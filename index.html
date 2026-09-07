@@ -135,6 +135,51 @@
     </div>
     <div id="tab4" class="tab-content">
         <h2>⚙️ Schvalování a správa přístupových práv</h2>
+                <!-- FORMULÁŘ A SPRÁVA AKCÍ PRO ADMINA -->
+        <div class="box-section">
+            <h3>+ Vytvořit novou firemní akci</h3>
+            <form onsubmit="handleCreateActionSubmit(event)">
+                <div class="form-group">
+                    <label>Název akce:</label>
+                    <input type="text" id="actNewName" required placeholder="např. Teambuilding 2026">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Datum:</label>
+                        <input type="date" id="actNewDate" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Čas:</label>
+                        <input type="time" id="actNewTime" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Místo konání:</label>
+                    <input type="text" id="actNewPlace" required placeholder="např. Konferenční sál A">
+                </div>
+                <div class="form-group">
+                    <label>Kapacita lístků (celkem):</label>
+                    <input type="number" id="actNewCapacity" min="1" required placeholder="př. 50">
+                </div>
+                <button type="submit" class="btn-submit" style="background: #28a745; width: auto; padding: 10px 25px;">Uložit novou akci</button>
+            </form>
+        </div>
+
+        <h3>Aktuální seznam akcí a obsazenost</h3>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Akce / Kdy a Kde</th>
+                        <th>Kapacita / Schváleno</th>
+                        <th>Stav akce</th>
+                        <th>Schválení lidé</th>
+                        <th>Akce</th>
+                    </tr>
+                </thead>
+                <tbody id="adminActionsTableBody"></tbody>
+            </table>
+        </div>
         <h3>1. Čekající žádosti o přidělení role</h3>
         <div style="overflow-x: auto;">
             <table>
@@ -294,6 +339,52 @@
             renderAdminSection();
         }
     }
+        // Databáze akcí
+    let companyActions = JSON.parse(localStorage.getItem('companyActions')) || [
+        { id: 1, name: 'Konference Tech 2026', date: '2026-10-15', time: '09:00', place: 'Praha', capacity: 10, status: 'Aktivní' },
+        { id: 2, name: 'Firemní Gala Večer', date: '2026-11-20', time: '19:00', place: 'Brno', capacity: 5, status: 'Aktivní' }
+    ];
+
+    function handleCreateActionSubmit(e) {
+        e.preventDefault();
+        const newAct = {
+            id: Date.now(),
+            name: document.getElementById('actNewName').value.trim(),
+            date: document.getElementById('actNewDate').value,
+            time: document.getElementById('actNewTime').value,
+            place: document.getElementById('actNewPlace').value.trim(),
+            capacity: parseInt(document.getElementById('actNewCapacity').value),
+            status: 'Aktivní'
+        };
+        companyActions.push(newAct);
+        localStorage.setItem('companyActions', JSON.stringify(companyActions));
+        e.target.reset();
+        renderAdminSection();
+        updateActionSelectOptions();
+        alert('Akce byla úspěšně vytvořena!');
+    }
+
+    function deleteCompanyAction(id) {
+        if(confirm('Opravdu chcete tuto akci smazat ze systému?')) {
+            companyActions = companyActions.filter(a => r.id !== id);
+            localStorage.setItem('companyActions', JSON.stringify(companyActions));
+            renderAdminSection();
+            updateActionSelectOptions();
+        }
+    }
+
+    function toggleActionStatus(id) {
+        companyActions = companyActions.map(a => {
+            if(a.id === id) {
+                const nextStatus = a.status === 'Aktivní' ? 'Zrušena' : 'Aktivní';
+                return { ...a, status: nextStatus };
+            }
+            return a;
+        });
+        localStorage.setItem('companyActions', JSON.stringify(companyActions));
+        renderAdminSection();
+        updateActionSelectOptions();
+    }
     function renderAdminSection() {
         const tbodyReq = document.getElementById('roleRequestsTableBody');
         tbodyReq.innerHTML = '';
@@ -342,7 +433,32 @@
             });
         }
     }
+        // Vykreslení tabulky akcí pro Admina (včetně schválených lidí a náhradníků)
+        const tbodyActList = document.getElementById('adminActionsTableBody');
+        if(tbodyActList) {
+            tbodyActList.innerHTML = '';
+            companyActions.forEach(act => {
+                // Najdeme lidi schválené na tuto akci
+                const approvedPeople = requests.filter(r => r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno');
+                const totalApprovedTickets = approvedPeople.reduce((sum, r) => sum + parseInt(r.tickets), 0);
+                const peopleNames = approvedPeople.map(p => p.employee + ' (' + p.tickets + 'ks)').join(', ') || 'Nikdo';
 
+                // Najdeme a očíslujeme náhradníky pro tuto akci chronologicky podle času podání žádosti
+                const waitlist = requests.filter(r => r.action === act.name && r.status2 === 'Náhradník');
+                const waitlistNames = waitlist.map((p, index) => '#' + (index + 1) + ' ' + p.employee + ' (' + p.tickets + 'ks)').join(', ') || 'Žádní';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td><strong>' + act.name + '</strong><br><small>' + act.date + ' v ' + act.time + ' — ' + act.place + '</small></td>' +
+                    '<td>' + totalApprovedTickets + ' / ' + act.capacity + '</td>' +
+                    '<td><span class="status status-' + (act.status === 'Aktivní' ? 'schvaleno' : 'zamitnuto') + '">' + act.status + '</span></td>' +
+                    '<td><small><strong>Schválení:</strong> ' + peopleNames + '<br><strong>Náhradníci:</strong> ' + waitlistNames + '</small></td>' +
+                    '<td>' +
+                        '<button onclick="toggleActionStatus(' + act.id + ')">' + (act.status === 'Aktivní' ? 'Zrušit akci' : 'Aktivovat') + '</button> ' +
+                        '<button style="background:#dc3545; color:white; border:none; padding:2px 5px;" onclick="deleteCompanyAction(' + act.id + ')">Smazat</button>' +
+                    '</td>';
+                tbodyActList.appendChild(tr);
+            });
+        }
     function handleFormSubmit(e) {
         e.preventDefault();
         const newRequest = {
