@@ -123,8 +123,10 @@
                 <div class="form-group">
                     <label for="reqRole">Požadovaná role:</label>
                     <select id="reqRole" required>
-                        <option value="manager">Manažer (Schvalování 1. stupně)</option>
-                        <option value="admin">Hlavní Admin (Úplná kontrola nad systémem)</option>
+                        <select id="reqRole" required>
+    <option value="manager">1. stupeň ASM / RSM</option>
+    <option value="rsm_praha">2. stupeň RSM Praha Central</option>
+    <option value="admin">3. stupeň Admin</option>
                     </select>
                 </div>
                 <button type="submit" class="btn-submit" style="background: #17a2b8;">Odeslat žádost ke schválení</button>
