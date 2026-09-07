@@ -578,5 +578,79 @@
         document.body.removeChild(link);
     }
 </script>
+    // FUNKCE PRO MAZÁNÍ REZERVACÍ (oprava, aby tlačítko fungovalo)
+    function deleteTicketRequest(id) {
+        if(confirm('Opravdu chcete tuto žádost o rezervaci lístků trvale smazat?')) {
+            requests = requests.filter(function(req) { return req.id !== id; });
+            localStorage.setItem('ticketRequests', JSON.stringify(requests));
+            renderTable();
+        }
+    }
+
+    // NOVÁ FUNKCE: TLAČÍTKO PRO PŘEDVYPLNĚNÍ EMAILU PODLE STAVU
+    function sendStatusEmail(id) {
+        const req = requests.find(function(r) { return r.id === id; });
+        if (!req) return;
+
+        let subject = 'Info o vaší žádosti o lístky';
+        let body = 'Dobrý den,\n\n';
+
+        // Automatický text podle toho, jaký je stav rezervace
+        if (req.status1 === 'Schváleno' && req.status2 === 'Schváleno') {
+            subject = 'SCHVÁLENO: Rezervace lístků';
+            body += 'vaše žádost o lístky na akci ' + req.action + ' pro zákazníka ' + req.customer + ' byla úspěšně SCHVÁLENA.';
+        } else if (req.status1 === 'Zamítnuto' || req.status2 === 'Zamítnuto') {
+            subject = 'ZAMÍTNUTO: Rezervace lístků';
+            body += 'vaše žádost o lístky na akci ' + req.action + ' byla bohužel ZAMÍTNUTA.';
+        } else if (req.status2 === 'Náhradník') {
+            subject = 'NÁHRADNÍK: Rezervace lístků';
+            body += 'vaše žádost o lístky na akci ' + req.action + ' byla zařazena do seznamu NÁHRADNÍKŮ.';
+        } else {
+            alert('Před odesláním e-mailu musíte nejprve rezervaci schválit, zamítnout nebo vybrat jako náhradníka!');
+            return;
+        }
+
+        body += '\n\nS pozdravem,\nHlavní správce';
+
+        // Otevření Outlooku / e-mailového programu (vše se zakóduje, aby fungovala diakritika)
+        window.location.href = 'mailto:' + req.manager + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+    }
+
+    // Sloupec navíc pro e-mailové tlačítko do vaší tabulky
+    const originalRenderTable = renderTable;
+    renderTable = function() {
+        originalRenderTable();
+        const tbody = document.getElementById('requestsTableBody');
+        if (!tbody || requests.length === 0) return;
+        
+        // Přidáme záhlaví pro e-mailový sloupec, pokud tam ještě není
+        const theadRow = tbody.closest('table').querySelector('thead tr');
+        if (theadRow && !theadRow.querySelector('.email-header')) {
+            const th = document.createElement('th');
+            th.className = 'email-header';
+            th.innerText = 'Upozornění';
+            theadRow.appendChild(th);
+        }
+
+        // Vložíme obálku/tlačítko ke každému řádku
+        const rows = tbody.querySelectorAll('tr');
+        requests.forEach(function(req, index) {
+            if (rows[index]) {
+                const td = document.createElement('td');
+                // Tlačítko uvidí pouze přihlášený Admin
+                if (currentUser && currentUser.role === 'admin') {
+                    td.innerHTML = '<button style="background:#17a2b8; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer;" onclick="sendStatusEmail(' + req.id + ')">✉️ Poslat stav</button>';
+                } else {
+                    td.innerHTML = '<small style="color:#999">Pouze pro Admina</small>';
+                }
+                rows[index].appendChild(td);
+            }
+        });
+    };
+
+    // Znovu všechno správně nastartujeme
+    updateLoginBar();
+    renderTable();
+</script>
 </body>
 </html>
