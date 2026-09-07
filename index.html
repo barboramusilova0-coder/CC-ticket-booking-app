@@ -6,7 +6,7 @@
     <title>Systém rezervace lístků</title>
     <style>
         body { font-family: sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
-        .container { max-width: 1100px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin: auto; }
+        .container { max-width: 1200px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin: auto; }
         .login-bar { background: #343a40; color: white; padding: 10px 20px; border-radius: 6px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
         .login-bar input { width: 150px; padding: 5px; border-radius: 4px; border: none; margin-right: 10px; }
         .login-bar button { padding: 5px 15px; border: none; border-radius: 4px; background: #007bff; color: white; cursor: pointer; }
@@ -40,12 +40,12 @@
             <span>Přihlášení kódem: </span>
             <input type="password" id="userToken" placeholder="Zadejte váš kód">
             <button onclick="loginUser()">Přihlásit</button>
-            <button onclick="location.reload(true)" style="background: #6c757d; font-size: 13px; margin-left: auto;">🔄 Obnovit stránku</button>
         </div>
         <div id="userInfo" style="display: none;">
             <span>Přihlášen jako: <strong id="loggedName">--</strong> (<span id="loggedRole">--</span>)</span>
             <button class="logout" onclick="logoutUser()">Odhlásit se</button>
         </div>
+        <button onclick="location.reload(true)" style="background: #6c757d; font-size: 13px; margin-left: auto; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">🔄 Obnovit stránku</button>
     </div>
     <h1>Systém rezervace lístků</h1>
     <div class="tabs">
@@ -59,12 +59,7 @@
         <form id="ticketForm" onsubmit="handleFormSubmit(event)">
             <div class="form-group">
                 <label for="actionSelect">Vyberte akci:</label>
-                <select id="actionSelect" required>
-                    <option value="">-- Vyberte ze seznamu --</option>
-                    <option value="Konference Tech 2026">Konference Tech 2026</option>
-                    <option value="Firemní Gala Večer">Firemní Gala Večer</option>
-                    <option value="Školení AI v praxi">Školení AI v praxi</option>
-                </select>
+                <select id="actionSelect" required></select>
             </div>
             <div class="form-group">
                 <label for="employeeName">Jméno zaměstnance:</label>
@@ -103,6 +98,8 @@
                         <th>2. Admin</th>
                         <th>Akce (1. Šéf)</th>
                         <th>Akce (2. Admin)</th>
+                        <th>Správa</th>
+                        <th>Upozornění</th>
                     </tr>
                 </thead>
                 <tbody id="requestsTableBody"></tbody>
@@ -123,22 +120,20 @@
                     <input type="email" id="reqEmail" required placeholder="novak@firma.cz">
                 </div>
                 <div class="form-group">
-    <label for="reqRole">Požadovaná role:</label>
-    <select id="reqRole" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
-        <option value="">-- Vyberte stupeň schválení --</option>
-        <option value="applicant">0 - žadatel</option>
-        <option value="manager">1. stupeň ASM / RSM</option>
-        <option value="rsm_praha">2. stupeň RSM Praha Central</option>
-        <option value="admin">3. stupeň Admin</option>
-    </select>
-</div>
+                    <label for="reqRole">Požadovaná role:</label>
+                    <select id="reqRole" required>
+                        <option value="applicant">0 - žadatel</option>
+                        <option value="manager">1. stupeň ASM / RSM</option>
+                        <option value="rsm_praha">2. stupeň RSM Praha Central</option>
+                        <option value="admin">3. stupeň Admin</option>
+                    </select>
+                </div>
                 <button type="submit" class="btn-submit" style="background: #17a2b8;">Odeslat žádost ke schválení</button>
             </form>
         </div>
     </div>
     <div id="tab4" class="tab-content">
         <h2>⚙️ Schvalování a správa přístupových práv</h2>
-                <!-- FORMULÁŘ A SPRÁVA AKCÍ PRO ADMINA -->
         <div class="box-section">
             <h3>+ Vytvořit novou firemní akci</h3>
             <form onsubmit="handleCreateActionSubmit(event)">
@@ -167,7 +162,6 @@
                 <button type="submit" class="btn-submit" style="background: #28a745; width: auto; padding: 10px 25px;">Uložit novou akci</button>
             </form>
         </div>
-
         <h3>Aktuální seznam akcí a obsazenost</h3>
         <div style="overflow-x: auto;">
             <table>
@@ -183,7 +177,7 @@
                 <tbody id="adminActionsTableBody"></tbody>
             </table>
         </div>
-        <h3>1. Čekající žádosti o přidělení role</h3>
+        <h3>2. Čekající žádosti o přidělení role</h3>
         <div style="overflow-x: auto;">
             <table>
                 <thead>
@@ -197,7 +191,7 @@
                 <tbody id="roleRequestsTableBody"></tbody>
             </table>
         </div>
-        <h3>2. Aktivní schvalovatelé (Vydané kódy)</h3>
+        <h3>3. Aktivní schvalovatelé (Vydané kódy)</h3>
         <div style="overflow-x: auto;">
             <table>
                 <thead>
@@ -220,487 +214,122 @@
     let roleRequests = JSON.parse(localStorage.getItem('roleRequests')) || [];
     let requests = JSON.parse(localStorage.getItem('ticketRequests')) || [];
     let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+    let companyActions = JSON.parse(localStorage.getItem('companyActions')) || [];
 
     function loginUser() {
         const token = document.getElementById('userToken').value.trim();
         if (token === masterAdminToken) {
             currentUser = { name: "Hlavní Správce", role: "admin", email: "admin@firma.cz" };
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                function updateActionSelectOptions() {
-        const select = document.getElementById('actionSelect');
-        if (!select) return;
-        
-        let html = '<option value="">-- Vyberte ze seznamu --</option>';
-        companyActions.forEach(act => {
-            if (act.status === 'Aktivní') {
-                html += '<option value="' + act.name + '">' + act.name + ' (' + act.date + ')</option>';
-            }
-        });
-        select.innerHTML = html;
-    }
-
-    // Spuštění všech tabulek a seznamů při načtení webu
-    updateLoginBar();
-    renderTable();
-    updateActionSelectOptions();
+            updateLoginBar(); renderTable();
         } else if (customUsers[token]) {
             currentUser = customUsers[token];
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            updateLoginBar();
-            renderTable();
-        } else {
-            alert('Neplatný přihlašovací kód!');
-        }
+            updateLoginBar(); renderTable();
+        } else { alert('Neplatný kód!'); }
     }
-
-    function logoutUser() {
-        currentUser = null;
-        localStorage.removeItem('currentUser');
-        updateLoginBar();
-        renderTable();
-    }
-
+    function logoutUser() { currentUser = null; localStorage.removeItem('currentUser'); updateLoginBar(); renderTable(); }
     function updateLoginBar() {
-        const adminTabBtn = document.getElementById('btn-admin');
+        const btn = document.getElementById('btn-admin');
         if (currentUser) {
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('userInfo').style.display = 'block';
             document.getElementById('loggedName').innerText = currentUser.name;
             document.getElementById('loggedRole').innerText = currentUser.role === 'admin' ? 'Hlavní Admin' : 'Manažer';
-            if (currentUser.role === 'admin') {
-                adminTabBtn.style.display = 'block';
-            } else {
-                adminTabBtn.style.display = 'none';
-            }
-        } else {
-            document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('userInfo').style.display = 'none';
-            adminTabBtn.style.display = 'none';
-        }
+            if (currentUser.role === 'admin') btn.style.display = 'block'; else btn.style.display = 'none';
+        } else { document.getElementById('loginForm').style.display = 'block'; document.getElementById('userInfo').style.display = 'none'; btn.style.display = 'none'; }
     }
-
-    function openTab(tabNum) {
-        document.getElementById('tab1').classList.remove('active');
-        document.getElementById('tab2').classList.remove('active');
-        document.getElementById('tab3').classList.remove('active');
-        document.getElementById('tab4').classList.remove('active');
+    function openTab(num) {
+        for(let i=1; i<=4; i++) document.getElementById('tab'+i).classList.remove('active');
         document.getElementById('btn-nova').classList.remove('active');
         document.getElementById('btn-seznam').classList.remove('active');
         document.getElementById('btn-zadost-role').classList.remove('active');
         document.getElementById('btn-admin').classList.remove('active');
-        document.getElementById('tab' + tabNum).classList.add('active');
-        if (tabNum === 1) document.getElementById('btn-nova').classList.add('active');
-        if (tabNum === 2) { document.getElementById('btn-seznam').classList.add('active'); renderTable(); }
-        if (tabNum === 3) document.getElementById('btn-zadost-role').classList.add('active');
-        if (tabNum === 4) { document.getElementById('btn-admin').classList.add('active'); renderAdminSection(); }
+        document.getElementById('tab'+num).classList.add('active');
+        if (num === 1) document.getElementById('btn-nova').classList.add('active');
+        if (num === 2) { document.getElementById('btn-seznam').classList.add('active'); renderTable(); }
+        if (num === 3) document.getElementById('btn-zadost-role').classList.add('active');
+        if (num === 4) { document.getElementById('btn-admin').classList.add('active'); renderAdminSection(); }
     }
-
     function handleRoleRequestSubmit(e) {
         e.preventDefault();
-        const newReq = {
-            id: Date.now(),
-            name: document.getElementById('reqName').value.trim(),
-            email: document.getElementById('reqEmail').value.toLowerCase().trim(),
-            role: document.getElementById('reqRole').value
-        };
-        roleRequests.push(newReq);
-        localStorage.setItem('roleRequests', JSON.stringify(roleRequests));
-        e.target.reset();
-        alert('Žádost o přístup byla odeslána správci.');
+        roleRequests.push({ id: Date.now(), name: document.getElementById('reqName').value.trim(), email: document.getElementById('reqEmail').value.toLowerCase().trim(), role: document.getElementById('reqRole').value });
+        localStorage.setItem('roleRequests', JSON.stringify(roleRequests)); e.target.reset(); alert('Odesláno!');
     }
-
     function approveRoleRequest(id) {
-        const reqIndex = roleRequests.findIndex(r => r.id === id);
-        if (reqIndex > -1) {
-            const req = roleRequests[reqIndex];
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-            let token = '';
-            for (let i = 0; i < 5; i++) token += chars.charAt(Math.floor(Math.random() * chars.length));
-            customUsers[token] = { name: req.name, email: req.email, role: req.role };
-            localStorage.setItem('customUsers', JSON.stringify(customUsers));
-            roleRequests.splice(reqIndex, 1);
-            localStorage.setItem('roleRequests', JSON.stringify(roleRequests));
-            alert('Přístup schválen! Kód: ' + token);
-            renderAdminSection();
+        const idx = roleRequests.findIndex(r => r.id === id);
+        if (idx > -1) {
+            const r = roleRequests[idx]; const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let tok = '';
+            for (let i = 0; i < 5; i++) tok += chars.charAt(Math.floor(Math.random() * chars.length));
+            customUsers[tok] = { name: r.name, email: r.email, role: r.role };
+            localStorage.setItem('customUsers', JSON.stringify(customUsers)); roleRequests.splice(idx, 1);
+            localStorage.setItem('roleRequests', JSON.stringify(roleRequests)); alert('Kód: ' + tok); renderAdminSection();
         }
     }
-
-    function rejectRoleRequest(id) {
-        if(confirm('Opravdu zamítnout žádost?')) {
-            roleRequests = roleRequests.filter(r => r.id !== id);
-            localStorage.setItem('roleRequests', JSON.stringify(roleRequests));
-            renderAdminSection();
-        }
-    }
-
-    function editRoleRequest(id) {
-        roleRequests = roleRequests.map(r => {
-            if (r.id === id) {
-                let isCurrentlyAdmin = r.role === 'admin';
-                let nextRole = 'manager';
-                if(!isCurrentlyAdmin) nextRole = 'admin';
-                let confirmChange = confirm('Změnit roli uživatele?');
-                if (confirmChange) {
-                    return { ...r, role: nextRole };
-                }
-            }
-            return r;
-        });
-        localStorage.setItem('roleRequests', JSON.stringify(roleRequests));
-        renderAdminSection();
-    }
-
-    function deleteActiveUser(token) {
-        if(confirm('Opravdu smazat schvalovatele?')) {
-            delete customUsers[token];
-            localStorage.setItem('customUsers', JSON.stringify(customUsers));
-            renderAdminSection();
-        }
-    }
-        // Databáze akcí
-    let companyActions = JSON.parse(localStorage.getItem('companyActions')) || [
-        { id: 1, name: 'Konference Tech 2026', date: '2026-10-15', time: '09:00', place: 'Praha', capacity: 10, status: 'Aktivní' },
-        { id: 2, name: 'Firemní Gala Večer', date: '2026-11-20', time: '19:00', place: 'Brno', capacity: 5, status: 'Aktivní' }
-    ];
-
+    function rejectRoleRequest(id) { if(confirm('Smazat?')) { roleRequests = roleRequests.filter(r => r.id !== id); localStorage.setItem('roleRequests', JSON.stringify(roleRequests)); renderAdminSection(); } }
+    function editRoleRequest(id) { roleRequests = roleRequests.map(r => { if (r.id === id) { let n = r.role === 'admin' ? 'manager' : 'admin'; if(confirm('Změnit?')) return { ...r, role: n }; } return r; }); localStorage.setItem('roleRequests', JSON.stringify(roleRequests)); renderAdminSection(); }
+    function deleteActiveUser(tok) { if(confirm('Smazat?')) { delete customUsers[tok]; localStorage.setItem('customUsers', JSON.stringify(customUsers)); renderAdminSection(); } }
     function handleCreateActionSubmit(e) {
         e.preventDefault();
-        const newAct = {
-            id: Date.now(),
-            name: document.getElementById('actNewName').value.trim(),
-            date: document.getElementById('actNewDate').value,
-            time: document.getElementById('actNewTime').value,
-            place: document.getElementById('actNewPlace').value.trim(),
-            capacity: parseInt(document.getElementById('actNewCapacity').value),
-            status: 'Aktivní'
-        };
-        companyActions.push(newAct);
-        localStorage.setItem('companyActions', JSON.stringify(companyActions));
-        e.target.reset();
-        renderAdminSection();
-        updateActionSelectOptions();
-        alert('Akce byla úspěšně vytvořena!');
+        companyActions.push({ id: Date.now(), name: document.getElementById('actNewName').value.trim(), date: document.getElementById('actNewDate').value, time: document.getElementById('actNewTime').value, place: document.getElementById('actNewPlace').value.trim(), capacity: parseInt(document.getElementById('actNewCapacity').value), status: 'Aktivní' });
+        localStorage.setItem('companyActions', JSON.stringify(companyActions)); e.target.reset(); renderAdminSection(); updateActionSelectOptions(); alert('Vytvořeno!');
     }
-
-        function deleteCompanyAction(id) {
-        if(confirm('Opravdu chcete tuto akci smazat ze systému?')) {
-            companyActions = companyActions.filter(function(a) { return a.id !== id; });
-            localStorage.setItem('companyActions', JSON.stringify(companyActions));
-            renderAdminSection();
-            updateActionSelectOptions();
-        }
-    }
-
-    function toggleActionStatus(id) {
-        companyActions = companyActions.map(a => {
-            if(a.id === id) {
-                const nextStatus = a.status === 'Aktivní' ? 'Zrušena' : 'Aktivní';
-                return { ...a, status: nextStatus };
-            }
-            return a;
-        });
-        localStorage.setItem('companyActions', JSON.stringify(companyActions));
-        renderAdminSection();
-        updateActionSelectOptions();
-    }
+    function deleteCompanyAction(id) { if(confirm('Smazat?')) { companyActions = companyActions.filter(a => a.id !== id); localStorage.setItem('companyActions', JSON.stringify(companyActions)); renderAdminSection(); updateActionSelectOptions(); } }
+    function toggleActionStatus(id) { companyActions = companyActions.map(a => a.id === id ? { ...a, status: a.status === 'Aktivní' ? 'Zrušena' : 'Aktivní' } : a); localStorage.setItem('companyActions', JSON.stringify(companyActions)); renderAdminSection(); updateActionSelectOptions(); }
     function renderAdminSection() {
-        const tbodyReq = document.getElementById('roleRequestsTableBody');
-        tbodyReq.innerHTML = '';
-        if(roleRequests.length === 0) {
-            tbodyReq.innerHTML = '<tr><td colspan="4">Žádné čekající žádosti.</td></tr>';
-        } else {
-            roleRequests.forEach(r => {
-                const tr = document.createElement('tr');
-                let rText = 'Manažer';
-                if(r.role === 'admin') rText = 'Hlavní Admin';
-                
-                let html = '<td><strong>' + r.name + '</strong></td>';
-                html += '<td>' + r.email + '</td>';
-                html += '<td>' + rText + '</td>';
-                html += '<td>';
-                html += '<button onclick="approveRoleRequest(' + r.id + ')">Schválit</button> ';
-                html += '<button onclick="editRoleRequest(' + r.id + ')">Upravit</button> ';
-                html += '<button onclick="rejectRoleRequest(' + r.id + ')">Smazat</button>';
-                html += '</td>';
-                
-                tr.innerHTML = html;
-                tbodyReq.appendChild(tr);
-            });
-        }
-
-        const tbodyAct = document.getElementById('activeUsersTableBody');
-        tbodyAct.innerHTML = '';
-        const tokens = Object.keys(customUsers);
-        if(tokens.length === 0) {
-            tbodyAct.innerHTML = '<tr><td colspan="5">Žatím žádní uživatelé.</td></tr>';
-        } else {
-            tokens.forEach(token => {
-                const u = customUsers[token];
-                const tr = document.createElement('tr');
-                let rText = 'Manažer';
-                if(u.role === 'admin') rText = 'Hlavní Admin';
-                
-                let html = '<td><strong>' + u.name + '</strong></td>';
-                html += '<td>' + u.email + '</td>';
-                html += '<td>' + rText + '</td>';
-                html += '<td>' + token + '</td>';
-                html += '<td><button onclick="deleteActiveUser(\'' + token + '\')">Smazat</button></td>';
-                
-                tr.innerHTML = html;
-                tbodyAct.appendChild(tr);
-            });
-        }
+        const tbody = document.getElementById('roleRequestsTableBody'); tbody.innerHTML = '';
+        if(roleRequests.length === 0) tbody.innerHTML = '<tr><td colspan="4">Žádné žádosti.</td></tr>';
+        else roleRequests.forEach(r => { let t = '0 - Žadatel'; if(r.role==='manager') t='1. stupeň'; if(r.role==='rsm_praha') t='2. stupeň'; if(r.role==='admin') t='Admin'; let tr = document.createElement('tr'); tr.innerHTML = '<td><strong>'+r.name+'</strong></td><td>'+r.email+'</td><td>'+t+'</td><td><button onclick="approveRoleRequest('+r.id+')">Schválit</button> <button onclick="editRoleRequest('+r.id+')">Upravit</button> <button onclick="rejectRoleRequest('+r.id+')">Smazat</button></td>'; tbody.appendChild(tr); });
+        const tbodyA = document.getElementById('activeUsersTableBody'); tbodyA.innerHTML = ''; const tks = Object.keys(customUsers);
+        if(tks.length === 0) tbodyA.innerHTML = '<tr><td colspan="5">Žádní uživatelé.</td></tr>';
+        else tks.forEach(tk => { const u = customUsers[tk]; let t = 'Žadatel'; if(u.role==='manager') t='1. stupeň'; if(u.role==='rsm_praha') t='2. stupeň'; if(u.role==='admin') t='Admin'; let tr = document.createElement('tr'); tr.innerHTML = '<td><strong>'+u.name+'</strong></td><td>'+u.email+'</td><td>'+t+'</td><td>'+tk+'</td><td><button onclick="deleteActiveUser(\''+tk+'\')">Smazat</button></td>'; tbodyA.appendChild(tr); });
+        const tbodyL = document.getElementById('adminActionsTableBody'); if(tbodyL) { tbodyL.innerHTML = ''; companyActions.forEach(act => { const app = requests.filter(r => r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno'); const tot = app.reduce((s, r) => s + parseInt(r.tickets), 0); const tr = document.createElement('tr'); tr.innerHTML = '<td><strong>'+act.name+'</strong><br><small>'+act.date+'</small></td><td>'+tot+' / '+act.capacity+'</td><td>'+act.status+'</td><td>-</td><td><button onclick="toggleActionStatus('+act.id+')">Zrušit</button> <button onclick="deleteCompanyAction('+act.id+')">Smazat</button></td>'; tbodyL.appendChild(tr); }); }
     }
-        // Vykreslení tabulky akcí pro Admina (včetně schválených lidí a náhradníků)
-        const tbodyActList = document.getElementById('adminActionsTableBody');
-        if(tbodyActList) {
-            tbodyActList.innerHTML = '';
-            companyActions.forEach(act => {
-                // Najdeme lidi schválené na tuto akci
-                const approvedPeople = requests.filter(r => r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno');
-                const totalApprovedTickets = approvedPeople.reduce((sum, r) => sum + parseInt(r.tickets), 0);
-                const peopleNames = approvedPeople.map(p => p.employee + ' (' + p.tickets + 'ks)').join(', ') || 'Nikdo';
-
-                // Najdeme a očíslujeme náhradníky pro tuto akci chronologicky podle času podání žádosti
-                const waitlist = requests.filter(r => r.action === act.name && r.status2 === 'Náhradník');
-                const waitlistNames = waitlist.map((p, index) => '#' + (index + 1) + ' ' + p.employee + ' (' + p.tickets + 'ks)').join(', ') || 'Žádní';
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = '<td><strong>' + act.name + '</strong><br><small>' + act.date + ' v ' + act.time + ' — ' + act.place + '</small></td>' +
-                    '<td>' + totalApprovedTickets + ' / ' + act.capacity + '</td>' +
-                    '<td><span class="status status-' + (act.status === 'Aktivní' ? 'schvaleno' : 'zamitnuto') + '">' + act.status + '</span></td>' +
-                    '<td><small><strong>Schválení:</strong> ' + peopleNames + '<br><strong>Náhradníci:</strong> ' + waitlistNames + '</small></td>' +
-                    '<td>' +
-                        '<button onclick="toggleActionStatus(' + act.id + ')">' + (act.status === 'Aktivní' ? 'Zrušit akci' : 'Aktivovat') + '</button> ' +
-                        '<button style="background:#dc3545; color:white; border:none; padding:2px 5px;" onclick="deleteCompanyAction(' + act.id + ')">Smazat</button>' +
-                    '</td>';
-                tbodyActList.appendChild(tr);
-            });
-        }
     function handleFormSubmit(e) {
-        e.preventDefault();
-        const newRequest = {
-            id: Date.now(),
-            action: document.getElementById('actionSelect').value,
-            employee: document.getElementById('employeeName').value,
-            manager: document.getElementById('managerEmail').value.toLowerCase().trim(),
-            customer: document.getElementById('customerName').value,
-            tickets: document.getElementById('ticketCount').value,
-            reason: document.getElementById('reason').value,
-            status1: 'Čeká',
-            status2: 'Čeká',
-            approvedBy1: '',
-            approvedBy2: ''
-        };
-        requests.push(newRequest);
-        localStorage.setItem('ticketRequests', JSON.stringify(requests));
-        document.getElementById('ticketForm').reset();
-        alert('Žádost uložena!');
-        openTab(2);
+        e.preventDefault(); requests.push({ id: Date.now(), action: document.getElementById('actionSelect').value, employee: document.getElementById('employeeName').value, manager: document.getElementById('managerEmail').value.toLowerCase().trim(), customer: document.getElementById('customerName').value, tickets: document.getElementById('ticketCount').value, reason: document.getElementById('reason').value, status1: 'Čeká', status2: 'Čeká', approvedBy1: '', approvedBy2: '' });
+        localStorage.setItem('ticketRequests', JSON.stringify(requests)); document.getElementById('ticketForm').reset(); alert('Uloženo!'); openTab(2);
     }
-
-    function setStatus1(id, status) {
-        requests = requests.map(req => req.id === id ? {...req, status1: status, approvedBy1: currentUser.name} : req);
-        localStorage.setItem('ticketRequests', JSON.stringify(requests));
-        renderTable();
-    }
-
-    function setStatus2(id, status) {
-        requests = requests.map(req => req.id === id ? {...req, status2: status, approvedBy2: currentUser.name} : req);
-        localStorage.setItem('ticketRequests', JSON.stringify(requests));
-        renderTable();
-    }
-
-    function renderTable() {
-        const tbody = document.getElementById('requestsTableBody');
-        tbody.innerHTML = '';
-        if(requests.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7">Žádné žádosti o lístky.</td></tr>';
-            return;
-        }
-        requests.forEach(req => {
-            const isMyManager = currentUser && currentUser.email === req.manager;
-            const isAdmin = currentUser && currentUser.role === 'admin';
-            const disableManager = (!isMyManager && !isAdmin) ? 'disabled' : '';
-            const disableAdmin = (!isAdmin) ? 'disabled' : '';
-            const tr = document.createElement('tr');
-            
-            let html = '<td><strong>' + req.action + '</strong><br><small>' + req.reason + '</small></td>';
-            html += '<td>' + req.employee + '</td>';
-            html += '<td>' + req.customer + ' (' + req.tickets + ' ks)</td>';
-            html += '<td>' + req.status1 + '<br><small>' + (req.approvedBy1 || req.manager) + '</small></td>';
-            html += '<td>' + req.status2 + '<br><small>' + (req.approvedBy2 || '') + '</small></td>';
-            html += '<td>';
-            html += '<button onclick="setStatus1(' + req.id + ', \'Schváleno\')" ' + disableManager + '>Ano</button> ';
-            html += '<button onclick="setStatus1(' + req.id + ', \'Zamítnuto\')" ' + disableManager + '>Ne</button>';
-            html += '</td>';
-            html += '<td>';
-            html += '<button onclick="setStatus2(' + req.id + ', \'Schváleno\')" ' + disableAdmin + '>Ano</button> ';
-            html += '<button onclick="setStatus2(' + req.id + ', \'Zamítnuto\')" ' + disableAdmin + '>Ne</button> ';
-            html += '<button onclick="setStatus2(' + req.id + ', \'Náhradník\')" ' + disableAdmin + '>Náhradník</button>';
-            html += '</td>';
-                        // Tlačítko smazat uvidí jen Admin nebo Žadatel 0
-            const isApplicant = !currentUser || (currentUser && currentUser.role === 'applicant');
-            if (isAdmin || isApplicant) {
-                html += '<td><button style="background:#dc3545;color:white;border:none;padding:5px 8px;border-radius:4px;cursor:pointer;" onclick="deleteTicketRequest(' + req.id + ')">Smazat</button></td>';
-            } else {
-                html += '<td></td>';
-            }
-            tr.innerHTML = html;
-            tbody.appendChild(tr);
-        });
-    }
-
-    updateLoginBar();
-    renderTable();
-        function exportToExcel() {
-        if (requests.length === 0) {
-            alert('V tabulce nejsou žádné žádosti ke stažení.');
-            return;
-        }
-        
-        // Hlavička tabulky v Excelu (oddělená středníky)
-        let csv = 'Akce;Zadatel;Zakaznik;Pocet listku;Duvod;Stav 1 (Sef);Stav 2 (Admin)\r\n';
-        
-        // Projdeme všechny žádosti a poskládáme řádky
-        requests.forEach(function(req) {
-            let row = req.action + ';' + req.employee + ';' + req.customer + ';' + req.tickets + ';' + req.reason + ';' + req.status1 + ';' + req.status2;
-            csv += row + '\r\n';
-        });
-        
-        // Vytvoření souboru a jeho automatické stažení v prohlížeči
-        let blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-        let link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.setAttribute('download', 'export_rezervaci_listku.csv');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-</script>
-    // FUNKCE PRO MAZÁNÍ REZERVACÍ (oprava, aby tlačítko fungovalo)
+    function setStatus1(id, s) { requests = requests.map(r => r.id === id ? {...r, status1: s, approvedBy1: currentUser.name} : r); localStorage.setItem('ticketRequests', JSON.stringify(requests)); renderTable(); }
+    function setStatus2(id, s) { requests = requests.map(r => r.id === id ? {...r, status2: s, approvedBy2: currentUser.name} : r); localStorage.setItem('ticketRequests', JSON.stringify(requests)); renderTable(); }
+    
     function deleteTicketRequest(id) {
-        if(confirm('Opravdu chcete tuto žádost o rezervaci lístků trvale smazat?')) {
-            requests = requests.filter(function(req) { return req.id !== id; });
+        if(confirm('Opravdu smazat rezervaci?')) {
+            requests = requests.filter(function(r) { return r.id !== id; });
             localStorage.setItem('ticketRequests', JSON.stringify(requests));
             renderTable();
         }
     }
-
-    // NOVÁ FUNKCE: TLAČÍTKO PRO PŘEDVYPLNĚNÍ EMAILU PODLE STAVU
     function sendStatusEmail(id) {
-        const req = requests.find(function(r) { return r.id === id; });
-        if (!req) return;
-
-        let subject = 'Info o vaší žádosti o lístky';
-        let body = 'Dobrý den,\n\n';
-
-        // Automatický text podle toho, jaký je stav rezervace
-        if (req.status1 === 'Schváleno' && req.status2 === 'Schváleno') {
-            subject = 'SCHVÁLENO: Rezervace lístků';
-            body += 'vaše žádost o lístky na akci ' + req.action + ' pro zákazníka ' + req.customer + ' byla úspěšně SCHVÁLENA.';
-        } else if (req.status1 === 'Zamítnuto' || req.status2 === 'Zamítnuto') {
-            subject = 'ZAMÍTNUTO: Rezervace lístků';
-            body += 'vaše žádost o lístky na akci ' + req.action + ' byla bohužel ZAMÍTNUTA.';
-        } else if (req.status2 === 'Náhradník') {
-            subject = 'NÁHRADNÍK: Rezervace lístků';
-            body += 'vaše žádost o lístky na akci ' + req.action + ' byla zařazena do seznamu NÁHRADNÍKŮ.';
-        } else {
-            alert('Před odesláním e-mailu musíte nejprve rezervaci schválit, zamítnout nebo vybrat jako náhradníka!');
-            return;
-        }
-
-        body += '\n\nS pozdravem,\nHlavní správce';
-
-        // Otevření Outlooku / e-mailového programu (vše se zakóduje, aby fungovala diakritika)
-        window.location.href = 'mailto:' + req.manager + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+        const r = requests.find(x => x.id === id); if (!r) return; let s = 'Info', b = 'Dobrý den,\n\n';
+        if (r.status1 === 'Schváleno' && r.status2 === 'Schváleno') { s = 'SCHVÁLENO'; b += 'Rezervace schválena.'; }
+        else if (r.status1 === 'Zamítnuto' || r.status2 === 'Zamítnuto') { s = 'ZAMÍTNUTO'; b += 'Rezervace zamítnuta.'; }
+        else if (r.status2 === 'Náhradník') { s = 'NÁHRADNÍK'; b += 'Jste náhradník.'; } else { alert('Nastavte stav!'); return; }
+        window.location.href = 'mailto:' + r.manager + '?subject=' + encodeURIComponent(s) + '&body=' + encodeURIComponent(b);
     }
-
-    // Sloupec navíc pro e-mailové tlačítko do vaší tabulky
-    const originalRenderTable = renderTable;
-    renderTable = function() {
-        originalRenderTable();
-        const tbody = document.getElementById('requestsTableBody');
-        if (!tbody || requests.length === 0) return;
-        
-        // Přidáme záhlaví pro e-mailový sloupec, pokud tam ještě není
-        const theadRow = tbody.closest('table').querySelector('thead tr');
-        if (theadRow && !theadRow.querySelector('.email-header')) {
-            const th = document.createElement('th');
-            th.className = 'email-header';
-            th.innerText = 'Upozornění';
-            theadRow.appendChild(th);
-        }
-
-        // Vložíme obálku/tlačítko ke každému řádku
-        const rows = tbody.querySelectorAll('tr');
-        requests.forEach(function(req, index) {
-            if (rows[index]) {
-                const td = document.createElement('td');
-                // Tlačítko uvidí pouze přihlášený Admin
-                if (currentUser && currentUser.role === 'admin') {
-                    td.innerHTML = '<button style="background:#17a2b8; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer;" onclick="sendStatusEmail(' + req.id + ')">✉️ Poslat stav</button>';
-                } else {
-                    td.innerHTML = '<small style="color:#999">Pouze pro Admina</small>';
-                }
-                rows[index].appendChild(td);
-            }
+    function renderTable() {
+        const tbody = document.getElementById('requestsTableBody'); if(!tbody) return; tbody.innerHTML = '';
+        if(requests.length === 0) { tbody.innerHTML = '<tr><td colspan="9">Žádné žádosti.</td></tr>'; return; }
+        requests.forEach(function(req) {
+            const isMgr = currentUser && currentUser.email === req.manager; const isAdmin = currentUser && currentUser.role === 'admin';
+            const dMgr = (!isMgr && !isAdmin) ? 'disabled' : ''; const dAdm = (!isAdmin) ? 'disabled' : ''; const tr = document.createElement('tr');
+            const isApp = !currentUser || (currentUser && currentUser.role === 'applicant');
+            let delBtn = (isAdmin || isApp) ? '<button style="background:#dc3545;color:white;" onclick="deleteTicketRequest(' + req.id + ')">Smazat</button>' : '';
+            let mailBtn = isAdmin ? '<button style="background:#17a2b8;color:white;" onclick="sendStatusEmail(' + req.id + ')">✉ Mail</button>' : '';
+            tr.innerHTML = '<td><strong>'+req.action+'</strong></td><td>'+req.employee+'</td><td>'+req.customer+'</td><td>'+req.status1+'</td><td>'+req.status2+'</td><td><button onclick="setStatus1('+req.id+',\'Schváleno\')" '+dMgr+'>Ano</button> <button onclick="setStatus1('+req.id+',\'Zamítnuto\')" '+dMgr+'>Ne</button></td><td><button onclick="setStatus2('+req.id+',\'Schváleno\')" '+dAdm+'>Ano</button> <button onclick="setStatus2('+req.id+',\'Zamítnuto\')" '+dAdm+'>Ne</button> <button onclick="setStatus2('+req.id+',\'Náhradník\')" '+dAdm+'>Náhradník</button></td><td>'+delBtn+'</td><td>'+mailBtn+'</td>';
+            tbody.appendChild(tr);
         });
-    };
-
-    // Znovu všechno správně nastartujeme
-    updateLoginBar();
-    renderTable();
-</script>
-    // 1. SAMOTNÁ FUNKCE PRO VYMAZÁNÍ ŽÁDOSTI Z PAMĚTI
-    function deleteTicketRequest(id) {
-        if(confirm('Opravdu chcete tuto žádost o rezervaci lístků trvale smazat?')) {
-            requests = requests.filter(function(req) { return req.id !== id; });
-            localStorage.setItem('ticketRequests', JSON.stringify(requests));
-            renderTable(); // Znovu překreslí tabulku už bez smazané žádosti
-        }
     }
-
-    // 2. DOPLNĚNÍ ČERVENÉHO TLAČÍTKA "SMAZAT" DO VAŠÍ TABULKY
-    const originalRenderTable = renderTable;
-    renderTable = function() {
-        // Spustíme vaši původní tabulku
-        originalRenderTable();
-        
-        const tbody = document.getElementById('requestsTableBody');
-        if (!tbody || requests.length === 0) return;
-        
-        // Přidáme záhlaví pro sloupec Správa, pokud tam ještě není
-        const theadRow = tbody.closest('table').querySelector('thead tr');
-        if (theadRow && !theadRow.querySelector('.delete-header')) {
-            const th = document.createElement('th');
-            th.className = 'delete-header';
-            th.innerText = 'Správa';
-            theadRow.appendChild(th);
-        }
-
-        // Projdeme řádky a adminovi nebo žadateli 0 tam to tlačítko připneme
-        const rows = tbody.querySelectorAll('tr');
-        requests.forEach(function(req, index) {
-            if (rows[index]) {
-                const td = document.createElement('td');
-                const isApplicant = !currentUser || (currentUser && currentUser.role === 'applicant');
-                const isAdmin = currentUser && currentUser.role === 'admin';
-                
-                if (isAdmin || isApplicant) {
-                    td.innerHTML = '<button style="background:#dc3545; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer;" onclick="deleteTicketRequest(' + req.id + ')">Smazat</button>';
-                } else {
-                    td.innerHTML = '-';
-                }
-                rows[index].appendChild(td);
-            }
-        });
-    };
-
-    // Všechno znovu správně nastartujeme při načtení webu
-    updateLoginBar();
-    renderTable();
-    if (typeof updateActionSelectOptions === 'function') updateActionSelectOptions();
+    function exportToExcel() {
+        if (requests.length === 0) return; let csv = 'Akce;Zadatel;Zakaznik;Stav\r\n';
+        requests.forEach(function(r) { csv += r.action + ';' + r.employee + ';' + r.customer + ';' + r.status2 + '\r\n'; });
+        let blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' }); let link = document.createElement('a');
+        link.href = URL.createObjectURL(blob); link.setAttribute('download', 'export.csv'); document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    }
+    function updateActionSelectOptions() {
+        const sel = document.getElementById('actionSelect'); if (!sel) return; let h = '<option value="">-- Vyberte --</option>';
+        companyActions.forEach(function(a) { if (a.status === 'Aktivní') h += '<option value="'+a.name+'">'+a.name+'</option>'; }); sel.innerHTML = h;
+    }
+    updateLoginBar(); renderTable(); updateActionSelectOptions();
 </script>
 </body>
 </html>
