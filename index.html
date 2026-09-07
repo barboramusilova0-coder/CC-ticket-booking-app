@@ -372,16 +372,35 @@
             tbody.appendChild(tr);
         });
     }
-    function renderPublicActionsTable() {
+       function renderPublicActionsTable() {
         const tbody = document.getElementById('publicActionsTableBody'); if(!tbody) return; tbody.innerHTML = '';
         if(companyActions.length === 0) { tbody.innerHTML = '<tr><td colspan="4">Žádné akce.</td></tr>'; return; }
         companyActions.forEach(function(act) {
-            const app = requests.filter(function(r) { return r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno'; }); let tot = 0; app.forEach(function(x) { tot += parseInt(x.tickets); });
+            const app = requests.filter(function(r) { return r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno'; }); 
+            let tot = 0; app.forEach(function(x) { tot += parseInt(x.tickets); });
             const names = app.map(function(p) { return p.employee + ' (' + p.tickets + ' ks pro: ' + p.customer + ')'; }).join(', ') || 'Nikdo';
             const wl = requests.filter(function(r) { return r.action === act.name && r.status2 === 'Náhradník'; });
             const wlNames = wl.map(function(p, i) { return '#' + (i + 1) + ' ' + p.employee + ' (' + p.tickets + ' ks)'; }).join(', ') || 'Žádní';
             const tr = document.createElement('tr'); if (act.status === 'Zrušena') tr.style.opacity = '0.5';
             tr.innerHTML = '<td><strong>'+act.name+'</strong></td><td>'+tot+' / '+act.capacity+'</td><td>'+names+'</td><td>'+wlNames+'</td>'; tbody.appendChild(tr);
+        });
+    }
+    function renderTable() {
+        const tbody = document.getElementById('requestsTableBody'); if(!tbody) return; tbody.innerHTML = '';
+        if(requests.length === 0) { tbody.innerHTML = '<tr><td colspan="9">Žádné žádosti.</td></tr>'; return; }
+        requests.forEach(function(req) {
+            const isSef1 = currentUser && currentUser.role === 'manager' && currentUser.email === req.manager; 
+            const isSef2 = currentUser && currentUser.role === 'rsm_praha'; 
+            const isSystemAdmin = currentUser && currentUser.role === 'admin';
+            const dMgr = (isSef1 || isSystemAdmin) ? '' : 'disabled'; 
+            const dAdm = ((isSef2 && req.status1 === 'Schváleno') || isSystemAdmin) ? '' : 'disabled';
+            const tr = document.createElement('tr'); let sClass1 = 'cekajici', sClass2 = 'cekajici';
+            if(req.status1 === 'Schváleno') sClass1 = 'schvaleno'; if(req.status1 === 'Zamítnuto') sClass1 = 'zamitnuto';
+            if(req.status2 === 'Schváleno') sClass2 = 'schvaleno'; if(req.status2 === 'Zamítnuto') sClass2 = 'zamitnuto'; if(req.status2 === 'Náhradník') sClass2 = 'nahradnik';
+            const isApp = !currentUser || (currentUser && currentUser.role === 'applicant');
+            let delBtn = (isSystemAdmin || isApp) ? '<button style="background:#dc3545;color:white;" onclick="deleteTicketRequest(' + req.id + ')">Smazat</button>' : '';
+            let mailBtn = isSystemAdmin ? '<button style="background:#17a2b8;color:white;" onclick="sendStatusEmail(' + req.id + ')">✉ Mail</button>' : '';
+            tr.innerHTML = '<td><strong>'+req.action+'</strong></td><td>'+req.employee+'</td><td>'+req.customer+'</td><td><span class="status status-'+sClass1+'">'+req.status1+'</span></td><td><span class="status status-'+sClass2+'">'+req.status2+'</span></td><td><button onclick="setStatus1('+req.id+',\'Schváleno\')" '+dMgr+'>Ano</button> <button onclick="setStatus1('+req.id+',\'Zamítnuto\')" '+dMgr+'>Ne</button></td><td><button onclick="setStatus2('+req.id+',\'Schváleno\')" '+dAdm+'>Ano</button> <button onclick="setStatus2('+req.id+',\'Zamítnuto\')" '+dAdm+'>Ne</button> <button class="btn-action" style="background:#17a2b8;color:white;" onclick="setStatus2('+req.id+',\'Náhradník\')" '+dAdm+'>Náhradník</button></td><td>'+delBtn+'</td><td>'+mailBtn+'</td>'; tbody.appendChild(tr);
         });
     }
     function exportToExcel() {
@@ -398,3 +417,4 @@
 </script>
 </body>
 </html>
+
