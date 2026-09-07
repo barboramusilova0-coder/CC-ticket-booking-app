@@ -90,6 +90,7 @@
     </div>
     <div id="tab2" class="tab-content">
         <h2>Přehled a schvalování žádostí o lístky</h2>
+        <button onclick="exportToExcel()" style="background-color: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 15px;">📥 Stáhnout do Excelu</button>
         <div style="overflow-x: auto;">
             <table style="width: 100%;">
                 <thead>
@@ -223,8 +224,23 @@
         if (token === masterAdminToken) {
             currentUser = { name: "Hlavní Správce", role: "admin", email: "admin@firma.cz" };
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            updateLoginBar();
-            renderTable();
+                function updateActionSelectOptions() {
+        const select = document.getElementById('actionSelect');
+        if (!select) return;
+        
+        let html = '<option value="">-- Vyberte ze seznamu --</option>';
+        companyActions.forEach(act => {
+            if (act.status === 'Aktivní') {
+                html += '<option value="' + act.name + '">' + act.name + ' (' + act.date + ')</option>';
+            }
+        });
+        select.innerHTML = html;
+    }
+
+    // Spuštění všech tabulek a seznamů při načtení webu
+    updateLoginBar();
+    renderTable();
+    updateActionSelectOptions();
         } else if (customUsers[token]) {
             currentUser = customUsers[token];
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
@@ -364,9 +380,9 @@
         alert('Akce byla úspěšně vytvořena!');
     }
 
-    function deleteCompanyAction(id) {
+        function deleteCompanyAction(id) {
         if(confirm('Opravdu chcete tuto akci smazat ze systému?')) {
-            companyActions = companyActions.filter(a => r.id !== id);
+            companyActions = companyActions.filter(function(a) { return a.id !== id; });
             localStorage.setItem('companyActions', JSON.stringify(companyActions));
             renderAdminSection();
             updateActionSelectOptions();
@@ -529,6 +545,30 @@
 
     updateLoginBar();
     renderTable();
+        function exportToExcel() {
+        if (requests.length === 0) {
+            alert('V tabulce nejsou žádné žádosti ke stažení.');
+            return;
+        }
+        
+        // Hlavička tabulky v Excelu (oddělená středníky)
+        let csv = 'Akce;Zadatel;Zakaznik;Pocet listku;Duvod;Stav 1 (Sef);Stav 2 (Admin)\r\n';
+        
+        // Projdeme všechny žádosti a poskládáme řádky
+        requests.forEach(function(req) {
+            let row = req.action + ';' + req.employee + ';' + req.customer + ';' + req.tickets + ';' + req.reason + ';' + req.status1 + ';' + req.status2;
+            csv += row + '\r\n';
+        });
+        
+        // Vytvoření souboru a jeho automatické stažení v prohlížeči
+        let blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+        let link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute('download', 'export_rezervaci_listku.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 </script>
 </body>
 </html>
