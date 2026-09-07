@@ -27,7 +27,8 @@
         .login-bar button.logout:hover { background: var(--cc-red-hover); }
         
         .cc-refresh-btn { background-color: #ffffff; border: 2px solid #e2e8f0; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; margin-left: auto; position: relative; transition: all 0.25s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .cc-refresh-btn::before { content: '🍾'; font-size: 18px; opacity: 0.15; position: absolute; transition: all 0.25s ease; }
+.cc-refresh-btn::before { content: ''; width: 24px; height: 24px; background: url('https://wikimedia.org') no-repeat center/contain; opacity: 0.15; position: absolute; transition: all 0.25s ease; }
+.cc-refresh-btn:hover::before { opacity: 1; filter: drop-shadow(0 0 1px rgba(228,30,38,0.3)); }
         .cc-refresh-btn span { font-size: 20px; font-weight: bold; color: #475569; z-index: 2; transition: transform 0.4s ease; display: inline-block; line-height: 1; }
         .cc-refresh-btn:hover { border-color: var(--cc-red); box-shadow: 0 4px 12px rgba(228, 30, 38, 0.15); transform: scale(1.05); }
         .cc-refresh-btn:hover::before { opacity: 0.8; filter: drop-shadow(0 0 2px rgba(228, 30, 38, 0.5)); transform: scale(1.1); }
@@ -82,10 +83,13 @@
             <span>⟳</span>
         </div>
     </div>
-    <div class="brand-title">
-        <h1>Systém rezervace lístků</h1>
-        <span class="brand-badge">Coca-Cola HBC</span>
+    <div class="brand-title" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <img src="https://wikimedia.org" alt="Coca-Cola Logo" style="height: 45px; object-fit: contain;">
+        <h1 style="margin: 0; font-size: 28px; color: #0f172a; font-weight: 800; border-left: 2px solid #e2e8f0; padding-left: 16px;">Systém rezervace lístků</h1>
     </div>
+    <span class="brand-badge" style="background: var(--cc-red); color: white; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">HBC Hub</span>
+</div>
     <div class="tabs">
         <button id="btn-nova" class="tab-btn active" onclick="openTab(1)">Nová rezervace</button>
         <button id="btn-seznam" class="tab-btn" onclick="openTab(2)">Seznam žádostí</button>
