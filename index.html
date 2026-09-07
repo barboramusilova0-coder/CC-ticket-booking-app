@@ -5,70 +5,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Systém rezervace lístků</title>
     <style>
-            <style>
         :root {
-            --coca-cola-red: #e41e26;
-            --coca-cola-hover: #b81118;
-            --success: #2e7d32;
-            --danger: #c62828;
-            --info: #00838f;
-            --bg-clean: #fcfcfd;
-            --text-dark: #1f2937;
-            --border-light: #f1f3f5;
+            --cc-red: #e41e26;
+            --cc-red-hover: #b81118;
+            --cc-dark: #0f172a;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg-light: #f8fafc;
+            --border: #e2e8f0;
         }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg-clean); margin: 0; padding: 24px; color: var(--text-dark); -webkit-font-smoothing: antialiased; }
-        .container { max-width: 1280px; background: #ffffff; padding: 40px; border-radius: 16px; border: 1px solid #e9ecef; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02); margin: auto; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg-light); margin: 0; padding: 0; color: #334155; -webkit-font-smoothing: antialiased; }
         
-        h1 { font-size: 32px; color: var(--coca-cola-red); margin-top: 0; margin-bottom: 28px; font-weight: 800; letter-spacing: -0.03em; }
-        h2 { font-size: 22px; color: #111827; margin-top: 0; margin-bottom: 20px; font-weight: 700; letter-spacing: -0.01em; }
-        h3 { font-size: 16px; color: #374151; margin-top: 0; margin-bottom: 14px; font-weight: 600; }
-
-        /* Vzdušná a čistá přihlašovací lišta bez tmavých barev */
-        .login-bar { background: #ffffff; color: var(--text-dark); padding: 16px 24px; border-radius: 12px; margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e9ecef; }
-        .login-bar input { width: 190px; padding: 9px 12px; border-radius: 8px; border: 1px solid #ced4da; background: #ffffff; color: var(--text-dark); font-size: 14px; transition: all .2s; }
-        .login-bar input:focus { border-color: var(--coca-cola-red); outline: none; box-shadow: 0 0 0 3px rgba(228, 30, 38, 0.1); }
-        .login-bar button { padding: 9px 18px; border: none; border-radius: 8px; background: var(--text-dark); color: white; cursor: pointer; font-weight: 600; font-size: 14px; transition: background .15s; }
+        /* Horní červený firemní pruh */
+        body::before { content: ''; display: block; height: 6px; background: var(--cc-red); width: 100%; }
+        
+        .container { max-width: 1280px; background: #ffffff; padding: 40px; border-radius: 0 0 16px 16px; border: 1px solid var(--border); border-top: none; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02); margin: auto; }
+        
+        /* Profesionální Coca-Cola lišta s logickým uspořádáním */
+        .login-bar { background: #ffffff; padding: 16px 24px; border-radius: 12px; margin-bottom: 36px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); border-left: 4px solid var(--cc-red); box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+        .login-bar input { width: 180px; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; background: #ffffff; color: #1e293b; font-size: 14px; font-weight: 500; transition: all .2s; }
+        .login-bar input:focus { border-color: var(--cc-red); outline: none; box-shadow: 0 0 0 3px rgba(228, 30, 38, 0.1); }
+        
+        /* Jasně viditelná a kontrastní tlačítka */
+        .login-bar button { padding: 10px 20px; border: none; border-radius: 8px; background: var(--cc-dark); color: white; cursor: pointer; font-weight: 600; font-size: 14px; transition: background .15s; }
         .login-bar button:hover { background: #000000; }
-        .login-bar button.logout { background: var(--coca-cola-red); }
-        .login-bar button.logout:hover { background: var(--coca-cola-hover); }
+        .login-bar button.logout { background: var(--cc-red); }
+        .login-bar button.logout:hover { background: var(--cc-red-hover); }
+        
+        /* Tlačítko obnovy s jasným kontrastem */
+        .login-bar button[onclick*="reload"] { background: #64748b; color: white; margin-left: 12px; }
+        .login-bar button[onclick*="reload"]:hover { background: #475569; }
 
-        /* Čisté vzdušné záložky */
-        .tabs { display: flex; gap: 8px; border-bottom: 2px solid var(--border-light); margin-bottom: 36px; }
-        .tab-btn { padding: 14px 24px; border: none; background: none; font-size: 16px; font-weight: 600; cursor: pointer; color: #6b7280; border-bottom: 3px solid transparent; transition: all .15s; padding-bottom: 16px; }
-        .tab-btn:hover { color: var(--coca-cola-red); }
-        .tab-btn.active { color: var(--coca-cola-red); border-bottom: 3px solid var(--coca-cola-red); }
+        /* Branding hned v nadpisu */
+        .brand-title { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+        h1 { font-size: 32px; color: #0f172a; margin: 0; font-weight: 800; letter-spacing: -0.03em; }
+        .brand-badge { background: var(--cc-red); color: white; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+
+        h2 { font-size: 22px; color: #1e293b; margin-top: 0; margin-bottom: 20px; font-weight: 700; }
+        
+        /* Elegantní menu se záložkami */
+        .tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 36px; }
+        .tab-btn { padding: 14px 24px; border: none; background: none; font-size: 15px; font-weight: 600; cursor: pointer; color: #64748b; border-bottom: 3px solid transparent; transition: all .15s; }
+        .tab-btn:hover { color: var(--cc-red); }
+        .tab-btn.active { color: var(--cc-red); border-bottom: 3px solid var(--cc-red); }
+        
         .tab-content { display: none; }
-        .tab-content.active { display: block; animation: slideUp 0.25s ease-out; }
+        .tab-content.active { display: block; animation: slideUp 0.2s ease-out; }
         
         /* Formuláře */
         .form-group { margin-bottom: 24px; }
-        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: #4b5563; }
-        input, select, textarea { width: 100%; padding: 12px 16px; border: 1px solid #ced4da; border-radius: 8px; box-sizing: border-box; font-size: 15px; color: var(--text-dark); background-color: #ffffff; transition: all .15s; }
-        input:focus, select:focus, textarea:focus { border-color: var(--coca-cola-red); outline: none; box-shadow: 0 0 0 4px rgba(228, 30, 38, 0.08); }
-        button.btn-submit { background-color: var(--coca-cola-red); color: white; border: none; padding: 14px 28px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 700; width: 100%; transition: background .15s; box-shadow: 0 4px 12px rgba(228, 30, 38, 0.15); }
-        button.btn-submit:hover { background-color: var(--coca-cola-hover); }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: #475569; }
+        input, select, textarea { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 15px; color: #334155; background-color: #ffffff; transition: all .15s; }
+        input:focus, select:focus, textarea:focus { border-color: var(--cc-red); outline: none; box-shadow: 0 0 0 4px rgba(228, 30, 38, 0.08); }
         
-        /* Světlé minimalistické tabulky */
+        /* Velké hlavní odesílací tlačítko */
+        button.btn-submit { background-color: var(--cc-red); color: white; border: none; padding: 14px 28px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 700; width: 100%; transition: background .15s; box-shadow: 0 4px 12px rgba(228, 30, 38, 0.15); }
+        button.btn-submit:hover { background-color: var(--cc-red-hover); }
+        
+        /* Přehledné korporátní tabulky */
         table { width: 100%; border-collapse: collapse; margin-top: 12px; margin-bottom: 36px; font-size: 14px; }
-        th, td { padding: 16px 20px; border-bottom: 1px solid var(--border-light); text-align: left; }
-        th { background-color: #f8f9fa; color: #4b5563; font-weight: 700; text-transform: uppercase; font-size: 12px; letter-spacing: 0.06em; border-bottom: 2px solid #e5e7eb; }
-        tr:hover { background-color: #ffa1a40a; }
+        th, td { padding: 16px 20px; border-bottom: 1px solid var(--border); text-align: left; }
+        th { background-color: #f8fafc; color: #475569; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0; }
+        tr:hover { background-color: rgba(224, 30, 38, 0.02); }
         
-        /* Přehledné stavové štítky */
-        .status { padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; display: inline-block; text-align: center; }
+        /* Čisté status štítky */
+        .status { padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; display: inline-block; text-align: center; }
         .status-cekajici { background-color: #fef3c7; color: #b45309; }
         .status-schvaleno { background-color: #d1fae5; color: #065f46; }
         .status-zamitnuto { background-color: #fee2e2; color: #991b1b; }
         .status-nahradnik { background-color: #e0f2fe; color: #0369a1; }
 
-        /* Tlačítka v tabulkách */
-        .btn-action, table button { border: 1px solid #ced4da; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all .15s; background: #ffffff; color: #374151; }
-        .btn-action:hover, table button:hover { background: #f3f4f6; border-color: #9ca3af; }
-        .btn-action:disabled { background: #f3f4f6 !important; color: #d1d5db !important; border-color: #e5e7eb !important; cursor: not-allowed; }
+        /* Akční funkční tlačítka v tabulkách */
+        .btn-action, table button { border: 1px solid #cbd5e1; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all .15s; background: #ffffff; color: #334155; }
+        .btn-action:hover, table button:hover { background: #f8fafc; border-color: #94a3b8; }
+        .btn-action:disabled { background: #f1f5f9 !important; color: #cbd5e1 !important; border-color: #e2e8f0 !important; cursor: not-allowed; }
         
-        .box-section { background: #ffffff; padding: 28px; border-radius: 12px; border: 1px solid #e5e7eb; margin-bottom: 36px; }
+        .box-section { background: #ffffff; padding: 28px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 36px; }
         
-        @keyframes slideUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -85,7 +99,10 @@
         </div>
         <button onclick="location.reload(true)" style="background: #6c757d; font-size: 13px; margin-left: auto; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">🔄 Obnovit stránku</button>
     </div>
-    <h1>Systém rezervace lístků</h1>
+       <div class="brand-title">
+        <h1>Systém rezervace lístků</h1>
+        <span class="brand-badge">Coca-Cola HBC</span>
+    </div>
     <div class="tabs">
         <button id="btn-nova" class="tab-btn active" onclick="openTab(1)">Nová rezervace</button>
         <button id="btn-seznam" class="tab-btn" onclick="openTab(2)">Seznam žádostí</button>
