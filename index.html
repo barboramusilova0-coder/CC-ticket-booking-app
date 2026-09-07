@@ -652,5 +652,55 @@
     updateLoginBar();
     renderTable();
 </script>
+    // 1. SAMOTNÁ FUNKCE PRO VYMAZÁNÍ ŽÁDOSTI Z PAMĚTI
+    function deleteTicketRequest(id) {
+        if(confirm('Opravdu chcete tuto žádost o rezervaci lístků trvale smazat?')) {
+            requests = requests.filter(function(req) { return req.id !== id; });
+            localStorage.setItem('ticketRequests', JSON.stringify(requests));
+            renderTable(); // Znovu překreslí tabulku už bez smazané žádosti
+        }
+    }
+
+    // 2. DOPLNĚNÍ ČERVENÉHO TLAČÍTKA "SMAZAT" DO VAŠÍ TABULKY
+    const originalRenderTable = renderTable;
+    renderTable = function() {
+        // Spustíme vaši původní tabulku
+        originalRenderTable();
+        
+        const tbody = document.getElementById('requestsTableBody');
+        if (!tbody || requests.length === 0) return;
+        
+        // Přidáme záhlaví pro sloupec Správa, pokud tam ještě není
+        const theadRow = tbody.closest('table').querySelector('thead tr');
+        if (theadRow && !theadRow.querySelector('.delete-header')) {
+            const th = document.createElement('th');
+            th.className = 'delete-header';
+            th.innerText = 'Správa';
+            theadRow.appendChild(th);
+        }
+
+        // Projdeme řádky a adminovi nebo žadateli 0 tam to tlačítko připneme
+        const rows = tbody.querySelectorAll('tr');
+        requests.forEach(function(req, index) {
+            if (rows[index]) {
+                const td = document.createElement('td');
+                const isApplicant = !currentUser || (currentUser && currentUser.role === 'applicant');
+                const isAdmin = currentUser && currentUser.role === 'admin';
+                
+                if (isAdmin || isApplicant) {
+                    td.innerHTML = '<button style="background:#dc3545; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer;" onclick="deleteTicketRequest(' + req.id + ')">Smazat</button>';
+                } else {
+                    td.innerHTML = '-';
+                }
+                rows[index].appendChild(td);
+            }
+        });
+    };
+
+    // Všechno znovu správně nastartujeme při načtení webu
+    updateLoginBar();
+    renderTable();
+    if (typeof updateActionSelectOptions === 'function') updateActionSelectOptions();
+</script>
 </body>
 </html>
