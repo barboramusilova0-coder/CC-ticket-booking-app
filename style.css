@@ -1,0 +1,145 @@
+/* Globální reset a moderní font */
+@import url('https://googleapis.com');
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f8fafc; /* Světlé neutrální pozadí */
+    color: #1e293b;
+    display: flex; /* Pro vytvoření sidebaru a obsahu vedle sebe */
+    min-height: 100vh;
+}
+
+/* Navigační panel (Sidebar) */
+.sidebar {
+    width: 260px;
+    background-color: #0f172a; /* Tmavě břidlicová */
+    color: #ffffff;
+    padding: 24px;
+    position: fixed;
+    height: 100vh;
+}
+
+.sidebar h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 32px;
+    color: #38bdf8;
+}
+
+.sidebar a {
+    display: block;
+    color: #94a3b8;
+    text-decoration: none;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.sidebar a:hover, .sidebar a.active {
+    background-color: #1e293b;
+    color: #ffffff;
+}
+
+/* Hlavní obsahová část */
+.main-content {
+    margin-left: 260px; /* Odsazení o šířku sidebaru */
+    padding: 40px;
+    width: calc(100% - 260px);
+}
+
+/* Profi Karty (Formuláře a Sekce) */
+.card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 32px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.02);
+}
+
+h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #0f172a;
+}
+
+/* Moderní formulářové prvky */
+label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: #475569;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    margin-bottom: 18px;
+    transition: border-color 0.2s;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: #6366f1; /* Indigo akcent při kliknutí */
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Tlačítka */
+button, .btn {
+    background-color: #4f46e5; /* Korporátní indigo */
+    color: #ffffff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+button:hover {
+    background-color: #4338ca;
+}
+
+/* Profesionální Tabulky */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+}
+
+th {
+    background-color: #f1f5f9;
+    color: #475569;
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+td {
+    padding: 16px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 0.95rem;
+}
+
+tr:hover td {
+    background-color: #f8fafc; /* Efekt řádku pod myší */
+}
