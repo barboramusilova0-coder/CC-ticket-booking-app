@@ -44,7 +44,6 @@
         <div id="userInfo" style="display: none;">
             <span>Přihlášen jako: <strong id="loggedName">--</strong> (<span id="loggedRole">--</span>)</span>
             <button class="logout" onclick="logoutUser()">Odhlásit se</button>
-            <button onclick="location.reload(true)" style="background: #6c757d; font-size: 13px; margin-left: auto;">🔄 Obnovit stránku</button>
         </div>
     </div>
     <h1>Systém rezervace lístků</h1>
@@ -99,10 +98,10 @@
                         <th>Akce a důvod</th>
                         <th>Žadatel</th>
                         <th>Zákazník</th>
-                        <th>1. ASM</th>
-                        <th>2. RSM Praha Central</th>
-                        <th>Akce (1. ASM)</th>
-                        <th>Akce (2. RSM Praha Central)</th>
+                        <th>1. Šéf</th>
+                        <th>2. Admin</th>
+                        <th>Akce (1. Šéf)</th>
+                        <th>Akce (2. Admin)</th>
                     </tr>
                 </thead>
                 <tbody id="requestsTableBody"></tbody>
@@ -126,7 +125,6 @@
     <label for="reqRole">Požadovaná role:</label>
     <select id="reqRole" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
         <option value="">-- Vyberte stupeň schválení --</option>
-        <option value="applicant">0 - žadatel</option>
         <option value="manager">1. stupeň ASM / RSM</option>
         <option value="rsm_praha">2. stupeň RSM Praha Central</option>
         <option value="admin">3. stupeň Admin</option>
@@ -511,49 +509,13 @@
         renderTable();
     }
 
-        function renderTable() {
+    function renderTable() {
         const tbody = document.getElementById('requestsTableBody');
         tbody.innerHTML = '';
         if(requests.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7">Žádné žádosti o lístky.</td></tr>';
             return;
-        } // <-- TATO ZÁVORKA TU CHYBĚLA, ukončuje podmínku prázdné tabulky
-
-        requests.forEach(req => {
-            const isMyManager = currentUser && currentUser.email === req.manager;
-            const isAdmin = currentUser && currentUser.role === 'admin';
-            const disManager = (!isMyManager && !isAdmin) ? 'disabled' : '';
-            const disAdmin = (!isAdmin) ? 'disabled' : '';
-            const tr = document.createElement('tr');
-            
-            // Bezpečnostní zámek pro smazání (Admin a Žadatel 0)
-            const isApplicant = !currentUser || (currentUser && currentUser.role === 'applicant');
-            const canDelete = isAdmin || isApplicant;
-            
-            let row = `<td><strong>${req.action}</strong><br><small>${req.reason}</small></td>`;
-            row += `<td>${req.employee}</td><td>${req.customer} (${req.tickets} ks)</td>`;
-            row += `<td>${req.status1}<br><small>${req.approvedBy1 || req.manager}</small></td>`;
-            row += `<td>${req.status2}<br><small>${req.approvedBy2 || ''}</small></td>`;
-            row += `<td><button onclick="setStatus1(${req.id},'Schváleno')" ${disManager}>Ano</button> <button onclick="setStatus1(${req.id},'Zamítnuto')" ${disManager}>Ne</button></td>`;
-            row += `<td><button onclick="setStatus2(${req.id},'Schváleno')" ${disAdmin}>Ano</button> <button onclick="setStatus2(${req.id},'Zamítnuto')" ${disAdmin}>Ne</button> <button onclick="setStatus2(${req.id},'Náhradník')" ${disAdmin}>Náhradník</button></td>`;
-            
-            // Přidání červeného tlačítka podle práv
-            let deleteBtn = canDelete ? `<button style="background:#dc3545; color:white; margin-left:5px; border:none; padding:5px 8px; border-radius:4px; cursor:pointer;" onclick="deleteTicketRequest(${req.id})">Smazat</button>` : '';
-            row += `<td>${deleteBtn}</td>`;
-            
-            tr.innerHTML = row;
-            tbody.appendChild(tr);
-        });
-    } // <-- TATO ZÁVORKA ukončuje celou funkci renderTable
-
-    // TATO FUNKCE STOJÍ ÚPLNĚ SAMOSTATNĚ POD NÍ
-    function deleteTicketRequest(id) {
-        if(confirm('Opravdu chcete tuto žádost o rezervaci lístků trvale smazat?')) {
-            requests = requests.filter(function(req) { return req.id !== id; });
-            localStorage.setItem('ticketRequests', JSON.stringify(requests));
-            renderTable();
         }
-    }
         requests.forEach(req => {
             const isMyManager = currentUser && currentUser.email === req.manager;
             const isAdmin = currentUser && currentUser.role === 'admin';
@@ -577,12 +539,6 @@
             html += '</td>';
             
             tr.innerHTML = html;
-                        // Smazat rezervaci může Hlavní Admin nebo běžný uživatel bez role (Žadatel)
-            const isApplicant = !currentUser || (currentUser && currentUser.role === 'applicant');
-            const canDelete = isAdmin || isApplicant;
-            
-            let deleteBtn = canDelete ? `<button style="background:#dc3545; color:white; margin-left:5px; border:none; padding:5px 8px; border-radius:4px; cursor:pointer;" onclick="deleteTicketRequest(${req.id})">Smazat</button>` : '';
-            row += `<td>${deleteBtn}</td>`;
             tbody.appendChild(tr);
         });
     }
