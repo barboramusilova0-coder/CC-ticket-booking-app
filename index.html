@@ -40,6 +40,7 @@
             <span>Přihlášení kódem: </span>
             <input type="password" id="userToken" placeholder="Zadejte váš kód">
             <button onclick="loginUser()">Přihlásit</button>
+            <button onclick="location.reload(true)" style="background: #6c757d; font-size: 13px; margin-left: auto;">🔄 Obnovit stránku</button>
         </div>
         <div id="userInfo" style="display: none;">
             <span>Přihlášen jako: <strong id="loggedName">--</strong> (<span id="loggedRole">--</span>)</span>
@@ -125,6 +126,7 @@
     <label for="reqRole">Požadovaná role:</label>
     <select id="reqRole" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
         <option value="">-- Vyberte stupeň schválení --</option>
+        <option value="applicant">0 - žadatel</option>
         <option value="manager">1. stupeň ASM / RSM</option>
         <option value="rsm_praha">2. stupeň RSM Praha Central</option>
         <option value="admin">3. stupeň Admin</option>
@@ -537,7 +539,13 @@
             html += '<button onclick="setStatus2(' + req.id + ', \'Zamítnuto\')" ' + disableAdmin + '>Ne</button> ';
             html += '<button onclick="setStatus2(' + req.id + ', \'Náhradník\')" ' + disableAdmin + '>Náhradník</button>';
             html += '</td>';
-            
+                        // Tlačítko smazat uvidí jen Admin nebo Žadatel 0
+            const isApplicant = !currentUser || (currentUser && currentUser.role === 'applicant');
+            if (isAdmin || isApplicant) {
+                html += '<td><button style="background:#dc3545;color:white;border:none;padding:5px 8px;border-radius:4px;cursor:pointer;" onclick="deleteTicketRequest(' + req.id + ')">Smazat</button></td>';
+            } else {
+                html += '<td></td>';
+            }
             tr.innerHTML = html;
             tbody.appendChild(tr);
         });
