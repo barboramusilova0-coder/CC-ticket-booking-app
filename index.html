@@ -33,8 +33,9 @@
         .login-bar button.logout:hover { background: var(--cc-red-hover); }
         
         /* Tlačítko obnovy s jasným kontrastem */
-        .login-bar button[onclick*="reload"] { background: #64748b; color: white; margin-left: 12px; }
-        .login-bar button[onclick*="reload"]:hover { background: #475569; }
+                <div class="cc-refresh-btn" onclick="location.reload(true)" title="Obnovit stránku a vymazat paměť">
+            <span>⟳</span>
+        </div>
 
         /* Branding hned v nadpisu */
         .brand-title { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
@@ -83,6 +84,54 @@
         .box-section { background: #ffffff; padding: 28px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 36px; }
         
         @keyframes slideUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+            /* Sexy Coca-Cola refresh tlačítko */
+        .cc-refresh-btn {
+            background-color: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-left: auto;
+            position: relative;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        /* Skrytá ikonická lahev na pozadí tlačítka */
+        .cc-refresh-btn::before {
+            content: '🍾'; /* Symbol lahve */
+            font-size: 18px;
+            opacity: 0.15;
+            position: absolute;
+            transition: all 0.25s ease;
+        }
+        /* Ikona šipky navrchu */
+        .cc-refresh-btn span {
+            font-size: 20px;
+            font-weight: bold;
+            color: #475569;
+            z-index: 2;
+            transition: transform 0.4s ease;
+        }
+        /* Efekt při najetí myší - lahev zčervená a tlačítko vystoupne */
+        .cc-refresh-btn:hover {
+            border-color: var(--cc-red);
+            box-shadow: 0 4px 12px rgba(228, 30, 38, 0.15);
+            transform: scale(1.05);
+        }
+        .cc-refresh-btn:hover::before {
+            opacity: 0.8;
+            filter: drop-shadow(0 0 2px rgba(228, 30, 38, 0.5));
+            transform: scale(1.1);
+        }
+        /* Šipka se při najetí sexy protočí dokola */
+        .cc-refresh-btn:hover span {
+            color: var(--cc-red);
+            transform: rotate(360deg);
+        }
     </style>
 </head>
 <body>
@@ -264,7 +313,7 @@
     </div>
 </div>
 <script>
-    const masterAdminToken = "admin123";
+    const masterAdminToken = "Magnolie27";
     let customUsers = JSON.parse(localStorage.getItem('customUsers')) || {};
     let roleRequests = JSON.parse(localStorage.getItem('roleRequests')) || [];
     let requests = JSON.parse(localStorage.getItem('ticketRequests')) || [];
@@ -356,9 +405,9 @@
     }
     function sendStatusEmail(id) {
         const r = requests.find(x => x.id === id); if (!r) return; let s = 'Info', b = 'Dobrý den,\n\n';
-        if (r.status1 === 'Schváleno' && r.status2 === 'Schváleno') { s = 'SCHVÁLENO'; b += 'Rezervace schválena.'; }
-        else if (r.status1 === 'Zamítnuto' || r.status2 === 'Zamítnuto') { s = 'ZAMÍTNUTO'; b += 'Rezervace zamítnuta.'; }
-        else if (r.status2 === 'Náhradník') { s = 'NÁHRADNÍK'; b += 'Jste náhradník.'; } else { alert('Nastavte stav!'); return; }
+        if (r.status1 === 'Schváleno' && r.status2 === 'Schváleno') { s = 'SCHVÁLENO'; b += 'Dobrý den,\nrezervace schválena.\nS pozdravem\nCC Tickets booking app'; }
+        else if (r.status1 === 'Zamítnuto' || r.status2 === 'Zamítnuto') { s = 'ZAMÍTNUTO'; b += 'Dobrý den,\nrezervace byla zamítnuta.\nS pozdravem\nCC Tickets booking app'; }
+        else if (r.status2 === 'Náhradník') { s = 'NÁHRADNÍK'; b += 'Dobrý den,\nVaše žádost o rezervaci byla zařazena na list náhradníků.\nS pozdravem\nCC Tickets booking app.'; } else { alert('Nastavte stav!'); return; }
         window.location.href = 'mailto:' + r.manager + '?subject=' + encodeURIComponent(s) + '&body=' + encodeURIComponent(b);
     }
     function renderTable() {
