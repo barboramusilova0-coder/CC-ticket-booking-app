@@ -330,53 +330,21 @@
     function setStatus2(id, s) { requests = requests.map(r => r.id === id ? {...r, status2: s, approvedBy2: currentUser.name} : r); localStorage.setItem('ticketRequests', JSON.stringify(requests)); renderTable(); }
     function deleteTicketRequest(id) { if(confirm('Opravdu smazat rezervaci?')) { requests = requests.filter(function(r) { return r.id !== id; }); localStorage.setItem('ticketRequests', JSON.stringify(requests)); renderTable(); } }
     function sendStatusEmail(id) {
-        const r = requests.find(x => x.id === id); if (!r) return; let s = 'Info', b = 'Dobrý den,\n\n';
-        if (r.status1 === 'Schváleno' && r.status2 === 'Schváleno') { s = 'SCHVÁLENO: Rezervace lístků'; b += 'Dobrý den, Vaše žádost o lístky na akci ' + r.action + ' byla úspěšně SCHVÁLENA. S pozdravem CC Tickets booking app'; }
-        else if (r.status1 === 'Zamítnuto' || r.status2 === 'Zamítnuto') { s = 'ZAMÍTNUTO: Rezervace lístků'; b += 'Dobrý den, Vaše žádost o lístky na akci ' + r.action + ' byla bohužel ZAMÍTNUTA. pozdravem CC Tickets booking app'; }
-        else if (r.status2 === 'Náhradník') { s = 'NÁHRADNÍK: Rezervace lístků'; b += 'Dobrý den, Vaše žádost o lístky na akci ' + r.action + ' byla zařazena do seznamu NÁHRADNÍKŮ. O případené dostupnosti budete informováni. pozdravem CC Tickets booking app'; } else { alert('Nastavte stav!'); return; }
-        b += '\n\nS pozdravem,\nHlavní správce'; window.location.href = 'mailto:' + r.manager + '?subject=' + encodeURIComponent(s) + '&body=' + encodeURIComponent(b);
+                const r = requests.find(x => x.id === id); if (!r) return; let s = 'Info', b = 'Dobrý den,\n\n';
+        if (r.status1 === 'Schváleno' && r.status2 === 'Schváleno') { s = 'SCHVÁLENO: Rezervace lístků'; b += 'Dobrý den,\nVaše žádost o lístky na akci ' + r.action + ' byla úspěšně SCHVÁLENA.'; }
+        else if (r.status1 === 'Zamítnuto' || r.status2 === 'Zamítnuto') { s = 'ZAMÍTNUTO: Rezervace lístků'; b += 'Dobrý den,\nVaše žádost o lístky na akci ' + r.action + ' byla bohužel ZAMÍTNUTA.'; }
+        else if (r.status2 === 'Náhradník') { s = 'NÁHRADNÍK: Rezervace lístků'; b += 'Dobrý den,\nVaše žádost o lístky na akci ' + r.action + ' byla zařazena do seznamu NÁHRADNÍKŮ.\nO případené dostupnosti budete informováni.'; } else { alert('Nastavte stav!'); return; }
+        b += '\n\nS pozdravem,\nCC Tickets booking app'; window.location.href = 'mailto:' + r.manager + '?subject=' + encodeURIComponent(s) + '&body=' + encodeURIComponent(b);
     }
-        function renderTable() {
+    function renderTable() {
         const tbody = document.getElementById('requestsTableBody'); 
         if(!tbody) return; 
         tbody.innerHTML = '';
         
         if(requests.length === 0) { 
-            tbody.innerHTML = '<tr><td colspan="7">Žádné žádosti o lístky.</td></tr>'; 
+            tbody.innerHTML = '<tr><td colspan="9">Žádné žádosti o lístky.</td></tr>'; 
             return; 
         }
-        
-        requests.forEach(function(req) {
-            const isSef1 = currentUser && currentUser.role === 'manager' && currentUser.email === req.manager;
-            const isSef2 = currentUser && currentUser.role === 'rsm_praha';
-            const isSystemAdmin = currentUser && currentUser.role === 'admin';
-
-            const dMgr = (isSef1 || isSystemAdmin) ? '' : 'disabled';
-            const dAdm = ((isSef2 && req.status1 === 'Schváleno') || isSystemAdmin) ? '' : 'disabled';
-            
-            const tr = document.createElement('tr'); 
-            let sClass1 = 'cekajici', sClass2 = 'cekajici';
-            if(req.status1 === 'Schváleno') sClass1 = 'schvaleno'; 
-            if(req.status1 === 'Zamítnuto') sClass1 = 'zamitnuto';
-            if(req.status2 === 'Schváleno') sClass2 = 'schvaleno'; 
-            if(req.status2 === 'Zamítnuto') sClass2 = 'zamitnuto'; 
-            if(req.status2 === 'Náhradník') sClass2 = 'nahradnik';
-            
-            const isApp = !currentUser || (currentUser && currentUser.role === 'applicant');
-            let delBtn = (isSystemAdmin || isApp) ? '<button style="background:#dc3545;color:white;border:none;padding:5px 8px;border-radius:4px;cursor:pointer;margin-right:5px;" onclick="deleteTicketRequest(' + req.id + ')">Smazat</button>' : '';
-            let mailBtn = isSystemAdmin ? '<button style="background:#17a2b8;color:white;border:none;padding:5px 8px;border-radius:4px;cursor:pointer;" onclick="sendStatusEmail(' + req.id + ')">✉ Mail</button>' : '';
-            
-            // Sestavení 7 přesných sloupců podle vašeho záhlaví
-            tr.innerHTML = '<td><strong>'+req.action+'</strong></td>' +
-                '<td>'+req.employee+'</td>' +
-                '<td>'+req.customer+'</td>' +
-                '<td><span class="status status-'+sClass1+'">'+req.status1+'</span><br><div style="margin-top:5px;"><button onclick="setStatus1('+req.id+',\'Schváleno\')" '+dMgr+'>Ano</button> <button onclick="setStatus1('+req.id+',\'Zamítnuto\')" '+dMgr+'>Ne</button></div></td>' +
-                '<td><span class="status status-'+sClass2+'">'+req.status2+'</span><br><div style="margin-top:5px;"><button onclick="setStatus2('+req.id+',\'Schváleno\')" '+dAdm+'>Ano</button> <button onclick="setStatus2('+req.id+',\'Zamítnuto\')" '+dAdm+'>Ne</button> <button class="btn-action" style="background:#17a2b8;color:white;" onclick="setStatus2('+req.id+',\'Náhradník\')" '+dAdm+'>Náhradník</button></div></td>' +
-                '<td>1. Šéf: <b>'+req.status1+'</b><br>2. Šéf: <b>'+req.status2+'</b></td>' +
-                '<td>' + delBtn + mailBtn + '</td>';
-            tbody.appendChild(tr);
-        });
-    }
         
         requests.forEach(function(req) {
             // Správné ověření rolí pro Coca-Cola HBC
