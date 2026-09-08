@@ -629,47 +629,5 @@ function renderTable() {
             renderTable();
         }
     }, 150);
-       <script>
-    // 🔥 DOPLNĚNÍ INFORMACÍ O KAPACITÁCH A LÍSTCÍCH PRO 2. STUPEŇ SCHVALOVÁNÍ
-    (function() {
-        var puvodniRenderTable = window.renderTable;
-        if (typeof puvodniRenderTable === 'function') {
-            window.renderTable = function() {
-                // Nejdříve necháme proběhnout tvou funkční tabulku
-                puvodniRenderTable();
-                
-                // Pokud je přihlášen 2. stupeň (RSM Praha), upravíme zobrazení řádků
-                if (currentUser && (currentUser.role === 'rsm_praha' || currentUser.role.includes('2'))) {
-                    var rows = document.querySelectorAll('#requestsTableBody tr');
-                    rows.forEach(function(row) {
-                        var cells = row.getElementsByTagName('td');
-                        if (cells.length >= 8) {
-                            // Zjistíme název akce z prvního sloupce
-                            var akceName = cells[0].innerText.trim();
-                            
-                            // Najdeme tuto akci v seznamu akcí, abychom znali její kapacitu
-                            var akceObj = (window.companyActions || []).find(function(a) { return a.name === akceName; });
-                            if (akceObj) {
-                                // Spočítáme, kolik lístků už je na tuto akci celkově finálně schváleno
-                                var schvalenoListku = 0;
-                                (window.requests || []).forEach(function(r) {
-                                    if (r.action === akceName && r.status1 === 'Schváleno' && r.status2 === 'Schváleno') {
-                                        schvalenoListku += parseInt(r.tickets || 1);
-                                    }
-                                });
-                                
-                                // Vložíme informaci o aktuální obsazenosti akce přímo ke stavu rezervace (8. sloupec)
-                                var stavCell = cells[7];
-                                var infoBox = document.createElement('div');
-                                infoBox.style.cssText = 'margin-top: 8px; padding: 4px 8px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px; font-size: 11px; color: #166534; font-weight: bold;';
-                                infoBox.innerHTML = '📊 Obsazenost akce: ' + schvalenoListku + ' / ' + akceObj.capacity + ' ks';
-                                stavCell.appendChild(infoBox);
-                            }
-                        }
-                    });
-                }
-            };
-        }
-    })(); 
 </script>
 </html>
