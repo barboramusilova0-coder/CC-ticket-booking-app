@@ -519,6 +519,18 @@ function renderTable() {
     }
     if(localStorage.getItem('currentUser')) { currentUser = JSON.parse(localStorage.getItem('currentUser')); saveAndStyleSession(); }
     updateActionSelectOptions();
+        function setStatus1(id, s) { 
+        var uName = (currentUser && currentUser.name) ? currentUser.name : 'Manažer 1. stupně';
+        requests = requests.map(function(r) { return r.id === id ? Object.assign({}, r, {status1: s, approvedBy1: uName}) : r; }); 
+        localStorage.setItem('ticketRequests', JSON.stringify(requests)); 
+        renderTable(); 
+    }
+    function setStatus2(id, s) { 
+        var uName = (currentUser && currentUser.name) ? currentUser.name : 'RSM Praha';
+        requests = requests.map(function(r) { return r.id === id ? Object.assign({}, r, {status2: s, approvedBy2: uName}) : r; }); 
+        localStorage.setItem('ticketRequests', JSON.stringify(requests)); 
+        renderTable(); 
+    }
 </script>
 </body>
 </html>
