@@ -595,6 +595,20 @@ function renderTable() {
             }
         }
         localStorage.setItem('ticketRequests', JSON.stringify(requests)); 
+         if (typeof firebase !== 'undefined') {
+    firebase.firestore()
+        .collection("portalData")
+        .doc("cocaColaDatabase")
+        .set({
+            ticketRequests: requests
+        }, { merge: true })
+        .then(function() {
+            console.log("Rezervace byla uložena do Firebase");
+        })
+        .catch(function(error) {
+            console.error("Chyba Firebase:", error);
+        });
+}
         renderTable(); 
     }
         // OPRAVA: Zařídíme, aby tabulku akcí a obsazenosti viděl kromě Admina i 2. stupeň (RSM Praha)
