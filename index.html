@@ -1323,5 +1323,54 @@ window.deleteCompanyAction = function(id) {
         });
     })();
 </script>
+    <!-- 🔌 AUTOMATICKÝ DOPLŇOVAČ DATA A ČASU DO HLAVNÍ SCHVALOVACÍ TABULKY -->
+<script>
+    (function() {
+        function doplnDatumACasDoSchvalovani() {
+            // Načteme si aktuální akce z paměti, abychom z nich vytáhli termíny
+            var akceZPameti = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+            if (akceZPameti.length === 0) return;
+
+            // Najdeme všechny řádky v hlavní tabulce žádostí ke schválení
+            var radkyTabulky = document.querySelectorAll('#requestsTableBody tr');
+            
+            radkyTabulky.forEach(function(row) {
+                // Pojistka pro prázdnou zprávu v tabulce
+                if (row.cells.length < 2) return;
+
+                // První buňka (index 0) obsahuje název akce
+                var bunkaAkce = row.cells[0];
+                var cistyNazevAkce = bunkaAkce.querySelector('strong') ? bunkaAkce.querySelector('strong').innerText.trim() : bunkaAkce.innerText.trim();
+
+                // Najdeme k této akci odpovídající datum a čas z databáze akcí
+                var nalezenaAkce = akceZPameti.find(function(a) {
+                    return a.name.trim() === cistyNazevAkce;
+                });
+
+                if (nalezenaAkce) {
+                    var d = nalezenaAkce.date || '';
+                    var c = nalezenaAkce.time || '';
+                    
+                    // Pokud má akce vyplněné datum nebo čas a ještě jsme to do buňky nedopsali
+                    if ((d || c) && !bunkaAkce.querySelector('.cc-tab-term')) {
+                        var termSpan = document.createElement('span');
+                        termSpan.className = 'cc-tab-term';
+                        termSpan.style.cssText = 'display: block; font-size: 11px; color: #64748b; font-weight: 600; margin-top: 4px; line-height: 1.2;';
+                        
+                        // Sestavíme pěkný popisek s ikonkami hodin a kalendáře
+                        termSpan.innerHTML = '📅 ' + d + (c ? ' ⏰ ' + c : '');
+                        
+                        // Vložíme pod podtučněný název akce
+                        bunkaAkce.appendChild(termSpan);
+                    }
+                }
+            });
+        }
+
+        // Hlídáme tabulku plynule na pozadí, protože se často překresluje při schvalování nebo filtrování
+        setInterval(doplnDatumACasDoSchvalovani, 600);
+        document.addEventListener('click', function() { setTimeout(doplnDatumACasDoSchvalovani, 100); });
+    })();
+</script>
 </body>
 </html>
