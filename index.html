@@ -707,4 +707,60 @@ function renderTable() {
         }, 350);
     })();
 </script>
+    <script>
+    // ✉️ GLOBÁLNÍ ZÁCHRANNÝ SYSTÉM PRO TLAČÍTKO E-MAILU
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.tagName === 'BUTTON') {
+            var btnText = e.target.innerText ? e.target.innerText.toLowerCase() : '';
+            var btnOnclick = e.target.getAttribute('onclick') ? e.target.getAttribute('onclick').toLowerCase() : '';
+            
+            // Pokud uživatel klikne na tlačítko, které obsahuje slovo "mail" nebo "sendstatus"
+            if (btnText.indexOf('mail') > -1 || btnOnclick.indexOf('sendstatus') > -1) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Vytáhneme ID rezervace z příkazu onclick
+                var matches = btnOnclick.match(/\d+/);
+                if (matches) {
+                    var idZadosti = parseInt(matches[0]);
+                    
+                    // Načteme čerstvá data přímo z paměti prohlížeče
+                    var vsechnyZadosti = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
+                    var r = vsechnyZadosti.find(function(x) { return x.id === idZadosti; });
+                    
+                    if (r) {
+                        var předmět = 'Info';
+                        var tělo = 'Dobrý den,%0D%0A%0D%0A';
+                        
+                        var s1 = r.status1 ? r.status1.toLowerCase().trim() : '';
+                        var s2 = r.status2 ? r.status2.toLowerCase().trim() : '';
+                        
+                        // Sestavíme text e-mailu podle reálného stavu v tabulce
+                        if (s1 === 'schváleno' && s2 === 'schváleno') {
+                            předmět = 'SCHVÁLENO: Rezervace lístků';
+                            tělo += 'Vaše žádost o lístky na akci ' + r.action + ' byla úspěšně SCHVÁLENA.%0D%0A';
+                        } else if (s1 === 'zamítnuto' || s2 === 'zamítnuto') {
+                            předmět = 'ZAMÍTNUTO: Rezervace lístků';
+                            tělo += 'Vaše žádost o lístky na akci ' + r.action + ' byla bohužel ZAMÍTNUTA.%0D%0A';
+                        } else if (s2 === 'náhradník' || s2 === 'nahradnik') {
+                            předmět = 'NÁHRADNÍK: Rezervace lístků';
+                            tělo += 'Vaše žádost o lístky na akci ' + r.action + ' byla zařazena do seznamu NÁHRADNÍKŮ.%0D%0A';
+                        } else {
+                            alert('Před odesláním e-mailu musíte nejdříve nastavit stav schválení (Ano/Ne)!');
+                            return;
+                        }
+                        
+                        tělo += '%0D%0AS pozdravem,%0D%0AHlavní správce Coca-Cola HBC';
+                        
+                        // Zjistíme, komu e-mail poslat (přednost má e-mail přihlášeného žadatele, jinak manažer)
+                        var cilovyEmail = r.applicantEmail ? r.applicantEmail : r.manager;
+                        
+                        // Příkaz pro okamžité otevření Outlooku/Pošty
+                        window.location.href = 'mailto:' + cilovyEmail + '?subject=' + encodeURIComponent(předmět) + '&body=' + tělo;
+                    }
+                }
+            }
+        }
+    }, true);
+</script>
 </html>
