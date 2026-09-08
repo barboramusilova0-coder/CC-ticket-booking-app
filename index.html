@@ -923,4 +923,51 @@ function renderTable() {
         setTimeout(stylujNaseSkveleTlacitko, 250);
     })();
 </script>
+    <script>
+    // 🎟️ PŘÍMÉ NAFEDROVÁNÍ AKCÍ DO FORMULÁŘE REZERVACÍ
+    (function() {
+        function natvrdoPropisAkceDoRoletky() {
+            var roletkaSelect = document.getElementById('actionSelect') || document.querySelector('select');
+            if (!roletkaSelect) return;
+
+            // Načteme si aktuální akce z paměti prohlížeče
+            var seznamAkciZPameti = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+            
+            // Vyčistíme starý obsah roletky a připravíme úvodní volbu
+            var vysledneOptions = '<option value="">-- Vyberte akci --</option>';
+            var nalezenaAktivni = false;
+
+            // Projdeme všechny uložené akce a ty aktivní přidáme do formuláře
+            seznamAkciZPameti.forEach(function(akce) {
+                if (akce.status === 'Aktivní' || !akce.status) {
+                    vysledneOptions += '<option value="' + akce.name + '">' + akce.name + '</option>';
+                    nalezenaAktivni = true;
+                }
+            });
+
+            // Pokud v systému žádná akce není, dáme uživateli jasně vědět
+            if (!nalezenaAktivni) {
+                vysledneOptions = '<option value="">❌ V systému není žádná aktivní akce</option>';
+            }
+
+            // Zapíšeme vygenerované akce do formuláře před oči uživatele
+            if (roletkaSelect.innerHTML !== vysledneOptions) {
+                roletkaSelect.innerHTML = vysledneOptions;
+            }
+        }
+
+        // Hlídáme, aby se akce propisovaly hned po načtení i při každém překliknutí záložek
+        setTimeout(natvrdoPropisAkceDoRoletky, 250);
+        document.addEventListener('click', function() { setTimeout(natvrdoPropisAkceDoRoletky, 50); });
+        
+        if (window.openTab) {
+            var originalniZalozky = window.openTab;
+            window.openTab = function(num) {
+                originalniZalozky(num);
+                if (num === 1) { setTimeout(natvrdoPropisAkceDoRoletky, 50); }
+            };
+        }
+    })();
+</script>
+
 </html>
