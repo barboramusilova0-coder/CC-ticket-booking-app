@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Systém rezervace lístků</title>
+    <title>Rezervační portál lístků | Coca-Cola HBC</title>
     <style>
         :root {
             --cc-red: #e41e26;
@@ -17,26 +17,28 @@
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg-light); margin: 0; padding: 0; color: #334155; -webkit-font-smoothing: antialiased; }
         body::before { content: ''; display: block; height: 6px; background: var(--cc-red); width: 100%; }
         .container { max-width: 1280px; background: #ffffff; padding: 40px; border-radius: 0 0 16px 16px; border: 1px solid var(--border); border-top: none; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02); margin: auto; }
-        
         .login-bar { background: #ffffff; padding: 16px 24px; border-radius: 12px; margin-bottom: 36px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); border-left: 4px solid var(--cc-red); box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
-        .login-bar input { width: 180px; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; background: #ffffff; color: #1e293b; font-size: 14px; font-weight: 500; transition: all .2s; }
-        .login-bar input:focus { border-color: var(--cc-red); outline: none; box-shadow: 0 0 0 3px rgba(228, 30, 38, 0.1); }
         .login-bar button { padding: 10px 20px; border: none; border-radius: 8px; background: var(--cc-dark); color: white; cursor: pointer; font-weight: 600; font-size: 14px; transition: background .15s; }
         .login-bar button:hover { background: #000000; }
         .login-bar button.logout { background: var(--cc-red); }
         .login-bar button.logout:hover { background: var(--cc-red-hover); }
-        
         .cc-refresh-btn { background-color: #ffffff; border: 2px solid #e2e8f0; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; margin-left: auto; position: relative; transition: all 0.25s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .cc-refresh-btn::before { content: '🎃'; font-size: 18px; opacity: 0.15; position: absolute; transition: all 0.25s ease; }
+        .cc-refresh-btn::before { content: '🍾'; font-size: 18px; opacity: 0.15; position: absolute; transition: all 0.25s ease; }
         .cc-refresh-btn span { font-size: 20px; font-weight: bold; color: #475569; z-index: 2; transition: transform 0.4s ease; display: inline-block; line-height: 1; }
         .cc-refresh-btn:hover { border-color: var(--cc-red); box-shadow: 0 4px 12px rgba(228, 30, 38, 0.15); transform: scale(1.05); }
         .cc-refresh-btn:hover::before { opacity: 0.8; filter: drop-shadow(0 0 2px rgba(228, 30, 38, 0.5)); transform: scale(1.1); }
         .cc-refresh-btn:hover span { color: var(--cc-red); transform: rotate(360deg); }
+        .welcome-gate { max-width: 600px; margin: 60px auto; padding: 40px; background: #ffffff; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); text-align: center; }
+        .gate-login-box { background: #f8fafc; padding: 24px; border-radius: 12px; border: 1px solid var(--border); margin-top: 24px; }
+        .gate-login-box input { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 16px; margin-bottom: 16px; text-align: center; font-weight: 600; }
+        .gate-login-box input:focus { border-color: var(--cc-red); outline: none; box-shadow: 0 0 0 4px rgba(228, 30, 38, 0.08); }
+        .guide-box { background: #ffffff; border: 1px solid var(--border); border-left: 4px solid #3b82f6; border-radius: 8px; padding: 20px; margin-bottom: 32px; text-align: left; }
+        .guide-box h3 { margin-top: 0; color: var(--cc-dark); font-size: 16px; }
+        .guide-box ol { margin: 0; padding-left: 20px; font-size: 14px; color: #475569; line-height: 1.6; }
         .brand-title { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
         h1 { font-size: 32px; color: #0f172a; margin: 0; font-weight: 800; letter-spacing: -0.03em; }
         .brand-badge { background: var(--cc-red); color: white; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
         h2 { font-size: 22px; color: #1e293b; margin-top: 0; margin-bottom: 20px; font-weight: 700; }
-        
         .tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 36px; }
         .tab-btn { padding: 14px 24px; border: none; background: none; font-size: 15px; font-weight: 600; cursor: pointer; color: #64748b; border-bottom: 3px solid transparent; transition: all .15s; }
         .tab-btn:hover { color: var(--cc-red); }
@@ -47,13 +49,11 @@
         label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: #475569; }
         input, select, textarea { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 15px; color: #334155; background-color: #ffffff; transition: all .15s; }
         input:focus, select:focus, textarea:focus { border-color: var(--cc-red); outline: none; box-shadow: 0 0 0 4px rgba(228, 30, 38, 0.08); }
-        button.btn-submit { background-color: var(--cc-red); color: white; border: none; padding: 14px 28px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 700; width: 100%; transition: background .15s; box-shadow: 0 4px 12px rgba(228, 30, 38, 0.15); }
-        button.btn-submit:hover { background-color: var(--cc-red-hover); }
-        table { width: 100%; border-collapse: collapse; margin-top: 12px; margin-bottom: 36px; font-size: 14px; }
-        th, td { padding: 16px 20px; border-bottom: 1px solid var(--border); text-align: left; }
-        th { background-color: #f8fafc; color: #475569; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0; }
-        tr:hover { background-color: rgba(224, 30, 38, 0.02); }
-        
+        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 16px; margin-bottom: 40px; font-size: 14px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); }
+        th, td { padding: 18px 24px; border-bottom: 1px solid var(--border); text-align: left; line-height: 1.5; }
+        th { background-color: #f8fafc; color: #475569; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.08em; border-bottom: 2px solid #e2e8f0; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background-color: rgba(224, 30, 38, 0.03); color: #000000; transition: background-color 0.15s ease; }
         .status { padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; display: inline-block; text-align: center; }
         .status-cekajici { background-color: #fef3c7; color: #b45309; }
         .status-schvaleno { background-color: #d1fae5; color: #065f46; }
@@ -67,16 +67,32 @@
     </style>
 </head>
 <body>
-<div class="container">
+
+<div id="welcomeGate" class="welcome-gate">
+    <div style="font-size: 40px; margin-bottom: 10px;">🔴</div>
+    <h1 style="font-size: 28px; margin-bottom: 8px;">Interní rezervační portál</h1>
+    <span class="brand-badge" style="display: inline-block; margin-bottom: 24px;">Coca-Cola HBC</span>
+    
+    <div class="guide-box">
+        <h3>📖 Návod k použití portálu:</h3>
+        <ol>
+            <li><strong>Přihlášení:</strong> Zadejte svůj unikátní přístupový kód níže.</li>
+            <li><strong>Nová rezervace:</strong> Vyberte akci, zadejte finanční obrat v EUR, počet lístků a důvod žádosti.</li>
+            <li><strong>Sledování stavu:</strong> V záložce "Seznam žádostí" okamžitě vidíte průběh schvalování u své rezervace.</li>
+            <li><strong>Schvalovací proces:</strong> Žádost podléhá schválení 1. stupněm (váš manažer) a následně 2. stupněm (Praha Central).</li>
+        </ol>
+    </div>
+    <div class="gate-login-box">
+        <label style="font-size: 16px; margin-bottom: 12px; display: block; font-weight: 700;">Vstupte zadáním vašeho kódu:</label>
+        <input type="password" id="gateUserToken" placeholder="Zadejte kód (např. admin123)">
+        <button onclick="loginUserFromGate()" style="width: 100%; padding: 14px; font-size: 16px; font-weight: 700; background: var(--cc-red); border: none; border-radius: 8px; color: white; cursor: pointer;">Vstoupit do systému</button>
+    </div>
+</div>
+<div id="mainSystem" class="container" style="display: none;">
     <div class="login-bar">
-        <div id="loginForm">
-            <span>Přihlášení kódem: </span>
-            <input type="password" id="userToken" placeholder="Zadejte váš osobní kód">
-            <button onclick="loginUser()">Přihlásit</button>
-        </div>
-        <div id="userInfo" style="display: none;">
+        <div>
             <span>Přihlášen jako: <strong id="loggedName">--</strong> (<span id="loggedRole">--</span>)</span>
-            <button class="logout" onclick="logoutUser()">Odhlásit se</button>
+            <button class="logout" onclick="logoutUser()" style="margin-left: 15px;">Odhlásit se</button>
         </div>
         <div class="cc-refresh-btn" onclick="location.reload(true)" title="Obnovit stránku a vymazat paměť">
             <span>⟳</span>
@@ -92,8 +108,11 @@
         <button id="btn-zadost-role" class="tab-btn" onclick="openTab(3)">Požádat o přístup</button>
         <button id="btn-admin" class="tab-btn" onclick="openTab(4)" style="display: none;">⚙️ Schvalování přístupů</button>
     </div>
-
     <div id="tab1" class="tab-content active">
+        <div style="background: #f8fafc; border: 1px solid var(--border); padding: 20px; border-radius: 8px; margin-bottom: 24px; font-size: 14px;">
+            ℹ️ <strong>Nová rezervace:</strong> Vyberte akci, vyplňte jméno klienta, finanční obrat v EUR a odešlete. Po odeslání se můžete překliknout do záložky <strong>"Seznam žádostí"</strong>, kde uvidíte aktuální stav schvalování vaší rezervace.
+        </div>
+        
         <h2>Žádat o lístky na akci</h2>
         <form id="ticketForm" onsubmit="handleFormSubmit(event)">
             <div class="form-group">
@@ -101,38 +120,48 @@
                 <select id="actionSelect" required></select>
             </div>
             <div class="form-group">
-                <label for="employeeName">Jméno zaměstnance:</label>
+                <label for="employeeName">Jméno zaměstnance (Žadatel):</label>
                 <input type="text" id="employeeName" required placeholder="Vaše jméno">
             </div>
             <div class="form-group">
                 <label for="managerEmail">E-mail nadřízeného (1. schvalovatel):</label>
-                <input type="email" id="managerEmail" required placeholder="novotny@cchellenic.com">
+                <input type="email" id="managerEmail" required placeholder="novotny@firma.cz">
             </div>
             <div class="form-group">
-                <label for="customerName">Jméno zákazníka a důvod žádosti o lístky a obratem (EUR):</label>
-                <input type="text" id="customerName" required placeholder="Jméno provozovny/sítě, důvod žádosti a obrat (EUR)">
+                <label for="customerName">Jméno zákazníka:</label>
+                <input type="text" id="customerName" required placeholder="Jméno klienta">
+            </div>
+            <div class="form-group">
+                <label for="euroTurnover">Obrat v EUR:</label>
+                <input type="number" id="euroTurnover" min="0" required placeholder="př. 5000">
             </div>
             <div class="form-group">
                 <label for="ticketCount">Počet lístků:</label>
                 <input type="number" id="ticketCount" min="1" max="10" required placeholder="1">
             </div>
+            <div class="form-group">
+                <label for="reason">Důvod žádosti o lístky:</label>
+                <textarea id="reason" rows="3" required></textarea>
+            </div>
             <button type="submit" class="btn-submit">Odeslat žádost</button>
         </form>
     </div>
     <div id="tab2" class="tab-content">
-        <h2>Přehled a schvalování žádostí o lístky</h2>
-        <button onclick="exportToExcel()" style="background-color: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 15px;">📥 Stáhnout do Excelu</button>
+        <h2>Přehled and schvalování žádostí o lístky</h2>
+        <div id="excelBtnContainer">
+            <button onclick="exportToExcel()" style="background-color: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 15px;">📥 Stáhnout do Excelu</button>
+        </div>
         <div style="overflow-x: auto;">
             <table style="width: 100%;">
                 <thead>
                     <tr>
                         <th>Akce</th>
                         <th>Žadatel</th>
-                        <th>Jméno zákazníka a důvod žádosti o lístky a obratem (EUR)</th>
-                        <th>1. Schvalovatel (ASM/RSM)</th>
-                        <th>2. Schvalovatel (RSM Praha Central)</th>
-                        <th>1. Schvalovatel (ASM/RSM)</th>
-                        <th>2. Schvalovatel (RSM Praha Central)</th>
+                        <th>Zákazník</th>
+                        <th>1. schvalovatel (ASM/RSM)</th>
+                        <th>2. schvalovatel (RSM Praha Central)</th>
+                        <th>Schvalování (1. Šéf)</th>
+                        <th>Schvalování (2. Admin)</th>
                         <th>Stav rezervace</th>
                         <th>Zaslání stavu rezervace</th>
                     </tr>
@@ -143,7 +172,7 @@
     </div>
     <div id="tab3" class="tab-content">
         <h2>Žádost o vytvoření účtu schvalovatele</h2>
-        <p>Jste žadatel nebo schvalovatel? Vyplňte formulář. Žádost podléhá schválení administrátora.</p>
+        <p>Jste nadřízený nebo správce? Vyplňte formulář. Žádost podléhá schválení Hlavním správcem.</p>
         <div class="box-section">
             <form onsubmit="handleRoleRequestSubmit(event)">
                 <div class="form-group">
@@ -152,7 +181,7 @@
                 </div>
                 <div class="form-group">
                     <label for="reqEmail">Váš pracovní e-mail:</label>
-                    <input type="email" id="reqEmail" required placeholder="novak@cchellenic.com">
+                    <input type="email" id="reqEmail" required placeholder="novak@firma.cz">
                 </div>
                 <div class="form-group">
                     <label for="reqRole">Požadovaná role:</label>
@@ -170,7 +199,7 @@
     <div id="tab4" class="tab-content">
         <h2>⚙️ Schvalování a správa přístupových práv</h2>
         <div class="box-section">
-            <h3>+ Vytvořit novou akci</h3>
+            <h3>+ Vytvořit novou firemní akci</h3>
             <form onsubmit="handleCreateActionSubmit(event)">
                 <div class="form-group">
                     <label>Název akce:</label>
@@ -244,43 +273,66 @@
     </div>
 </div>
 <script>
-    const masterAdminToken = "Magnolie27"; // Sem napište své tajné heslo
+    const masterAdminToken = "admin123"; 
     let customUsers = JSON.parse(localStorage.getItem('customUsers')) || {};
     let roleRequests = JSON.parse(localStorage.getItem('roleRequests')) || [];
     let requests = JSON.parse(localStorage.getItem('ticketRequests')) || [];
     let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
     let companyActions = JSON.parse(localStorage.getItem('companyActions')) || [];
 
-    function loginUser() {
-        const token = document.getElementById('userToken').value.trim();
+    function loginUserFromGate() {
+        const token = document.getElementById('gateUserToken').value.trim();
         if (token === masterAdminToken) {
-            currentUser = { name: "Barbora Musilová", role: "admin", email: "barbora.musilova@cchellenic.com" };
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            updateLoginBar(); renderTable();
+            currentUser = { name: "Hlavní Správce", role: "admin", email: "admin@firma.cz" };
+            saveAndStyleSession();
         } else if (customUsers[token]) {
             currentUser = customUsers[token];
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            updateLoginBar(); renderTable();
-        } else { alert('Neplatný kód!'); }
+            saveAndStyleSession();
+        } else { alert('Neplatný přístupový kód!'); }
     }
-    function logoutUser() { currentUser = null; localStorage.removeItem('currentUser'); updateLoginBar(); renderTable(); }
+    function saveAndStyleSession() {
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        document.getElementById('welcomeGate').style.display = 'none';
+        document.getElementById('mainSystem').style.display = 'block';
+        updateLoginBar(); 
+        const bRole = document.getElementById('btn-zadost-role');
+        const bExcel = document.getElementById('excelBtnContainer');
+        if(currentUser.role === 'applicant') {
+            if(bRole) bRole.style.display = 'none';
+            if(bExcel) bExcel.style.display = 'none';
+            openTab(1); 
+        } else {
+            if(bRole) bRole.style.display = 'block';
+            if(bExcel) bExcel.style.display = 'block';
+            openTab(2); 
+        }
+    }
+    function logoutUser() { 
+        currentUser = null; 
+        localStorage.removeItem('currentUser'); 
+        document.getElementById('welcomeGate').style.display = 'block';
+        document.getElementById('mainSystem').style.display = 'none';
+        document.getElementById('gateUserToken').value = '';
+    }
     function updateLoginBar() {
         const btn = document.getElementById('btn-admin');
         if (currentUser) {
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('userInfo').style.display = 'block';
             document.getElementById('loggedName').innerText = currentUser.name;
-            document.getElementById('loggedRole').innerText = currentUser.role === 'admin' ? 'Hlavní Admin' : 'Manažer';
-            if (currentUser.role === 'admin') btn.style.display = 'block'; else btn.style.display = 'none';
-        } else { document.getElementById('loginForm').style.display = 'block'; document.getElementById('userInfo').style.display = 'none'; btn.style.display = 'none'; }
+            let roleTxt = 'Žadatel (Stupeň 0)';
+            if(currentUser.role === 'manager') roleTxt = '1. stupeň ASM/RSM';
+            if(currentUser.role === 'rsm_praha') roleTxt = '2. stupeň RSM Praha Central';
+            if(currentUser.role === 'admin') roleTxt = 'Hlavní Admin';
+            document.getElementById('loggedRole').innerText = roleTxt;
+            if (currentUser.role === 'admin' && btn) btn.style.display = 'block'; else if(btn) btn.style.display = 'none';
+        }
     }
     function openTab(num) {
-        for(let i=1; i<=4; i++) document.getElementById('tab'+i).classList.remove('active');
+        for(let i=1; i<=4; i++) { const t = document.getElementById('tab'+i); if(t) t.classList.remove('active'); }
         document.getElementById('btn-nova').classList.remove('active');
         document.getElementById('btn-seznam').classList.remove('active');
         document.getElementById('btn-zadost-role').classList.remove('active');
         document.getElementById('btn-admin').classList.remove('active');
-        document.getElementById('tab'+num).classList.add('active');
+        const targetTab = document.getElementById('tab' + num); if(targetTab) targetTab.classList.add('active');
         if (num === 1) document.getElementById('btn-nova').classList.add('active');
         if (num === 2) { document.getElementById('btn-seznam').classList.add('active'); renderTable(); }
         if (num === 3) document.getElementById('btn-zadost-role').classList.add('active');
@@ -298,87 +350,78 @@
             for (let i = 0; i < 5; i++) tok += chars.charAt(Math.floor(Math.random() * chars.length));
             customUsers[tok] = { name: r.name, email: r.email, role: r.role };
             localStorage.setItem('customUsers', JSON.stringify(customUsers)); roleRequests.splice(idx, 1);
-            localStorage.setItem('roleRequests', JSON.stringify(roleRequests)); alert('Kód: ' + tok); renderAdminSection();
+            localStorage.setItem('roleRequests', JSON.stringify(roleRequests)); alert('Vygenerovaný kód pro uživatele: ' + tok); renderAdminSection();
         }
     }
-    function rejectRoleRequest(id) { if(confirm('Smazat?')) { roleRequests = roleRequests.filter(r => r.id !== id); localStorage.setItem('roleRequests', JSON.stringify(roleRequests)); renderAdminSection(); } }
-    function editRoleRequest(id) { roleRequests = roleRequests.map(r => { if (r.id === id) { let n = r.role === 'admin' ? 'manager' : 'admin'; if(confirm('Změnit?')) return { ...r, role: n }; } return r; }); localStorage.setItem('roleRequests', JSON.stringify(roleRequests)); renderAdminSection(); }
-    function deleteActiveUser(tok) { if(confirm('Smazat?')) { delete customUsers[tok]; localStorage.setItem('customUsers', JSON.stringify(customUsers)); renderAdminSection(); } }
+    function rejectRoleRequest(id) { if(confirm('Smazat žádost?')) { roleRequests = roleRequests.filter(r => r.id !== id); localStorage.setItem('roleRequests', JSON.stringify(roleRequests)); renderAdminSection(); } }
+    function editRoleRequest(id) { roleRequests = roleRequests.map(r => { if (r.id === id) { let n = r.role === 'admin' ? 'manager' : 'admin'; if(confirm('Změnit roli?')) return { ...r, role: n }; } return r; }); localStorage.setItem('roleRequests', JSON.stringify(roleRequests)); renderAdminSection(); }
+    function deleteActiveUser(tok) { if(confirm('Deaktivovat uživatele a smazat kód?')) { delete customUsers[tok]; localStorage.setItem('customUsers', JSON.stringify(customUsers)); renderAdminSection(); } }
     function handleCreateActionSubmit(e) {
         e.preventDefault();
         companyActions.push({ id: Date.now(), name: document.getElementById('actNewName').value.trim(), date: document.getElementById('actNewDate').value, time: document.getElementById('actNewTime').value, place: document.getElementById('actNewPlace').value.trim(), capacity: parseInt(document.getElementById('actNewCapacity').value), status: 'Aktivní' });
-        localStorage.setItem('companyActions', JSON.stringify(companyActions)); e.target.reset(); renderAdminSection(); updateActionSelectOptions(); alert('Vytvořeno!');
+        localStorage.setItem('companyActions', JSON.stringify(companyActions)); e.target.reset(); renderAdminSection(); updateActionSelectOptions(); alert('Akce vytvořena!');
     }
-    function deleteCompanyAction(id) { if(confirm('Smazat?')) { companyActions = companyActions.filter(a => a.id !== id); localStorage.setItem('companyActions', JSON.stringify(companyActions)); renderAdminSection(); updateActionSelectOptions(); } }
+    function deleteCompanyAction(id) { if(confirm('Opravdu smazat celou akci?')) { companyActions = companyActions.filter(a => a.id !== id); localStorage.setItem('companyActions', JSON.stringify(companyActions)); renderAdminSection(); updateActionSelectOptions(); } }
     function toggleActionStatus(id) { companyActions = companyActions.map(a => a.id === id ? { ...a, status: a.status === 'Aktivní' ? 'Zrušena' : 'Aktivní' } : a); localStorage.setItem('companyActions', JSON.stringify(companyActions)); renderAdminSection(); updateActionSelectOptions(); }
     function renderAdminSection() {
         const tbody = document.getElementById('roleRequestsTableBody'); tbody.innerHTML = '';
-        if(roleRequests.length === 0) tbody.innerHTML = '<tr><td colspan="4">Žádné žádosti.</td></tr>';
+        if(roleRequests.length === 0) tbody.innerHTML = '<tr><td colspan="4">Žádné čekající žádosti o role.</td></tr>';
         else roleRequests.forEach(r => { let t = '0 - Žadatel'; if(r.role=='manager') t='1. stupeň'; if(r.role=='rsm_praha') t='2. stupeň'; if(r.role=='admin') t='Admin'; let tr = document.createElement('tr'); tr.innerHTML = '<td><strong>'+r.name+'</strong></td><td>'+r.email+'</td><td>'+t+'</td><td><button onclick="approveRoleRequest('+r.id+')">Schválit</button> <button onclick="editRoleRequest('+r.id+')">Upravit</button> <button onclick="rejectRoleRequest('+r.id+')">Smazat</button></td>'; tbody.appendChild(tr); });
         const tbodyA = document.getElementById('activeUsersTableBody'); tbodyA.innerHTML = ''; const tks = Object.keys(customUsers);
-        if(tks.length === 0) tbodyA.innerHTML = '<tr><td colspan="5">Zatím žádní uživatelé.</td></tr>';
-        else tks.forEach(tk => { const u = customUsers[tk]; let t = '0 - Žadatel'; if(u.role=='manager') t='1. stupeň'; if(u.role=='rsm_praha') t='2. stupeň'; if(u.role=='admin') t='Admin'; let tr = document.createElement('tr'); tr.innerHTML = '<td><strong>'+u.name+'</strong></td><td>'+u.email+'</td><td>'+t+'</td><td>'+tk+'</td><td><button onclick="deleteActiveUser(\''+tk+'\')">Smazat</button></td>'; tbodyA.appendChild(tr); });
-        const tbodyL = document.getElementById('adminActionsTableBody'); if(tbodyL) { tbodyL.innerHTML = ''; companyActions.forEach(act => { const app = requests.filter(r => r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno'); const tot = app.reduce((s, r) => s + parseInt(r.tickets), 0); const tr = document.createElement('tr'); tr.innerHTML = '<td><strong>'+act.name+'</strong><br><small>'+act.date+'</small></td><td>'+tot+' / '+act.capacity+'</td><td>'+act.status+'</td><td>-</td><td><button onclick="toggleActionStatus('+act.id+')">Zrušit</button> <button onclick="deleteCompanyAction('+act.id+')">Smazat</button></td>'; tbodyL.appendChild(tr); }); }
+        if(tks.length === 0) tbodyA.innerHTML = '<tr><td colspan="5">Zatím nebyl vydán žádný přístupový kód.</td></tr>';
+        else tks.forEach(tk => { const u = customUsers[tk]; let t = '0 - Žadatel'; if(u.role=='manager') t='1. stupeň'; if(u.role=='rsm_praha') t='2.纽 stupeň'; if(u.role=='admin') t='Admin'; let tr = document.createElement('tr'); tr.innerHTML = '<td><strong>'+u.name+'</strong></td><td>'+u.email+'</td><td>'+t+'</td><td>'+tk+'</td><td><button onclick="deleteActiveUser(\''+tk+'\')">Smazat</button></td>'; tbodyA.appendChild(tr); });
+        const tbodyL = document.getElementById('adminActionsTableBody'); 
+        if(tbodyL) { 
+            tbodyL.innerHTML = ''; 
+            companyActions.forEach(function(act) { 
+                const app = requests.filter(r => r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno'); 
+                let tot = 0; app.forEach(function(x) { tot += parseInt(x.tickets); }); 
+                const names = app.map(function(p) { return p.employee + ' (' + p.tickets + ' ks pro: ' + p.customer + ')'; }).join(', ') || 'Nikdo zatím neschválen';
+                const wl = requests.filter(function(r) { return r.action === act.name && r.status2 === 'Náhradník'; });
+                const wlNames = wl.map(function(p, i) { return '#' + (i + 1) + ' ' + p.employee + ' (' + p.tickets + ' ks)'; }).join(', ') || 'Žádní';
+                const tr = document.createElement('tr'); if (act.status === 'Zrušena') tr.style.opacity = '0.5'; 
+                tr.innerHTML = '<td><strong>'+act.name+'</strong><br><small>'+act.date+'</small></td><td>'+tot+' / '+act.capacity+'</td><td>'+act.status+'</td><td><small><strong>Schválení:</strong> ' + names + '<br><strong>Náhradníci:</strong> ' + wlNames + '</small></td><td><button onclick="toggleActionStatus('+act.id+')">Zrušit</button> <button style="background:#dc3545;color:white;border:none;padding:2px 5px;border-radius:4px;cursor:pointer;" onclick="deleteCompanyAction('+act.id+')">Smazat</button></td>'; tbodyL.appendChild(tr); 
+            }); 
+        }
     }
     function handleFormSubmit(e) {
-        e.preventDefault(); requests.push({ id: Date.now(), action: document.getElementById('actionSelect').value, employee: document.getElementById('employeeName').value, manager: document.getElementById('managerEmail').value.toLowerCase().trim(), customer: document.getElementById('customerName').value, tickets: document.getElementById('ticketCount').value, reason: document.getElementById('reason').value, status1: 'Čeká', status2: 'Čeká', approvedBy1: '', approvedBy2: '' });
-        localStorage.setItem('ticketRequests', JSON.stringify(requests)); document.getElementById('ticketForm').reset(); alert('Uloženo!'); openTab(2);
+        e.preventDefault(); requests.push({ id: Date.now(), action: document.getElementById('actionSelect').value, employee: document.getElementById('employeeName').value, manager: document.getElementById('managerEmail').value.toLowerCase().trim(), customer: document.getElementById('customerName').value, turnover: document.getElementById('euroTurnover').value, tickets: document.getElementById('ticketCount').value, reason: document.getElementById('reason').value, status1: 'Čeká', status2: 'Čeká', approvedBy1: '', approvedBy2: '' });
+        localStorage.setItem('ticketRequests', JSON.stringify(requests)); document.getElementById('ticketForm').reset(); alert('Žádost úspěšně odeslána!'); openTab(2);
     }
     function setStatus1(id, s) { requests = requests.map(r => r.id === id ? {...r, status1: s, approvedBy1: currentUser.name} : r); localStorage.setItem('ticketRequests', JSON.stringify(requests)); renderTable(); }
     function setStatus2(id, s) { requests = requests.map(r => r.id === id ? {...r, status2: s, approvedBy2: currentUser.name} : r); localStorage.setItem('ticketRequests', JSON.stringify(requests)); renderTable(); }
-    function deleteTicketRequest(id) { if(confirm('Opravdu smazat rezervaci?')) { requests = requests.filter(function(r) { return r.id !== id; }); localStorage.setItem('ticketRequests', JSON.stringify(requests)); renderTable(); } }
+    function deleteTicketRequest(id) { if(confirm('Opravdu smazat tuto rezervaci?')) { requests = requests.filter(function(r) { return r.id !== id; }); localStorage.setItem('ticketRequests', JSON.stringify(requests)); renderTable(); } }
     function sendStatusEmail(id) {
-                const r = requests.find(x => x.id === id); if (!r) return; let s = 'Info', b = 'Dobrý den,\n\n';
-        if (r.status1 === 'Schváleno' && r.status2 === 'Schváleno') { s = 'SCHVÁLENO: Rezervace lístků'; b += 'Dobrý den,\nVaše žádost o lístky na akci ' + r.action + ' byla úspěšně SCHVÁLENA.'; }
-        else if (r.status1 === 'Zamítnuto' || r.status2 === 'Zamítnuto') { s = 'ZAMÍTNUTO: Rezervace lístků'; b += 'Dobrý den,\nVaše žádost o lístky na akci ' + r.action + ' byla bohužel ZAMÍTNUTA.'; }
-        else if (r.status2 === 'Náhradník') { s = 'NÁHRADNÍK: Rezervace lístků'; b += 'Dobrý den,\nVaše žádost o lístky na akci ' + r.action + ' byla zařazena do seznamu NÁHRADNÍKŮ.\nO případené dostupnosti budete informováni.'; } else { alert('Nastavte stav!'); return; }
-        b += '\n\nS pozdravem,\nCC Tickets booking app'; window.location.href = 'mailto:' + r.manager + '?subject=' + encodeURIComponent(s) + '&body=' + encodeURIComponent(b);
+        const r = requests.find(x => x.id === id); if (!r) return; let s = 'Info', b = 'Dobrý den,%0D%0A%0D%0A';
+        if (r.status1 === 'Schváleno' && r.status2 === 'Schváleno') { s = 'SCHVÁLENO: Rezervace lístků'; b += 'Vaše žádost o lístky na akci ' + r.action + ' byla úspěšně SCHVÁLENA.%0D%0A'; }
+        else if (r.status1 === 'Zamítnuto' || r.status2 === 'Zamítnuto') { s = 'ZAMÍTNUTO: Rezervace lístků'; b += 'Vaše žádost o lístky na akci ' + r.action + ' byla bohužel ZAMÍTNUTA.%0D%0A'; }
+        else if (r.status2 === 'Náhradník') { s = 'NÁHRADNÍK: Rezervace lístků'; b += 'Vaše žádost o lístky na akci ' + r.action + ' byla zařazena do seznamu NÁHRADNÍKŮ.%0D%0A'; } else { alert('Nastavte stav!'); return; }
+        b += '%0D%0AS pozdravem,%0D%0AHlavní správce'; window.location.href = 'mailto:' + r.manager + '?subject=' + encodeURIComponent(s) + '&body=' + b;
     }
     function renderTable() {
-        const tbody = document.getElementById('requestsTableBody'); 
-        if(!tbody) return; 
-        tbody.innerHTML = '';
-        
-        if(requests.length === 0) { 
-            tbody.innerHTML = '<tr><td colspan="9">Žádné žádosti o lístky.</td></tr>'; 
-            return; 
+        const tbody = document.getElementById('requestsTableBody'); if(!tbody) return; tbody.innerHTML = '';
+        let filteredRequests = requests;
+        if (currentUser) {
+            if (currentUser.role === 'applicant') { filteredRequests = requests.filter(r => r.employee.toLowerCase().trim() === currentUser.name.toLowerCase().trim()); }
+            else if (currentUser.role === 'manager') { filteredRequests = requests.filter(r => r.manager.toLowerCase().trim() === currentUser.email.toLowerCase().trim()); }
+            else if (currentUser.role === 'rsm_praha') { filteredRequests = requests; }
         }
-        
-        requests.forEach(function(req) {
-            // Správné ověření rolí pro Coca-Cola HBC
-            const isSef1 = currentUser && currentUser.role === 'manager' && currentUser.email === req.manager;
-            const isSef2 = currentUser && currentUser.role === 'rsm_praha';
-            const isSystemAdmin = currentUser && currentUser.role === 'admin';
-
-            // Zámky na tlačítka (2. stupeň čeká na schválení od 1. stupně)
-            const dMgr = (isSef1 || isSystemAdmin) ? '' : 'disabled';
-            const dAdm = ((isSef2 && req.status1 === 'Schváleno') || isSystemAdmin) ? '' : 'disabled';
-            
-            const tr = document.createElement('tr'); 
-            let sClass1 = 'cekajici', sClass2 = 'cekajici';
-            if(req.status1 === 'Schváleno') sClass1 = 'schvaleno'; 
-            if(req.status1 === 'Zamítnuto') sClass1 = 'zamitnuto';
-            if(req.status2 === 'Schváleno') sClass2 = 'schvaleno'; 
-            if(req.status2 === 'Zamítnuto') sClass2 = 'zamitnuto'; 
-            if(req.status2 === 'Náhradník') sClass2 = 'nahradnik';
-            
+        if(filteredRequests.length === 0) { tbody.innerHTML = '<tr><td colspan="9">Žádné podané žádosti o lístky k zobrazení.</td></tr>'; return; }
+        filteredRequests.forEach(function(req) {
+            const isSef1 = currentUser && currentUser.role === 'manager' && currentUser.email === req.manager; const isSef2 = currentUser && currentUser.role === 'rsm_praha'; const isSystemAdmin = currentUser && currentUser.role === 'admin';
+            const dMgr = (isSef1 || isSystemAdmin) ? '' : 'disabled'; const dAdm = ((isSef2 && req.status1 === 'Schváleno') || isSystemAdmin) ? '' : 'disabled';
+            const tr = document.createElement('tr'); let sClass1 = 'cekajici', sClass2 = 'cekajici';
+            if(req.status1 === 'Schváleno') sClass1 = 'schvaleno'; if(req.status1 === 'Zamítnuto') sClass1 = 'zamitnuto';
+            if(req.status2 === 'Schváleno') sClass2 = 'schvaleno'; if(req.status2 === 'Zamítnuto') sClass2 = 'zamitnuto'; if(req.status2 === 'Náhradník') sClass2 = 'nahradnik';
             const isApp = !currentUser || (currentUser && currentUser.role === 'applicant');
-            let delBtn = (isSystemAdmin || isApp) ? '<button style="background:#dc3545;color:white;border:none;padding:5px 8px;border-radius:4px;cursor:pointer;" onclick="deleteTicketRequest(' + req.id + ')">Smazat</button>' : '';
-            let mailBtn = isSystemAdmin ? '<button style="background:#17a2b8;color:white;" onclick="sendStatusEmail(' + req.id + ')">✉ Mail</button>' : '';
-            
-            tr.innerHTML = '<td><strong>'+req.action+'</strong></td>' +
-                '<td>'+req.employee+'</td>' +
-                '<td>'+req.customer+'</td>' +
-                '<td><span class="status status-'+sClass1+'">'+req.status1+'</span></td>' +
-                '<td><span class="status status-'+sClass2+'">'+req.status2+'</span></td>' +
-                '<td><button onclick="setStatus1('+req.id+',\'Schváleno\')" '+dMgr+'>Ano</button> <button onclick="setStatus1('+req.id+',\'Zamítnuto\')" '+dMgr+'>Ne</button></td>' +
-                '<td><button onclick="setStatus2('+req.id+',\'Schváleno\')" '+dAdm+'>Ano</button> <button onclick="setStatus2('+req.id+',\'Zamítnuto\')" '+dAdm+'>Ne</button> <button class="btn-action" style="background:#17a2b8;color:white;" onclick="setStatus2('+req.id+',\'Náhradník\')" '+dAdm+'>Náhradník</button></td>' +
-                '<td>'+delBtn+'</td>' +
-                '<td>'+mailBtn+'</td>';
+            let delBtn = (isSystemAdmin || isApp) ? '<button style="background:#dc3545;color:white;border:none;padding:5px 8px;border-radius:4px;cursor:pointer;margin-right:5px;" onclick="deleteTicketRequest(' + req.id + ')">Smazat</button>' : '';
+            let mailBtn = isSystemAdmin ? '<button style="background:#17a2b8;color:white;border:none;padding:5px 8px;border-radius:4px;cursor:pointer;" onclick="sendStatusEmail(' + req.id + ')">✉ Mail</button>' : '';
+            let actionControls1 = currentUser.role === 'applicant' ? '<span style="color:#94a3b8">-</span>' : '<button onclick="setStatus1('+req.id+',\'Schváleno\')" '+dMgr+'>Ano</button> <button onclick="setStatus1('+req.id+',\'Zamítnuto\')" '+dMgr+'>Ne</button>';
+            let actionControls2 = currentUser.role === 'applicant' ? '<span style="color:#94a3b8">-</span>' : '<button onclick="setStatus2('+req.id+',\'Schváleno\')" '+dAdm+'>Ano</button> <button onclick="setStatus2('+req.id+',\'Zamítnuto\')" '+dAdm+'>Ne</button> <button class="btn-action" style="background:#17a2b8;color:white;" onclick="setStatus2('+req.id+',\'Náhradník\')" '+dAdm+'>Náhradník</button>';
+            tr.innerHTML = '<td><strong>'+req.action+'</strong></td><td>'+req.employee+'</td><td><strong>'+req.customer+'</strong><br><small style="color:#64748b; line-height:1.3; display:block; max-width:200px; word-break:break-word; margin-top:4px;">Důvod: '+(req.reason || '')+'</small></td><td><span class="status status-'+sClass1+'">'+req.status1+'</span></td><td><span class="status status-'+sClass2+'">'+req.status2+'</span></td><td>'+actionControls1+'</td><td>'+actionControls2+'</td><td>1. Šéf: <b>'+req.status1+'</b><br>2. Šéf: <b>'+req.status2+'</b></td><td>' + delBtn + mailBtn + '</td>';
             tbody.appendChild(tr);
         });
     }
-
     function exportToExcel() {
         if (requests.length === 0) return; let csv = 'Akce;Zadatel;Zakaznik;Stav\r\n';
         requests.forEach(function(r) { csv += r.action + ';' + r.employee + ';' + r.customer + ';' + r.status2 + '\r\n'; });
@@ -389,7 +432,8 @@
         const sel = document.getElementById('actionSelect'); if (!sel) return; let h = '<option value="">-- Vyberte akci --</option>';
         companyActions.forEach(function(a) { if (a.status === 'Aktivní') h += '<option value="'+a.name+'">'+a.name+'</option>'; }); sel.innerHTML = h;
     }
-    updateLoginBar(); renderTable(); updateActionSelectOptions();
+    if(localStorage.getItem('currentUser')) { currentUser = JSON.parse(localStorage.getItem('currentUser')); saveAndStyleSession(); }
+    updateActionSelectOptions();
 </script>
 </body>
 </html>
