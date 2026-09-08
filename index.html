@@ -981,12 +981,12 @@ function renderTable() {
         .tab-content { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
         table { min-width: 900px !important; }
     }
-<<!-- 🌐 NAČTENÍ ROZHRANÍ GOOGLE FIREBASE POMOCÍ KLASICKÝCH WEBOVÝCH SKRIPTŮ -->
+<!-- 🌐 STABILNÍ WEB COMPAT ROZHRANÍ PRO GOOGLE FIREBASE CLOUD -->
 <script src="https://gstatic.com"></script>
 <script src="https://gstatic.com"></script>
 
 <script>
-    // 🧲 GLOBÁLNÍ PROPOJENÍ PORTÁLU S FIREBASE CLOUDEM (VČETNĚ AKCÍ)
+    // 🧲 ENGINE PRO ŽIVÝ PŘENOS DAT MEZI MOBILEM A PC (Coca-Cola HBC)
     (function() {
         var firebaseConfig = {
             apiKey: "AIzaSyCPSV3AauKHMPfnkACjbfvEDbb6RFJMiJA",
@@ -998,72 +998,60 @@ function renderTable() {
             measurementId: "G-GKKE8GCN0T"
         };
 
-        firebase.initializeApp(firebaseConfig);
+        // Bezpečné spuštění Firebase cloudu
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         var db = firebase.firestore();
         var docRef = db.collection("portalData").doc("cocaColaDatabase");
 
-        // 🔄 1. ČÁST: ŽIVÝ PŘÍJEM DAT Z INTERNETU (onSnapshot)
+        // 🔄 1. ŽIVÝ PŘÍJEM Z INTERNETU: Okamžitě stahuje akce a žádosti do mobilu i PC
         docRef.onSnapshot(function(docSnap) {
             if (docSnap.exists) {
-                var cloudData = docSnap.data();
+                var cloud = docSnap.data();
+                console.log("Live data stažena z cloudu úspěšně!");
                 
-                if (cloudData.ticketRequests) {
-                    window.requests = cloudData.ticketRequests;
-                    localStorage.setItem('ticketRequests', JSON.stringify(window.requests));
-                }
-                if (cloudData.companyActions) {
-                    window.companyActions = cloudData.companyActions;
-                    localStorage.setItem('companyActions', JSON.stringify(window.companyActions));
-                }
-                if (cloudData.customUsers) {
-                    window.customUsers = cloudData.customUsers;
-                    localStorage.setItem('customUsers', JSON.stringify(window.customUsers));
-                }
-                if (cloudData.roleRequests) {
-                    window.roleRequests = cloudData.roleRequests;
-                    localStorage.setItem('roleRequests', JSON.stringify(window.roleRequests));
-                }
+                // Přepíšeme data v běžícím programu
+                if (cloud.ticketRequests) { window.requests = cloud.ticketRequests; localStorage.setItem('ticketRequests', JSON.stringify(window.requests)); }
+                if (cloud.companyActions) { window.companyActions = cloud.companyActions; localStorage.setItem('companyActions', JSON.stringify(window.companyActions)); }
+                if (cloud.customUsers) { window.customUsers = cloud.customUsers; localStorage.setItem('customUsers', JSON.stringify(window.customUsers)); }
+                if (cloud.roleRequests) { window.roleRequests = cloud.roleRequests; localStorage.setItem('roleRequests', JSON.stringify(window.roleRequests)); }
                 
-                // Překreslíme všechny komponenty na stránce
+                // Vynutíme bleskové překreslení všech tabulek a roletky s akcemi
                 if (typeof renderTable === 'function') renderTable();
                 if (typeof renderAdminSection === 'function') renderAdminSection();
                 if (typeof updateActionSelectOptions === 'function') updateActionSelectOptions();
             }
-        }, function(error) {
-            console.error("Chyba při živém stahování z Firebase:", error);
+        }, function(err) {
+            console.error("Chyba synchronizace cloudu:", err);
         });
 
-        // 📤 2. ČÁST: OKAMŽITÉ ODESÍLÁNÍ ZMĚN DO CLOUDU
-        function odesliDataDoClouduNatvrdo() {
+        // 📤 2. ŽIVÉ ODESÍLÁNÍ DO INTERNETU: Okamžitě vystřelí každou akci, schválení i smazání
+        function odesliAktualniStavDoCloudu() {
             setTimeout(function() {
-                var dataToUpload = {
+                var dataToCloud = {
                     ticketRequests: JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [],
                     companyActions: JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [],
                     customUsers: JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {},
                     roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || window.roleRequests || []
                 };
 
-                docRef.set(dataToUpload, { merge: true })
-                    .then(function() { console.log("Data byla úspěšně nahrána do cloudu!"); })
-                    .catch(function(err) { console.error("Chyba při zápisu do cloudu:", err); });
-            }, 150); // Dáme prohlížeči drobný čas na lokální zápis
+                docRef.set(dataToCloud, { merge: true })
+                    .then(function() { console.log("Změna úspěšně odeslána do Firebase!"); })
+                    .catch(function(e) { console.error("Chyba odesílání do Firebase:", e); });
+            }, 100);
         }
 
-        // POJISTKA PRO FORMULÁŘE: Chytáme jak odeslání žádosti o lístky, tak i vytvoření NOVÉ AKCE!
-        document.addEventListener('submit', function(e) {
-            if (e.target) {
-                odesliDataDoClouduNatvrdo();
-            }
-        });
+        // Hlídáme uložení jakéhokoliv formuláře (Nová rezervace i Nová akce)
+        document.addEventListener('submit', function() { odesliAktualniStavDoCloudu(); });
 
-        // POJISTKA PRO TLAČÍTKA: Schvalování, mazání rezervací, mazání akcí, rušení akcí
+        // Hlídáme kliknutí na jakákoliv tlačítka (Ano/Ne/Smazat/Zrušit/Uložit)
         document.addEventListener('click', function(e) {
             if (e.target && e.target.tagName === 'BUTTON') {
                 var txt = e.target.innerText ? e.target.innerText.toLowerCase() : '';
                 var onc = e.target.getAttribute('onclick') ? e.target.getAttribute('onclick').toLowerCase() : '';
-                
-                if (txt.indexOf('ano') > -1 || txt.indexOf('ne') > -1 || txt.indexOf('náhradník') > -1 || txt.indexOf('smazat') > -1 || txt.indexOf('zrušit') > -1 || txt.indexOf('uložit') > -1 || onc.indexOf('status') > -1 || onc.indexOf('action') > -1 || onc.indexOf('delete') > -1) {
-                    odesliDataDoClouduNatvrdo();
+                if (txt.indexOf('ano') > -1 || txt.indexOf('ne') > -1 || txt.indexOf('náhradník') > -1 || txt.indexOf('smazat') > -1 || txt.indexOf('zrušit') > -1 || onc.indexOf('status') > -1 || onc.indexOf('delete') > -1 || onc.indexOf('action') > -1) {
+                    odesliAktualniStavDoCloudu();
                 }
             }
         }, true);
