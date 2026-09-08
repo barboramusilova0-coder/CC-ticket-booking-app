@@ -254,7 +254,7 @@
     function loginUser() {
         const token = document.getElementById('userToken').value.trim();
         if (token === masterAdminToken) {
-            currentUser = { name: "Hlavní Správce", role: "admin", email: "admin@firma.cz" };
+            currentUser = { name: "Barbora Musilová", role: "admin", email: "barbora.musilova@cchellenic.com" };
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
             updateLoginBar(); renderTable();
         } else if (customUsers[token]) {
