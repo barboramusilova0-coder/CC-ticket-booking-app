@@ -303,25 +303,26 @@
             </table>
         </div>
     </div>
-            <!-- 🍁 FÁZE 2: DESIGNER HALLOWEEN PANEL 🍁 -->
-        <div style="margin-top: 60px; padding: 30px; border: 1px solid var(--border); background: #ffffff; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.01);">
-            <p style="font-size: 14px; color: #ea580c; font-weight: 700; margin-top: 0; margin-bottom: 4px; letter-spacing: 0.02em;">🕯️ Dušičkový koutek Coca-Cola HBC</p>
-            <p style="font-size: 13px; color: #64748b; margin-top: 0; margin-bottom: 24px;">Kliknutím rozsviťte nebo zhasněte svíčku uvnitř dýní.</p>
+                    <!-- 🍁 FÁZE 2: FOTOGRAFICKÝ PODZIMNÍ KOUTEK 🍁 -->
+        <div style="margin-top: 60px; padding: 30px; border: 1px solid var(--border); background: #ffffff; border-radius: 12px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.02);">
+            <p style="font-size: 15px; color: #ea580c; font-weight: 700; margin-top: 0; margin-bottom: 4px; letter-spacing: 0.02em;">🕯️ Podzimní lucerny Coca-Cola HBC</p>
+            <p style="font-size: 13px; color: #64748b; margin-top: 0; margin-bottom: 24px;">Kliknutím rozsviťte nebo zhasněte svíčku uvnitř dýňových luceren.</p>
             
-            <div style="display: flex; justify-content: center; gap: 40px;">
+            <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap;">
                 <!-- Dýně 1 -->
-                <div id="p-box1" onclick="toggleGraphicPumpkin(1)" style="cursor: pointer; width: 75px; height: 75px; transition: all 0.3s ease;" class="p-pumpkin-off">
-                    <svg viewBox="0 0 100 100" style="width:100%; height:100%;">
-                        <path d="M50,15 C35,15 25,25 25,45 C25,70 38,85 50,85 C62,85 75,70 75,45 C75,25 65,15 50,15 Z" fill="#ea580c"/>
-                        <path d="M50,15 C42,15 35,22 35,45 C35,68 42,85 50,85 C58,85 65,68 65,45 C65,22 58,15 50,15 Z" fill="#f97316"/>
-                        <path d="M50,5 L50,15 C53,10 58,12 60,8" stroke="#15803d" stroke-width="6" fill="none" stroke-linecap="round"/>
-                        <polygon points="38,40 46,40 42,32" fill="#451a03"/>
-                        <polygon points="54,40 62,40 58,32" fill="#451a03"/>
-                        <polygon points="50,46 47,52 53,42" fill="#451a03"/>
-                        <path d="M33,56 Q50,70 67,56 Q58,62 50,58 Q42,62 33,56 Z" fill="#451a03"/>
-                        <!-- Plamínek (na začátku skrytý přes display:none) -->
-                        <path id="flame1" d="M46,62 Q50,45 54,62 Q52,66 50,66 Q48,66 46,62 Z" fill="#facc15" style="display: none; animation: flamePulse 0.15s infinite alternate; transform-origin: center bottom;"/>
-                    </svg>
+                <div onclick="togglePumpkinPhoto(1)" style="cursor: pointer; width: 120px; height: 120px; border-radius: 12px; overflow: hidden; border: 2px solid #e2e8f0; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.05);" id="p-frame1">
+                    <img id="p-img1" src="https://unsplash.com" style="width: 100%; height: 100%; object-fit: cover; transition: opacity 0.2s;" alt="Dýně 1">
+                </div>
+                <!-- Dýně 2 -->
+                <div onclick="togglePumpkinPhoto(2)" style="cursor: pointer; width: 120px; height: 120px; border-radius: 12px; overflow: hidden; border: 2px solid #e2e8f0; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.05);" id="p-frame2">
+                    <img id="p-img2" src="https://unsplash.com" style="width: 100%; height: 100%; object-fit: cover; transition: opacity 0.2s;" alt="Dýně 2">
+                </div>
+                <!-- Dýně 3 -->
+                <div onclick="togglePumpkinPhoto(3)" style="cursor: pointer; width: 120px; height: 120px; border-radius: 12px; overflow: hidden; border: 2px solid #e2e8f0; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.05);" id="p-frame3">
+                    <img id="p-img3" src="https://unsplash.com" style="width: 100%; height: 100%; object-fit: cover; transition: opacity 0.2s;" alt="Dýně 3">
+                </div>
+            </div>
+        </div>
                 </div>
                 <!-- Dýně 2 -->
                 <div id="p-box2" onclick="toggleGraphicPumpkin(2)" style="cursor: pointer; width: 75px; height: 75px; transition: all 0.3s ease;" class="p-pumpkin-off">
@@ -531,23 +532,40 @@
         companyActions.forEach(function(a) { if (a.status === 'Aktivní') h += '<option value="'+a.name+'">'+a.name+'</option>'; }); sel.innerHTML = h;
     }
     if(localStorage.getItem('currentUser')) { currentUser = JSON.parse(localStorage.getItem('currentUser')); saveAndStyleSession(); }
-        function toggleGraphicPumpkin(num) {
-        const box = document.getElementById('p-box' + num);
-        const flame = document.getElementById('flame' + num);
-        if (!box || !flame) return;
+            function togglePumpkinPhoto(num) {
+        const img = document.getElementById('p-img1' === 'p-img' + num ? 'p-img1' : 'p-img' + num);
+        const frame = document.getElementById('p-frame' + num);
+        if (!img || !frame) return;
 
-        // Malý hravý efekt poskočení při kliknutí
-        box.style.transform = 'scale(0.88)';
-        setTimeout(function() { box.style.transform = 'scale(1.05)'; }, 80);
-        setTimeout(function() { box.style.transform = 'scale(1)'; }, 200);
+        // Adresy na profesionální podzimní fotky (Zhasnutá vs Rozsvícená)
+        const photos = {
+            1: {
+                off: "https://unsplash.com",
+                on: "https://unsplash.com"
+            },
+            2: {
+                off: "https://unsplash.com",
+                on: "https://unsplash.com"
+            },
+            3: {
+                off: "https://unsplash.com",
+                on: "https://unsplash.com"
+            }
+        };
 
-        // Podmínka rozsvícení a zhasnutí plamínku svíčky
-        if (flame.style.display === 'none') {
-            flame.style.display = 'block'; // Ukáže pulzující plamínek
-            box.className = 'p-pumpkin-on'; // Přidá dýni záři a jas
+        // Jemné klikací pružení boxu
+        frame.style.transform = 'scale(0.9)';
+        setTimeout(function() { frame.style.transform = 'scale(1)'; }, 150);
+
+        // Přepnutí fotky a rozsvícení zlatého rámečku
+        if (img.src === photos[num].off) {
+            img.src = photos[num].on;
+            frame.style.borderColor = "#f59e0b";
+            frame.style.boxShadow = "0 0 15px rgba(245, 158, 11, 0.4)";
         } else {
-            flame.style.display = 'none'; // Schová plamínek
-            box.className = 'p-pumpkin-off'; // Vrátí dýni do zhasnutého stavu
+            img.src = photos[num].off;
+            frame.style.borderColor = "#e2e8f0";
+            frame.style.boxShadow = "0 4px 6px rgba(0,0,0,0.05)";
         }
     }
     updateActionSelectOptions();
