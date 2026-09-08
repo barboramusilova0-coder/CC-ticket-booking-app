@@ -1055,4 +1055,56 @@ function renderTable() {
         }
     };
 </script>
+    <script type="module">
+    // 🧲 GLOBÁLNÍ PŘÍMÝ VYSÍLAČ PRO FIREBASE CLOUD (ODSTRANĚNÍ ZÁSEKU)
+    import { initializeApp } from "https://gstatic.com";
+    import { getFirestore, doc, setDoc } from "https://gstatic.com";
+
+    const cfg = {
+        apiKey: "AIzaSyCPSV3AauKHMPfnkACjbfvEDbb6RFJMiJA",
+        authDomain: "://firebaseapp.com",
+        projectId: "cc-tickets-booking-app",
+        storageBucket: "cc-tickets-booking-app.firebasestorage.app",
+        messagingSenderId: "998442761726",
+        appId: "1:998442761726:web:e5bbe201f68c9594ea54af"
+    };
+
+    const firebaseApp = initializeApp(cfg);
+    const cloudDb = getFirestore(firebaseApp);
+
+    // Pomocná funkce, která vezme všechna data z plochy a okamžitě je natvrdo vystřelí do cloudu
+    function vynutOkamzityUploadDoCloudu() {
+        setTimeout(function() {
+            var dataToUpload = {
+                ticketRequests: JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [],
+                companyActions: JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [],
+                customUsers: JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {},
+                roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || window.roleRequests || []
+            };
+            
+            setDoc(doc(cloudDb, "portalData", "cocaColaDatabase"), dataToUpload, { merge: true })
+                .then(function() { console.log("Data úspěšně odeslána do Firebase Cloudu!"); })
+                .catch(function(err) { console.error("Chyba přímého uploadu:", err); });
+        }, 150); // Dáme prohlížeči 150ms čas na lokální zápis
+    }
+
+    // 1. POJISTKA: Chytáme odeslání hlavního rezervačního formuláře lístků
+    document.addEventListener('submit', function(e) {
+        if (e.target && (e.target.id === 'ticketForm' || e.target.getAttribute('onsubmit'))) {
+            vynutOkamzityUploadDoCloudu();
+        }
+    });
+
+    // 2. POJISTKA: Chytáme kliknutí na jakékoliv schvalovací (Ano/Ne/Náhradník) nebo mazací tlačítko
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.tagName === 'BUTTON') {
+            var txt = e.target.innerText ? e.target.innerText.toLowerCase() : '';
+            var onc = e.target.getAttribute('onclick') ? e.target.getAttribute('onclick').toLowerCase() : '';
+            
+            if (txt.indexOf('ano') > -1 || txt.indexOf('ne') > -1 || txt.indexOf('náhradník') > -1 || txt.indexOf('smazat') > -1 || onc.indexOf('status') > -1 || onc.indexOf('delete') > -1) {
+                vynutOkamzityUploadDoCloudu();
+            }
+        }
+    }, true);
+</script>
 </html>
