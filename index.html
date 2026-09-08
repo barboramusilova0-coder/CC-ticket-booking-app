@@ -771,13 +771,26 @@ function renderTable() {
     }, true);
 </script>
     <script>
-    // ⚖️ LOGIKA PRO ZAMYKÁNÍ TLAČÍTKA PODLE KODEXU CHOVÁNÍ
+    // ⚖️ NEPRŮSTŘELNÁ KONTROLA COMPLIANCE A VŠECH POVINNÝCH POLÍČEK
     function toggleSubmitButtonByCompliance() {
         var checkbox = document.getElementById('complianceCheck');
         var submitBtn = document.getElementById('mainFormSubmitBtn');
         if (!checkbox || !submitBtn) return;
 
-        if (checkbox.checked) {
+        // Načteme si všechny důležité kolonky z formuláře
+        var action = document.getElementById('actionSelect') ? document.getElementById('actionSelect').value : '';
+        var employee = document.getElementById('employeeName') ? document.getElementById('employeeName').value.trim() : '';
+        var manager = document.getElementById('managerEmail') ? document.getElementById('managerEmail').value.trim() : '';
+        var customer = document.getElementById('customerName') ? document.getElementById('customerName').value.trim() : '';
+        var tickets = document.getElementById('ticketCount') ? document.getElementById('ticketCount').value.trim() : '';
+        var reason = document.getElementById('reason') ? document.getElementById('reason').value.trim() : '';
+
+        // Zkontrolujeme, zda je úplně všechno vyplněné a zároveň zaškrtnutý checkbox
+        var jeVseVyplneno = (action !== '' && employee !== '' && manager !== '' && customer !== '' && tickets !== '' && reason !== '');
+        var jeComplianceZaškrtnuto = checkbox.checked;
+
+        // Tlačítko odemkneme POUZE pokud je splněno obojí naráz
+        if (jeComplianceZaškrtnuto && jeVseVyplneno) {
             submitBtn.disabled = false;
             submitBtn.style.opacity = '1';
             submitBtn.style.cursor = 'pointer';
@@ -786,22 +799,20 @@ function renderTable() {
             submitBtn.disabled = true;
             submitBtn.style.opacity = '0.4';
             submitBtn.style.cursor = 'not-allowed';
-            submitBtn.style.backgroundColor = '#94a3b8'; // Manažerská šedá barva při zamčení
+            submitBtn.style.backgroundColor = '#94a3b8'; // Zamčená manažerská šedá
         }
     }
 
-    // Záchranná pojistka: po úspěšném odeslání žádosti vrátíme tlačítko do zašedlého stavu
-    document.addEventListener('submit', function(e) {
-        if (e.target && e.target.id === 'ticketForm') {
-            setTimeout(function() {
-                var checkbox = document.getElementById('complianceCheck');
-                if (checkbox) checkbox.checked = false;
-                toggleSubmitButtonByCompliance();
-            }, 500);
+    // Naučíme formulář kontrolovat vyplněnost okamžitě při psaní (při každém stisknutí klávesy)
+    document.addEventListener('input', function(e) {
+        if (e.target && e.target.form && e.target.form.id === 'ticketForm') {
+            toggleSubmitButtonByCompliance();
         }
     });
-
-    // Spustíme hned na začátku pro jistotu, aby bylo šedivé hned po načtení
-    setTimeout(toggleSubmitButtonByCompliance, 200);
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.form && e.target.form.id === 'ticketForm') {
+            toggleSubmitButtonByCompliance();
+        }
+    });
 </script>
 </html>
