@@ -115,9 +115,6 @@
             <div class="form-group">
                 <label for="ticketCount">Počet lístků:</label>
                 <input type="number" id="ticketCount" min="1" max="10" required placeholder="1">
-                            <div class="form-group">
-                <label for="euroTurnover">Obrat v EUR:</label>
-                <input type="number" id="euroTurnover" min="0" required placeholder="př. 5000">
             </div>
             <div class="form-group">
                 <label for="reason">Důvod přidělení:</label>
@@ -328,7 +325,7 @@
         const tbodyL = document.getElementById('adminActionsTableBody'); if(tbodyL) { tbodyL.innerHTML = ''; companyActions.forEach(act => { const app = requests.filter(r => r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno'); const tot = app.reduce((s, r) => s + parseInt(r.tickets), 0); const tr = document.createElement('tr'); tr.innerHTML = '<td><strong>'+act.name+'</strong><br><small>'+act.date+'</small></td><td>'+tot+' / '+act.capacity+'</td><td>'+act.status+'</td><td>-</td><td><button onclick="toggleActionStatus('+act.id+')">Zrušit</button> <button onclick="deleteCompanyAction('+act.id+')">Smazat</button></td>'; tbodyL.appendChild(tr); }); }
     }
     function handleFormSubmit(e) {
-        e        e.preventDefault(); requests.push({ id: Date.now(), action: document.getElementById('actionSelect').value, employee: document.getElementById('employeeName').value, manager: document.getElementById('managerEmail').value.toLowerCase().trim(), customer: document.getElementById('customerName').value, turnover: document.getElementById('euroTurnover').value, tickets: document.getElementById('ticketCount').value, reason: document.getElementById('reason').value, status1: 'Čeká', status2: 'Čeká', approvedBy1: '', approvedBy2: '' });
+        e.preventDefault(); requests.push({ id: Date.now(), action: document.getElementById('actionSelect').value, employee: document.getElementById('employeeName').value, manager: document.getElementById('managerEmail').value.toLowerCase().trim(), customer: document.getElementById('customerName').value, tickets: document.getElementById('ticketCount').value, reason: document.getElementById('reason').value, status1: 'Čeká', status2: 'Čeká', approvedBy1: '', approvedBy2: '' });
         localStorage.setItem('ticketRequests', JSON.stringify(requests)); document.getElementById('ticketForm').reset(); alert('Uloženo!'); openTab(2);
     }
     function setStatus1(id, s) { requests = requests.map(r => r.id === id ? {...r, status1: s, approvedBy1: currentUser.name} : r); localStorage.setItem('ticketRequests', JSON.stringify(requests)); renderTable(); }
