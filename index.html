@@ -65,7 +65,7 @@
         .box-section { background: #ffffff; padding: 28px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 36px; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
             /* 🍁 PODZIMNÍ EFEKT: Animace padajícího listí v pozadí 🍁 */
-        .leaves-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; overflow: hidden; }
+                .leaves-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99999 !important; overflow: hidden; opacity: 0.45; }
         .leaf { position: absolute; top: -50px; display: block; background-size: contain; background-repeat: no-repeat; opacity: 0.85; animation: fall linear infinite; }
         
         /* Předpisy pro kroužení a snášení lístků */
