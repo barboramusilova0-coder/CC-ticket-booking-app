@@ -774,4 +774,33 @@ function renderTable() {
         };
     })();
 </script>
+    <script>
+    // 🔥 FORCE RE-RENDER: Natvrdo překreslíme stránku po každé změně stavu v localStorage
+    (function() {
+        var puvodniSetItem = localStorage.setItem;
+        localStorage.setItem = function(key, value) {
+            // Nejdříve necháme data normálně uložit do paměti prohlížeče
+            puvodniSetItem.apply(this, arguments);
+            
+            // Pokud se ukládají žádosti o lístky, okamžitě vynutíme grafické překreslení obou tabulek
+            if (key === 'ticketRequests') {
+                // Načteme nová data i do běžící paměti programu
+                if (window.requests) {
+                    try { window.requests = JSON.parse(value); } catch(e){}
+                }
+                // Spustíme vykreslení tabulky žádostí
+                if (typeof renderTable === 'function') {
+                    try { renderTable(); } catch(e){}
+                }
+                // Spustíme vykreslení té spodní tabulky u akcí (pro Admina i RSM)
+                if (typeof renderAdminSection === 'function') {
+                    try { renderAdminSection(); } catch(e){}
+                }
+                if (typeof renderRsmSection === 'function') {
+                    try { renderRsmSection(); } catch(e){}
+                }
+            }
+        };
+    })();
+</script>
 </html>
