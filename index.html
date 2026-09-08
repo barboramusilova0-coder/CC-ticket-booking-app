@@ -916,77 +916,27 @@ function renderTable() {
     })();
 </script>
     <script>
-    // 🧲 NEPRŮSTŘELNÝ FIX: ODSTRANĚNÍ DUPLICITY A NATVRDO PROPISOVÁNÍ LIDÍ
+    // 🧹 NATVRDO ODSTRANĚNÍ SPODNÍCH TABULEK AKCÍ
     (function() {
-        function opravHromaduAspodniSeznam() {
-            // 1. KROK: Najdeme všechny tabulky akcí a pokud jich je víc, necháme jen tu první
-            var vsechnyBoxy = document.querySelectorAll('.box-section, div');
-            var nalezenoTabulek = 0;
-            vsechnyBoxy.forEach(function(b) {
-                if (b.innerHTML && b.innerHTML.indexOf('Aktuální seznam akcí') > -1 && b.tagName === 'DIV') {
-                    nalezenoTabulek++;
-                    if (nalezenoTabulek > 1) { b.remove(); } // Odstraní druhou kopii
+        function smazSpodniTabulky() {
+            // Smaže box s ID rsmActionsSection (pokud v kódu je)
+            var rsmPanel = document.getElementById('rsmActionsSection');
+            if (rsmPanel) rsmPanel.remove();
+            
+            // Pro jistotu najde jakýkoliv div, který obsahuje text "Aktuální seznam akcí" a vymaže ho
+            var vsechnyDivy = document.querySelectorAll('div, .box-section');
+            vsechnyDivy.forEach(function(d) {
+                if (d.innerHTML && d.innerHTML.indexOf('Aktuální seznam akcí') > -1) {
+                    d.remove();
                 }
             });
-
-            // 2. KROK: Najdeme tělo spodní tabulky (podle jakéhokoliv ID, které v kódu máš)
-            var rsmTbody = document.getElementById('rsmActionsTableBody') || document.getElementById('adminActionsTableBody');
-            if (!rsmTbody) return;
-
-            // Načteme čerstvá data přímo z paměti prohlížeče
-            var dataZadosti = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
-            var dataAkce = window.companyActions || [];
-
-            rsmTbody.innerHTML = '';
-            if (dataAkce.length === 0) {
-                rsmTbody.innerHTML = '<tr><td colspan="4">V systému nejsou vytvořené žádné akce.</td></tr>';
-                return;
-            }
-
-            // 3. KROK: Sami ručně spočítáme a přepíšeme řádky, abychom obešli ty zaseknuté funkce
-            dataAkce.forEach(function(act) {
-                // Najdeme lidi se schválením od obou stupňů (převádíme na malá písmena pro 100% shodu)
-                var schvaleniLide = dataZadosti.filter(function(r) {
-                    var s1 = r.status1 ? r.status1.toLowerCase().trim() : '';
-                    var s2 = r.status2 ? r.status2.toLowerCase().trim() : '';
-                    return r.action === act.name && s1 === 'schváleno' && s2 === 'schváleno';
-                });
-
-                var celkemListku = 0;
-                schvaleniLide.forEach(function(x) { celkemListku += parseInt(x.tickets || 1); });
-
-                var seznamJmen = schvaleniLide.map(function(p) {
-                    return p.employee + ' (' + (p.tickets || 1) + ' ks pro: ' + p.customer + ')';
-                }).join(', ') || '<span style="color:#94a3b8">Nikdo finálně neschválen</span>';
-
-                // Najdeme náhradníky
-                var nahradnici = dataZadosti.filter(function(r) {
-                    var s2 = r.status2 ? r.status2.toLowerCase().trim() : '';
-                    return r.action === act.name && (s2 === 'náhradník' || s2 === 'nahradnik');
-                });
-                var seznamNahradniku = nahradnici.map(function(p, i) {
-                    return '#' + (i + 1) + ' ' + p.employee + ' (' + (p.tickets || 1) + ' ks)';
-                }).join(', ') || '<span style="color:#94a3b8">Žádní</span>';
-
-                // Vykreslíme řádek čistě a bez chyb
-                var tr = document.createElement('tr');
-                if (act.status === 'Zrušena') tr.style.opacity = '0.5';
-                tr.innerHTML = '<td><strong>' + act.name + '</strong><br><small>' + (act.date || '') + '</small></td>' +
-                               '<td><strong>' + celkemListku + ' / ' + act.capacity + '</strong></td>' +
-                               '<td>' + act.status + '</td>' +
-                               '<td><small><strong>Schválení:</strong> ' + seznamJmen + '<br><strong style="color:#0369a1">Náhradníci:</strong> ' + seznamNahradniku + '</small></td>';
-                rsmTbody.appendChild(tr);
-            });
         }
-
-        // Spustíme opravu ihned po načtení, po překliknutí záložky i po každém kliknutí myši
-        setTimeout(opravHromaduAspodniSeznam, 200);
-        document.addEventListener('click', function() { setTimeout(opravHromaduAspodniSeznam, 200); });
         
-        // Propojíme to s otevíráním záložek
-        var rsmStaraOpenTab = window.openTab;
-        if (typeof rsmStaraOpenTab === 'function') {
-            window.openTab = function(num) { rsmStaraOpenTab(num); setTimeout(opravHromaduAspodniSeznam, 50); };
+        // Spustíme mazání hned po načtení stránky i při překlikávání záložek
+        setTimeout(smazSpodniTabulky, 100);
+        if (window.openTab) {
+            var origOpenTab = window.openTab;
+            window.openTab = function(num) { origOpenTab(num); setTimeout(smazSpodniTabulky, 50); };
         }
     })();
 </script>
