@@ -562,4 +562,21 @@ function renderTable() {
     };
 </script>
 </body>
+    <script>
+    // 🧹 UNIVERZÁLNÍ POJISTKA PRO OKAMŽITÉ SMAZÁNÍ ŘÁDKU
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.tagName === 'BUTTON') {
+            var textTlacitka = e.target.innerText ? e.target.innerText.toLowerCase() : '';
+            
+            // Pokud klikneš na jakékoliv tlačítko, které na sobě má napsáno "Smazat"
+            if (textTlacitka.indexOf('smazat') > -1) {
+                // Dáme prohlížeči malou chviličku (100 milisekund), aby řádek vymazal z paměti...
+                setTimeout(function() {
+                    // ...a hned potom stránku automaticky zaktualizujeme (refresh), takže řádek ihned vizuálně zmizí!
+                    location.reload();
+                }, 100);
+            }
+        }
+    }, true);
+</script>
 </html>
