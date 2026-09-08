@@ -754,4 +754,24 @@ function renderTable() {
         }
     }, true);
 </script>
+    <script>
+    // 🔥 AUTOMATICKÉ PROPOJENÍ: Překreslení spodního přehledu ihned po kliknutí na tlačítko
+    (function() {
+        var puvodniSetStatus1 = window.setStatus1;
+        window.setStatus1 = function(id, s) {
+            if (typeof puvodniSetStatus1 === 'function') puvodniSetStatus1(id, s);
+            // Automaticky pošleme impuls i spodní tabulce u akcí
+            if (typeof renderAdminSection === 'function') { try { renderAdminSection(); } catch(e){} }
+            if (typeof renderRsmSection === 'function') { try { renderRsmSection(); } catch(e){} }
+        };
+
+        var puvodniSetStatus2 = window.setStatus2;
+        window.setStatus2 = function(id, s) {
+            if (typeof puvodniSetStatus2 === 'function') puvodniSetStatus2(id, s);
+            // Automaticky pošleme impuls i spodní tabulce u akcí
+            if (typeof renderAdminSection === 'function') { try { renderAdminSection(); } catch(e){} }
+            if (typeof renderRsmSection === 'function') { try { renderRsmSection(); } catch(e){} }
+        };
+    })();
+</script>
 </html>
