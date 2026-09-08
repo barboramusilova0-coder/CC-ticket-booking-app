@@ -303,71 +303,13 @@
             </table>
         </div>
     </div>
-                                  <!-- 🍁 FÁZE 2: ILUSTROVANÝ PODZIMNÍ KOUTEK COCA-COLA 🍁 -->
-        <div style="margin-top: 60px; padding: 30px; border: 1px solid var(--border); background: #ffffff; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.01);">
-            <p style="font-size: 15px; color: #ea580c; font-weight: 700; margin-top: 0; margin-bottom: 4px; letter-spacing: 0.02em;">🕯️ Podzimní dýně Coca-Cola HBC</p>
-            <p style="font-size: 13px; color: #64748b; margin-top: 0; margin-bottom: 24px;">Kliknutím na dýni zapálíš nebo zhasneš svíčku uvnitř!</p>
+                                          <!-- 🧙‍♂️ 🍁 FÁZE 2: OBŘÍ HAGRIDOVSKÁ HALDA DÝNÍ 🍁 🧙‍♂️ -->
+        <div style="margin-top: 60px; padding: 40px 20px; border: 1px solid var(--border); background: #ffffff; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.01); overflow: hidden; position: relative;">
+            <p style="font-size: 16px; color: #7c2d12; font-weight: 800; margin-top: 0; margin-bottom: 4px; letter-spacing: 0.03em;">🧙‍♂️ Hagridova gigantická dýňová halda (Coca-Cola HBC)</p>
+            <p style="font-size: 13px; color: #64748b; margin-top: 0; margin-bottom: 30px;">Kliknutím rozsviťte nebo zhasněte magické plamínky v divoké haldě dýní!</p>
             
-            <div style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;">
-                <!-- Dýně 1 -->
-                <div id="p-box1" onclick="toggleCcPumpkin(1)" style="cursor: pointer; width: 110px; height: 100px; transition: all 0.3s ease; transform-origin: center bottom;">
-                    <svg viewBox="0 0 120 100" style="width:100%; height:100%;">
-                        <!-- Zakroucený zelený stonek z tvého obrázku -->
-                        <path d="M60,20 Q65,5 75,12 T85,5" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round"/>
-                        <!-- Hnědý hlavní stonek -->
-                        <path d="M55,25 C52,15 62,12 65,22 C61,25 58,26 55,25" fill="#78350f"/>
-                        <!-- Tělo dýně s odlesky přesně podle předlohy -->
-                        <ellipse cx="50" cy="55" rx="25" ry="32" fill="#ea580c"/>
-                        <ellipse cx="70" cy="55" rx="25" ry="32" fill="#ea580c"/>
-                        <ellipse cx="38" cy="55" rx="20" ry="28" fill="#f97316"/>
-                        <ellipse cx="82" cy="55" rx="20" ry="28" fill="#f97316"/>
-                        <ellipse cx="50" cy="54" rx="14" ry="30" fill="#facc15" opacity="0.15"/>
-                        <!-- Skrytý halloweenský obličej (při startu neviditelný) -->
-                        <g id="face1" style="display: none;">
-                            <polygon points="38,45 46,45 42,36" fill="#fef08a" style="filter: drop-shadow(0 0 4px #facc15);"/>
-                            <polygon points="64,45 72,45 68,36" fill="#fef08a" style="filter: drop-shadow(0 0 4px #facc15);"/>
-                            <polygon points="55,51 52,57 58,57" fill="#fef08a" style="filter: drop-shadow(0 0 4px #facc15);"/>
-                            <path d="M35,62 Q55,78 75,62 Q65,68 55,64 Q45,68 35,62 Z" fill="#fef08a" style="filter: drop-shadow(0 0 6px #ea580c);"/>
-                        </g>
-                    </svg>
-                </div>
-                <!-- Dýně 2 -->
-                <div id="p-box2" onclick="toggleCcPumpkin(2)" style="cursor: pointer; width: 110px; height: 100px; transition: all 0.3s ease; transform-origin: center bottom;">
-                    <svg viewBox="0 0 120 100" style="width:100%; height:100%;">
-                        <path d="M60,20 Q65,5 75,12 T85,5" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round"/>
-                        <path d="M55,25 C52,15 62,12 65,22 C61,25 58,26 55,25" fill="#78350f"/>
-                        <ellipse cx="50" cy="55" rx="25" ry="32" fill="#ea580c"/>
-                        <ellipse cx="70" cy="55" rx="25" ry="32" fill="#ea580c"/>
-                        <ellipse cx="38" cy="55" rx="20" ry="28" fill="#f97316"/>
-                        <ellipse cx="82" cy="55" rx="20" ry="28" fill="#f97316"/>
-                        <ellipse cx="50" cy="54" rx="14" ry="30" fill="#facc15" opacity="0.15"/>
-                        <g id="face2" style="display: none;">
-                            <polygon points="38,45 46,45 42,36" fill="#fef08a" style="filter: drop-shadow(0 0 4px #facc15);"/>
-                            <polygon points="64,45 72,45 68,36" fill="#fef08a" style="filter: drop-shadow(0 0 4px #facc15);"/>
-                            <polygon points="55,51 52,57 58,57" fill="#fef08a" style="filter: drop-shadow(0 0 4px #facc15);"/>
-                            <path d="M35,62 Q55,78 75,62 Q65,68 55,64 Q45,68 35,62 Z" fill="#fef08a" style="filter: drop-shadow(0 0 6px #ea580c);"/>
-                        </g>
-                    </svg>
-                </div>
-                <!-- Dýně 3 -->
-                <div id="p-box3" onclick="toggleCcPumpkin(3)" style="cursor: pointer; width: 110px; height: 100px; transition: all 0.3s ease; transform-origin: center bottom;">
-                    <svg viewBox="0 0 120 100" style="width:100%; height:100%;">
-                        <path d="M60,20 Q65,5 75,12 T85,5" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round"/>
-                        <path d="M55,25 C52,15 62,12 65,22 C61,25 58,26 55,25" fill="#78350f"/>
-                        <ellipse cx="50" cy="55" rx="25" ry="32" fill="#ea580c"/>
-                        <ellipse cx="70" cy="55" rx="25" ry="32" fill="#ea580c"/>
-                        <ellipse cx="38" cy="55" rx="20" ry="28" fill="#f97316"/>
-                        <ellipse cx="82" cy="55" rx="20" ry="28" fill="#f97316"/>
-                        <ellipse cx="50" cy="54" rx="14" ry="30" fill="#facc15" opacity="0.15"/>
-                        <g id="face3" style="display: none;">
-                            <polygon points="38,45 46,45 42,36" fill="#fef08a" style="filter: drop-shadow(0 0 4px #facc15);"/>
-                            <polygon points="64,45 72,45 68,36" fill="#fef08a" style="filter: drop-shadow(0 0 4px #facc15);"/>
-                            <polygon points="55,51 52,57 58,57" fill="#fef08a" style="filter: drop-shadow(0 0 4px #facc15);"/>
-                            <path d="M35,62 Q55,78 75,62 Q65,68 55,64 Q45,68 35,62 Z" fill="#fef08a" style="filter: drop-shadow(0 0 6px #ea580c);"/>
-                        </g>
-                    </svg>
-                </div>
-            </div>
+            <!-- Tady program automaticky navrství divokou obří haldu -->
+            <div id="hagridPumpkinPatch" style="position: relative; width: 100%; max-width: 900px; height: 260px; margin: 0 auto; display: flex; justify-content: center; align-items: flex-end;"></div>
         </div>
 </div>
 <script>
@@ -549,26 +491,63 @@
         companyActions.forEach(function(a) { if (a.status === 'Aktivní') h += '<option value="'+a.name+'">'+a.name+'</option>'; }); sel.innerHTML = h;
     }
     if(localStorage.getItem('currentUser')) { currentUser = JSON.parse(localStorage.getItem('currentUser')); saveAndStyleSession(); }
-               function toggleCcPumpkin(num) {
-        const box = document.getElementById('p-box' + num);
-        const face = document.getElementById('face' + num);
+                  function generateHagridPatch() {
+        const patch = document.getElementById('hagridPumpkinPatch');
+        if (!patch) return;
+        patch.innerHTML = '';
+        
+        // Vygenerujeme obří divokou haldu 25 dýní
+        for (let i = 1; i <= 25; i++) {
+            // Náhodně spočítáme velikosti a divoké pozice přes sebe, aby to vypadalo přirozeně a giganticky
+            const width = Math.floor(Math.random() * 50) + 80; // Obří hagridovské rozměry (80px až 130px)
+            const left = Math.floor(Math.random() * 80) + 5;   // Rozprostření od 5% do 85% šířky
+            const bottom = Math.floor(Math.random() * 45);     // Vrstvení do výšky (hromada)
+            const zIndex = 10 + bottom + Math.floor(width/10); // Přední vrstvy překryjí ty zadní
+            
+            const div = document.createElement('div');
+            div.id = 'h-pumpkin-' + i;
+            div.setAttribute('onclick', 'toggleHagridPumpkin(' + i + ')');
+            div.style.cssText = 'position:absolute; left:'+left+'%; bottom:'+bottom+'px; width:'+width+'px; height:auto; cursor:pointer; transition:all 0.2s; z-index:'+zIndex+'; transform-origin:center bottom;';
+            
+            // Vložíme přesně ten tvůj čistý styl dýně s lístkem a skrytým svítícím obličejem
+            div.innerHTML = '<svg viewBox="0 0 120 100" style="width:100%; height:100%;">' +
+                '<path d="M60,20 Q65,5 75,12 T85,5" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"/>' +
+                '<path d="M55,25 C52,15 62,12 65,22 C61,25 58,26 55,25" fill="#78350f"/>' +
+                '<ellipse cx="50" cy="55" rx="25" ry="32" fill="#ea580c"/>' +
+                '<ellipse cx="70" cy="55" rx="25" ry="32" fill="#ea580c"/>' +
+                '<ellipse cx="38" cy="55" rx="20" ry="28" fill="#f97316"/>' +
+                '<ellipse cx="82" cy="55" rx="20" ry="28" fill="#f97316"/>' +
+                '<ellipse cx="50" cy="54" rx="14" ry="30" fill="#facc15" opacity="0.15"/>' +
+                '<g id="h-face-' + i + '" style="display: none;">' +
+                    '<polygon points="38,45 46,45 42,36" fill="#fef08a" style="filter:drop-shadow(0 0 4px #facc15);"/>' +
+                    '<polygon points="64,45 72,45 68,36" fill="#fef08a" style="filter:drop-shadow(0 0 4px #facc15);"/>' +
+                    '<polygon points="55,51 52,57 58,57" fill="#fef08a" style="filter:drop-shadow(0 0 4px #facc15);"/>' +
+                    '<path d="M35,62 Q55,78 75,62 Q65,68 55,64 Q45,68 35,62 Z" fill="#fef08a" style="filter:drop-shadow(0 0 6px #ea580c);"/>' +
+                '</g>' +
+            '</svg>';
+            patch.appendChild(div);
+        }
+    }
+
+    // Funkce pro rozsvěcení dýní v haldě
+    function toggleHagridPumpkin(num) {
+        const box = document.getElementById('h-pumpkin-' + num);
+        const face = document.getElementById('h-face-' + num);
         if (!box || !face) return;
 
-        // Roztomilé dynamické odpružení dýně při kliknutí myší
         box.style.transform = 'scale(0.85)';
         setTimeout(function() { box.style.transform = 'scale(1.08)'; }, 80);
         setTimeout(function() { box.style.transform = 'scale(1)'; }, 220);
 
-        // Pokud dýně svítí, zhasneme ji do tvého čistého stylu. Jinak rozsvítíme!
         if (face.style.display === 'none') {
-            face.style.display = 'block'; // Vyřeže svítící obličej
-            box.style.filter = 'drop-shadow(0 0 15px rgba(251, 146, 60, 0.7)) drop-shadow(0 0 4px #facc15)'; // Rozsvítí záři
+            face.style.display = 'block';
+            box.style.filter = 'drop-shadow(0 0 15px rgba(251, 146, 60, 0.85)) drop-shadow(0 0 4px #facc15)';
         } else {
-            face.style.display = 'none'; // Schová obličej
-            box.style.filter = 'none'; // Zhasne záři a vrátí čistou dýni
+            face.style.display = 'none';
+            box.style.filter = 'none';
         }
-    }
-    updateActionSelectOptions();
+        if(localStorage.getItem('currentUser')) { currentUser = JSON.parse(localStorage.getItem('currentUser')); saveAndStyleSession(); }
+updateActionSelectOptions(); generateHagridPatch();
 </script>
 </body>
 </html>
