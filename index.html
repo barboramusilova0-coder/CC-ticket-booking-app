@@ -860,4 +860,67 @@ function renderTable() {
         window.openTab(zapamatovanaZalozka);
     }, 200);
 </script>
+    <script>
+    // 🎨 DESIGNÉRSKÝ HLÍDAČ PRO KRÁSNÉ ZA OBLENÉ TLAČÍTKO S DÝNÍ
+    (function() {
+        function stylujNaseSkveleTlacitko() {
+            var submitBtn = document.getElementById('mainFormSubmitBtn') || document.querySelector('.btn-submit');
+            var checkbox = document.getElementById('complianceCheck');
+            if (!submitBtn) return;
+
+            // Zjistíme, zda jsou vyplněná základní textová pole (pokud na stránce jsou)
+            var action = document.getElementById('actionSelect') ? document.getElementById('actionSelect').value : '';
+            var employee = document.getElementById('employeeName') ? document.getElementById('employeeName').value.trim() : '';
+            var manager = document.getElementById('managerEmail') ? document.getElementById('managerEmail').value.trim() : '';
+            var customer = document.getElementById('customerName') ? document.getElementById('customerName').value.trim() : '';
+            var tickets = document.getElementById('ticketCount') ? document.getElementById('ticketCount').value.trim() : '';
+            var reason = document.getElementById('reason') ? document.getElementById('reason').value.trim() : '';
+
+            var jeVseVyplneno = (action !== '' && employee !== '' && manager !== '' && customer !== '' && tickets !== '' && reason !== '');
+            var jeComplianceZaskrtnuto = checkbox ? checkbox.checked : true;
+
+            // Základní společný luxusní zaoblený styl tlačítka
+            submitBtn.style.padding = '16px 32px';
+            submitBtn.style.borderRadius = '50px'; // Pilulkový tvar
+            submitBtn.style.border = 'none';
+            submitBtn.style.fontSize = '16px';
+            submitBtn.style.fontWeight = '800';
+            submitBtn.style.letterSpacing = '0.03em';
+            submitBtn.style.textTransform = 'uppercase';
+            submitBtn.style.width = '100%';
+            submitBtn.style.display = 'flex';
+            submitBtn.style.alignItems = 'center';
+            submitBtn.style.justifyContent = 'center';
+            submitBtn.style.gap = '10px';
+            submitBtn.style.transition = 'all 0.3s ease';
+
+            // Přepínání vzhledu ZAMČENO vs. ODEMČENO
+            if (jeComplianceZaskrtnuto && jeVseVyplneno) {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+                submitBtn.style.background = 'linear-gradient(135deg, #e41e26 0%, #b81118 100%)'; // Coca-Cola rudá
+                submitBtn.style.color = 'white';
+                submitBtn.style.boxShadow = '0 4px 15px rgba(228, 30, 38, 0.25)';
+                submitBtn.innerHTML = 'Odeslat žádost 🎃';
+            } else {
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.6';
+                submitBtn.style.cursor = 'not-allowed';
+                submitBtn.style.background = 'linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%)'; // Elegantní šedá
+                submitBtn.style.color = '#64748b';
+                submitBtn.style.boxShadow = 'none';
+                submitBtn.innerHTML = '🔒 Odeslat žádost';
+            }
+        }
+
+        // Hlídáme psaní ve formuláři i zaškrtávání políčka v reálném čase
+        document.addEventListener('input', function(e) { if (e.target && e.target.form && e.target.form.id === 'ticketForm') stylujNaseSkveleTlacitko(); });
+        document.addEventListener('change', function(e) { if (e.target && e.target.form && e.target.form.id === 'ticketForm') stylujNaseSkveleTlacitko(); });
+        document.addEventListener('click', function() { setTimeout(stylujNaseSkveleTlacitko, 50); });
+
+        // Spustíme hned po načtení stránky
+        setTimeout(stylujNaseSkveleTlacitko, 250);
+    })();
+</script>
 </html>
