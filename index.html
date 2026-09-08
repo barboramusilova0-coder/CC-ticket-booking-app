@@ -969,5 +969,17 @@ function renderTable() {
         }
     })();
 </script>
-
+<style>
+    /* 📱 MOBILNÍ A IPAD OPTIMALIZACE PRO COCA-COLA HBC */
+    @media (max-width: 1024px) {
+        .container { padding: 20px !important; margin: 10px !important; border-radius: 12px !important; }
+        h1 { font-size: 24px !important; }
+        .tabs { display: flex; flex-wrap: wrap; gap: 6px !important; }
+        .tab-btn { padding: 10px 16px !important; font-size: 13px !important; flex: 1 1 auto; text-align: center; background: #f1f5f9; border-radius: 6px; }
+        
+        /* Zařídí, že široká schvalovací tabulka půjde na mobilu pohodlně posouvat prstem */
+        .tab-content { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+        table { min-width: 900px !important; }
+    }
+</style>
 </html>
