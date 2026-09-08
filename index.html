@@ -420,7 +420,35 @@
         companyActions.push({ id: Date.now(), name: document.getElementById('actNewName').value.trim(), date: document.getElementById('actNewDate').value, time: document.getElementById('actNewTime').value, place: document.getElementById('actNewPlace').value.trim(), capacity: parseInt(document.getElementById('actNewCapacity').value), status: 'Aktivní' });
         localStorage.setItem('companyActions', JSON.stringify(companyActions)); e.target.reset(); renderAdminSection(); updateActionSelectOptions(); alert('Akce vytvořena!');
     }
-    function deleteCompanyAction(id) { if(confirm('Opravdu chcete smazat celou akci?')) { companyActions = companyActions.filter(a => a.id !== id); localStorage.setItem('companyActions', JSON.stringify(companyActions)); renderAdminSection(); updateActionSelectOptions(); } }
+        function deleteCompanyAction(id) { 
+        if(confirm('Opravdu smazat celou akci? Smaže se z tabulky i z formuláře na mobilu.')) { 
+            // 1. Vymažeme akci z paměti programu
+            companyActions = companyActions.filter(function(a) { return a.id !== id; }); 
+            localStorage.setItem('companyActions', JSON.stringify(companyActions)); 
+            
+            // 2. Okamžitě natvrdo vymažeme akci i z internetové live databáze Firebase
+            if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                var db = firebase.firestore();
+                var dataProCloud = {
+                    ticketRequests: JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [],
+                    companyActions: companyActions,
+                    customUsers: JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {},
+                    roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || window.roleRequests || []
+                };
+                db.collection("portalData").doc("cocaColaDatabase").set(dataProCloud, { merge: true })
+                    .then(function() { console.log("Akce byla trvale smazána z Firebase cloudu!"); })
+                    .catch(function(err) { console.error("Chyba při mazání akce z cloudu:", err); });
+            }
+            
+            // 3. Občerstvíme formulář a bleskově restartujeme stránku, ať akce hned zmizí z očí
+            if (typeof updateActionSelectOptions === 'function') updateActionSelectOptions();
+            renderAdminSection(); 
+            
+            setTimeout(function() {
+                location.reload();
+            }, 150);
+        } 
+    }
     function toggleActionStatus(id) { companyActions = companyActions.map(a => a.id === id ? { ...a, status: a.status === 'Aktivní' ? 'Zrušena' : 'Aktivní' } : a); localStorage.setItem('companyActions', JSON.stringify(companyActions)); renderAdminSection(); updateActionSelectOptions(); }
     function renderAdminSection() {
         const tbody = document.getElementById('roleRequestsTableBody'); tbody.innerHTML = '';
@@ -1042,6 +1070,37 @@ function renderTable() {
                 }, 50); // Drobná pauza na uložení v prohlížeči
             }
         };
+    })();
+</script>
+    <script>
+    // 📡 NEUSTÁLÝ HLÍDAČ: Natvrdo protlačí nově vytvořené akce do Firebase cloudu
+    (function() {
+        var minulySeznamAkci = localStorage.getItem('companyActions');
+
+        // Kontrola běží plynule na pozadí každou vteřinu
+        setInterval(function() {
+            var aktualniSeznamAkci = localStorage.getItem('companyActions');
+            
+            // Pokud hlídač zjistí, že jsi na PC vytvořila nebo smazala akci (paměť se změnila)
+            if (aktualniSeznamAkci !== minulySeznamAkci) {
+                minulySeznamAkci = aktualniSeznamAkci;
+                
+                // Pokud na konci souboru existuje spojení na Firebase, natvrdo data odešleme
+                if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                    var db = firebase.firestore();
+                    var dataProCloud = {
+                        companyActions: JSON.parse(aktualniSeznamAkci) || [],
+                        ticketRequests: JSON.parse(localStorage.getItem('ticketRequests')) || [],
+                        customUsers: JSON.parse(localStorage.getItem('customUsers')) || {},
+                        roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || []
+                    };
+                    
+                    db.collection("portalData").doc("cocaColaDatabase").set(dataProCloud, { merge: true })
+                        .then(function() { console.log("Nová akce byla automaticky synchronizována s cloudem!"); })
+                        .catch(function(e) { console.error("Chyba automatického odeslání akce:", e); });
+                }
+            }
+        }, 1000);
     })();
 </script>
 </html>
