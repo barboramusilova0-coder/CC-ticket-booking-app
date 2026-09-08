@@ -406,51 +406,55 @@
     }
     function deleteCompanyAction(id) { if(confirm('Opravdu chcete smazat celou akci?')) { companyActions = companyActions.filter(a => a.id !== id); localStorage.setItem('companyActions', JSON.stringify(companyActions)); renderAdminSection(); updateActionSelectOptions(); } }
     function toggleActionStatus(id) { companyActions = companyActions.map(a => a.id === id ? { ...a, status: a.status === 'Aktivní' ? 'Zrušena' : 'Aktivní' } : a); localStorage.setItem('companyActions', JSON.stringify(companyActions)); renderAdminSection(); updateActionSelectOptions(); }
-        function renderAdminSection() {
-        const tbody = document.getElementById('roleRequestsTableBody'); if(tbody) tbody.innerHTML = '';
-        if(roleRequests && roleRequests.length === 0 && tbody) tbody.innerHTML = '<tr><td colspan="4">Žádné čekající žádosti o role.</td></tr>';
-        else if(roleRequests && tbody) roleRequests.forEach(r => { let t = '0 - Žadatel'; if(r.role=='manager') t='1. stupeň'; if(r.role=='rsm_praha') t='2. stupeň'; if(r.role=='admin') t='Admin'; let tr = document.createElement('tr'); tr.innerHTML = '<td><strong>'+r.name+'</strong></td><td>'+r.email+'</td><td>'+t+'</td><td><button onclick="approveRoleRequest('+r.id+')">Schválit</button> <button onclick="editRoleRequest('+r.id+')">Upravit</button> <button onclick="rejectRoleRequest('+r.id+')">Smazat</button></td>'; tbody.appendChild(tr); });
+            function renderRsmSection() {
+        const panel = document.getElementById('rsmActionsSection');
+        const tbodyL = document.getElementById('rsmActionsTableBody');
+        if (!panel || !tbodyL) return;
+
+        // Načteme si nejčerstvější data z paměti
+        var vsechnyZadosti = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
+        var vseechnyAkce = window.companyActions || [];
+
+        panel.style.display = 'block';
+        tbodyL.innerHTML = '';
         
-        const tbodyA = document.getElementById('activeUsersTableBody'); if(tbodyA) tbodyA.innerHTML = ''; const tks = Object.keys(customUsers);
-        if(tks.length === 0 && tbodyA) tbodyA.innerHTML = '<tr><td colspan="5">Zatím nebyl vydán žádný přístupový kód.</td></tr>';
-        else if(tbodyA) tks.forEach(tk => { const u = customUsers[tk]; let t = '0 - Žadatel'; if(u.role=='manager') t='1. stupeň'; if(u.role=='rsm_praha') t='2. stupeň'; if(u.role=='admin') t='Admin'; let tr = document.createElement('tr'); tr.innerHTML = '<td><strong>'+u.name+'</strong></td><td>'+u.email+'</td><td>'+t+'</td><td>'+tk+'</td><td><button onclick="deleteActiveUser(\''+tk+'\')">Smazat</button></td>'; tbodyA.appendChild(tr); });
-        
-        const tbodyL = document.getElementById('adminActionsTableBody'); 
-        if(tbodyL) { 
-            tbodyL.innerHTML = ''; 
-            companyActions.forEach(function(act) { 
-                // OPRAVA: Najdeme všechny lidi, kteří mají schválení od 1. i 2. stupně naráz
-                const app = requests.filter(function(r) { 
-                    return r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno'; 
-                }); 
-                
-                // Přesně spočítáme lístky (s pojistkou, kdyby políčko bylo textové nebo prázdné)
-                let tot = 0; 
-                app.forEach(function(x) { tot += parseInt(x.tickets || 1); }); 
-                
-                // Vypíšeme jména finálně schválených lidí do přehledu
-                const names = app.map(function(p) { 
-                    return p.employee + ' (' + (p.tickets || 1) + ' ks pro: ' + p.customer + ')'; 
-                }).join(', ') || '<span style="color:#94a3b8">Nikdo zatím neschválen</span>';
-                
-                // Vypíšeme očíslovaný pořadník náhradníků (kteří mají od 2. stupně nastaveno Náhradník)
-                const wl = requests.filter(function(r) { 
-                    return r.action === act.name && r.status2 === 'Náhradník'; 
-                });
-                const wlNames = wl.map(function(p, i) { 
-                    return '#' + (i + 1) + ' ' + p.employee + ' (' + (p.tickets || 1) + ' ks)'; 
-                }).join(', ') || '<span style="color:#94a3b8">Žádní</span>';
-                
-                const tr = document.createElement('tr'); 
-                if (act.status === 'Zrušena') tr.style.opacity = '0.5'; 
-                tr.innerHTML = '<td><strong>'+act.name+'</strong><br><small>'+(act.date || '')+'</small></td>' +
-                               '<td><strong>'+tot+' / '+act.capacity+'</strong></td>' +
-                               '<td>'+act.status+'</td>' +
-                               '<td><small><strong>Schválení:</strong> ' + names + '<br><strong style="color:#0369a1">Náhradníci:</strong> ' + wlNames + '</small></td>' +
-                               '<td><button onclick="toggleActionStatus('+act.id+')">Zrušit</button> <button style="background:#dc3545;color:white;border:none;padding:2px 5px;border-radius:4px;cursor:pointer;" onclick="deleteCompanyAction('+act.id+')">Smazat</button></td>'; 
-                tbodyL.appendChild(tr); 
-            }); 
+        if (vseechnyAkce.length === 0) {
+            tbodyL.innerHTML = '<tr><td colspan="4">V systému nejsou vytvořené žádné akce.</td></tr>';
+            return;
         }
+        
+        vseechnyAkce.forEach(function(act) { 
+            // Najdeme lidi, co mají "Schváleno" od 1. i 2. stupně zároveň
+            const schvaleniUcitele = vsechnyZadosti.filter(function(r) {
+                return r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno';
+            });
+            
+            // Spočítáme lístky
+            let tot = 0; 
+            schvaleniUcitele.forEach(function(x) { tot += parseInt(x.tickets || 1); }); 
+            
+            // Vytvoříme textový seznam schválených lidí
+            const names = schvaleniUcitele.map(function(p) { 
+                return p.employee + ' (' + (p.tickets || 1) + ' ks pro: ' + p.customer + ')'; 
+            }).join(', ') || '<span style="color:#94a3b8">Nikdo finálně neschválen</span>';
+            
+            // Najdeme náhradníky (status2 === 'Náhradník')
+            const nahradnici = vsechnyZadosti.filter(function(r) {
+                return r.action === act.name && r.status2 === 'Náhradník';
+            });
+            const wlNames = nahradnici.map(function(p, i) { 
+                return '#' + (i + 1) + ' ' + p.employee + ' (' + (p.tickets || 1) + ' ks)'; 
+            }).join(', ') || '<span style="color:#94a3b8">Žádní</span>';
+            
+            const tr = document.createElement('tr'); 
+            if (act.status === 'Zrušena') tr.style.opacity = '0.5'; 
+            tr.innerHTML = '<td><strong>'+act.name+'</strong><br><small>'+(act.date || '')+'</small></td>' +
+                           '<td><strong>'+tot+' / '+act.capacity+'</strong></td>' +
+                           '<td>'+act.status+'</td>' +
+                           '<td><small><strong>Schválení:</strong> ' + names + '<br><strong style="color:#0369a1">Náhradníci:</strong> ' + wlNames + '</small></td>'; 
+            tbodyL.appendChild(tr); 
+        });
+    }
     }
            function handleFormSubmit(e) {
         e.preventDefault(); 
