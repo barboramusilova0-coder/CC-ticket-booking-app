@@ -639,40 +639,65 @@ function renderTable() {
         }
     };
 </script>
-</body>
-    <script>
-    // 🧹 UNIVERZÁLNÍ POJISTKA PRO AUTOMATICKÉ TRVALÉ VYMAZÁNÍ ŘÁDKU
-    document.addEventListener('click', function(e) {
-        if (e.target && e.target.tagName === 'BUTTON') {
-            var textTlacitka = e.target.innerText ? e.target.innerText.toLowerCase() : '';
-            var onclickAtribut = e.target.getAttribute('onclick') ? e.target.getAttribute('onclick').toLowerCase() : '';
-            
-            // Pokud uživatel klikne na jakékoliv tlačítko s textem Smazat
-            if (textTlacitka.indexOf('smazat') > -1 || onclickAtribut.indexOf('delete') > -1) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                if (confirm('Opravdu chcete tuto rezervaci trvale smazat?')) {
-                    // Vytáhneme ID (číslo) rezervace přímo z textu příkazu onclick
-                    var nalezenaCisla = onclickAtribut.match(/\d+/);
-                    if (nalezenaCisla) {
-                        var idRezervace = parseInt(nalezenaCisla[0]);
-                        
-                        // Načteme aktuální žádosti z paměti, vyřadíme smazané ID a uložíme čistou databázi zpět
-                        var aktualniData = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
-                        var ocistenaData = aktualniData.filter(function(r) { return r.id !== idRezervace; });
-                        
-                        window.requests = ocistenaData;
-                        localStorage.setItem('ticketRequests', JSON.stringify(ocistenaData));
-                        
-                        // Stránku bleskově zaktualizujeme – řádek už v paměti neexistuje, takže nadobro zmizí!
-                        location.reload();
-                    }
-                }
-            }
-        }
-    }, true);
+<script>
+/* Oprava mazání a e-mailu */
+window.deleteTicketRequest = function(id) {
+    if (!confirm('Opravdu chcete tuto rezervaci trvale smazat?')) return;
+    var list = Array.isArray(window.requests) ? window.requests : (typeof requests !== 'undefined' ? requests : []);
+    var newList = list.filter(function(r) { return String(r.id) !== String(id); });
+    window.requests = newList;
+    try { requests = newList; } catch (e) {}
+    localStorage.setItem('ticketRequests', JSON.stringify(newList));
+    if (typeof renderTable === 'function') renderTable();
+};
+
+window.sendStatusEmail = function(id) {
+    var list = Array.isArray(window.requests) ? window.requests : (typeof requests !== 'undefined' ? requests : []);
+    var r = list.find(function(item) { return String(item.id) === String(id); });
+    if (!r) { alert('Rezervace nebyla nalezena.'); return; }
+    var email = (r.applicantEmail || '').trim();
+    if (!email) { alert('U této rezervace není uložen e-mail žadatele.'); return; }
+
+    var subject = 'Stav žádosti o rezervaci lístků – ' + (r.action || 'Coca-Cola HBC');
+    var body =
+        'Dobrý den,\n\n' +
+        'informujeme Vás o stavu Vaší žádosti o rezervaci lístků.\n\n' +
+        'Akce: ' + (r.action || '') + '\n' +
+        'Zákazník: ' + (r.customer || '') + '\n' +
+        'Počet lístků: ' + (r.tickets || '') + '\n' +
+        'Stav 1. schválení: ' + (r.status1 || '') + '\n' +
+        'Stav 2. schválení: ' + (r.status2 || '') + '\n\n' +
+        'S pozdravem,\nHlavní správce Coca-Cola HBC';
+
+    window.location.href = 'mailto:' + encodeURIComponent(email) +
+        '?subject=' + encodeURIComponent(subject) +
+        '&body=' + encodeURIComponent(body);
+};
+
+/* Bezpečné mazání role / uživatele / akce – změna localStorage se automaticky synchronizuje do Firebase. */
+window.rejectRoleRequest = function(id) {
+    if (!confirm('Opravdu chcete smazat tuto žádost o přístup?')) return;
+    roleRequests = roleRequests.filter(function(r) { return String(r.id) !== String(id); });
+    localStorage.setItem('roleRequests', JSON.stringify(roleRequests));
+    if (typeof renderAdminSection === 'function') renderAdminSection();
+};
+
+window.deleteActiveUser = function(token) {
+    if (!confirm('Deaktivovat uživatele a smazat přístupový kód?')) return;
+    delete customUsers[token];
+    localStorage.setItem('customUsers', JSON.stringify(customUsers));
+    if (typeof renderAdminSection === 'function') renderAdminSection();
+};
+
+window.deleteCompanyAction = function(id) {
+    if (!confirm('Opravdu smazat celou akci? Smaže se z tabulky i z formuláře.')) return;
+    companyActions = companyActions.filter(function(a) { return String(a.id) !== String(id); });
+    localStorage.setItem('companyActions', JSON.stringify(companyActions));
+    if (typeof renderAdminSection === 'function') renderAdminSection();
+    if (typeof updateActionSelectOptions === 'function') updateActionSelectOptions();
+};
 </script>
+</body>
     <script>
     // 🔍 POKROČILÁ MANAŽERSKÁ VYHLEDÁVACÍ LIŠTA (Coca-Cola HBC)
     (function() {
