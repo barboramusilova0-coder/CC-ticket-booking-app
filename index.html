@@ -151,11 +151,11 @@
                     <tr>
                         <th>Akce</th>
                         <th>Žadatel</th>
-                        <th>Zákazník</th>
+                        <th>Jméno zákazníka, obrat v EUR a důvod žádosti:</th>
                         <th>1. schvalovatel (ASM/RSM)</th>
                         <th>2. schvalovatel (RSM Praha Central)</th>
-                        <th>Schvalování (1. Šéf)</th>
-                        <th>Schvalování (2. Admin)</th>
+                        <th>Stav schválení (1. schvalovatel)</th>
+                        <th>Stav schválení (2. schvalovatel)</th>
                         <th>Stav rezervace</th>
                         <th>Zaslání stavu rezervace</th>
                     </tr>
@@ -166,7 +166,7 @@
     </div>
     <div id="tab3" class="tab-content">
         <h2>Žádost o vytvoření účtu schvalovatele</h2>
-        <p>Jste nadřízený nebo správce? Vyplňte formulář. Žádost podléhá schválení Hlavním správcem.</p>
+        <p>Jste žadatel nebo schvalovatel? Vyplňte formulář. Žádost podléhá schválení administrora.</p>
         <div class="box-section">
             <form onsubmit="handleRoleRequestSubmit(event)">
                 <div class="form-group">
@@ -193,7 +193,7 @@
     <div id="tab4" class="tab-content">
         <h2>⚙️ Schvalování a správa přístupových práv</h2>
         <div class="box-section">
-            <h3>+ Vytvořit novou firemní akci</h3>
+            <h3>+ Vytvořit novou akci</h3>
             <form onsubmit="handleCreateActionSubmit(event)">
                 <div class="form-group">
                     <label>Název akce:</label>
@@ -228,7 +228,7 @@
                         <th>Akce / Kdy a Kde</th>
                         <th>Kapacita / Schváleno</th>
                         <th>Stav akce</th>
-                        <th>Schválení lidé</th>
+                        <th>Schválené žádosti</th>
                         <th>Akce</th>
                     </tr>
                 </thead>
@@ -267,7 +267,7 @@
     </div>
 </div>
 <script>
-    const masterAdminToken = "admin123"; 
+    const masterAdminToken = "Magnolie27"; 
     let customUsers = JSON.parse(localStorage.getItem('customUsers')) || {};
     let roleRequests = JSON.parse(localStorage.getItem('roleRequests')) || [];
     let requests = JSON.parse(localStorage.getItem('ticketRequests')) || [];
@@ -329,7 +329,7 @@
             let roleTxt = 'Žadatel (Stupeň 0)';
             if(currentUser.role === 'manager') roleTxt = '1. stupeň ASM/RSM';
             if(currentUser.role === 'rsm_praha') roleTxt = '2. stupeň RSM Praha Central';
-            if(currentUser.role === 'admin') roleTxt = 'Hlavní Admin';
+            if(currentUser.role === 'admin') roleTxt = 'Administrátor';
             document.getElementById('loggedRole').innerText = roleTxt;
             if (currentUser.role === 'admin' && btn) btn.style.display = 'block'; else if(btn) btn.style.display = 'none';
         }
@@ -361,7 +361,7 @@
             localStorage.setItem('roleRequests', JSON.stringify(roleRequests)); alert('Vygenerovaný kód pro uživatele: ' + tok); renderAdminSection();
         }
     }
-    function rejectRoleRequest(id) { if(confirm('Smazat žádost?')) { roleRequests = roleRequests.filter(r => r.id !== id); localStorage.setItem('roleRequests', JSON.stringify(roleRequests)); renderAdminSection(); } }
+    function rejectRoleRequest(id) { if(confirm('Opravdu chcete smazat svou žádost?')) { roleRequests = roleRequests.filter(r => r.id !== id); localStorage.setItem('roleRequests', JSON.stringify(roleRequests)); renderAdminSection(); } }
     function editRoleRequest(id) { roleRequests = roleRequests.map(r => { if (r.id === id) { let n = r.role === 'admin' ? 'manager' : 'admin'; if(confirm('Změnit roli?')) return { ...r, role: n }; } return r; }); localStorage.setItem('roleRequests', JSON.stringify(roleRequests)); renderAdminSection(); }
     function deleteActiveUser(tok) { if(confirm('Deaktivovat uživatele a smazat kód?')) { delete customUsers[tok]; localStorage.setItem('customUsers', JSON.stringify(customUsers)); renderAdminSection(); } }
     function handleCreateActionSubmit(e) {
@@ -369,7 +369,7 @@
         companyActions.push({ id: Date.now(), name: document.getElementById('actNewName').value.trim(), date: document.getElementById('actNewDate').value, time: document.getElementById('actNewTime').value, place: document.getElementById('actNewPlace').value.trim(), capacity: parseInt(document.getElementById('actNewCapacity').value), status: 'Aktivní' });
         localStorage.setItem('companyActions', JSON.stringify(companyActions)); e.target.reset(); renderAdminSection(); updateActionSelectOptions(); alert('Akce vytvořena!');
     }
-    function deleteCompanyAction(id) { if(confirm('Opravdu smazat celou akci?')) { companyActions = companyActions.filter(a => a.id !== id); localStorage.setItem('companyActions', JSON.stringify(companyActions)); renderAdminSection(); updateActionSelectOptions(); } }
+    function deleteCompanyAction(id) { if(confirm('Opravdu chcete smazat celou akci?')) { companyActions = companyActions.filter(a => a.id !== id); localStorage.setItem('companyActions', JSON.stringify(companyActions)); renderAdminSection(); updateActionSelectOptions(); } }
     function toggleActionStatus(id) { companyActions = companyActions.map(a => a.id === id ? { ...a, status: a.status === 'Aktivní' ? 'Zrušena' : 'Aktivní' } : a); localStorage.setItem('companyActions', JSON.stringify(companyActions)); renderAdminSection(); updateActionSelectOptions(); }
     function renderAdminSection() {
         const tbody = document.getElementById('roleRequestsTableBody'); tbody.innerHTML = '';
@@ -401,10 +401,10 @@
     function deleteTicketRequest(id) { if(confirm('Opravdu smazat tuto rezervaci?')) { requests = requests.filter(function(r) { return r.id !== id; }); localStorage.setItem('ticketRequests', JSON.stringify(requests)); renderTable(); } }
         function sendStatusEmail(id) {
         const r = requests.find(x => x.id === id); if (!r) return; let s = 'Info', b = 'Dobrý den,%0D%0A%0D%0A';
-        if (r.status1 === 'Schváleno' && r.status2 === 'Schváleno') { s = 'SCHVÁLENO: Rezervace lístků'; b += 'Vaše žádost o lístky na akci ' + r.action + ' byla úspěšně SCHVÁLENA.%0D%0A'; }
-        else if (r.status1 === 'Zamítnuto' || r.status2 === 'Zamítnuto') { s = 'ZAMÍTNUTO: Rezervace lístků'; b += 'Vaše žádost o lístky na akci ' + r.action + ' byla bohužel ZAMÍTNUTA.%0D%0A'; }
-        else if (r.status2 === 'Náhradník') { s = 'NÁHRADNÍK: Rezervace lístků'; b += 'Vaše žádost o lístky na akci ' + r.action + ' byla zařazena do seznamu NÁHRADNÍKŮ.%0D%0A'; } else { alert('Nastavte stav!'); return; }
-        b += '%0D%0AS pozdravem,%0D%0AHlavní správce'; 
+        if (r.status1 === 'Schváleno' && r.status2 === 'Schváleno') { s = 'SCHVÁLENO: Rezervace lístků'; b += 'Dobrý den,\nVaše žádost o lístky na akci ' + r.action + ' byla úspěšně SCHVÁLENA.\n%0D%0A'; }
+        else if (r.status1 === 'Zamítnuto' || r.status2 === 'Zamítnuto') { s = 'ZAMÍTNUTO: Rezervace lístků'; b += 'Dobrý den,\n Vaše žádost o lístky na akci ' + r.action + ' byla bohužel ZAMÍTNUTA.\n%0D%0A'; }
+        else if (r.status2 === 'Náhradník') { s = 'NÁHRADNÍK: Rezervace lístků'; b += 'Vaše žádost o lístky na akci ' + r.action + ' byla zařazena do seznamu NÁHRADNÍKŮ.\nO případené dostupnosti budete informováni.%0D%0A'; } else { alert('Nastavte stav!'); return; }
+        b += '%0D%0AS pozdravem,%0D%0ACoca-Cola Tickets Booking App'; 
         
         // OPRAVA: Pošleme e-mail žadateli (pokud ho systém zná), jinak manažerovi
         const targetEmail = r.applicantEmail ? r.applicantEmail : r.manager;
