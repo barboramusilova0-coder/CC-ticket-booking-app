@@ -537,6 +537,29 @@ function renderTable() {
         localStorage.setItem('ticketRequests', JSON.stringify(requests)); 
         renderTable(); 
     }
+        // OPRAVA: Zařídíme, aby tabulku akcí a obsazenosti viděl kromě Admina i 2. stupeň (RSM Praha)
+    var originalOpenTab = openTab;
+    openTab = function(num) {
+        originalOpenTab(num);
+        // Pokud se klikne na Seznam žádostí (záložka 2) a je přihlášen 2. stupeň nebo Admin, vykreslíme i přehled akcí
+        if (num === 2 && currentUser && (currentUser.role === 'rsm_praha' || currentUser.role.includes('2') || currentUser.role === 'admin')) {
+            // Zkontrolujeme, zda už na stránce máme místo pro tabulku akcí, pokud ne, vytvoříme ho elegantně pod hlavní tabulkou
+            if (!document.getElementById('adminActionsTableBody') && document.getElementById('tab2')) {
+                var div = document.createElement('div');
+                div.className = 'box-section';
+                div.style.marginTop = '40px';
+                div.innerHTML = '<h3>📊 Aktuální seznam akcí, obsazenost a pořadník náhradníků</h3>' +
+                                '<div style="overflow-x: auto;"><table><thead><tr>' +
+                                '<th>Akce / Kdy a Kde</th><th>Kapacita / Schváleno</th><th>Stav akce</th><th>Schválení lidé a náhradníci</th>' +
+                                '</tr></thead><tbody id="adminActionsTableBody"></tbody></table></div>';
+                document.getElementById('tab2').appendChild(div);
+            }
+            // Spustíme originální výpočet obsazenosti, který tam dopíše jména schválených lidí i očíslované náhradníky
+            if (typeof renderAdminSection === 'function') {
+                renderAdminSection();
+            }
+        }
+    };
 </script>
 </body>
 </html>
