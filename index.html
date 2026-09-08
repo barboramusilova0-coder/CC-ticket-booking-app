@@ -563,18 +563,34 @@ function renderTable() {
 </script>
 </body>
     <script>
-    // 🧹 UNIVERZÁLNÍ POJISTKA PRO OKAMŽITÉ SMAZÁNÍ ŘÁDKU
+    // 🧹 UNIVERZÁLNÍ POJISTKA PRO AUTOMATICKÉ TRVALÉ VYMAZÁNÍ ŘÁDKU
     document.addEventListener('click', function(e) {
         if (e.target && e.target.tagName === 'BUTTON') {
             var textTlacitka = e.target.innerText ? e.target.innerText.toLowerCase() : '';
+            var onclickAtribut = e.target.getAttribute('onclick') ? e.target.getAttribute('onclick').toLowerCase() : '';
             
-            // Pokud klikneš na jakékoliv tlačítko, které na sobě má napsáno "Smazat"
-            if (textTlacitka.indexOf('smazat') > -1) {
-                // Dáme prohlížeči malou chviličku (100 milisekund), aby řádek vymazal z paměti...
-                setTimeout(function() {
-                    // ...a hned potom stránku automaticky zaktualizujeme (refresh), takže řádek ihned vizuálně zmizí!
-                    location.reload();
-                }, 100);
+            // Pokud uživatel klikne na jakékoliv tlačítko s textem Smazat
+            if (textTlacitka.indexOf('smazat') > -1 || onclickAtribut.indexOf('delete') > -1) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (confirm('Opravdu chcete tuto rezervaci trvale smazat?')) {
+                    // Vytáhneme ID (číslo) rezervace přímo z textu příkazu onclick
+                    var nalezenaCisla = onclickAtribut.match(/\d+/);
+                    if (nalezenaCisla) {
+                        var idRezervace = parseInt(nalezenaCisla[0]);
+                        
+                        // Načteme aktuální žádosti z paměti, vyřadíme smazané ID a uložíme čistou databázi zpět
+                        var aktualniData = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
+                        var ocistenaData = aktualniData.filter(function(r) { return r.id !== idRezervace; });
+                        
+                        window.requests = ocistenaData;
+                        localStorage.setItem('ticketRequests', JSON.stringify(ocistenaData));
+                        
+                        // Stránku bleskově zaktualizujeme – řádek už v paměti neexistuje, takže nadobro zmizí!
+                        location.reload();
+                    }
+                }
             }
         }
     }, true);
