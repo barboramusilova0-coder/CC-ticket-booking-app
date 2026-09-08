@@ -525,9 +525,15 @@ function renderTable() {
         localStorage.setItem('ticketRequests', JSON.stringify(requests)); 
         renderTable(); 
     }
-    function setStatus2(id, s) { 
+        function setStatus2(id, s) { 
         var uName = (currentUser && currentUser.name) ? currentUser.name : 'RSM Praha';
-        requests = requests.map(function(r) { return r.id === id ? Object.assign({}, r, {status2: s, approvedBy2: uName}) : r; }); 
+        for (var i = 0; i < requests.length; i++) {
+            if (requests[i].id === id) {
+                requests[i].status2 = s;
+                requests[i].approvedBy2 = uName;
+                break;
+            }
+        }
         localStorage.setItem('ticketRequests', JSON.stringify(requests)); 
         renderTable(); 
     }
