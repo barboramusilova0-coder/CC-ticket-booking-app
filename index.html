@@ -807,4 +807,23 @@ function renderTable() {
         }, true);
     })();
 </script>
+    <script>
+    // 🚀 UNIVERZÁLNÍ POJISTKA PRO OKAMŽITÉ ZOBRAZENÍ STAVŮ A MAZÁNÍ (Coca-Cola HBC)
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.tagName === 'BUTTON') {
+            var btnText = e.target.innerText ? e.target.innerText.toLowerCase() : '';
+            var btnOnclick = e.target.getAttribute('onclick') ? e.target.getAttribute('onclick').toLowerCase() : '';
+            
+            // Pokud uživatel klikne na jakékoliv tlačítko schválení (Ano/Ne/Náhradník) nebo smazání
+            if (btnText.indexOf('ano') > -1 || btnText.indexOf('ne') > -1 || btnText.indexOf('náhradník') > -1 || btnText.indexOf('smazat') > -1 || btnOnclick.indexOf('status') > -1 || btnOnclick.indexOf('delete') > -1) {
+                
+                // Dáme prohlížeči malinkou chviličku (150 milisekund), aby stihl data v pořádku zapsat do paměti...
+                setTimeout(function() {
+                    // ...a hned potom stránku bleskově automaticky zaktualizujeme (uděláme ten F5 refresh za tebe!)
+                    location.reload();
+                }, 150);
+            }
+        }
+    }, true);
+</script>
 </html>
