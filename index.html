@@ -123,6 +123,24 @@
             <button type="submit" class="btn-submit">Odeslat žádost</button>
         </form>
     </div>
+        <div style="margin-top: 40px;">
+        <h2>Aktuální obsazenost firemních akcí</h2>
+        <p style="font-size: 14px; color: #64748b; margin-top: -10px; margin-bottom: 20px;">Přehled všech akcí a zaměstnanců, kterým byly lístky definitivně schváleny oběma stupni.</p>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Název akce / Kdy a Kde</th>
+                        <th>Obsazenost</th>
+                        <th>Definitivně schválení (lístky a klienti)</th>
+                        <th>Pořadník náhradníků</th>
+                    </tr>
+                </thead>
+                <tbody id="publicActionsTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
     <div id="tab2" class="tab-content">
         <h2>Přehled a schvalování žádostí o lístky</h2>
         <button onclick="exportToExcel()" style="background-color: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 15px;">📥 Stáhnout do Excelu</button>
@@ -248,7 +266,7 @@
     </div>
 </div>
 <script>
-    const masterAdminToken = "admin123"; // Sem napište své tajné heslo
+    const masterAdminToken = "Magnolie27"; // Sem napište své tajné heslo
     let customUsers = JSON.parse(localStorage.getItem('customUsers')) || {};
     let roleRequests = JSON.parse(localStorage.getItem('roleRequests')) || [];
     let requests = JSON.parse(localStorage.getItem('ticketRequests')) || [];
@@ -370,7 +388,28 @@
         const sel = document.getElementById('actionSelect'); if (!sel) return; let h = '<option value="">-- Vyberte akci --</option>';
         companyActions.forEach(function(a) { if (a.status === 'Aktivní') h += '<option value="'+a.name+'">'+a.name+'</option>'; }); sel.innerHTML = h;
     }
-    updateLoginBar(); renderTable(); updateActionSelectOptions();
+     function renderPublicActionsTable() {
+        const tbody = document.getElementById('publicActionsTableBody');
+        if(!tbody) return;
+        tbody.innerHTML = '';
+        if(companyActions.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="color:#64748b">Zatím nebyly vytvořeny žádné firemní akce.</td></tr>';
+            return;
+        }
+        companyActions.forEach(function(act) {
+            const app = requests.filter(function(r) { return r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno'; }); 
+            let tot = 0; app.forEach(function(x) { tot += parseInt(x.tickets); }); 
+            const names = app.map(function(p) { return '• <strong>' + p.employee + '</strong> (' + p.tickets + ' ks pro: ' + p.customer + ')'; }).join('<br>') || '<span style="color:#94a3b8">Zatím nikdo neschválen</span>';
+            const wl = requests.filter(function(r) { return r.action === act.name && r.status2 === 'Náhradník'; });
+            const wlNames = wl.map(function(p, i) { return '#' + (i + 1) + ' <strong>' + p.employee + '</strong> (' + p.tickets + ' ks)'; }).join('<br>') || '<span style="color:#94a3b8">Žádní náhradníci</span>';
+            const tr = document.createElement('tr'); 
+            if (act.status === 'Zrušena') tr.style.opacity = '0.5'; 
+            tr.innerHTML = '<td><strong>'+act.name+'</strong></td><td><strong>' + tot + '</strong> / ' + act.capacity + ' ks</td><td><small style="line-height:1.5">' + names + '</small></td><td><small style="line-height:1.5">' + wlNames + '</small></td>'; 
+            tbody.appendChild(tr); 
+        });
+    }
+    updateLoginBar(); renderTable(); updateActionSelectOptions(); renderPublicActionsTable();
+
 </script>
 </body>
 </html>
