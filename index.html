@@ -71,7 +71,7 @@
     <div class="login-bar">
         <div id="loginForm">
             <span>Přihlášení kódem: </span>
-            <input type="password" id="userToken" placeholder="Zadejte váš kód">
+            <input type="password" id="userToken" placeholder="Zadejte váš osobní kód">
             <button onclick="loginUser()">Přihlásit</button>
         </div>
         <div id="userInfo" style="display: none;">
@@ -87,9 +87,9 @@
         <span class="brand-badge">Coca-Cola HBC</span>
     </div>
     <div class="tabs">
-        <button id="btn-nova" class="tab-btn active" onclick="openTab(1)">Nová rezervace</button>
-        <button id="btn-seznam" class="tab-btn" onclick="openTab(2)">Seznam žádostí</button>
-        <button id="btn-zadost-role" class="tab-btn" onclick="openTab(3)">Požádat o přístup</button>
+        <button id="btn-nova" class="tab-btn active" onclick="openTab(1)">NOVÁ REZERVACE</button>
+        <button id="btn-seznam" class="tab-btn" onclick="openTab(2)">SEZNAM REZERVACÍ</button>
+        <button id="btn-zadost-role" class="tab-btn" onclick="openTab(3)">PŘÍSTUP</button>
         <button id="btn-admin" class="tab-btn" onclick="openTab(4)" style="display: none;">⚙️ Schvalování přístupů</button>
     </div>
 
@@ -97,11 +97,11 @@
         <h2>Žádat o lístky na akci</h2>
         <form id="ticketForm" onsubmit="handleFormSubmit(event)">
             <div class="form-group">
-                <label for="actionSelect">Vyberte akci:</label>
+                <label for="actionSelect">Akce:</label>
                 <select id="actionSelect" required></select>
             </div>
             <div class="form-group">
-                <label for="employeeName">Jméno zaměstnance:</label>
+                <label for="employeeName">Zaměstnanec:</label>
                 <input type="text" id="employeeName" required placeholder="Vaše jméno">
             </div>
             <div class="form-group">
@@ -109,22 +109,22 @@
                 <input type="email" id="managerEmail" required placeholder="novotny@firma.cz">
             </div>
             <div class="form-group">
-                <label for="customerName">Jméno zákazníka:</label>
-                <input type="text" id="customerName" required placeholder="Jméno klienta">
+                <label for="customerName">Zákazník:</label>
+                <input type="text" id="customerName" required placeholder="Jméno provozovny/zákazníka">
             </div>
             <div class="form-group">
                 <label for="ticketCount">Počet lístků:</label>
                 <input type="number" id="ticketCount" min="1" max="10" required placeholder="1">
             </div>
             <div class="form-group">
-                <label for="reason">Důvod přidělení:</label>
+                <label for="reason">Poznámka (důvod žádosti):</label>
                 <textarea id="reason" rows="3" required></textarea>
             </div>
             <button type="submit" class="btn-submit">Odeslat žádost</button>
         </form>
     </div>
         <div style="margin-top: 40px;">
-        <h2>Aktuální obsazenost firemních akcí</h2>
+        <h2>Aktuální obsazenost akcí</h2>
         <p style="font-size: 14px; color: #64748b; margin-top: -10px; margin-bottom: 20px;">Přehled všech akcí a zaměstnanců, kterým byly lístky definitivně schváleny oběma stupni.</p>
         <div style="overflow-x: auto;">
             <table>
@@ -132,7 +132,7 @@
                     <tr>
                         <th>Název akce / Kdy a Kde</th>
                         <th>Obsazenost</th>
-                        <th>Definitivně schválení (lístky a klienti)</th>
+                        <th>Definitivně schválení (lístky a zákazníci)</th>
                         <th>Pořadník náhradníků</th>
                     </tr>
                 </thead>
@@ -151,12 +151,10 @@
                         <th>Akce a důvod</th>
                         <th>Žadatel</th>
                         <th>Zákazník</th>
-                        <th>1. Šéf</th>
-                        <th>2. Admin</th>
-                        <th>Akce (1. Šéf)</th>
-                        <th>Akce (2. Admin)</th>
-                        <th>Správa</th>
-                        <th>Upozornění</th>
+                        <th>1. Schvalovatel (ASM/RSM)</th>
+                        <th>2. Schvalovatel (RSM Praha Central)</th>
+                        <th>Stav</th>
+                        <th>Zaslat email o stavu</th>
                     </tr>
                 </thead>
                 <tbody id="requestsTableBody"></tbody>
@@ -165,7 +163,7 @@
     </div>
     <div id="tab3" class="tab-content">
         <h2>Žádost o vytvoření účtu schvalovatele</h2>
-        <p>Jste nadřízený nebo správce? Vyplňte formulář. Žádost podléhá schválení Hlavním správcem.</p>
+        <p>Jste žadatel nebo schvalovatel? Vyplňte formulář. Žádost podléhá schválení administrátora.</p>
         <div class="box-section">
             <form onsubmit="handleRoleRequestSubmit(event)">
                 <div class="form-group">
@@ -196,7 +194,7 @@
             <form onsubmit="handleCreateActionSubmit(event)">
                 <div class="form-group">
                     <label>Název akce:</label>
-                    <input type="text" id="actNewName" required placeholder="např. Teambuilding 2026">
+                    <input type="text" id="actNewName" required placeholder="např. Davis Cup 2026">
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <div class="form-group" style="flex: 1;">
@@ -210,7 +208,7 @@
                 </div>
                 <div class="form-group">
                     <label>Místo konání:</label>
-                    <input type="text" id="actNewPlace" required placeholder="např. Konferenční sál A">
+                    <input type="text" id="actNewPlace" required placeholder="např. O2 Arena">
                 </div>
                 <div class="form-group">
                     <label>Kapacita lístků (celkem):</label>
@@ -257,7 +255,6 @@
                         <th>E-mail</th>
                         <th>Role</th>
                         <th>Přihlašovací kód</th>
-                        <th>Akce</th>
                     </tr>
                 </thead>
                 <tbody id="activeUsersTableBody"></tbody>
