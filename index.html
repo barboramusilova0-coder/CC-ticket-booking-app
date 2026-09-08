@@ -333,15 +333,32 @@
     }
     function deleteCompanyAction(id) { if(confirm('Smazat?')) { companyActions = companyActions.filter(a => a.id !== id); localStorage.setItem('companyActions', JSON.stringify(companyActions)); renderAdminSection(); updateActionSelectOptions(); } }
     function toggleActionStatus(id) { companyActions = companyActions.map(a => a.id === id ? { ...a, status: a.status === 'Aktivní' ? 'Zrušena' : 'Aktivní' } : a); localStorage.setItem('companyActions', JSON.stringify(companyActions)); renderAdminSection(); updateActionSelectOptions(); }
-    function renderAdminSection() {
+       function renderAdminSection() {
         const tbody = document.getElementById('roleRequestsTableBody'); tbody.innerHTML = '';
         if(roleRequests.length === 0) tbody.innerHTML = '<tr><td colspan="4">Žádné žádosti.</td></tr>';
         else roleRequests.forEach(r => { let t = '0 - Žadatel'; if(r.role=='manager') t='1. stupeň'; if(r.role=='rsm_praha') t='2. stupeň'; if(r.role=='admin') t='Admin'; let tr = document.createElement('tr'); tr.innerHTML = '<td><strong>'+r.name+'</strong></td><td>'+r.email+'</td><td>'+t+'</td><td><button onclick="approveRoleRequest('+r.id+')">Schválit</button> <button onclick="editRoleRequest('+r.id+')">Upravit</button> <button onclick="rejectRoleRequest('+r.id+')">Smazat</button></td>'; tbody.appendChild(tr); });
+        
         const tbodyA = document.getElementById('activeUsersTableBody'); tbodyA.innerHTML = ''; const tks = Object.keys(customUsers);
         if(tks.length === 0) tbodyA.innerHTML = '<tr><td colspan="5">Zatím žádní uživatelé.</td></tr>';
         else tks.forEach(tk => { const u = customUsers[tk]; let t = '0 - Žadatel'; if(u.role=='manager') t='1. stupeň'; if(u.role=='rsm_praha') t='2. stupeň'; if(u.role=='admin') t='Admin'; let tr = document.createElement('tr'); tr.innerHTML = '<td><strong>'+u.name+'</strong></td><td>'+u.email+'</td><td>'+t+'</td><td>'+tk+'</td><td><button onclick="deleteActiveUser(\''+tk+'\')">Smazat</button></td>'; tbodyA.appendChild(tr); });
-        const tbodyL = document.getElementById('adminActionsTableBody'); if(tbodyL) { tbodyL.innerHTML = ''; companyActions.forEach(act => { const app = requests.filter(r => r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno'); const tot = app.reduce((s, r) => s + parseInt(r.tickets), 0); const tr = document.createElement('tr'); tr.innerHTML = '<td><strong>'+act.name+'</strong><br><small>'+act.date+'</small></td><td>'+tot+' / '+act.capacity+'</td><td>'+act.status+'</td><td>-</td><td><button onclick="toggleActionStatus('+act.id+')">Zrušit</button> <button onclick="deleteCompanyAction('+act.id+')">Smazat</button></td>'; tbodyL.appendChild(tr); }); }
+        
+        const tbodyL = document.getElementById('adminActionsTableBody'); 
+        if(tbodyL) { 
+            tbodyL.innerHTML = ''; 
+            companyActions.forEach(function(act) { 
+                const app = requests.filter(r => r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno'); 
+                
+                // Opravené a zjednodušené sčítání lístků bez chyb
+                let tot = 0; 
+                app.forEach(function(x) { tot += parseInt(x.tickets); }); 
+                
+                const tr = document.createElement('tr'); 
+                tr.innerHTML = '<td><strong>'+act.name+'</strong><br><small>'+act.date+'</small></td><td>'+tot+' / '+act.capacity+'</td><td>'+act.status+'</td><td>-</td><td><button onclick="toggleActionStatus('+act.id+')">Zrušit</button> <button onclick="deleteCompanyAction('+act.id+')">Smazat</button></td>'; 
+                tbodyL.appendChild(tr); 
+            }); 
+        }
     }
+
     function handleFormSubmit(e) {
         e.preventDefault(); requests.push({ id: Date.now(), action: document.getElementById('actionSelect').value, employee: document.getElementById('employeeName').value, manager: document.getElementById('managerEmail').value.toLowerCase().trim(), customer: document.getElementById('customerName').value, tickets: document.getElementById('ticketCount').value, reason: document.getElementById('reason').value, status1: 'Čeká', status2: 'Čeká', approvedBy1: '', approvedBy2: '' });
         localStorage.setItem('ticketRequests', JSON.stringify(requests)); document.getElementById('ticketForm').reset(); alert('Uloženo!'); openTab(2);
@@ -409,6 +426,9 @@
         });
     }
     updateLoginBar(); renderTable(); updateActionSelectOptions(); renderPublicActionsTable();
+    updateLoginBar();
+    renderTable();
+    if (typeof updateActionSelectOptions === 'function') updateActionSelectOptions();
 
 </script>
 </body>
