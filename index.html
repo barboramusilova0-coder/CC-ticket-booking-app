@@ -982,4 +982,77 @@ function renderTable() {
         table { min-width: 900px !important; }
     }
 </style>
+    <!-- 🔥 FIREBASE CLOUD FIRESTORE LINK - LIVE DATABÁZE -->
+<script type="module">
+    // Načteme bezpečně moderní webové knihovny pro komunikaci s Google Firestore
+    import { initializeApp } from "https://gstatic.com";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://gstatic.com";
+
+    // Tvůj unikátní konfigurační klíč k projektu cc-tickets-booking-app
+    const firebaseConfig = {
+        apiKey: "AIzaSyCPSV3AauKHMPfnkACjbfvEDbb6RFJMiJA",
+        authDomain: "cc-tickets-booking-app.firebaseapp.com",
+        projectId: "cc-tickets-booking-app",
+        storageBucket: "cc-tickets-booking-app.firebasestorage.app",
+        messagingSenderId: "998442761726",
+        appId: "1:998442761726:web:e5bbe201f68c9594ea54af",
+        measurementId: "G-GKKE8GCN0T"
+    };
+
+    // Probudíme Firebase k životu
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // 🔄 SLEDOVÁNÍ DATABÁZE V REÁLNÉM ČASE (onSnapshot)
+    // Jakmile sestra nebo kdokoliv ve firmě kdekoli v ČR odešle data, v tu samou milisekundu se ti to propíše na obrazovku!
+    onSnapshot(doc(db, "portalData", "cocaColaDatabase"), (docSnap) => {
+        if (docSnap.exists()) {
+            const cloudData = docSnap.data();
+            
+            // Synchronizujeme online data s lokální pamětí prohlížeče
+            if (cloudData.ticketRequests) {
+                window.requests = cloudData.ticketRequests;
+                localStorage.setItem('ticketRequests', JSON.stringify(window.requests));
+            }
+            if (cloudData.companyActions) {
+                window.companyActions = cloudData.companyActions;
+                localStorage.setItem('companyActions', JSON.stringify(window.companyActions));
+            }
+            if (cloudData.customUsers) {
+                window.customUsers = cloudData.customUsers;
+                localStorage.setItem('customUsers', JSON.stringify(window.customUsers));
+            }
+            if (cloudData.roleRequests) {
+                window.roleRequests = cloudData.roleRequests;
+                localStorage.setItem('roleRequests', JSON.stringify(window.roleRequests));
+            }
+            
+            // Okamžitě bleskově překreslíme tabulky před očima, ať jsou data aktuální
+            if (typeof renderTable === 'function') renderTable();
+            if (typeof renderAdminSection === 'function') renderAdminSection();
+            if (typeof updateActionSelectOptions === 'function') updateActionSelectOptions();
+        }
+    });
+
+    // 📤 AUTOMATICKÉ ODESÍLÁNÍ ZMĚN DO CLOUDU
+    // Tento hlídač hlídá jakékoliv uložení (odeslání žádosti, schválení Ano/Ne i smazání) a ihned to vystřelí na internet
+    const originalSetItem = localStorage.setItem;
+    localStorage.setItem = function(key, value) {
+        originalSetItem.apply(this, arguments);
+        
+        if (['ticketRequests', 'companyActions', 'customUsers', 'roleRequests'].indexOf(key) > -1) {
+            // Připravíme si balíček pro upload
+            const dataToUpload = {
+                ticketRequests: JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [],
+                companyActions: JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [],
+                customUsers: JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {},
+                roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || window.roleRequests || []
+            };
+            
+            // Natvrdo a bezpečně zapíšeme do tvé Google Firebase Firestore databáze
+            setDoc(doc(db, "portalData", "cocaColaDatabase"), dataToUpload, { merge: true })
+                .catch((error) => console.error("Chyba při odesílání do cloudu:", error));
+        }
+    };
+</script>
 </html>
