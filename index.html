@@ -183,7 +183,7 @@
                     Potvrzuji, že jsem se seznámil/a s Kodexem chování a Pravidly chování pro zákazníky a jsem si vědom/a povinnosti je dodržovat.
                 </label>
             </div>
-              <button type="submit" class="btn-submit" id="mainFormSubmitBtn" disabled>Odeslat žádost</button>
+             <button type="submit" id="mainFormSubmitBtn" disabled style="background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%); color: #64748b; border: none; padding: 16px 32px; border-radius: 50px; cursor: not-allowed; font-size: 16px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; width: 100%; transition: all 0.3s ease; box-shadow: none; display: flex; align-items: center; justify-content: center; gap: 10px; opacity: 0.6;">🔒 Odeslat žádost</button>
         </form>
     </div>
     <div id="tab2" class="tab-content">
@@ -777,12 +777,11 @@ function renderTable() {
 </script>
     <script>
     // ⚖️ NEPRŮSTŘELNÁ KONTROLA COMPLIANCE A VŠECH POVINNÝCH POLÍČEK
-    function toggleSubmitButtonByCompliance() {
+        function toggleSubmitButtonByCompliance() {
         var checkbox = document.getElementById('complianceCheck');
         var submitBtn = document.getElementById('mainFormSubmitBtn');
         if (!checkbox || !submitBtn) return;
 
-        // Načteme si všechny důležité kolonky z formuláře
         var action = document.getElementById('actionSelect') ? document.getElementById('actionSelect').value : '';
         var employee = document.getElementById('employeeName') ? document.getElementById('employeeName').value.trim() : '';
         var manager = document.getElementById('managerEmail') ? document.getElementById('managerEmail').value.trim() : '';
@@ -790,33 +789,25 @@ function renderTable() {
         var tickets = document.getElementById('ticketCount') ? document.getElementById('ticketCount').value.trim() : '';
         var reason = document.getElementById('reason') ? document.getElementById('reason').value.trim() : '';
 
-        // Zkontrolujeme, zda je úplně všechno vyplněné a zároveň zaškrtnutý checkbox
         var jeVseVyplneno = (action !== '' && employee !== '' && manager !== '' && customer !== '' && tickets !== '' && reason !== '');
-        var jeComplianceZaškrtnuto = checkbox.checked;
+        var jeComplianceZaskrtnuto = checkbox.checked;
 
-        // Tlačítko odemkneme POUZE pokud je splněno obojí naráz
-        if (jeComplianceZaškrtnuto && jeVseVyplneno) {
+        if (jeComplianceZaskrtnuto && jeVseVyplneno) {
             submitBtn.disabled = false;
             submitBtn.style.opacity = '1';
             submitBtn.style.cursor = 'pointer';
-            submitBtn.style.backgroundColor = 'var(--cc-red)';
+            submitBtn.style.background = 'linear-gradient(135deg, #e41e26 0%, #b81118 100%)';
+            submitBtn.style.color = 'white';
+            submitBtn.style.boxShadow = '0 4px 15px rgba(228, 30, 38, 0.25)';
+            submitBtn.innerHTML = 'Odeslat žádost 🎃';
         } else {
             submitBtn.disabled = true;
-            submitBtn.style.opacity = '0.4';
+            submitBtn.style.opacity = '0.6';
             submitBtn.style.cursor = 'not-allowed';
-            submitBtn.style.backgroundColor = '#94a3b8'; // Zamčená manažerská šedá
-        }
-    }
-
-    // Naučíme formulář kontrolovat vyplněnost okamžitě při psaní (při každém stisknutí klávesy)
-    document.addEventListener('input', function(e) {
-        if (e.target && e.target.form && e.target.form.id === 'ticketForm') {
-            toggleSubmitButtonByCompliance();
-        }
-    });
-    document.addEventListener('change', function(e) {
-        if (e.target && e.target.form && e.target.form.id === 'ticketForm') {
-            toggleSubmitButtonByCompliance();
+            submitBtn.style.background = 'linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%)';
+            submitBtn.style.color = '#64748b';
+            submitBtn.style.boxShadow = 'none';
+            submitBtn.innerHTML = '🔒 Odeslat žádost';
         }
     });
 </script>
