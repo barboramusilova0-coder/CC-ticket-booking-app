@@ -65,7 +65,7 @@
         .box-section { background: #ffffff; padding: 28px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 36px; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
             /* 🍁 PODZIMNÍ EFEKT: Animace padajícího listí v pozadí 🍁 */
-        .leaves-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; overflow: hidden; }
+        .leaves-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; overflow: hidden; opacity: 0.4;}
         .leaf { position: absolute; top: -50px; display: block; background-size: contain; background-repeat: no-repeat; opacity: 0.85; animation: fall linear infinite; }
         
         /* Předpisy pro kroužení a snášení lístků */
@@ -74,7 +74,13 @@
             10% { opacity: 0.85; }
             90% { opacity: 0.85; }
             100% { transform: translateY(105vh) rotate(720deg) translateX(100px); opacity: 0; }
+               /* Styly pro Fázi 2: Animace ohně a záře rozsvícené dýně */
+        @keyframes flamePulse { 
+            0% { transform: scale(0.88) rotate(-1deg); fill: #facc15; } 
+            100% { transform: scale(1.12) rotate(1deg); fill: #f97316; filter: drop-shadow(0 0 4px #facc15); } 
         }
+        .p-pumpkin-off { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.04)); opacity: 0.9; }
+        .p-pumpkin-on { filter: drop-shadow(0 0 20px rgba(251, 146, 60, 0.6)) drop-shadow(0 0 6px rgba(250, 204, 21, 0.8)) !important; opacity: 1 !important; }
     </style>
 </head>
 <body>
@@ -297,6 +303,54 @@
             </table>
         </div>
     </div>
+            <!-- 🍁 FÁZE 2: DESIGNER HALLOWEEN PANEL 🍁 -->
+        <div style="margin-top: 60px; padding: 30px; border: 1px solid var(--border); background: #ffffff; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.01);">
+            <p style="font-size: 14px; color: #ea580c; font-weight: 700; margin-top: 0; margin-bottom: 4px; letter-spacing: 0.02em;">🕯️ Dušičkový koutek Coca-Cola HBC</p>
+            <p style="font-size: 13px; color: #64748b; margin-top: 0; margin-bottom: 24px;">Kliknutím rozsviťte nebo zhasněte svíčku uvnitř dýní.</p>
+            
+            <div style="display: flex; justify-content: center; gap: 40px;">
+                <!-- Dýně 1 -->
+                <div id="p-box1" onclick="toggleGraphicPumpkin(1)" style="cursor: pointer; width: 75px; height: 75px; transition: all 0.3s ease;" class="p-pumpkin-off">
+                    <svg viewBox="0 0 100 100" style="width:100%; height:100%;">
+                        <path d="M50,15 C35,15 25,25 25,45 C25,70 38,85 50,85 C62,85 75,70 75,45 C75,25 65,15 50,15 Z" fill="#ea580c"/>
+                        <path d="M50,15 C42,15 35,22 35,45 C35,68 42,85 50,85 C58,85 65,68 65,45 C65,22 58,15 50,15 Z" fill="#f97316"/>
+                        <path d="M50,5 L50,15 C53,10 58,12 60,8" stroke="#15803d" stroke-width="6" fill="none" stroke-linecap="round"/>
+                        <polygon points="38,40 46,40 42,32" fill="#451a03"/>
+                        <polygon points="54,40 62,40 58,32" fill="#451a03"/>
+                        <polygon points="50,46 47,52 53,42" fill="#451a03"/>
+                        <path d="M33,56 Q50,70 67,56 Q58,62 50,58 Q42,62 33,56 Z" fill="#451a03"/>
+                        <!-- Plamínek (na začátku skrytý přes display:none) -->
+                        <path id="flame1" d="M46,62 Q50,45 54,62 Q52,66 50,66 Q48,66 46,62 Z" fill="#facc15" style="display: none; animation: flamePulse 0.15s infinite alternate; transform-origin: center bottom;"/>
+                    </svg>
+                </div>
+                <!-- Dýně 2 -->
+                <div id="p-box2" onclick="toggleGraphicPumpkin(2)" style="cursor: pointer; width: 75px; height: 75px; transition: all 0.3s ease;" class="p-pumpkin-off">
+                    <svg viewBox="0 0 100 100" style="width:100%; height:100%;">
+                        <path d="M50,15 C35,15 25,25 25,45 C25,70 38,85 50,85 C62,85 75,70 75,45 C75,25 65,15 50,15 Z" fill="#ea580c"/>
+                        <path d="M50,15 C42,15 35,22 35,45 C35,68 42,85 50,85 C58,85 65,68 65,45 C65,22 58,15 50,15 Z" fill="#f97316"/>
+                        <path d="M50,5 L50,15 C53,10 58,12 60,8" stroke="#15803d" stroke-width="6" fill="none" stroke-linecap="round"/>
+                        <polygon points="38,40 46,40 42,32" fill="#451a03"/>
+                        <polygon points="54,40 62,40 58,32" fill="#451a03"/>
+                        <polygon points="50,46 47,52 53,42" fill="#451a03"/>
+                        <path d="M33,56 Q50,70 67,56 Q58,62 50,58 Q42,62 33,56 Z" fill="#451a03"/>
+                        <path id="flame2" d="M46,62 Q50,45 54,62 Q52,66 50,66 Q48,66 46,62 Z" fill="#facc15" style="display: none; animation: flamePulse 0.15s infinite alternate; transform-origin: center bottom;"/>
+                    </svg>
+                </div>
+                <!-- Dýně 3 -->
+                <div id="p-box3" onclick="toggleGraphicPumpkin(3)" style="cursor: pointer; width: 75px; height: 75px; transition: all 0.3s ease;" class="p-pumpkin-off">
+                    <svg viewBox="0 0 100 100" style="width:100%; height:100%;">
+                        <path d="M50,15 C35,15 25,25 25,45 C25,70 38,85 50,85 C62,85 75,70 75,45 C75,25 65,15 50,15 Z" fill="#ea580c"/>
+                        <path d="M50,15 C42,15 35,22 35,45 C35,68 42,85 50,85 C58,85 65,68 65,45 C65,22 58,15 50,15 Z" fill="#f97316"/>
+                        <path d="M50,5 L50,15 C53,10 58,12 60,8" stroke="#15803d" stroke-width="6" fill="none" stroke-linecap="round"/>
+                        <polygon points="38,40 46,40 42,32" fill="#451a03"/>
+                        <polygon points="54,40 62,40 58,32" fill="#451a03"/>
+                        <polygon points="50,46 47,52 53,42" fill="#451a03"/>
+                        <path d="M33,56 Q50,70 67,56 Q58,62 50,58 Q42,62 33,56 Z" fill="#451a03"/>
+                        <path id="flame3" d="M46,62 Q50,45 54,62 Q52,66 50,66 Q48,66 46,62 Z" fill="#facc15" style="display: none; animation: flamePulse 0.15s infinite alternate; transform-origin: center bottom;"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
 </div>
 <script>
     const masterAdminToken = "Magnolie27"; 
@@ -477,6 +531,25 @@
         companyActions.forEach(function(a) { if (a.status === 'Aktivní') h += '<option value="'+a.name+'">'+a.name+'</option>'; }); sel.innerHTML = h;
     }
     if(localStorage.getItem('currentUser')) { currentUser = JSON.parse(localStorage.getItem('currentUser')); saveAndStyleSession(); }
+        function toggleGraphicPumpkin(num) {
+        const box = document.getElementById('p-box' + num);
+        const flame = document.getElementById('flame' + num);
+        if (!box || !flame) return;
+
+        // Malý hravý efekt poskočení při kliknutí
+        box.style.transform = 'scale(0.88)';
+        setTimeout(function() { box.style.transform = 'scale(1.05)'; }, 80);
+        setTimeout(function() { box.style.transform = 'scale(1)'; }, 200);
+
+        // Podmínka rozsvícení a zhasnutí plamínku svíčky
+        if (flame.style.display === 'none') {
+            flame.style.display = 'block'; // Ukáže pulzující plamínek
+            box.className = 'p-pumpkin-on'; // Přidá dýni záři a jas
+        } else {
+            flame.style.display = 'none'; // Schová plamínek
+            box.className = 'p-pumpkin-off'; // Vrátí dýni do zhasnutého stavu
+        }
+    }
     updateActionSelectOptions();
 </script>
 </body>
