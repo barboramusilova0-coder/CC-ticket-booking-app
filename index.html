@@ -406,14 +406,26 @@
     }
     function deleteCompanyAction(id) { if(confirm('Opravdu chcete smazat celou akci?')) { companyActions = companyActions.filter(a => a.id !== id); localStorage.setItem('companyActions', JSON.stringify(companyActions)); renderAdminSection(); updateActionSelectOptions(); } }
     function toggleActionStatus(id) { companyActions = companyActions.map(a => a.id === id ? { ...a, status: a.status === 'Aktivní' ? 'Zrušena' : 'Aktivní' } : a); localStorage.setItem('companyActions', JSON.stringify(companyActions)); renderAdminSection(); updateActionSelectOptions(); }
-        function renderAdminSection() {
-        const tbody = document.getElementById('roleRequestsTableBody'); if(tbody) tbody.innerHTML = '';
-        if(roleRequests.length === 0 && tbody) tbody.innerHTML = '<tr><td colspan="4">Žádné čekající žádosti o role.</td></tr>';
-        else if(tbody) roleRequests.forEach(r => { let t = '0 - Žadatel'; if(r.role=='manager') t='1. stupeň'; if(r.role=='rsm_praha') t='2. stupeň'; if(r.role=='admin') t='Admin'; let tr = document.createElement('tr'); tr.innerHTML = '<td><strong>'+r.name+'</strong></td><td>'+r.email+'</td><td>'+t+'</td><td><button onclick="approveRoleRequest('+r.id+')">Schválit</button> <button onclick="editRoleRequest('+r.id+')">Upravit</button> <button onclick="rejectRoleRequest('+r.id+')">Smazat</button></td>'; tbody.appendChild(tr); });
-        
-        const tbodyA = document.getElementById('activeUsersTableBody'); if(tbodyA) tbodyA.innerHTML = ''; const tks = Object.keys(customUsers);
-        if(tks.length === 0 && tbodyA) tbodyA.innerHTML = '<tr><td colspan="5">Zatím nebyl vydán žádný přístupový kód.</td></tr>';
-        else if(tbodyA) tks.forEach(tk => { const u = customUsers[tk]; let t = '0 - Žadatel'; if(u.role=='manager') t='1. stupeň'; if(u.role=='rsm_praha') t='2.纽 stupeň'; if(u.role=='admin') t='Admin'; let tr = document.createElement('tr'); tr.innerHTML = '<td><strong>'+u.name+'</strong></td><td>'+u.email+'</td><td>'+t+'</td><td>'+tk+'</td><td><button onclick="deleteActiveUser(\''+tk+'\')">Smazat</button></td>'; tbodyA.appendChild(tr); });
+    function renderAdminSection() {
+        const tbody = document.getElementById('roleRequestsTableBody'); tbody.innerHTML = '';
+        if(roleRequests.length === 0) tbody.innerHTML = '<tr><td colspan="4">Žádné čekající žádosti o role.</td></tr>';
+        else roleRequests.forEach(r => { let t = '0 - Žadatel'; if(r.role=='manager') t='1. stupeň'; if(r.role=='rsm_praha') t='2. stupeň'; if(r.role=='admin') t='Admin'; let tr = document.createElement('tr'); tr.innerHTML = '<td><strong>'+r.name+'</strong></td><td>'+r.email+'</td><td>'+t+'</td><td><button onclick="approveRoleRequest('+r.id+')">Schválit</button> <button onclick="editRoleRequest('+r.id+')">Upravit</button> <button onclick="rejectRoleRequest('+r.id+')">Smazat</button></td>'; tbody.appendChild(tr); });
+        const tbodyA = document.getElementById('activeUsersTableBody'); tbodyA.innerHTML = ''; const tks = Object.keys(customUsers);
+        if(tks.length === 0) tbodyA.innerHTML = '<tr><td colspan="5">Zatím nebyl vydán žádný přístupový kód.</td></tr>';
+        else tks.forEach(tk => { const u = customUsers[tk]; let t = '0 - Žadatel'; if(u.role=='manager') t='1. stupeň'; if(u.role=='rsm_praha') t='2.纽 stupeň'; if(u.role=='admin') t='Admin'; let tr = document.createElement('tr'); tr.innerHTML = '<td><strong>'+u.name+'</strong></td><td>'+u.email+'</td><td>'+t+'</td><td>'+tk+'</td><td><button onclick="deleteActiveUser(\''+tk+'\')">Smazat</button></td>'; tbodyA.appendChild(tr); });
+        const tbodyL = document.getElementById('adminActionsTableBody'); 
+        if(tbodyL) { 
+            tbodyL.innerHTML = ''; 
+            companyActions.forEach(function(act) { 
+                const app = requests.filter(r => r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno'); 
+                let tot = 0; app.forEach(function(x) { tot += parseInt(x.tickets); }); 
+                const names = app.map(function(p) { return p.employee + ' (' + p.tickets + ' ks pro: ' + p.customer + ')'; }).join(', ') || 'Nikdo zatím neschválen';
+                const wl = requests.filter(function(r) { return r.action === act.name && r.status2 === 'Náhradník'; });
+                const wlNames = wl.map(function(p, i) { return '#' + (i + 1) + ' ' + p.employee + ' (' + p.tickets + ' ks)'; }).join(', ') || 'Žádní';
+                const tr = document.createElement('tr'); if (act.status === 'Zrušena') tr.style.opacity = '0.5'; 
+                tr.innerHTML = '<td><strong>'+act.name+'</strong><br><small>'+act.date+'</small></td><td>'+tot+' / '+act.capacity+'</td><td>'+act.status+'</td><td><small><strong>Schválení:</strong> ' + names + '<br><strong>Náhradníci:</strong> ' + wlNames + '</small></td><td><button onclick="toggleActionStatus('+act.id+')">Zrušit</button> <button style="background:#dc3545;color:white;border:none;padding:2px 5px;border-radius:4px;cursor:pointer;" onclick="deleteCompanyAction('+act.id+')">Smazat</button></td>'; tbodyL.appendChild(tr); 
+            }); 
+        }
     }
            function handleFormSubmit(e) {
         e.preventDefault(); 
@@ -579,4 +591,44 @@ function renderTable() {
     };
 </script>
 </body>
+
+    <script>
+    // 🔥 DEFINITIVNÍ OŽIVENÍ TLAČÍTEK SCHVÁLENÍ
+    window.setStatus1 = function(id, s) { 
+        var uName = (currentUser && currentUser.name) ? currentUser.name : 'Manažer 1. stupně';
+        if (window.requests) {
+            for (var i = 0; i < requests.length; i++) {
+                if (requests[i].id === id) {
+                    requests[i].status1 = s;
+                    requests[i].approvedBy1 = uName;
+                    break;
+                }
+            }
+            localStorage.setItem('ticketRequests', JSON.stringify(requests)); 
+            if (typeof renderTable === 'function') renderTable(); 
+        }
+    };
+    
+    window.setStatus2 = function(id, s) { 
+        var uName = (currentUser && currentUser.name) ? currentUser.name : 'RSM Praha';
+        if (window.requests) {
+            for (var i = 0; i < requests.length; i++) {
+                if (requests[i].id === id) {
+                    requests[i].status2 = s;
+                    requests[i].approvedBy2 = uName;
+                    break;
+                }
+            }
+            localStorage.setItem('ticketRequests', JSON.stringify(requests)); 
+            if (typeof renderTable === 'function') renderTable(); 
+        }
+    };
+
+    // 🔥 POJISTKA PRO OKAMŽITÉ ZOBRAZENÍ TABULKY PO REFRESHI (F5)
+    setTimeout(function() {
+        if (typeof renderTable === 'function') {
+            renderTable();
+        }
+    }, 150);
+</script>
 </html>
