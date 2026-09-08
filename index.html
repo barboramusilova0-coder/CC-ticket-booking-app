@@ -820,4 +820,44 @@ function renderTable() {
         }
     });
 </script>
+    <script>
+    // 🔥 NEPRŮSTŘELNÁ OPRAVA PŘEKLIKÁVÁNÍ ZÁLOŽEK A PAMĚTI STRÁNKY
+    window.openTab = function(num) {
+        // Zapamatujeme si záložku v prohlížeči, aby po F5 nezmizela
+        localStorage.setItem('activeCcTab', num);
+
+        // Schováme všechen obsah
+        for (var i = 1; i <= 4; i++) { 
+            var t = document.getElementById('tab' + i); 
+            if (t) t.classList.remove('active'); 
+        }
+        
+        // Odbarvíme stará tlačítka záložek
+        var buttons = ['btn-nova', 'btn-seznam', 'btn-zadost-role', 'btn-admin'];
+        buttons.forEach(function(id) {
+            var b = document.getElementById(id);
+            if (b) b.classList.remove('active');
+        });
+        
+        // Aktivujeme vybranou záložku a tlačítko
+        var targetTab = document.getElementById('tab' + num); 
+        if (targetTab) targetTab.classList.add('active');
+        
+        var activeBtn = document.getElementById(buttons[num - 1]);
+        if (activeBtn) activeBtn.classList.add('active');
+        
+        // Spustíme vykreslení dat pro danou záložku
+        if (num === 2 && typeof renderTable === 'function') { renderTable(); }
+        if (num === 4 && typeof renderAdminSection === 'function') { renderAdminSection(); }
+    };
+
+    // POJISTKA PRO AUTOMATICKÝ START NA SPRÁVNÉ ZÁLOŽCE PO REFRESHI (F5)
+    setTimeout(function() {
+        var zapamatovanaZalozka = localStorage.getItem('activeCcTab') ? parseInt(localStorage.getItem('activeCcTab')) : 1;
+        // Pokud je uživatel host a nemá právo na rezervace, skočí na trojku
+        if (window.currentUser && currentUser.role === 'guest') zapamatovanaZalozka = 3;
+        
+        window.openTab(zapamatovanaZalozka);
+    }, 200);
+</script>
 </html>
