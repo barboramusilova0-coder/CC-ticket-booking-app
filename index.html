@@ -331,9 +331,9 @@
     function deleteTicketRequest(id) { if(confirm('Opravdu smazat rezervaci?')) { requests = requests.filter(function(r) { return r.id !== id; }); localStorage.setItem('ticketRequests', JSON.stringify(requests)); renderTable(); } }
     function sendStatusEmail(id) {
         const r = requests.find(x => x.id === id); if (!r) return; let s = 'Info', b = 'Dobrý den,\n\n';
-        if (r.status1 === 'Schváleno' && r.status2 === 'Schváleno') { s = 'SCHVÁLENO: Rezervace lístků'; b += 'Dobrý den, Vaše žádost o lístky na akci' + r.action + ' byla úspěšně SCHVÁLENA. S pozdravem CC Tickets booking app'; }
-        else if (r.status1 === 'Zamítnuto' || r.status2 === 'Zamítnuto') { s = 'ZAMÍTNUTO: Rezervace lístků'; b += 'Dobrý den, Vaše žádost o lístky na akci ' + r.action + ' byla bohužel ZAMÍTNUTA. S pozdravem CC Tickets booking app'; }
-        else if (r.status2 === 'Náhradník') { s = 'NÁHRADNÍK: Rezervace lístků'; b += 'Dobrý den, Vaše žádost o lístky na akci ' + r.action + ' byla zařazena do seznamu NÁHRADNÍKŮ. O případené dostupnosti budete informováni. S pozdravem CC Tickets booking app'; } else { alert('Nastavte stav!'); return; }
+        if (r.status1 === 'Schváleno' && r.status2 === 'Schváleno') { s = 'SCHVÁLENO: Rezervace lístků'; b += 'Dobrý den,%0D%0A Vaše žádost o lístky na akci ' + r.action + ' byla úspěšně SCHVÁLENA.%0D%0A S pozdravem%0D%0A CC Tickets booking app'; }
+        else if (r.status1 === 'Zamítnuto' || r.status2 === 'Zamítnuto') { s = 'ZAMÍTNUTO: Rezervace lístků'; b += 'Dobrý den,%0D%0AVaše žádost o lístky na akci ' + r.action + ' byla bohužel ZAMÍTNUTA.%0D%0AS pozdravem%0D%0ACC Tickets booking app'; }
+        else if (r.status2 === 'Náhradník') { s = 'NÁHRADNÍK: Rezervace lístků'; b += 'Dobrý den,%0D%0A Vaše žádost o lístky na akci ' + r.action + ' byla zařazena do seznamu NÁHRADNÍKŮ. O případené dostupnosti budete informováni.%0D%0AS pozdravem%0D%0ACC Tickets booking app'; } else { alert('Nastavte stav!'); return; }
         b += '\n\nS pozdravem,\nHlavní správce'; window.location.href = 'mailto:' + r.manager + '?subject=' + encodeURIComponent(s) + '&body=' + encodeURIComponent(b);
     }
     function renderTable() {
