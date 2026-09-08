@@ -1057,5 +1057,37 @@ function renderTable() {
         }, true);
     })();
 </script>
+<script>
+    // 🔌 REFRESH ROLETKY: Vynutí nahrání stažených online akcí přímo do formuláře
+    (function() {
+        // Každou vteřinu zkontrolujeme, zda do paměti nedorazily nové akce z internetu
+        setInterval(function() {
+            var roletkaSelect = document.getElementById('actionSelect') || document.querySelector('select');
+            if (!roletkaSelect) return;
 
+            // Vytáhneme čerstvé online akce, které Firebase uložil do paměti
+            var onlineAkce = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+            
+            var htmlMožnosti = '<option value="">-- Vyberte akci --</option>';
+            var maAktivni = false;
+
+            onlineAkce.forEach(function(a) {
+                if (a.status === 'Aktivní' || !a.status) {
+                    htmlMožnosti += '<option value="' + a.name + '">' + a.name + '</option>';
+                    maAktivni = true;
+                }
+            });
+
+            if (!maAktivni) {
+                htmlMožnosti = '<option value="">❌ V systému není žádná aktivní akce</option>';
+            }
+
+            // Pokud se data v paměti liší od toho, co vidíš na obrazovce, roletku bleskově přepíšeme
+            if (roletkaSelect.innerHTML !== htmlMožnosti) {
+                roletkaSelect.innerHTML = htmlMožnosti;
+                console.log("Roletka rezervací byla úspěšně občerstvena online daty!");
+            }
+        }, 1000); // Kontrola běží plynule na pozadí každou 1 vteřinu
+    })();
+</script>
 </html>
