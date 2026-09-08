@@ -463,40 +463,43 @@
         alert('Žádost o rezervaci lístků byla úspěšně odeslána!'); 
         openTab(2);
     }
-            function renderTable() {
+function renderTable() {
         const tbody = document.getElementById('requestsTableBody'); if(!tbody) return; tbody.innerHTML = '';
         
         let filteredRequests = requests;
         if (currentUser) {
-            if (currentUser.role === 'applicant') { filteredRequests = requests.filter(r => r.employee.toLowerCase().trim() === currentUser.name.toLowerCase().trim()); }
-            else if (currentUser.role === 'manager' || currentUser.role === '1 - ASM/RSM') { filteredRequests = requests.filter(r => r.manager.toLowerCase().trim() === currentUser.email.toLowerCase().trim()); }
+            if (currentUser.role === 'applicant') { 
+                filteredRequests = requests.filter(r => r.employee.toLowerCase().trim() === currentUser.name.toLowerCase().trim()); 
+            } else if (currentUser.role && (currentUser.role.includes('manager') || currentUser.role.includes('1'))) { 
+                filteredRequests = requests.filter(r => r.manager.toLowerCase().trim() === currentUser.email.toLowerCase().trim()); 
+            }
         }
         if(filteredRequests.length === 0) { tbody.innerHTML = '<tr><td colspan="9">Žádné podané žádosti o lístky k zobrazení.</td></tr>'; return; }
         
         filteredRequests.forEach(function(req) {
-            const isSef1 = currentUser && (currentUser.role === 'manager' || currentUser.role === '1 - ASM/RSM') && currentUser.email === req.manager;
-            const isSef2 = currentUser && (currentUser.role === 'rsm_praha' || currentUser.role === '2. stupeň');
-            const isSystemAdmin = currentUser && currentUser.role === 'admin';
+            // JASNÉ A NEPRŮSTŘELNÉ ROZPOZNÁNÍ ROLÍ PRO COCA-COLA HBC
+            const jeUživatelPrvníŠéf = currentUser && (currentUser.role.includes('manager') || currentUser.role.includes('1')) && currentUser.email === req.manager;
+            const jeUživatelDruhýŠéf = currentUser && (currentUser.role.includes('rsm_praha') || currentUser.role.includes('2'));
+            const jeHlavníAdmin = currentUser && currentUser.role === 'admin';
 
-            // Zámek 1. stupně: Kliká jen šéf u svých lidí nebo admin
-            const dMgr = (isSef1 || isSystemAdmin) ? '' : 'disabled';
+            // AKTIVACE TLAČÍTEK: Pokud je to přímý nadřízený nebo admin, tlačítko "dMgr" je PRÁZDNÉ (tedy aktivní a funkční!)
+            const dMgr = (jeUživatelPrvníŠéf || jeHlavníAdmin) ? '' : 'disabled';
             
             const tr = document.createElement('tr'); let sClass1 = 'cekajici', sClass2 = 'cekajici';
             if(req.status1 === 'Schváleno') sClass1 = 'schvaleno'; if(req.status1 === 'Zamítnuto') sClass1 = 'zamitnuto';
             if(req.status2 === 'Schváleno') sClass2 = 'schvaleno'; if(req.status2 === 'Zamítnuto') sClass2 = 'zamitnuto'; if(req.status2 === 'Náhradník') sClass2 = 'nahradnik';
             
             const isApp = !currentUser || (currentUser && currentUser.role === 'applicant');
-            let delBtn = (isSystemAdmin || isApp) ? '<button style="background:#dc3545;color:white;border:none;padding:5px 8px;border-radius:4px;cursor:pointer;margin-right:5px;" onclick="deleteTicketRequest(' + req.id + ')">Smazat</button>' : '';
-            let mailBtn = isSystemAdmin ? '<button style="background:#17a2b8;color:white;border:none;padding:5px 8px;border-radius:4px;cursor:pointer;" onclick="sendStatusEmail(' + req.id + ')">✉ Mail</button>' : '';
+            let delBtn = (jeHlavníAdmin || isApp) ? '<button style="background:#dc3545;color:white;border:none;padding:5px 8px;border-radius:4px;cursor:pointer;margin-right:5px;" onclick="deleteTicketRequest(' + req.id + ')">Smazat</button>' : '';
+            let mailBtn = jeHlavníAdmin ? '<button style="background:#17a2b8;color:white;border:none;padding:5px 8px;border-radius:4px;cursor:pointer;" onclick="sendStatusEmail(' + req.id + ')">✉ Mail</button>' : '';
             
-            // Ovládací tlačítka pro 1. schvalovatele
+            // Ovládací tlačítka pro 1. schvalovatele (reagují na opravený funkční zámek dMgr)
             let actionControls1 = currentUser.role === 'applicant' ? '<span style="color:#94a3b8">-</span>' : '<button onclick="setStatus1('+req.id+',\'Schváleno\')" '+dMgr+'>Ano</button> <button onclick="setStatus1('+req.id+',\'Zamítnuto\')" '+dMgr+'>Ne</button>';
             
-            // DEFINITIVNÍ NEPRŮSTŘELNÝ ZÁMEK PRO 2. STUPEŇ:
-            // Pokud je uživatel RSM Praha nebo Admin, ukážeme mu tlačítka. Manažerovi (1. stupeň) ukážeme text o uzamčení.
+            // Zámek pro 2. schvalovatele: Zobrazí se pouze adminovi nebo RSM Praha
             let actionControls2 = '<span style="color:#94a3b8; font-size:12px; font-weight:600;">🔒 Pouze RSM Praha</span>';
-            if (isSef2 || isSystemAdmin) {
-                const dAdm = (isSystemAdmin || (isSef2 && req.status1 === 'Schváleno')) ? '' : 'disabled';
+            if (jeUživatelDruhýŠéf || jeHlavníAdmin) {
+                const dAdm = (jeHlavníAdmin || (jeUživatelDruhýŠéf && req.status1 === 'Schváleno')) ? '' : 'disabled';
                 actionControls2 = '<button onclick="setStatus2('+req.id+',\'Schváleno\')" '+dAdm+'>Ano</button> <button onclick="setStatus2('+req.id+',\'Zamítnuto\')" '+dAdm+'>Ne</button> <button class="btn-action" style="background:#17a2b8;color:white;" onclick="setStatus2('+req.id+',\'Náhradník\')" '+dAdm+'>Náhradník</button>';
             }
             
