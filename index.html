@@ -1219,5 +1219,109 @@ window.deleteCompanyAction = function(id) {
         }
     })();
 </script>
+    <!-- 🔌 AUTOMATICKÝ ENHANCER ROLETEK PRO VŠECHNY TABULKY A FORMULÁŘE -->
+<script>
+    (function() {
+        function opravVsechnyRoletkyVSystemu() {
+            // Načteme si aktuální firemní akce z paměti
+            var akceZPameti = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+            if (akceZPameti.length === 0) return;
+
+            // 1. KROK: Opravíme roletku ve formuláři Nové rezervace (actionSelect)
+            var roletkaForm = document.getElementById('actionSelect') || document.querySelector('#tab1 select');
+            if (roletkaForm) {
+                aktualizujKonkretniRoletku(roletkaForm, akceZPameti, "-- Vyberte akci --");
+            }
+
+            // 2. KROK: Najdeme nebo vytvoříme roletku pro Admina nad tabulkou obsazenosti (tab4)
+            var adminTab4 = document.getElementById('tab4');
+            if (adminTab4) {
+                var nadpisSeznamu = adminTab4.querySelector('h3');
+                var tbodyL = document.getElementById('adminActionsTableBody');
+                
+                if (nadpisSeznamu && tbodyL) {
+                    var roletkaAdmin = document.getElementById('cc-admin-action-filter');
+                    
+                    // Pokud roletka nad admin tabulkou ještě není, vytvoříme ji přímo tady z konce
+                    if (!roletkaAdmin) {
+                        var filterDiv = document.createElement('div');
+                        filterDiv.id = 'cc-admin-filter-wrapper';
+                        filterDiv.style.cssText = 'margin-top: 10px; margin-bottom: 20px; background: #f8fafc; padding: 15px; border: 1px solid var(--border); border-radius: 8px; text-align: left;';
+                        filterDiv.innerHTML = '<label style="font-weight: 700; font-size: 13px; color: #475569; display: block; margin-bottom: 6px;">🔎 Rychlý filtr obsazenosti (Vyberte akci):</label>' +
+                                              '<select id="cc-admin-action-filter" style="width: 100%; max-width: 500px; padding: 10px 14px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 600; cursor: pointer; background: #fff;"></select>';
+                        
+                        nadpisSeznamu.parentNode.insertBefore(filterDiv, nadpisSeznamu.nextSibling);
+                        roletkaAdmin = document.getElementById('cc-admin-action-filter');
+                        
+                        // Naučíme admin roletku okamžitě filtrovat řádky v tabulce pod ní
+                        roletkaAdmin.addEventListener('change', odfiltrujRadkyAdminTabulky);
+                    }
+                    
+                    if (roletkaAdmin) {
+                        aktualizujKonkretniRoletku(roletkaAdmin, akceZPameti, "--- Zobrazit všechny vytvořené akce naráz ---");
+                    }
+                }
+            }
+        }
+
+        // Pomocná podfunkce pro sestavení plného textu: Název | Datum v Čas (Místo)
+        function aktualizujKonkretniRoletku(selectElement, akceList, uvodniText) {
+            var aktualniVyber = selectElement.value;
+            var html = '<option value="' + (uvodniText.indexOf('všechny') > -1 ? 'vse' : '') + '">' + uvodniText + '</option>';
+            var maAktivni = false;
+
+            akceList.forEach(function(act) {
+                if (act.status === 'Aktivní' || !act.status || uvodniText.indexOf('všechny') > -1) {
+                    var d = act.date || '';
+                    var c = act.time || '';
+                    var m = act.place || '';
+                    var plnyPopisek = act.name;
+                    if (d || c || m) { plnyPopisek += ' | ' + d + (c ? ' v ' + c : '') + (m ? ' (' + m + ')' : ''); }
+                    
+                    html += '<option value="' + act.name + '">' + plnyPopisek + '</option>';
+                    maAktivni = true;
+                }
+            });
+
+            if (!maAktivni) {
+                html = '<option value="">❌ V systému není žádná aktivní akce</option>';
+            }
+
+            // Zapíšeme do HTML pouze pokud se změnilo, ať nezpůsobíme zásek prohlížeče
+            if (selectElement.innerHTML !== html) {
+                selectElement.innerHTML = html;
+                if (aktualniVyber) selectElement.value = aktualniVyber;
+            }
+        }
+
+        // Pomocná podfunkce pro filtrování řádků v admin tabulce bez jejího přepisování
+        function odfiltrujRadkyAdminTabulky() {
+            var vybranaAkce = document.getElementById('cc-admin-action-filter') ? document.getElementById('cc-admin-action-filter').value : 'vse';
+            var rows = document.querySelectorAll('#adminActionsTableBody tr');
+            
+            rows.forEach(function(row) {
+                // Pojistka pro prázdnou zprávu v tabulce
+                if (row.cells.length < 2) return;
+                
+                var nazevAkceVTabulce = row.cells[0].querySelector('strong') ? row.cells[0].querySelector('strong').innerText : '';
+                
+                if (vybranaAkce === 'vse' || nazevAkceVTabulce === vybranaAkce) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // Spouštíme kontrolu a oživení roletek plynule na pozadí při každém kliknutí nebo načtení záložky
+        setInterval(opravVsechnyRoletkyVSystemu, 500);
+        document.addEventListener('click', function() { setTimeout(opravVsechnyRoletkyVSystemu, 50); });
+        
+        // Pokud admin vybral filtr a tabulka se překreslila z cloudu, filtr aplikujeme znova
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.id === 'btn-admin') { setTimeout(odfiltrujRadkyAdminTabulky, 100); }
+        });
+    })();
+</script>
 </body>
 </html>
