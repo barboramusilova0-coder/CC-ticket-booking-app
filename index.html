@@ -916,27 +916,34 @@ function renderTable() {
     })();
 </script>
     <script>
-    // 🧹 NATVRDO ODSTRANĚNÍ SPODNÍCH TABULEK AKCÍ
+    // 🧹 BEZPEČNÉ A CHYTRÉ ODSTRANĚNÍ NEFUNKČNÍ SPODNÍ TABULKY
     (function() {
-        function smazSpodniTabulky() {
-            // Smaže box s ID rsmActionsSection (pokud v kódu je)
+        function vymazPouzeNefunkcniTabulku() {
+            // Najdeme box s ID rsmActionsSection a bezpečně ho smažeme
             var rsmPanel = document.getElementById('rsmActionsSection');
-            if (rsmPanel) rsmPanel.remove();
+            if (rsmPanel) {
+                rsmPanel.innerHTML = ''; // Vyprázdní vnitřek
+                rsmPanel.style.display = 'none'; // Schová ho
+                rsmPanel.remove(); // Smaže ho z plochy
+            }
             
-            // Pro jistotu najde jakýkoliv div, který obsahuje text "Aktuální seznam akcí" a vymaže ho
-            var vsechnyDivy = document.querySelectorAll('div, .box-section');
-            vsechnyDivy.forEach(function(d) {
-                if (d.innerHTML && d.innerHTML.indexOf('Aktuální seznam akcí') > -1) {
-                    d.remove();
+            // Pro jistotu najdeme jakékoliv nadpisy h3, které obsahují text o obsazenosti, a smazáním vyčistíme prostor
+            var nadpisy = document.querySelectorAll('h3');
+            nadpisy.forEach(function(h) {
+                if (h.innerText && h.innerText.indexOf('Aktuální seznam akcí') > -1) {
+                    var rodicovskyBox = h.parentElement;
+                    if (rodicovskyBox && rodicovskyBox.id !== 'tab4' && rodicovskyBox.id !== 'mainSystem') {
+                        rodicovskyBox.remove();
+                    }
                 }
             });
         }
         
-        // Spustíme mazání hned po načtení stránky i při překlikávání záložek
-        setTimeout(smazSpodniTabulky, 100);
+        // Spustíme bezpečné mazání ihned po načtení i při překlikávání záložek
+        setTimeout(vymazPouzeNefunkcniTabulku, 100);
         if (window.openTab) {
             var origOpenTab = window.openTab;
-            window.openTab = function(num) { origOpenTab(num); setTimeout(smazSpodniTabulky, 50); };
+            window.openTab = function(num) { origOpenTab(num); setTimeout(vymazPouzeNefunkcniTabulku, 50); };
         }
     })();
 </script>
