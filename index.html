@@ -591,4 +591,44 @@ function renderTable() {
     };
 </script>
 </body>
+
+    <script>
+    // 🔥 DEFINITIVNÍ OŽIVENÍ TLAČÍTEK SCHVÁLENÍ
+    window.setStatus1 = function(id, s) { 
+        var uName = (currentUser && currentUser.name) ? currentUser.name : 'Manažer 1. stupně';
+        if (window.requests) {
+            for (var i = 0; i < requests.length; i++) {
+                if (requests[i].id === id) {
+                    requests[i].status1 = s;
+                    requests[i].approvedBy1 = uName;
+                    break;
+                }
+            }
+            localStorage.setItem('ticketRequests', JSON.stringify(requests)); 
+            if (typeof renderTable === 'function') renderTable(); 
+        }
+    };
+    
+    window.setStatus2 = function(id, s) { 
+        var uName = (currentUser && currentUser.name) ? currentUser.name : 'RSM Praha';
+        if (window.requests) {
+            for (var i = 0; i < requests.length; i++) {
+                if (requests[i].id === id) {
+                    requests[i].status2 = s;
+                    requests[i].approvedBy2 = uName;
+                    break;
+                }
+            }
+            localStorage.setItem('ticketRequests', JSON.stringify(requests)); 
+            if (typeof renderTable === 'function') renderTable(); 
+        }
+    };
+
+    // 🔥 POJISTKA PRO OKAMŽITÉ ZOBRAZENÍ TABULKY PO REFRESHI (F5)
+    setTimeout(function() {
+        if (typeof renderTable === 'function') {
+            renderTable();
+        }
+    }, 150);
+</script>
 </html>
