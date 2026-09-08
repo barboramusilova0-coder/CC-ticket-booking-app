@@ -153,16 +153,16 @@
         <h2>Žádat o lístky na akci</h2>
         <form id="ticketForm" onsubmit="handleFormSubmit(event)">
             <div class="form-group">
-                <label for="actionSelect">Vyberte akci (povinné):</label>
+                <label for="actionSelect">Vyberte akci(povinné):</label>
                 <select id="actionSelect" required></select>
             </div>
             <div class="form-group">
-                <label for="employeeName">Žadatel (povinné):</label>
+                <label for="employeeName">Žadatel(povinné):</label>
                 <input type="text" id="employeeName" required placeholder="Jméno zaměstnance">
             </div>
             <div class="form-group">
                 <label for="managerEmail">E-mail nadřízeného (1. schvalovatel)(povinné):</label>
-                <input type="email" id="managerEmail" required placeholder="novotny@cchellenic.com">
+                <input type="email" id="managerEmail" required placeholder="novotny@@cchellenic.com">
             </div>
             <div class="form-group">
                 <label for="customerName">Jméno zákazníka(povinné):</label>
@@ -173,7 +173,7 @@
                 <input type="number" id="ticketCount" min="1" max="10" required placeholder="1">
             </div>
             <div class="form-group">
-                <label for="reason">Důvod žádosti o lístky (nezapomeňte uvést všechny detaily a obrat v EUR)(povinné):</label>
+                <label for="reason">Důvod žádosti o lístky (nezapomeňte uvést všechny detaily a obrat v EUR) (povinné):</label>
                 <textarea id="reason" rows="3" required placeholder="Např. Obchodní schůzka s klíčovým klientem..."></textarea>
             </div>
                         <!-- ⚖️ COMPLIANCE POJISTKA COCA-COLA HBC -->
@@ -183,52 +183,7 @@
                     Potvrzuji, že jsem se seznámil/a s Kodexem chování a Pravidly chování pro zákazníky a jsem si vědom/a povinnosti je dodržovat.
                 </label>
             </div>
-              <button type="submit" class="        button.btn-submit { 
-            background: linear-gradient(135deg, #e41e26 0%, #b81118 100%) !important; 
-            color: white !important; 
-            border: none !important; 
-            padding: 16px 32px !important; 
-            border-radius: 50px !important; /* Moderní pilulkový/zaoblený tvar */
-            cursor: pointer !important; 
-            font-size: 16px !important; 
-            font-weight: 800 !important; 
-            letter-spacing: 0.03em !important;
-            text-transform: uppercase;
-            width: 100% !important; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; 
-            box-shadow: 0 4px 15px rgba(228, 30, 38, 0.25) !important;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        button.btn-submit:hover:not(:disabled) { 
-            background: linear-gradient(135deg, #ff4d4d 0%, #e41e26 100%) !important;
-            transform: translateY(-2px) scale(1.01) !important;
-            box-shadow: 0 6px 20px rgba(228, 30, 38, 0.4), 0 0 12px rgba(249, 115, 22, 0.3) !important;
-        }
-        button.btn-submit:hover:not(:disabled)::after {
-            content: '🎃';
-            animation: bouncePumpkin 0.4s infinite alternate;
-        }
-        button.btn-submit:active:not(:disabled) {
-            transform: translateY(1px) scale(0.99) !important;
-        }
-        button.btn-submit:disabled { 
-            background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%) !important; 
-            color: #64748b !important; 
-            opacity: 0.6 !important; 
-            cursor: not-allowed !important; 
-            box-shadow: none !important;
-            transform: none !important;
-        }
-        button.btn-submit:disabled::before {
-            content: '🔒 ';
-        }
-        @keyframes bouncePumpkin {
-            from { transform: translateY(0) scale(1); }
-            to { transform: translateY(-3px) scale(1.1); }
-        }
+              <button type="submit" class="btn-submit" id="mainFormSubmitBtn" disabled>Odeslat žádost</button>
         </form>
     </div>
     <div id="tab2" class="tab-content">
@@ -424,18 +379,23 @@
             document.getElementById('loggedRole').innerText = roleTxt;
             if (currentUser.role === 'admin' && btn) btn.style.display = 'block'; else if(btn) btn.style.display = 'none';
         }
-    }
-    function openTab(num) {
+        function openTab(num) {
+        // Uložíme si číslo aktuální záložky do paměti prohlížeče, aby po F5 nezmizela
+        localStorage.setItem('activeCcTab', num);
+
         for(let i=1; i<=4; i++) { const t = document.getElementById('tab'+i); if(t) t.classList.remove('active'); }
-        document.getElementById('btn-nova').classList.remove('active');
-        document.getElementById('btn-seznam').classList.remove('active');
-        document.getElementById('btn-zadost-role').classList.remove('active');
-        document.getElementById('btn-admin').classList.remove('active');
+        if(document.getElementById('btn-nova')) document.getElementById('btn-nova').classList.remove('active');
+        if(document.getElementById('btn-seznam')) document.getElementById('btn-seznam').classList.remove('active');
+        if(document.getElementById('btn-zadost-role')) document.getElementById('btn-zadost-role').classList.remove('active');
+        if(document.getElementById('btn-admin')) document.getElementById('btn-admin').classList.remove('active');
+        
         const targetTab = document.getElementById('tab' + num); if(targetTab) targetTab.classList.add('active');
-        if (num === 1) document.getElementById('btn-nova').classList.add('active');
-        if (num === 2) { document.getElementById('btn-seznam').classList.add('active'); renderTable(); }
-        if (num === 3) document.getElementById('btn-zadost-role').classList.add('active');
-        if (num === 4) { document.getElementById('btn-admin').classList.add('active'); renderAdminSection(); }
+        if (num === 1 && document.getElementById('btn-nova')) document.getElementById('btn-nova').classList.add('active');
+        if (num === 2) { if(document.getElementById('btn-seznam')) document.getElementById('btn-seznam').classList.add('active'); renderTable(); }
+        if (num === 3 && document.getElementById('btn-zadost-role')) document.getElementById('btn-zadost-role').classList.add('active');
+        if (num === 4) { if(document.getElementById('btn-admin')) document.getElementById('btn-admin').classList.add('active'); renderAdminSection(); }
+    }
+
     }
     function handleRoleRequestSubmit(e) {
         e.preventDefault();
