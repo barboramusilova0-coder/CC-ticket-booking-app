@@ -427,9 +427,32 @@
             }); 
         }
     }
-    function handleFormSubmit(e) {
-                e.preventDefault(); requests.push({ id: Date.now(), action: document.getElementById('actionSelect').value, employee: document.getElementById('employeeName').value, manager: document.getElementById('managerEmail').value.toLowerCase().trim(), customer: document.getElementById('customerName').value, turnover: document.getElementById('euroTurnover').value, tickets: document.getElementById('ticketCount').value, reason: document.getElementById('reason').value, status1: 'Čeká', status2: 'Čeká', approvedBy1: '', approvedBy2: '', applicantEmail: (currentUser ? currentUser.email : '') });
-        localStorage.setItem('ticketRequests', JSON.stringify(requests)); document.getElementById('ticketForm').reset(); alert('Žádost úspěšně odeslána!'); openTab(2);
+       function handleFormSubmit(e) {
+        e.preventDefault(); 
+        
+        // Zjistíme e-mail přihlášeného žadatele, pokud existuje
+        const appEmail = (currentUser && currentUser.email) ? currentUser.email : '';
+
+        // Uložíme žádost v čistém formátu přesně tak, jak to zbytek aplikace vyžaduje
+        requests.push({ 
+            id: Date.now(), 
+            action: document.getElementById('actionSelect').value, 
+            employee: document.getElementById('employeeName').value, 
+            manager: document.getElementById('managerEmail').value.toLowerCase().trim(), 
+            customer: document.getElementById('customerName').value, 
+            tickets: document.getElementById('ticketCount').value, 
+            reason: document.getElementById('reason').value, 
+            status1: 'Čeká', 
+            status2: 'Čeká', 
+            approvedBy1: '', 
+            approvedBy2: '',
+            applicantEmail: appEmail
+        });
+        
+        localStorage.setItem('ticketRequests', JSON.stringify(requests)); 
+        document.getElementById('ticketForm').reset(); 
+        alert('Žádost o rezervaci lístků byla úspěšně odeslána!'); 
+        openTab(2);
     }
     function setStatus1(id, s) { requests = requests.map(r => r.id === id ? {...r, status1: s, approvedBy1: currentUser.name} : r); localStorage.setItem('ticketRequests', JSON.stringify(requests)); renderTable(); }
     function setStatus2(id, s) { requests = requests.map(r => r.id === id ? {...r, status2: s, approvedBy2: currentUser.name} : r); localStorage.setItem('ticketRequests', JSON.stringify(requests)); renderTable(); }
