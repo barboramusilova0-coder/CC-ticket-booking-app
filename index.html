@@ -588,35 +588,7 @@ function renderTable() {
                 tab2.appendChild(panel);
             }
         }
-        function setStatus1(id, s) { 
-        var uName = (currentUser && currentUser.name) ? currentUser.name : 'Manažer 1. stupně';
-        if (window.requests) {
-            for (var i = 0; i < requests.length; i++) {
-                if (requests[i].id === id) {
-                    requests[i].status1 = s;
-                    requests[i].approvedBy1 = uName;
-                    break;
-                }
-            }
-            localStorage.setItem('ticketRequests', JSON.stringify(requests)); 
-            if (typeof renderTable === 'function') renderTable(); 
-        }
-    }
-    
-    function setStatus2(id, s) { 
-        var uName = (currentUser && currentUser.name) ? currentUser.name : 'RSM Praha';
-        if (window.requests) {
-            for (var i = 0; i < requests.length; i++) {
-                if (requests[i].id === id) {
-                    requests[i].status2 = s;
-                    requests[i].approvedBy2 = uName;
-                    break;
-                }
-            }
-            localStorage.setItem('ticketRequests', JSON.stringify(requests)); 
-            if (typeof renderTable === 'function') renderTable(); 
-        }
-    }
+    };
 </script>
 </body>
 </html>
