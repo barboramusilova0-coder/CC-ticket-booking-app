@@ -814,12 +814,34 @@ function renderTable() {
             var btnText = e.target.innerText ? e.target.innerText.toLowerCase() : '';
             var btnOnclick = e.target.getAttribute('onclick') ? e.target.getAttribute('onclick').toLowerCase() : '';
             
-            // Pokud uživatel klikne na jakékoliv tlačítko schválení (Ano/Ne/Náhradník) nebo smazání
-            if (btnText.indexOf('ano') > -1 || btnText.indexOf('ne') > -1 || btnText.indexOf('náhradník') > -1 || btnText.indexOf('smazat') > -1 || btnOnclick.indexOf('status') > -1 || btnOnclick.indexOf('delete') > -1) {
+            // 1. SITUACE: Uživatel kliknul na jakékoliv tlačítko s textem SMAZAT
+            if (btnText.indexOf('smazat') > -1 || btnOnclick.indexOf('delete') > -1) {
+                e.preventDefault();
+                e.stopPropagation();
                 
-                // Dáme prohlížeči malinkou chviličku (150 milisekund), aby stihl data v pořádku zapsat do paměti...
+                if (confirm('Opravdu chcete tuto rezervaci trvale smazat?')) {
+                    // Vytáhneme ID rezervace přímo z textu příkazu onclick (hledáme číslo)
+                    var matches = btnOnclick.match(/\d+/);
+                    if (matches) {
+                        var idProSmazani = parseInt(matches[0]);
+                        
+                        // Načteme aktuální rezervace z paměti, vymažeme vybrané ID a uložíme zpět
+                        var aktualniRezervace = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
+                        aktualniRezervace = aktualniRezervace.filter(function(r) { return r.id !== idProSmazani; });
+                        
+                        window.requests = aktualniRezervace;
+                        localStorage.setItem('ticketRequests', JSON.stringify(aktualniRezervace));
+                        
+                        // Bleskové automatické znovunačtení stránky – řádek už v paměti není, takže navždy zmizí!
+                        location.reload();
+                    }
+                }
+            }
+            
+            // 2. SITUACE: Uživatel kliknul na schvalování (Ano/Ne/Náhradník)
+            else if (btnText.indexOf('ano') > -1 || btnText.indexOf('ne') > -1 || btnText.indexOf('náhradník') > -1 || btnOnclick.indexOf('status') > -1) {
+                // Necháme proběhnout uložení a za 150 milisekund stránku zaktualizujeme
                 setTimeout(function() {
-                    // ...a hned potom stránku bleskově automaticky zaktualizujeme (uděláme ten F5 refresh za tebe!)
                     location.reload();
                 }, 150);
             }
