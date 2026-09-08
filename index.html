@@ -655,5 +655,40 @@ function renderTable() {
             renderTable();
         }
     }, 150);
+            // 🔥 NEPRŮSTŘELNÉ OŽIVENÍ TLAČÍTEK PRO 1. I 2. STUPEŇ SCHVALOVÁNÍ
+    window.setStatus1 = function(id, s) { 
+        var uName = (currentUser && currentUser.name) ? currentUser.name : 'Manažer 1. stupně';
+        if (window.requests) {
+            for (var i = 0; i < requests.length; i++) {
+                if (requests[i].id === id) {
+                    requests[i].status1 = s;
+                    requests[i].approvedBy1 = uName;
+                    break;
+                }
+            }
+            localStorage.setItem('ticketRequests', JSON.stringify(requests)); 
+            // Vynutíme překreslení obou tabulek, aby se data hned ukázala
+            if (typeof renderTable === 'function') renderTable(); 
+            if (typeof renderAdminSection === 'function') { try { renderAdminSection(); } catch(e){} }
+        }
+    };
+    
+    window.setStatus2 = function(id, s) { 
+        var uName = (currentUser && currentUser.name) ? currentUser.name : 'RSM Praha';
+        if (window.requests) {
+            for (var i = 0; i < requests.length; i++) {
+                if (requests[i].id === id) {
+                    requests[i].status2 = s;
+                    requests[i].approvedBy2 = uName;
+                    break;
+                }
+            }
+            localStorage.setItem('ticketRequests', JSON.stringify(requests)); 
+            // Vynutíme překreslení obou tabulek, aby se data hned ukázala
+            if (typeof renderTable === 'function') renderTable(); 
+            if (typeof renderAdminSection === 'function') { try { renderAdminSection(); } catch(e){} }
+        }
+    };
+
 </script>
 </html>
