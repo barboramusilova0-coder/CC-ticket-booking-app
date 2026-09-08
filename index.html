@@ -64,20 +64,6 @@
         .btn-action:disabled { background: #f1f5f9 !important; color: #cbd5e1 !important; border-color: #e2e8f0 !important; cursor: not-allowed; }
         .box-section { background: #ffffff; padding: 28px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 36px; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-           /* Moderní Coca-Cola Action Cards Layout */
-        .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 24px; margin-top: 20px; }
-        .action-card { background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -1px rgba(0,0,0,0.02); transition: all 0.2s ease; border-top: 4px solid var(--border); position: relative; }
-        .action-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border-top-color: var(--cc-red); }
-        .card-header { margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-        .card-title { font-size: 18px; font-weight: 700; color: var(--cc-dark); margin: 0 0 4px 0; }
-        .card-meta { font-size: 13px; color: #64748b; }
-        .card-badge-status { position: absolute; top: 24px; right: 24px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--cc-red); }
-        .card-occupancy { background: #f8fafc; border-radius: 8px; padding: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
-        .card-occupancy-text { font-size: 14px; font-weight: 600; color: #475569; }
-        .card-occupancy-num { font-size: 16px; font-weight: 700; color: var(--cc-dark); }
-        .card-sections { display: flex; flex-direction: column; gap: 14px; }
-        .card-sec-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #475569; margin-bottom: 6px; }
-        .card-sec-content { font-size: 13px; line-height: 1.5; color: #334155; max-height: 120px; overflow-y: auto; padding-left: 4px; }
     </style>
 </head>
 <body>
@@ -136,13 +122,8 @@
             </div>
             <button type="submit" class="btn-submit">Odeslat žádost</button>
         </form>
-       <div style="margin-top: 40px;">
-        <h2>Aktuální obsazenost firemních akcí</h2>
-        <p style="font-size: 14px; color: #64748b; margin-top: -10px; margin-bottom: 24px;">Přehled všech běžících akcí a zaměstnanců, kterým byly lístky definitivně schváleny.</p>
-        <!-- Zde se automaticky vygenerují moderní karty -->
-        <div id="publicActionsCardsGrid" class="cards-grid"></div>
     </div>
-
+        <div style="margin-top: 40px;">
         <h2>Aktuální obsazenost firemních akcí</h2>
         <p style="font-size: 14px; color: #64748b; margin-top: -10px; margin-bottom: 20px;">Přehled všech akcí a zaměstnanců, kterým byly lístky definitivně schváleny oběma stupni.</p>
         <div style="overflow-x: auto;">
@@ -407,50 +388,13 @@
         const sel = document.getElementById('actionSelect'); if (!sel) return; let h = '<option value="">-- Vyberte akci --</option>';
         companyActions.forEach(function(a) { if (a.status === 'Aktivní') h += '<option value="'+a.name+'">'+a.name+'</option>'; }); sel.innerHTML = h;
     }
-         function renderPublicActionsTable() {
-        const grid = document.getElementById('publicActionsCardsGrid');
-        if(!grid) return;
-        grid.innerHTML = '';
+     function renderPublicActionsTable() {
+        const tbody = document.getElementById('publicActionsTableBody');
+        if(!tbody) return;
+        tbody.innerHTML = '';
         if(companyActions.length === 0) {
-            grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #64748b; padding: 40px; background: #ffffff; border-radius: 12px; border: 1px solid var(--border);">Zatím nebyly vytvořeny žádné firemní akce.</div>';
+            tbody.innerHTML = '<tr><td colspan="4" style="color:#64748b">Zatím nebyly vytvořeny žádné firemní akce.</td></tr>';
             return;
-        }
-        companyActions.forEach(function(act) {
-            const app = requests.filter(function(r) { return r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno'; }); 
-            let tot = 0; app.forEach(function(x) { tot += parseInt(x.tickets); }); 
-            
-            const names = app.map(function(p) { return '• <strong>' + p.employee + '</strong> (' + p.tickets + ' ks pro clienta: ' + p.customer + ')'; }).join('<br>') || '<span style="color:#94a3b8">Zatím nikdo neschválen</span>';
-            const wl = requests.filter(function(r) { return r.action === act.name && r.status2 === 'Náhradník'; });
-            const wlNames = wl.map(function(p, i) { return '#' + (i + 1) + ' <strong>' + p.employee + '</strong> (' + p.tickets + ' ks)'; }).join('<br>') || '<span style="color:#94a3b8">Žádní náhradníci</span>';
-            
-            const card = document.createElement('div');
-            card.className = 'action-card';
-            if (act.status === 'Zrušena') card.style.opacity = '0.5';
-            
-            card.innerHTML = 
-                '<div class="card-header">' +
-                    '<h3 class="card-title">' + act.name + '</h3>' +
-                    '<div class="card-meta">' + act.date + ' • ' + act.time + ' • ' + act.place + '</div>' +
-                    (act.status === 'Zrušena' ? '<span class="card-badge-status">[Zrušeno]</span>' : '') +
-                '</div>' +
-                '<div class="card-occupancy">' +
-                    '<span class="card-occupancy-text">Obsazenost kapacity</span>' +
-                    '<span class="card-occupancy-num">' + tot + ' / ' + act.capacity + ' ks</span>' +
-                '</div>' +
-                '<div class="card-sections">' +
-                    '<div>' +
-                        '<div class="card-sec-title">✅ Definitivně schválení</div>' +
-                        '<div class="card-sec-content">' + names + '</div>' +
-                    '</div>' +
-                    '<div style="margin-top: 6px; border-top: 1px dashed var(--border); padding-top: 10px;">' +
-                        '<div class="card-sec-title">⏳ Pořadník náhradníků</div>' +
-                        '<div class="card-sec-content">' + wlNames + '</div>' +
-                    '</div>' +
-                '</div>';
-            grid.appendChild(card);
-        });
-    }
-
         }
         companyActions.forEach(function(act) {
             const app = requests.filter(function(r) { return r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno'; }); 
