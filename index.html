@@ -280,6 +280,20 @@
     let requests = JSON.parse(localStorage.getItem('ticketRequests')) || [];
     let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
     let companyActions = JSON.parse(localStorage.getItem('companyActions')) || [];
+    function openAccessRequestFromGate() {
+        // Skryjeme úvodní bránu a ukážeme systém
+        document.getElementById('welcomeGate').style.display = 'none';
+        document.getElementById('mainSystem').style.display = 'block';
+        
+        // Skryjeme všechny ostatní záložky kromě žádosti o přístup
+        document.getElementById('btn-nova').style.display = 'none';
+        document.getElementById('btn-seznam').style.display = 'none';
+        document.getElementById('btn-zadost-role').style.display = 'block';
+        
+        // Nastavíme nepřihlášeného uživatele (hosta) a skočíme na záložku 3
+        currentUser = { name: "Anonymní žadatel", role: "guest" };
+        openTab(3);
+    }
 
     function loginUserFromGate() {
         const token = document.getElementById('gateUserToken').value.trim();
