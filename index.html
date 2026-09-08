@@ -176,7 +176,14 @@
                 <label for="reason">Důvod žádosti o lístky (nezapomeňte uvést všechny detaily a obrat v EUR):</label>
                 <textarea id="reason" rows="3" required placeholder="Např. Obchodní schůzka s klíčovým klientem..."></textarea>
             </div>
-            <button type="submit" class="btn-submit">Odeslat žádost</button>
+                        <!-- ⚖️ COMPLIANCE POJISTKA COCA-COLA HBC -->
+            <div class="form-group" style="display: flex; align-items: flex-start; gap: 10px; margin-top: 25px; margin-bottom: 25px; text-align: left; background: #f8fafc; padding: 15px; border: 1px solid var(--border); border-radius: 8px;">
+                <input type="checkbox" id="complianceCheck" onchange="toggleSubmitButtonByCompliance()" style="width: auto; margin-top: 4px; cursor: pointer;">
+                <label for="complianceCheck" style="font-weight: 600; font-size: 13px; color: #475569; cursor: pointer; user-select: none; line-height: 1.4;">
+                    Potvrzuji, že jsem se seznámil/a s Kodexem chování a Pravidly chování pro zákazníky a jsem si vědom/a povinnosti je dodržovat.
+                </label>
+            </div>
+              <button type="submit" class="btn-submit" id="mainFormSubmitBtn" disabled>Odeslat žádost</button>
         </form>
     </div>
     <div id="tab2" class="tab-content">
@@ -762,5 +769,39 @@ function renderTable() {
             }
         }
     }, true);
+</script>
+    <script>
+    // ⚖️ LOGIKA PRO ZAMYKÁNÍ TLAČÍTKA PODLE KODEXU CHOVÁNÍ
+    function toggleSubmitButtonByCompliance() {
+        var checkbox = document.getElementById('complianceCheck');
+        var submitBtn = document.getElementById('mainFormSubmitBtn');
+        if (!checkbox || !submitBtn) return;
+
+        if (checkbox.checked) {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.style.cursor = 'pointer';
+            submitBtn.style.backgroundColor = 'var(--cc-red)';
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.4';
+            submitBtn.style.cursor = 'not-allowed';
+            submitBtn.style.backgroundColor = '#94a3b8'; // Manažerská šedá barva při zamčení
+        }
+    }
+
+    // Záchranná pojistka: po úspěšném odeslání žádosti vrátíme tlačítko do zašedlého stavu
+    document.addEventListener('submit', function(e) {
+        if (e.target && e.target.id === 'ticketForm') {
+            setTimeout(function() {
+                var checkbox = document.getElementById('complianceCheck');
+                if (checkbox) checkbox.checked = false;
+                toggleSubmitButtonByCompliance();
+            }, 500);
+        }
+    });
+
+    // Spustíme hned na začátku pro jistotu, aby bylo šedivé hned po načtení
+    setTimeout(toggleSubmitButtonByCompliance, 200);
 </script>
 </html>
