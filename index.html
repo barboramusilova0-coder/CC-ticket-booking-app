@@ -595,4 +595,112 @@ function renderTable() {
         }
     }, true);
 </script>
+    <script>
+    // 🔍 POKROČILÁ MANAŽERSKÁ VYHLEDÁVACÍ LIŠTA (Coca-Cola HBC)
+    (function() {
+        function nasadPokrocileFiltry() {
+            var excelContainer = document.getElementById('excelBtnContainer');
+            
+            // Pokud lišta nad tabulkou ještě neexistuje, tak ji vytvoříme
+            if (excelContainer && !document.getElementById('cc-stav-filter')) {
+                var filterWrapper = document.createElement('div');
+                filterWrapper.id = 'cc-filter-bar-wrapper';
+                filterWrapper.style.cssText = 'margin-top: 15px; margin-bottom: 25px; padding: 15px; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; display: flex; gap: 15px; flex-wrap: wrap; align-items: center; text-align: left;';
+                
+                filterWrapper.innerHTML = 
+                    '<div style="display:flex; flex-direction:column; gap:4px;">' +
+                        '<label style="font-weight:700; font-size:12px; color:#475569;">Stav schválení:</label>' +
+                        '<select id="cc-stav-filter" style="width:200px; padding:8px 12px; border-radius:6px; border:1px solid #cbd5e1; font-weight:600; cursor:pointer; background:#fff;">' +
+                            '<option value="moje_cekajici">⏳ Moje čekající žádosti</option>' +
+                            '<option value="vse">--- Všechny žádosti ---</option>' +
+                            '<option value="vyrizene">🟢 Kompletně vyřízené</option>' +
+                        '</select>' +
+                    '</div>' +
+                    '<div style="display:flex; flex-direction:column; gap:4px;">' +
+                        '<label style="font-weight:700; font-size:12px; color:#475569;">Jméno žadatele:</label>' +
+                        '<input type="text" id="cc-search-applicant" placeholder="Hledat žadatele..." style="width:180px; padding:8px 12px; border-radius:6px; border:1px solid #cbd5e1; background:#fff;">' +
+                    '</div>' +
+                    '<div style="display:flex; flex-direction:column; gap:4px;">' +
+                        '<label style="font-weight:700; font-size:12px; color:#475569;">Jméno zákazníka:</label>' +
+                        '<input type="text" id="cc-search-customer" placeholder="Hledat zákazníka..." style="width:180px; padding:8px 12px; border-radius:6px; border:1px solid #cbd5e1; background:#fff;">' +
+                    '</div>';
+                
+                excelContainer.appendChild(filterWrapper);
+
+                // Propojíme všechny filtry, aby reagovaly okamžitě při psaní nebo výběru
+                document.getElementById('cc-stav-filter').addEventListener('change', spustiPokrocilouFiltraci);
+                document.getElementById('cc-search-applicant').addEventListener('input', spustiPokrocilouFiltraci);
+                document.getElementById('cc-search-customer').addEventListener('input', spustiPokrocilouFiltraci);
+            }
+        }
+
+        function spustiPokrocilouFiltraci() {
+            var filterStav = document.getElementById('cc-stav-filter') ? document.getElementById('cc-stav-filter').value : 'moje_cekajici';
+            var searchApplicant = document.getElementById('cc-search-applicant') ? document.getElementById('cc-search-applicant').value.toLowerCase().trim() : '';
+            var searchCustomer = document.getElementById('cc-search-customer') ? document.getElementById('cc-search-customer').value.toLowerCase().trim() : '';
+            
+            var rows = document.querySelectorAll('#requestsTableBody tr');
+            
+            rows.forEach(function(row) {
+                if (row.cells.length < 8) return; // Pojistka pro prázdnou tabulku
+
+                // Načteme texty z buněk tabulky pro porovnání
+                var textZadatele = row.cells[1].innerText.toLowerCase();
+                var textZakaznika = row.cells[2].innerText.toLowerCase();
+                
+                var textStavu1 = row.cells[3].innerText.toLowerCase(); // 1. stupeň
+                var textStavu2 = row.cells[4].innerText.toLowerCase(); // 2. stupeň
+
+                // Zjistíme roli a email přihlášeného schvalovatele, abychom poznali, co čeká přímo na něj
+                var uRole = (window.currentUser && currentUser.role) ? currentUser.role : '';
+                var uEmail = (window.currentUser && currentUser.email) ? currentUser.email.toLowerCase().trim() : '';
+                
+                // Vytáhneme email manažera z důvodové/skryté buňky nebo porovnáme podle řádku
+                var jeToMojeRezervace = row.innerHTML.toLowerCase().indexOf(uEmail) > -1 || uRole === 'admin' || uRole.includes('rsm_praha') || uRole.includes('2');
+
+                var naKomToVisi = 'nikdo';
+                if (textStavu1.indexOf('čeká') > -1) {
+                    naKomToVisi = 'manažer';
+                } else if (textStavu2.indexOf('čeká') > -1) {
+                    naKomToVisi = 'rsm';
+                }
+
+                // Vyhodnocení stavového filtru
+                var odpovidaStavu = false;
+                if (filterStav === 'moje_cekajici') {
+                    if (uRole === 'admin') {
+                        odpovidastavu = (naKomToVisi !== 'nikdo'); // Admin vidí všechno, co někde čeká
+                    } else if (uRole.includes('manager') || uRole.includes('1')) {
+                        odpovidastavu = (naKomToVisi === 'manažer' && jeToMojeRezervace);
+                    } else if (uRole.includes('rsm_praha') || uRole.includes('2')) {
+                        odpovidastavu = (naKomToVisi === 'rsm' && textStavu1.indexOf('schváleno') > -1);
+                    }
+                } else if (filterStav === 'vyrizene') {
+                    odpovidastavu = (naKomToVisi === 'nikdo');
+                } else {
+                    odpovidastavu = true; // Zobrazit vše
+                }
+
+                // Vyhodnocení textového vyhledávání (Žadatel + Zákazník)
+                var odpovidaZadateli = (searchApplicant === '' || textZadatele.indexOf(searchApplicant) > -1);
+                var odpovidaZakaznikovi = (searchCustomer === '' || textZakaznika.indexOf(searchCustomer) > -1);
+
+                // Řádek ukážeme, pouze pokud splňuje všechny 3 filtry naráz
+                if (odpovidastavu && odpovidaZadateli && odpovidaZakaznikovi) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // Automatické udržování lišty na obrazovce a okamžitá filtrace
+        setInterval(function() {
+            nasadPokrocileFiltry();
+            if (document.getElementById('cc-stav-filter')) {
+                spustiPokrocilouFiltraci();
+            }
+        }, 350);
+    })();
+</script>
 </html>
