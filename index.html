@@ -981,14 +981,13 @@ function renderTable() {
         .tab-content { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
         table { min-width: 900px !important; }
     }
-<!-- 🌐 NAČTENÍ ROZHRANÍ GOOGLE FIREBASE POMOCÍ KLASICKÝCH WEBOVÝCH SKRIPTŮ -->
+<<!-- 🌐 NAČTENÍ ROZHRANÍ GOOGLE FIREBASE POMOCÍ KLASICKÝCH WEBOVÝCH SKRIPTŮ -->
 <script src="https://gstatic.com"></script>
 <script src="https://gstatic.com"></script>
 
 <script>
-    // 🧲 GLOBÁLNÍ PROPOJENÍ PORTÁLU S FIREBASE CLOUDEM
+    // 🧲 GLOBÁLNÍ PROPOJENÍ PORTÁLU S FIREBASE CLOUDEM (VČETNĚ AKCÍ)
     (function() {
-        // Tvoje přesná konfigurace k projektu cc-tickets-booking-app
         var firebaseConfig = {
             apiKey: "AIzaSyCPSV3AauKHMPfnkACjbfvEDbb6RFJMiJA",
             authDomain: "://firebaseapp.com",
@@ -999,18 +998,15 @@ function renderTable() {
             measurementId: "G-GKKE8GCN0T"
         };
 
-        // Inicializujeme Firebase a Firestore klasickou bezpečnou cestou
         firebase.initializeApp(firebaseConfig);
         var db = firebase.firestore();
         var docRef = db.collection("portalData").doc("cocaColaDatabase");
 
         // 🔄 1. ČÁST: ŽIVÝ PŘÍJEM DAT Z INTERNETU (onSnapshot)
-        // Když sestra na PC nebo ty na mobilu cokoli změníte, kód to hned zachytí a přepíše obrazovku
         docRef.onSnapshot(function(docSnap) {
             if (docSnap.exists) {
                 var cloudData = docSnap.data();
                 
-                // Synchronizujeme cloudová data do lokální paměti běžícího programu
                 if (cloudData.ticketRequests) {
                     window.requests = cloudData.ticketRequests;
                     localStorage.setItem('ticketRequests', JSON.stringify(window.requests));
@@ -1028,7 +1024,7 @@ function renderTable() {
                     localStorage.setItem('roleRequests', JSON.stringify(window.roleRequests));
                 }
                 
-                // Okamžitě bleskově překreslíme grafické tabulky na stránce
+                // Překreslíme všechny komponenty na stránce
                 if (typeof renderTable === 'function') renderTable();
                 if (typeof renderAdminSection === 'function') renderAdminSection();
                 if (typeof updateActionSelectOptions === 'function') updateActionSelectOptions();
@@ -1037,7 +1033,7 @@ function renderTable() {
             console.error("Chyba při živém stahování z Firebase:", error);
         });
 
-        // 📤 2. ČÁST: OKAMŽITÉ ODESÍLÁNÍ ZMĚN DO CLOUDU (Pojistný vysílač)
+        // 📤 2. ČÁST: OKAMŽITÉ ODESÍLÁNÍ ZMĚN DO CLOUDU
         function odesliDataDoClouduNatvrdo() {
             setTimeout(function() {
                 var dataToUpload = {
@@ -1050,23 +1046,23 @@ function renderTable() {
                 docRef.set(dataToUpload, { merge: true })
                     .then(function() { console.log("Data byla úspěšně nahrána do cloudu!"); })
                     .catch(function(err) { console.error("Chyba při zápisu do cloudu:", err); });
-            }, 100);
+            }, 150); // Dáme prohlížeči drobný čas na lokální zápis
         }
 
-        // Sledujeme odeslání formuláře
+        // POJISTKA PRO FORMULÁŘE: Chytáme jak odeslání žádosti o lístky, tak i vytvoření NOVÉ AKCE!
         document.addEventListener('submit', function(e) {
-            if (e.target && (e.target.id === 'ticketForm' || e.target.getAttribute('onsubmit'))) {
+            if (e.target) {
                 odesliDataDoClouduNatvrdo();
             }
         });
 
-        // Sledujeme kliknutí na schvalovací tlačítka a smazání řádku
+        // POJISTKA PRO TLAČÍTKA: Schvalování, mazání rezervací, mazání akcí, rušení akcí
         document.addEventListener('click', function(e) {
             if (e.target && e.target.tagName === 'BUTTON') {
                 var txt = e.target.innerText ? e.target.innerText.toLowerCase() : '';
                 var onc = e.target.getAttribute('onclick') ? e.target.getAttribute('onclick').toLowerCase() : '';
                 
-                if (txt.indexOf('ano') > -1 || txt.indexOf('ne') > -1 || txt.indexOf('náhradník') > -1 || txt.indexOf('smazat') > -1 || onc.indexOf('status') > -1 || onc.indexOf('delete') > -1) {
+                if (txt.indexOf('ano') > -1 || txt.indexOf('ne') > -1 || txt.indexOf('náhradník') > -1 || txt.indexOf('smazat') > -1 || txt.indexOf('zrušit') > -1 || txt.indexOf('uložit') > -1 || onc.indexOf('status') > -1 || onc.indexOf('action') > -1 || onc.indexOf('delete') > -1) {
                     odesliDataDoClouduNatvrdo();
                 }
             }
