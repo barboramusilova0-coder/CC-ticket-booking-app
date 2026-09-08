@@ -537,98 +537,29 @@ function renderTable() {
         localStorage.setItem('ticketRequests', JSON.stringify(requests)); 
         renderTable(); 
     }
-            // OPRAVA: Přidáme přehled akcí pro 2. stupeň a Admina přímo do funkce renderTable
-    var staraRenderTable = renderTable;
-    renderTable = function() {
-        // Nejprve necháme vykreslit tu klasickou schvalovací tabulku, co ti teď krásně funguje
-        staraRenderTable();
-        
-        // Zkontrolujeme, zda je přihlášen 2. stupeň (RSM) nebo Admin
-        if (currentUser && (currentUser.role === 'rsm_praha' || currentUser.role.includes('2') || currentUser.role === 'admin')) {
-            var tab2 = document.getElementById('tab2');
-            if (tab2) {
-                // Odstraníme starý panel, pokud tam nějaký zbyl, ať se to nezdvojuje
-                var staryPanel = document.getElementById('cc-rsm-actions-panel');
-                if (staryPanel) staryPanel.remove();
-                
-                // Vytvoříme krásný nový panel s kapacitami a jmény
-                var panel = document.createElement('div');
-                panel.id = 'cc-rsm-actions-panel';
-                panel.className = 'box-section';
-                panel.style.marginTop = '40px';
-                
-                var html = '<h3>📊 Aktuální seznam akcí, obsazenost a pořadník náhradníků</h3>' +
-                           '<div style="overflow-x: auto;"><table><thead><tr>' +
-                           '<th>Akce / Kdy</th><th>Kapacita / Schváleno</th><th>Stav</th><th>Schválení lidé a náhradníci</th>' +
-                           '</tr></thead><tbody>';
-                
-                // Projdeme všechny dostupné firemní akce a spočítáme lidi
-                if (window.companyActions && companyActions.length > 0) {
-                    companyActions.forEach(function(act) {
-                        var app = requests.filter(function(r) { return r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno'; });
-                        var tot = 0; app.forEach(function(x) { tot += parseInt(x.tickets || 1); });
-                        
-                        var names = app.map(function(p) { return p.employee + ' (' + (p.tickets || 1) + ' ks pro: ' + p.customer + ')'; }).join(', ') || '<span style="color:#94a3b8">Nikdo zatím neschválen</span>';
-                        
-                        var wl = requests.filter(function(r) { return r.action === act.name && r.status2 === 'Náhradník'; });
-                        var wlNames = wl.map(function(p, i) { return '#' + (i + 1) + ' ' + p.employee + ' (' + (p.tickets || 1) + ' ks)'; }).join(', ') || '<span style="color:#94a3b8">Žádní</span>';
-                        
-                        var opacity = act.status === 'Zrušena' ? 'style="opacity:0.5;"' : '';
-                        html += '<tr ' + opacity + '><td><strong>' + act.name + '</strong><br><small>' + (act.date || '') + '</small></td>' +
-                                '<td><strong>' + tot + ' / ' + act.capacity + '</strong></td>' +
-                                '<td>' + act.status + '</td>' +
-                                '<td><small><strong>Schválení:</strong> ' + names + '<br><strong style="color:#0369a1">Náhradníci:</strong> ' + wlNames + '</small></td></tr>';
-                    });
-                } else {
-                    html += '<tr><td colspan="4">V systému zatím nejsou vytvořené žádné akce.</td></tr>';
-                }
-                
-                html += '</tbody></table></div>';
-                panel.innerHTML = html;
-                tab2.appendChild(panel);
+        // OPRAVA: Zařídíme, aby tabulku akcí a obsazenosti viděl kromě Admina i 2. stupeň (RSM Praha)
+    var originalOpenTab = openTab;
+    openTab = function(num) {
+        originalOpenTab(num);
+        // Pokud se klikne na Seznam žádostí (záložka 2) a je přihlášen 2. stupeň nebo Admin, vykreslíme i přehled akcí
+        if (num === 2 && currentUser && (currentUser.role === 'rsm_praha' || currentUser.role.includes('2') || currentUser.role === 'admin')) {
+            // Zkontrolujeme, zda už na stránce máme místo pro tabulku akcí, pokud ne, vytvoříme ho elegantně pod hlavní tabulkou
+            if (!document.getElementById('adminActionsTableBody') && document.getElementById('tab2')) {
+                var div = document.createElement('div');
+                div.className = 'box-section';
+                div.style.marginTop = '40px';
+                div.innerHTML = '<h3>📊 Aktuální seznam akcí, obsazenost a pořadník náhradníků</h3>' +
+                                '<div style="overflow-x: auto;"><table><thead><tr>' +
+                                '<th>Akce / Kdy a Kde</th><th>Kapacita / Schváleno</th><th>Stav akce</th><th>Schválení lidé a náhradníci</th>' +
+                                '</tr></thead><tbody id="adminActionsTableBody"></tbody></table></div>';
+                document.getElementById('tab2').appendChild(div);
+            }
+            // Spustíme originální výpočet obsazenosti, který tam dopíše jména schválených lidí i očíslované náhradníky
+            if (typeof renderAdminSection === 'function') {
+                renderAdminSection();
             }
         }
     };
 </script>
 </body>
-
-    <script>
-    // 🔥 DEFINITIVNÍ OŽIVENÍ TLAČÍTEK SCHVÁLENÍ
-    window.setStatus1 = function(id, s) { 
-        var uName = (currentUser && currentUser.name) ? currentUser.name : 'Manažer 1. stupně';
-        if (window.requests) {
-            for (var i = 0; i < requests.length; i++) {
-                if (requests[i].id === id) {
-                    requests[i].status1 = s;
-                    requests[i].approvedBy1 = uName;
-                    break;
-                }
-            }
-            localStorage.setItem('ticketRequests', JSON.stringify(requests)); 
-            if (typeof renderTable === 'function') renderTable(); 
-        }
-    };
-    
-    window.setStatus2 = function(id, s) { 
-        var uName = (currentUser && currentUser.name) ? currentUser.name : 'RSM Praha';
-        if (window.requests) {
-            for (var i = 0; i < requests.length; i++) {
-                if (requests[i].id === id) {
-                    requests[i].status2 = s;
-                    requests[i].approvedBy2 = uName;
-                    break;
-                }
-            }
-            localStorage.setItem('ticketRequests', JSON.stringify(requests)); 
-            if (typeof renderTable === 'function') renderTable(); 
-        }
-    };
-
-    // 🔥 POJISTKA PRO OKAMŽITÉ ZOBRAZENÍ TABULKY PO REFRESHI (F5)
-    setTimeout(function() {
-        if (typeof renderTable === 'function') {
-            renderTable();
-        }
-    }, 150);
-</script>
 </html>
