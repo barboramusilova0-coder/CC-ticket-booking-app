@@ -950,4 +950,88 @@ function renderTable() {
         }, 300);
     })();
 </script>
+    <script>
+    // 🔥 ROZHODUJÍCÍ OPRAVA PROPISOVÁNÍ A ODSTRANĚNÍ DUPLICITY
+    (function() {
+        // 1. Odstraníme tu druhou přebytečnou tabulku, pokud jich tam svítí víc
+        setTimeout(function() {
+            var panely = document.querySelectorAll('.box-section');
+            var nalezeno = 0;
+            panely.forEach(function(p) {
+                if (p.innerHTML.indexOf('Aktuální seznam akcí') > -1) {
+                    nalezeno++;
+                    if (nalezeno > 1) { p.remove(); } // Smaže duplikát
+                }
+            });
+        }, 100);
+
+        // 2. Přepíšeme vykreslovací logiku tak, aby ignorovala velikost písmen (Schváleno vs SCHVÁLENO)
+        window.renderRsmSection = function() {
+            var tbodyL = document.getElementById('rsmActionsTableBody') || document.getElementById('adminActionsTableBody');
+            if (!tbodyL) return;
+
+            var vsechnyZadosti = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
+            var vsechnyAkce = window.companyActions || [];
+
+            tbodyL.innerHTML = '';
+            
+            if (vsechnyAkce.length === 0) {
+                tbodyL.innerHTML = '<tr><td colspan="4">V systému nejsou vytvořené žádné akce.</td></tr>';
+                return;
+            }
+            
+            vsechnyAkce.forEach(function(act) { 
+                // CHYTRÉ VYHLEDÁVÁNÍ: Převedeme stav na malá písmenka, takže najde 'schváleno' i 'SCHVÁLENO'
+                var schvaleniLide = vsechnyZadosti.filter(function(r) {
+                    var s1 = r.status1 ? r.status1.toLowerCase().trim() : '';
+                    var s2 = r.status2 ? r.status2.toLowerCase().trim() : '';
+                    return r.action === act.name && s1 === 'schváleno' && s2 === 'schváleno';
+                });
+                
+                var tot = 0; 
+                schvaleniLide.forEach(function(x) { tot += parseInt(x.tickets || 1); }); 
+                
+                var names = schvaleniLide.map(function(p) { 
+                    return p.employee + ' (' + (p.tickets || 1) + ' ks pro: ' + p.customer + ')'; 
+                }).join(', ') || '<span style="color:#94a3b8">Nikdo finálně neschválen</span>';
+                
+                var nahradnici = vsechnyZadosti.filter(function(r) {
+                    var s2 = r.status2 ? r.status2.toLowerCase().trim() : '';
+                    return r.action === act.name && (s2 === 'náhradník' || s2 === 'nahradnik');
+                });
+                var wlNames = nahradnici.map(function(p, i) { 
+                    return '#' + (i + 1) + ' ' + p.employee + ' (' + (p.tickets || 1) + ' ks)'; 
+                }).join(', ') || '<span style="color:#94a3b8">Žádní</span>';
+                
+                // Vyhledáme správný řádek v existující tabulce a přepíšeme v něm data
+                var řádkyNaStránce = tbodyL.getElementsByTagName('tr');
+                var nalezenyRadek = null;
+                for(var i=0; i<řádkyNaStránce.length; i++) {
+                    if(řádkyNaStránce[i].innerHTML.indexOf(act.name) > -1) { nalezenyRadek = řádkyNaStránce[i]; break; }
+                }
+
+                var htmlObsah = '<td><strong>'+act.name+'</strong><br><small>'+(act.date || '')+'</small></td>' +
+                               '<td><strong>'+tot+' / '+act.capacity+'</strong></td>' +
+                               '<td>'+act.status+'</td>' +
+                               '<td><small><strong>Schválení:</strong> ' + names + '<br><strong style="color:#0369a1">Náhradníci:</strong> ' + wlNames + '</small></td>';
+
+                if (nalezenyRadek) {
+                    nalezenyRadek.innerHTML = htmlObsah;
+                } else {
+                    var tr = document.createElement('tr');
+                    if (act.status === 'Zrušena') tr.style.opacity = '0.5';
+                    tr.innerHTML = htmlObsah;
+                    tbodyL.appendChild(tr);
+                }
+            });
+        };
+
+        // Překlopíme to pod obě tabulky naráz
+        window.renderAdminSection = window.renderRsmSection;
+
+        // Vynutíme okamžitý výpočet lidských kapacit
+        setTimeout(window.renderRsmSection, 250);
+    })();
+</script>
+
 </html>
