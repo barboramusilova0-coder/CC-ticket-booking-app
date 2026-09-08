@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Systém rezervace lístků</title>
-   <style>
+    <style>
         :root {
             --cc-red: #e41e26;
             --cc-red-hover: #b81118;
@@ -81,14 +81,11 @@
         <div class="cc-refresh-btn" onclick="location.reload(true)" title="Obnovit stránku a vymazat paměť">
             <span>⟳</span>
         </div>
-        <div class="brand-title">
+    </div>
+    <div class="brand-title">
         <h1>Systém rezervace lístků</h1>
         <span class="brand-badge">Coca-Cola HBC</span>
     </div>
-        <span class="brand-badge" style="background: var(--cc-red); color: white; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">HBC Hub</span>
-    </div>
-    <span class="brand-badge" style="background: var(--cc-red); color: white; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">HBC Hub</span>
-</div>
     <div class="tabs">
         <button id="btn-nova" class="tab-btn active" onclick="openTab(1)">Nová rezervace</button>
         <button id="btn-seznam" class="tab-btn" onclick="openTab(2)">Seznam žádostí</button>
@@ -251,7 +248,7 @@
     </div>
 </div>
 <script>
-    const masterAdminToken = "admin123"; // Sem napište své nové tajné heslo
+    const masterAdminToken = "admin123"; // Sem napište své tajné heslo
     let customUsers = JSON.parse(localStorage.getItem('customUsers')) || {};
     let roleRequests = JSON.parse(localStorage.getItem('roleRequests')) || [];
     let requests = JSON.parse(localStorage.getItem('ticketRequests')) || [];
@@ -345,12 +342,22 @@
         const tbody = document.getElementById('requestsTableBody'); if(!tbody) return; tbody.innerHTML = '';
         if(requests.length === 0) { tbody.innerHTML = '<tr><td colspan="9">Žádné žádosti.</td></tr>'; return; }
         requests.forEach(function(req) {
-            const isMgr = currentUser && currentUser.email === req.manager; const isAdmin = currentUser && currentUser.role === 'admin';
-            const dMgr = (!isMgr && !isAdmin) ? 'disabled' : ''; const dAdm = (!isAdmin) ? 'disabled' : ''; const tr = document.createElement('tr');
+                        // Ověření rolí přihlášeného uživatele pro Coca-Cola HBC
+            const isSef1 = currentUser && currentUser.role === 'manager' && currentUser.email === req.manager;
+            const isSef2 = currentUser && currentUser.role === 'rsm_praha';
+            const isSystemAdmin = currentUser && currentUser.role === 'admin';
+
+            // Postupný schvalovací zámek (2. stupeň čeká na 1. stupeň)
+            const dMgr = (isSef1 || isSystemAdmin) ? '' : 'disabled';
+            const dAdm = ((isSef2 && req.status1 === 'Schváleno') || isSystemAdmin) ? '' : 'disabled';
+
+            const tr = document.createElement('tr');
             const isApp = !currentUser || (currentUser && currentUser.role === 'applicant');
+
             let delBtn = (isAdmin || isApp) ? '<button style="background:#dc3545;color:white;" onclick="deleteTicketRequest(' + req.id + ')">Smazat</button>' : '';
             let mailBtn = isAdmin ? '<button style="background:#17a2b8;color:white;" onclick="sendStatusEmail(' + req.id + ')">✉ Mail</button>' : '';
-            tr.innerHTML = '<td><strong>'+req.action+'</strong></td><td>'+req.employee+'</td><td>'+req.customer+'</td><td>'+req.status1+'</td><td>'+req.status2+'</td><td><button onclick="setStatus1('+req.id+',\'Schváleno\')" '+dMgr+'>Ano</button> <button onclick="setStatus1('+req.id+',\'Zamítnuto\')" '+dMgr+'>Ne</button></td><td><button onclick="setStatus2('+req.id+',\'Schváleno\')" '+dAdm+'>Ano</button> <button onclick="setStatus2('+req.id+',\'Zamítnuto\')" '+dAdm+'>Ne</button> <button onclick="setStatus2('+req.id+',\'Náhradník\')" '+dAdm+'>Náhradník</button></td><td>'+delBtn+'</td><td>'+mailBtn+'</td>'; tbody.appendChild(tr);
+            tr.innerHTML = '<td><strong>'+req.action+'</strong></td><td>'+req.employee+'</td><td>'+req.customer+'</td><td>'+req.status1+'</td><td>'+req.status2+'</td><td><button onclick="setStatus1('+req.id+',\'Schváleno\')" '+dMgr+'>Ano</button> <button onclick="setStatus1('+req.id+',\'Zamítnuto\')" '+dMgr+'>Ne</button></td><td><button onclick="setStatus2('+req.id+',\'Schváleno\')" '+dAdm+'>Ano</button> <button onclick="setStatus2('+req.id+',\'Zamítnuto\')" '+dAdm+'>Ne</button> <button class="btn-action" style="background:#17a2b8;color:white;" onclick="setStatus2('+req.id+',\'Náhradník\')" '+dAdm+'>Náhradník</button></td><td>'+delBtn+'</td><td>'+mailBtn+'</td>';
+            tbody.appendChild(tr);
         });
     }
     function exportToExcel() {
