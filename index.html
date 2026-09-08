@@ -71,7 +71,7 @@
     <div class="login-bar">
         <div id="loginForm">
             <span>Přihlášení kódem: </span>
-            <input type="password" id="userToken" placeholder="Zadejte váš kód">
+            <input type="password" id="userToken" placeholder="Zadejte váš osobní kód">
             <button onclick="loginUser()">Přihlásit</button>
         </div>
         <div id="userInfo" style="display: none;">
@@ -133,12 +133,10 @@
                         <th>Akce a důvod</th>
                         <th>Žadatel</th>
                         <th>Zákazník</th>
-                        <th>1. Šéf</th>
-                        <th>2. Admin</th>
-                        <th>Akce (1. Šéf)</th>
-                        <th>Akce (2. Admin)</th>
-                        <th>Správa</th>
-                        <th>Upozornění</th>
+                        <th>1. schvalovatel</th>
+                        <th>2. schvalovatel</th>
+                        <th>Stav rezervace</th>
+                        <th>Zaslání stavu rezervace</th>
                     </tr>
                 </thead>
                 <tbody id="requestsTableBody"></tbody>
@@ -147,7 +145,7 @@
     </div>
     <div id="tab3" class="tab-content">
         <h2>Žádost o vytvoření účtu schvalovatele</h2>
-        <p>Jste nadřízený nebo správce? Vyplňte formulář. Žádost podléhá schválení Hlavním správcem.</p>
+        <p>Jste žadatel nebo schvalovatel? Vyplňte formulář. Žádost podléhá schválení administrátora.</p>
         <div class="box-section">
             <form onsubmit="handleRoleRequestSubmit(event)">
                 <div class="form-group">
@@ -174,7 +172,7 @@
     <div id="tab4" class="tab-content">
         <h2>⚙️ Schvalování a správa přístupových práv</h2>
         <div class="box-section">
-            <h3>+ Vytvořit novou firemní akci</h3>
+            <h3>+ Vytvořit novou akci</h3>
             <form onsubmit="handleCreateActionSubmit(event)">
                 <div class="form-group">
                     <label>Název akce:</label>
@@ -248,7 +246,7 @@
     </div>
 </div>
 <script>
-    const masterAdminToken = "admin123"; // Sem napište své tajné heslo
+    const masterAdminToken = "Magnolie27"; // Sem napište své tajné heslo
     let customUsers = JSON.parse(localStorage.getItem('customUsers')) || {};
     let roleRequests = JSON.parse(localStorage.getItem('roleRequests')) || [];
     let requests = JSON.parse(localStorage.getItem('ticketRequests')) || [];
@@ -333,9 +331,9 @@
     function deleteTicketRequest(id) { if(confirm('Opravdu smazat rezervaci?')) { requests = requests.filter(function(r) { return r.id !== id; }); localStorage.setItem('ticketRequests', JSON.stringify(requests)); renderTable(); } }
     function sendStatusEmail(id) {
         const r = requests.find(x => x.id === id); if (!r) return; let s = 'Info', b = 'Dobrý den,\n\n';
-        if (r.status1 === 'Schváleno' && r.status2 === 'Schváleno') { s = 'SCHVÁLENO: Rezervace lístků'; b += 'Vaše žádost o lístky na akci ' + r.action + ' byla úspěšně SCHVÁLENA.'; }
-        else if (r.status1 === 'Zamítnuto' || r.status2 === 'Zamítnuto') { s = 'ZAMÍTNUTO: Rezervace lístků'; b += 'Vaše žádost o lístky na akci ' + r.action + ' byla bohužel ZAMÍTNUTA.'; }
-        else if (r.status2 === 'Náhradník') { s = 'NÁHRADNÍK: Rezervace lístků'; b += 'Vaše žádost o lístky na akci ' + r.action + ' byla zařazena do seznamu NÁHRADNÍKŮ.'; } else { alert('Nastavte stav!'); return; }
+        if (r.status1 === 'Schváleno' && r.status2 === 'Schváleno') { s = 'SCHVÁLENO: Rezervace lístků'; b += 'Dobrý den, Vaše žádost o lístky na akci' + r.action + ' byla úspěšně SCHVÁLENA. S pozdravem CC Tickets booking app'; }
+        else if (r.status1 === 'Zamítnuto' || r.status2 === 'Zamítnuto') { s = 'ZAMÍTNUTO: Rezervace lístků'; b += 'Dobrý den, Vaše žádost o lístky na akci ' + r.action + ' byla bohužel ZAMÍTNUTA. S pozdravem CC Tickets booking app'; }
+        else if (r.status2 === 'Náhradník') { s = 'NÁHRADNÍK: Rezervace lístků'; b += 'Dobrý den, Vaše žádost o lístky na akci ' + r.action + ' byla zařazena do seznamu NÁHRADNÍKŮ. O případené dostupnosti budete informováni. S pozdravem CC Tickets booking app'; } else { alert('Nastavte stav!'); return; }
         b += '\n\nS pozdravem,\nHlavní správce'; window.location.href = 'mailto:' + r.manager + '?subject=' + encodeURIComponent(s) + '&body=' + encodeURIComponent(b);
     }
     function renderTable() {
