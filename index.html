@@ -1103,4 +1103,73 @@ function renderTable() {
         }, 1000);
     })();
 </script>
+    <script>
+    // 🧲 DEFINITIVNÍ VYMAZÁNÍ AKCÍ Z INTERNETU A OKAMŽITÁ SYNCHRONIZACE
+    (function() {
+        // Chytáme kliknutí na tlačítka přímo na ploše, abychom předběhli ten zamrzající kód
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.tagName === 'BUTTON') {
+                var textTlacitka = e.target.innerText ? e.target.innerText.toLowerCase() : '';
+                var onclickPrikaz = e.target.getAttribute('onclick') ? e.target.getAttribute('onclick').toLowerCase() : '';
+                
+                // 1. SITUACE: Uživatel klikl na SMAZAT AKCI v administraci
+                if (textTlacitka.indexOf('smazat') > -1 && onclickPrikaz.indexOf('action') > -1) {
+                    // Vytáhneme přesné ID akce z příkazu onclick
+                    var matches = onclickPrikaz.match(/\d+/);
+                    if (matches) {
+                        var idAkce = parseInt(matches[0]);
+                        
+                        // Počkáme 100ms, až proběhne tvoje potvrzovací tabulka (confirm)
+                        setTimeout(function() {
+                            // Vytáhneme čerstvý seznam akcí, který tvoje funkce smazala z paměti
+                            var zbyvajiciAkce = JSON.parse(localStorage.getItem('companyActions')) || [];
+                            
+                            // Pokud ho tvoje funkce náhodou ještě nesmazala, smažeme ho my natvrdo tady
+                            zbyvajiciAkce = zbyvajiciAkce.filter(function(a) { return a.id !== idAkce; });
+                            localStorage.setItem('companyActions', JSON.stringify(zbyvajiciAkce));
+                            
+                            // OKAMŽITĚ přepisujeme online databázi Firebase na internetu čistým seznamem bez smazané akce
+                            if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                                var db = firebase.firestore();
+                                var dataProCloud = {
+                                    companyActions: zbyvajiciAkce,
+                                    ticketRequests: JSON.parse(localStorage.getItem('ticketRequests')) || [],
+                                    customUsers: JSON.parse(localStorage.getItem('customUsers')) || {},
+                                    roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || []
+                                };
+                                
+                                db.collection("portalData").doc("cocaColaDatabase").set(dataProCloud, { merge: true })
+                                    .then(function() { 
+                                        console.log("Akce byla úspěšně vymazána z internetového cloudu!"); 
+                                        // Bleskový restart stránky – akce už v cloudu není, takže navždy zmizí!
+                                        location.reload();
+                                    });
+                            }
+                        }, 100);
+                    }
+                }
+                
+                // 2. SITUACE: Uživatel na PC vytvořil a klikl na ULOŽIT NOVOU AKCI
+                if (textTlacitka.indexOf('uložit') > -1 || onclickPrikaz.indexOf('create') > -1 || e.target.type === 'submit') {
+                    setTimeout(function() {
+                        if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                            var db = firebase.firestore();
+                            var dataProCloud = {
+                                companyActions: JSON.parse(localStorage.getItem('companyActions')) || [],
+                                ticketRequests: JSON.parse(localStorage.getItem('ticketRequests')) || [],
+                                customUsers: JSON.parse(localStorage.getItem('customUsers')) || {},
+                                roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || []
+                            };
+                            db.collection("portalData").doc("cocaColaDatabase").set(dataProCloud, { merge: true })
+                                .then(function() { 
+                                    console.log("Nová akce byla úspěšně odeslána na internet!");
+                                    location.reload(); // Obnovíme stránku, ať se to propíše
+                                });
+                        }
+                    }, 500); // Dáme formuláři čas na uložení
+                }
+            }
+        }, true);
+    })();
+</script>
 </html>
