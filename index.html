@@ -65,45 +65,42 @@
         .box-section { background: #ffffff; padding: 28px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 36px; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
             /* 🍁 PODZIMNÍ EFEKT: Animace padajícího listí v pozadí 🍁 */
-        .leaves-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; overflow: hidden; opacity: 0.4;}
+        .leaves-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; overflow: hidden; }
         .leaf { position: absolute; top: -50px; display: block; background-size: contain; background-repeat: no-repeat; opacity: 0.85; animation: fall linear infinite; }
         
         /* Předpisy pro kroužení a snášení lístků */
+                /* Detailní fyzika padání podzimního listí */
         @keyframes fall {
-            0% { transform: translateY(0) rotate(0deg) translateX(0); opacity: 0; }
-            10% { opacity: 0.85; }
-            90% { opacity: 0.85; }
-            100% { transform: translateY(105vh) rotate(720deg) translateX(100px); opacity: 0; }
-               /* Styly pro Fázi 2: Animace ohně a záře rozsvícené dýně */
-        @keyframes flamePulse { 
-            0% { transform: scale(0.88) rotate(-1deg); fill: #facc15; } 
-            100% { transform: scale(1.12) rotate(1deg); fill: #f97316; filter: drop-shadow(0 0 4px #facc15); } 
+            0% { transform: translateY(-50px) rotate(0deg) translateX(0); opacity: 0; }
+            10% { opacity: 0.65; }
+            50% { transform: translateY(50vh) rotate(180deg) translateX(40px); }
+            90% { opacity: 0.65; }
+            100% { transform: translateY(105vh) rotate(360deg) translateX(-30px); opacity: 0; }
         }
-        .p-pumpkin-off { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.04)); opacity: 0.9; }
-        .p-pumpkin-on { filter: drop-shadow(0 0 20px rgba(251, 146, 60, 0.6)) drop-shadow(0 0 6px rgba(250, 204, 21, 0.8)) !important; opacity: 1 !important; }
     </style>
 </head>
 <body>
-    <!-- Kontejner pro padající podzimní listí -->
+        <!-- Kontejner pro detailní podzimní lístky (Javor a Dub) -->
     <div class="leaves-container">
-        <!-- Různé tvary javorových a dubových listů pomocí čisté grafiky SVG -->
-        <div class="leaf" style="left:10%; width:35px; height:35px; animation-duration:12s; animation-delay:0s;">
-            <svg viewBox="0 0 24 24" fill="#f97316"><path d="M12,2s1,3,3,4c2,1,5,0,5,0s-1,3-3,5c2,1,4,3,4,3s-3,1-5,0c0,2-2,5-2,5s-1-3-3-4c-2-1-5,0-5,0s1-3,3-5c-2-1-4-3-4-3s3-1,5,0c0-2,2-5,2-5z"/></svg>
+        <!-- 1. Javorový list (Sytě oranžový) -->
+        <div class="leaf" style="left: 8%; width: 42px; height: 42px; animation-duration: 14s; animation-delay: 0s;">
+            <svg viewBox="0 0 100 100" fill="#f97316"><path d="M50,5 L54,25 L68,18 L64,32 L82,30 L72,44 L92,52 L74,60 L80,78 L62,70 L58,90 L50,80 L42,90 L38,70 L20,78 L26,60 L8,52 L28,44 L18,30 L36,32 L32,18 L46,25 Z M50,45 L50,85" stroke="#ea580c" stroke-width="3" stroke-linecap="round"/></svg>
         </div>
-        <div class="leaf" style="left:30%; width:25px; height:24px; animation-duration:8s; animation-delay:3s;">
-            <svg viewBox="0 0 24 24" fill="#eab308"><path d="M12,2s1,3,3,4c2,1,5,0,5,0s-1,3-3,5c2,1,4,3,4,3s-3,1-5,0c0,2-2,5-2,5s-1-3-3-4c-2-1-5,0-5,0s1-3,3-5c-2-1-4-3-4-3s3-1,5,0c0-2,2-5,2-5z"/></svg>
+        <!-- 2. Dubový list (Zlatavý) -->
+        <div class="leaf" style="left: 28%; width: 34px; height: 44px; animation-duration: 9s; animation-delay: 3s;">
+            <svg viewBox="0 0 100 100" fill="#eab308"><path d="M50,5 C40,15 35,25 40,35 C30,38 32,50 42,55 C32,60 36,75 45,78 L50,95 L55,78 C64,75 68,60 58,55 C68,50 70,38 60,35 C65,25 60,15 50,5 Z M50,5 L50,78" stroke="#ca8a04" stroke-width="3" stroke-linecap="round"/></svg>
         </div>
-        <div class="leaf" style="left:55%; width:40px; height:40px; animation-duration:15s; animation-delay:1s;">
-            <svg viewBox="0 0 24 24" fill="#dc2626"><path d="M12,2s1,3,3,4c2,1,5,0,5,0s-1,3-3,5c2,1,4,3,4,3s-3,1-5,0c0,2-2,5-2,5s-1-3-3-4c-2-1-5,0-5,0s1-3,3-5c-2-1-4-3-4-3s3-1,5,0c0-2,2-5,2-5z"/></svg>
+        <!-- 3. Javorový list (Temně červený) -->
+        <div class="leaf" style="left: 48%; width: 46px; height: 46px; animation-duration: 16s; animation-delay: 1s;">
+            <svg viewBox="0 0 100 100" fill="#b91c1c"><path d="M50,5 L54,25 L68,18 L64,32 L82,30 L72,44 L92,52 L74,60 L80,78 L62,70 L58,90 L50,80 L42,90 L38,70 L20,78 L26,60 L8,52 L28,44 L18,30 L36,32 L32,18 L46,25 Z M50,45 L50,85" stroke="#991b1b" stroke-width="3" stroke-linecap="round"/></svg>
         </div>
-        <div class="leaf" style="left:75%; width:30px; height:30px; animation-duration:10s; animation-delay:5s;">
-            <svg viewBox="0 0 24 24" fill="#ea580c"><path d="M12,2s1,3,3,4c2,1,5,0,5,0s-1,3-3,5c2,1,4,3,4,3s-3,1-5,0c0,2-2,5-2,5s-1-3-3-4c-2-1-5,0-5,0s1-3,3-5c-2-1-4-3-4-3s3-1,5,0c0-2,2-5,2-5z"/></svg>
+        <!-- 4. Dubový list (Hnědooranžový) -->
+        <div class="leaf" style="left: 68%; width: 36px; height: 46px; animation-duration: 11s; animation-delay: 5s;">
+            <svg viewBox="0 0 100 100" fill="#d97706"><path d="M50,5 C40,15 35,25 40,35 C30,38 32,50 42,55 C32,60 36,75 45,78 L50,95 L55,78 C64,75 68,60 58,55 C68,50 70,38 60,35 C65,25 60,15 50,5 Z M50,5 L50,78" stroke="#b45309" stroke-width="3" stroke-linecap="round"/></svg>
         </div>
-        <div class="leaf" style="left:90%; width:22px; height:22px; animation-duration:7s; animation-delay:2s;">
-            <svg viewBox="0 0 24 24" fill="#ca8a04"><path d="M12,2s1,3,3,4c2,1,5,0,5,0s-1,3-3,5c2,1,4,3,4,3s-3,1-5,0c0,2-2,5-2,5s-1-3-3-4c-2-1-5,0-5,0s1-3,3-5c-2-1-4-3-4-3s3-1,5,0c0-2,2-5,2-5z"/></svg>
-        </div>
-        <div class="leaf" style="left:45%; width:32px; height:32px; animation-duration:13s; animation-delay:6s;">
-            <svg viewBox="0 0 24 24" fill="#b45309"><path d="M12,2s1,3,3,4c2,1,5,0,5,0s-1,3-3,5c2,1,4,3,4,3s-3,1-5,0c0,2-2,5-2,5s-1-3-3-4c-2-1-5,0-5,0s1-3,3-5c-2-1-4-3-4-3s3-1,5,0c0-2,2-5,2-5z"/></svg>
+        <!-- 5. Javorový list (Zlatě žlutý) -->
+        <div class="leaf" style="left: 85%; width: 38px; height: 38px; animation-duration: 8s; animation-delay: 2s;">
+            <svg viewBox="0 0 100 100" fill="#facc15"><path d="M50,5 L54,25 L68,18 L64,32 L82,30 L72,44 L92,52 L74,60 L80,78 L62,70 L58,90 L50,80 L42,90 L38,70 L20,78 L26,60 L8,52 L28,44 L18,30 L36,32 L32,18 L46,25 Z M50,45 L50,85" stroke="#eab308" stroke-width="3" stroke-linecap="round"/></svg>
         </div>
     </div>
 <div id="welcomeGate" class="welcome-gate">
@@ -303,14 +300,6 @@
             </table>
         </div>
     </div>
-                                          <!-- 🧙‍♂️ 🍁 FÁZE 2: OBŘÍ HAGRIDOVSKÁ HALDA DÝNÍ 🍁 🧙‍♂️ -->
-        <div style="margin-top: 60px; padding: 40px 20px; border: 1px solid var(--border); background: #ffffff; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.01); overflow: hidden; position: relative;">
-            <p style="font-size: 16px; color: #7c2d12; font-weight: 800; margin-top: 0; margin-bottom: 4px; letter-spacing: 0.03em;">🧙‍♂️ Hagridova gigantická dýňová halda (Coca-Cola HBC)</p>
-            <p style="font-size: 13px; color: #64748b; margin-top: 0; margin-bottom: 30px;">Kliknutím rozsviťte nebo zhasněte magické plamínky v divoké haldě dýní!</p>
-            
-            <!-- Tady program automaticky navrství divokou obří haldu -->
-            <div id="hagridPumpkinPatch" style="position: relative; width: 100%; max-width: 900px; height: 260px; margin: 0 auto; display: flex; justify-content: center; align-items: flex-end;"></div>
-        </div>
 </div>
 <script>
     const masterAdminToken = "Magnolie27"; 
@@ -491,63 +480,7 @@
         companyActions.forEach(function(a) { if (a.status === 'Aktivní') h += '<option value="'+a.name+'">'+a.name+'</option>'; }); sel.innerHTML = h;
     }
     if(localStorage.getItem('currentUser')) { currentUser = JSON.parse(localStorage.getItem('currentUser')); saveAndStyleSession(); }
-                  function generateHagridPatch() {
-        const patch = document.getElementById('hagridPumpkinPatch');
-        if (!patch) return;
-        patch.innerHTML = '';
-        
-        // Vygenerujeme obří divokou haldu 25 dýní
-        for (let i = 1; i <= 25; i++) {
-            // Náhodně spočítáme velikosti a divoké pozice přes sebe, aby to vypadalo přirozeně a giganticky
-            const width = Math.floor(Math.random() * 50) + 80; // Obří hagridovské rozměry (80px až 130px)
-            const left = Math.floor(Math.random() * 80) + 5;   // Rozprostření od 5% do 85% šířky
-            const bottom = Math.floor(Math.random() * 45);     // Vrstvení do výšky (hromada)
-            const zIndex = 10 + bottom + Math.floor(width/10); // Přední vrstvy překryjí ty zadní
-            
-            const div = document.createElement('div');
-            div.id = 'h-pumpkin-' + i;
-            div.setAttribute('onclick', 'toggleHagridPumpkin(' + i + ')');
-            div.style.cssText = 'position:absolute; left:'+left+'%; bottom:'+bottom+'px; width:'+width+'px; height:auto; cursor:pointer; transition:all 0.2s; z-index:'+zIndex+'; transform-origin:center bottom;';
-            
-            // Vložíme přesně ten tvůj čistý styl dýně s lístkem a skrytým svítícím obličejem
-            div.innerHTML = '<svg viewBox="0 0 120 100" style="width:100%; height:100%;">' +
-                '<path d="M60,20 Q65,5 75,12 T85,5" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"/>' +
-                '<path d="M55,25 C52,15 62,12 65,22 C61,25 58,26 55,25" fill="#78350f"/>' +
-                '<ellipse cx="50" cy="55" rx="25" ry="32" fill="#ea580c"/>' +
-                '<ellipse cx="70" cy="55" rx="25" ry="32" fill="#ea580c"/>' +
-                '<ellipse cx="38" cy="55" rx="20" ry="28" fill="#f97316"/>' +
-                '<ellipse cx="82" cy="55" rx="20" ry="28" fill="#f97316"/>' +
-                '<ellipse cx="50" cy="54" rx="14" ry="30" fill="#facc15" opacity="0.15"/>' +
-                '<g id="h-face-' + i + '" style="display: none;">' +
-                    '<polygon points="38,45 46,45 42,36" fill="#fef08a" style="filter:drop-shadow(0 0 4px #facc15);"/>' +
-                    '<polygon points="64,45 72,45 68,36" fill="#fef08a" style="filter:drop-shadow(0 0 4px #facc15);"/>' +
-                    '<polygon points="55,51 52,57 58,57" fill="#fef08a" style="filter:drop-shadow(0 0 4px #facc15);"/>' +
-                    '<path d="M35,62 Q55,78 75,62 Q65,68 55,64 Q45,68 35,62 Z" fill="#fef08a" style="filter:drop-shadow(0 0 6px #ea580c);"/>' +
-                '</g>' +
-            '</svg>';
-            patch.appendChild(div);
-        }
-    }
-
-    // Funkce pro rozsvěcení dýní v haldě
-    function toggleHagridPumpkin(num) {
-        const box = document.getElementById('h-pumpkin-' + num);
-        const face = document.getElementById('h-face-' + num);
-        if (!box || !face) return;
-
-        box.style.transform = 'scale(0.85)';
-        setTimeout(function() { box.style.transform = 'scale(1.08)'; }, 80);
-        setTimeout(function() { box.style.transform = 'scale(1)'; }, 220);
-
-        if (face.style.display === 'none') {
-            face.style.display = 'block';
-            box.style.filter = 'drop-shadow(0 0 15px rgba(251, 146, 60, 0.85)) drop-shadow(0 0 4px #facc15)';
-        } else {
-            face.style.display = 'none';
-            box.style.filter = 'none';
-        }
-        if(localStorage.getItem('currentUser')) { currentUser = JSON.parse(localStorage.getItem('currentUser')); saveAndStyleSession(); }
-updateActionSelectOptions(); generateHagridPatch();
+    updateActionSelectOptions();
 </script>
 </body>
 </html>
