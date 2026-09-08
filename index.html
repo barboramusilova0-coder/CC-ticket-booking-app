@@ -689,6 +689,69 @@ function renderTable() {
             if (typeof renderAdminSection === 'function') { try { renderAdminSection(); } catch(e){} }
         }
     };
+    // 🌉 PROPOJENÍ: Automatické překreslení spodní tabulky po každém schválení
+    var starySetStatus1 = window.setStatus1;
+    window.setStatus1 = function(id, s) {
+        if (typeof starySetStatus1 === 'function') starySetStatus1(id, s);
+        // Vynutíme okamžité probrání a překreslení spodní tabulky akcí
+        if (typeof renderAdminSection === 'function') { try { renderAdminSection(); } catch(e){} }
+    };
 
+    var starySetStatus2 = window.setStatus2;
+    window.setStatus2 = function(id, s) {
+        if (typeof starySetStatus2 === 'function') starySetStatus2(id, s);
+        // Vynutíme okamžité probrání a překreslení spodní tabulky akcí
+        if (typeof renderAdminSection === 'function') { try { renderAdminSection(); } catch(e){} }
+    };
+</script>
+    <script>
+    // 🔥 GLOBÁLNÍ ZÁCHRANNÝ SYSTÉM PRO TLAČÍTKA ANO/NE
+    document.addEventListener('click', function(e) {
+        // Kontrola, zda uživatel kliknul na schvalovací tlačítko v tabulce
+        if (e.target && e.target.tagName === 'BUTTON' && e.target.getAttribute('onclick')) {
+            var onclickText = e.target.getAttribute('onclick');
+            
+            // Pokud tlačítko obsahuje setStatus1 nebo setStatus2, spustíme naši natvrdo opravenou logiku
+            if (onclickText.indexOf('setStatus1') > -1 || onclickText.indexOf('setStatus2') > -1) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Vytáhneme z textu ID žádosti a požadovaný stav (Schváleno/Zamítnuto/Náhradník)
+                var matches = onclickText.match(/(\d+)\s*,\s*['"]([^'"]+)['"]/);
+                if (matches && matches.length >= 3) {
+                    var id = parseInt(matches[1]);
+                    var stav = matches[2];
+                    var jeToDruhýStupeň = (onclickText.indexOf('setStatus2') > -1);
+                    
+                    var uName = (window.currentUser && currentUser.name) ? currentUser.name : (jeToDruhýStupeň ? 'RSM Praha' : 'Manažer 1. stupně');
+                    
+                    // Načteme aktuální žádosti, přepíšeme stav a ihned uložíme
+                    var aktualniRequests = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
+                    for (var i = 0; i < aktualniRequests.length; i++) {
+                        if (aktualniRequests[i].id === id) {
+                            if (jeToDruhýStupeň) {
+                                aktualniRequests[i].status2 = stav;
+                                aktualniRequests[i].approvedBy2 = uName;
+                            } else {
+                                aktualniRequests[i].status1 = stav;
+                                aktualniRequests[i].approvedBy1 = uName;
+                            }
+                            break;
+                        }
+                    }
+                    
+                    // Zapíšeme natvrdo do paměti i do běžícího programu
+                    window.requests = aktualniRequests;
+                    localStorage.setItem('ticketRequests', JSON.stringify(aktualniRequests));
+                    
+                    // Vynutíme okamžité překreslení obou tabulek naráz před tvýma očima
+                    if (typeof renderTable === 'function') renderTable();
+                    if (typeof renderAdminSection === 'function') { try { renderAdminSection(); } catch(err){} }
+                    
+                    alert('Stav rezervace byl úspěšně změněn!');
+                }
+            }
+        }
+    }, true);
 </script>
 </html>
