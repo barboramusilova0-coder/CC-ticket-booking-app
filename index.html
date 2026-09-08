@@ -277,7 +277,7 @@
                 </div>
                 <div class="form-group">
                     <label>Místo konání:</label>
-                    <input type="text" id="actNewPlace" required placeholder="např. Konferenční sál A">
+                    <input type="text" id="actNewPlace" required placeholder="např. Skybox">
                 </div>
                 <div class="form-group">
                     <label>Kapacita lístků (celkem):</label>
@@ -1160,6 +1160,64 @@ window.deleteCompanyAction = function(id) {
     });
 })();
 </script>
+<script>
+    // 🎟️ INFORMAČNÍ ROLETKA: Propisuje do výběru název akce, datum, čas i místo konání
+    (function() {
+        function natvrdoPropisAkceDoRoletky() {
+            var roletkaSelect = document.getElementById('actionSelect') || document.querySelector('select');
+            if (!roletkaSelect) return;
 
+            // Načteme si aktuální akce z paměti
+            var seznamAkciZPameti = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+            
+            // Základní úvodní text
+            var vysledneOptions = '<option value="">-- Vyberte akci --</option>';
+            var nalezenaAktivni = false;
+
+            // Projdeme všechny akce a poskládáme jejich texty do jednoho přehledného řádku
+            seznamAkciZPameti.forEach(function(akce) {
+                if (akce.status === 'Aktivní' || !akce.status) {
+                    
+                    // Připravíme si hezké formátování data, času a místa, pokud jsou vyplněné
+                    var d = akce.date ? akce.date : '';
+                    var c = akce.time ? akce.time : '';
+                    var m = akce.place ? akce.place : '';
+                    
+                    // Vytvoříme přehledný popisek: Název akce | 15.10.2026 v 18:00 (Praha)
+                    var plnyPopisekAkce = akce.name;
+                    if (d || c || m) {
+                        plnyPopisekAkce += ' | ' + d + (c ? ' v ' + c : '') + (m ? ' (' + m + ')' : '');
+                    }
+
+                    // Do hodnoty (value) uložíme čistý název akce pro schvalování, ale uživateli ukážeme plný popisek
+                    vysledneOptions += '<option value="' + akce.name + '">' + plnyPopisekAkce + '</option>';
+                    nalezenaAktivni = true;
+                }
+            });
+
+            if (!nalezenaAktivni) {
+                vysledneOptions = '<option value="">❌ V systému není žádná aktivní akce</option>';
+            }
+
+            // Pokud se obsah liší, bleskově roletku občerstvíme
+            if (roletkaSelect.innerHTML !== vysledneOptions) {
+                roletkaSelect.innerHTML = vysledneOptions;
+                console.log("Roletka byla úspěšně aktualizována o detaily akcí!");
+            }
+        }
+
+        // Hlídáme roletku každou vteřinu na pozadí, aby se tam nové akce hned objevily
+        setTimeout(natvrdoPropisAkceDoRoletky, 250);
+        document.addEventListener('click', function() { setTimeout(natvrdoPropisAkceDoRoletky, 50); });
+        
+        if (window.openTab) {
+            var originalniZalozky = window.openTab;
+            window.openTab = function(num) {
+                originalniZalozky(num);
+                if (num === 1) { setTimeout(natvrdoPropisAkceDoRoletky, 50); }
+            };
+        }
+    })();
+</script>
 </body>
 </html>
