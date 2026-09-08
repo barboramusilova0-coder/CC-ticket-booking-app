@@ -427,21 +427,29 @@
             }); 
         }
     }
-       function handleFormSubmit(e) {
+           function handleFormSubmit(e) {
         e.preventDefault(); 
         
-        // Zjistíme e-mail přihlášeného žadatele, pokud existuje
+        // Zjistíme hodnoty z formuláře - pokud políčko na stránce nemáš, dosadí se bezpečně prázdný text
+        const actVal = document.getElementById('actionSelect') ? document.getElementById('actionSelect').value : '';
+        const empVal = document.getElementById('employeeName') ? document.getElementById('employeeName').value : '';
+        const mgrVal = document.getElementById('managerEmail') ? document.getElementById('managerEmail').value.toLowerCase().trim() : '';
+        const custVal = document.getElementById('customerName') ? document.getElementById('customerName').value : '';
+        const tktVal = document.getElementById('ticketCount') ? document.getElementById('ticketCount').value : '1';
+        const reasonVal = document.getElementById('reason') ? document.getElementById('reason').value : '';
+        
+        // Zjistíme e-mail přihlášeného žadatele
         const appEmail = (currentUser && currentUser.email) ? currentUser.email : '';
 
-        // Uložíme žádost v čistém formátu přesně tak, jak to zbytek aplikace vyžaduje
+        // Uložíme čistou žádost se všemi pojistkami
         requests.push({ 
             id: Date.now(), 
-            action: document.getElementById('actionSelect').value, 
-            employee: document.getElementById('employeeName').value, 
-            manager: document.getElementById('managerEmail').value.toLowerCase().trim(), 
-            customer: document.getElementById('customerName').value, 
-            tickets: document.getElementById('ticketCount').value, 
-            reason: document.getElementById('reason').value, 
+            action: actVal, 
+            employee: empVal, 
+            manager: mgrVal, 
+            customer: custVal, 
+            tickets: tktVal, 
+            reason: reasonVal, 
             status1: 'Čeká', 
             status2: 'Čeká', 
             approvedBy1: '', 
@@ -450,23 +458,10 @@
         });
         
         localStorage.setItem('ticketRequests', JSON.stringify(requests)); 
-        document.getElementById('ticketForm').reset(); 
+        if (document.getElementById('ticketForm')) document.getElementById('ticketForm').reset(); 
+        
         alert('Žádost o rezervaci lístků byla úspěšně odeslána!'); 
         openTab(2);
-    }
-    function setStatus1(id, s) { requests = requests.map(r => r.id === id ? {...r, status1: s, approvedBy1: currentUser.name} : r); localStorage.setItem('ticketRequests', JSON.stringify(requests)); renderTable(); }
-    function setStatus2(id, s) { requests = requests.map(r => r.id === id ? {...r, status2: s, approvedBy2: currentUser.name} : r); localStorage.setItem('ticketRequests', JSON.stringify(requests)); renderTable(); }
-    function deleteTicketRequest(id) { if(confirm('Opravdu smazat tuto rezervaci?')) { requests = requests.filter(function(r) { return r.id !== id; }); localStorage.setItem('ticketRequests', JSON.stringify(requests)); renderTable(); } }
-        function sendStatusEmail(id) {
-        const r = requests.find(x => x.id === id); if (!r) return; let s = 'Info', b = 'Dobrý den,%0D%0A%0D%0A';
-        if (r.status1 === 'Schváleno' && r.status2 === 'Schváleno') { s = 'SCHVÁLENO: Rezervace lístků'; b += 'Dobrý den,\nVaše žádost o lístky na akci ' + r.action + ' byla úspěšně SCHVÁLENA.\n%0D%0A'; }
-        else if (r.status1 === 'Zamítnuto' || r.status2 === 'Zamítnuto') { s = 'ZAMÍTNUTO: Rezervace lístků'; b += 'Dobrý den,\n Vaše žádost o lístky na akci ' + r.action + ' byla bohužel ZAMÍTNUTA.\n%0D%0A'; }
-        else if (r.status2 === 'Náhradník') { s = 'NÁHRADNÍK: Rezervace lístků'; b += 'Vaše žádost o lístky na akci ' + r.action + ' byla zařazena do seznamu NÁHRADNÍKŮ.\nO případené dostupnosti budete informováni.%0D%0A'; } else { alert('Nastavte stav!'); return; }
-        b += '%0D%0AS pozdravem,%0D%0ACoca-Cola Tickets Booking App'; 
-        
-        // OPRAVA: Pošleme e-mail žadateli (pokud ho systém zná), jinak manažerovi
-        const targetEmail = r.applicantEmail ? r.applicantEmail : r.manager;
-        window.location.href = 'mailto:' + targetEmail + '?subject=' + encodeURIComponent(s) + '&body=' + b;
     }
     function renderTable() {
         const tbody = document.getElementById('requestsTableBody'); if(!tbody) return; tbody.innerHTML = '';
