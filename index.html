@@ -115,6 +115,9 @@
             <div class="form-group">
                 <label for="ticketCount">Počet lístků:</label>
                 <input type="number" id="ticketCount" min="1" max="10" required placeholder="1">
+                            <div class="form-group">
+                <label for="euroTurnover">Obrat v EUR:</label>
+                <input type="number" id="euroTurnover" min="0" required placeholder="př. 5000">
             </div>
             <div class="form-group">
                 <label for="reason">Důvod přidělení:</label>
@@ -325,7 +328,7 @@
         const tbodyL = document.getElementById('adminActionsTableBody'); if(tbodyL) { tbodyL.innerHTML = ''; companyActions.forEach(act => { const app = requests.filter(r => r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno'); const tot = app.reduce((s, r) => s + parseInt(r.tickets), 0); const tr = document.createElement('tr'); tr.innerHTML = '<td><strong>'+act.name+'</strong><br><small>'+act.date+'</small></td><td>'+tot+' / '+act.capacity+'</td><td>'+act.status+'</td><td>-</td><td><button onclick="toggleActionStatus('+act.id+')">Zrušit</button> <button onclick="deleteCompanyAction('+act.id+')">Smazat</button></td>'; tbodyL.appendChild(tr); }); }
     }
     function handleFormSubmit(e) {
-        e.preventDefault(); requests.push({ id: Date.now(), action: document.getElementById('actionSelect').value, employee: document.getElementById('employeeName').value, manager: document.getElementById('managerEmail').value.toLowerCase().trim(), customer: document.getElementById('customerName').value, tickets: document.getElementById('ticketCount').value, reason: document.getElementById('reason').value, status1: 'Čeká', status2: 'Čeká', approvedBy1: '', approvedBy2: '' });
+        e        e.preventDefault(); requests.push({ id: Date.now(), action: document.getElementById('actionSelect').value, employee: document.getElementById('employeeName').value, manager: document.getElementById('managerEmail').value.toLowerCase().trim(), customer: document.getElementById('customerName').value, turnover: document.getElementById('euroTurnover').value, tickets: document.getElementById('ticketCount').value, reason: document.getElementById('reason').value, status1: 'Čeká', status2: 'Čeká', approvedBy1: '', approvedBy2: '' });
         localStorage.setItem('ticketRequests', JSON.stringify(requests)); document.getElementById('ticketForm').reset(); alert('Uloženo!'); openTab(2);
     }
     function setStatus1(id, s) { requests = requests.map(r => r.id === id ? {...r, status1: s, approvedBy1: currentUser.name} : r); localStorage.setItem('ticketRequests', JSON.stringify(requests)); renderTable(); }
@@ -338,41 +341,15 @@
         else if (r.status2 === 'Náhradník') { s = 'NÁHRADNÍK: Rezervace lístků'; b += 'Dobrý den,\nVaše žádost o lístky na akci ' + r.action + ' byla zařazena do seznamu NÁHRADNÍKŮ.\nO případené dostupnosti budete informováni.'; } else { alert('Nastavte stav!'); return; }
         b += '\n\nS pozdravem,\nCC Tickets booking app'; window.location.href = 'mailto:' + r.manager + '?subject=' + encodeURIComponent(s) + '&body=' + encodeURIComponent(b);
     }
-        function renderTable() {
-        const tbody = document.getElementById('requestsTableBody'); if(!tbody) return; tbody.innerHTML = '';
-        if(requests.length === 0) { tbody.innerHTML = '<tr><td colspan="9">Žádné žádosti o lístky.</td></tr>'; return; }
+    function renderTable() {
+        const tbody = document.getElementById('requestsTableBody'); 
+        if(!tbody) return; 
+        tbody.innerHTML = '';
         
-        requests.forEach(function(req) {
-            const isSef1 = currentUser && currentUser.role === 'manager' && currentUser.email === req.manager;
-            const isSef2 = currentUser && currentUser.role === 'rsm_praha';
-            const isSystemAdmin = currentUser && currentUser.role === 'admin';
-
-            const dMgr = (isSef1 || isSystemAdmin) ? '' : 'disabled';
-            const dAdm = ((isSef2 && req.status1 === 'Schváleno') || isSystemAdmin) ? '' : 'disabled';
-            
-            const tr = document.createElement('tr'); 
-            let sClass1 = 'cekajici', sClass2 = 'cekajici';
-            if(req.status1 === 'Schváleno') sClass1 = 'schvaleno'; if(req.status1 === 'Zamítnuto') sClass1 = 'zamitnuto';
-            if(req.status2 === 'Schváleno') sClass2 = 'schvaleno'; if(req.status2 === 'Zamítnuto') sClass2 = 'zamitnuto'; if(req.status2 === 'Náhradník') sClass2 = 'nahradnik';
-            
-            const isApp = !currentUser || (currentUser && currentUser.role === 'applicant');
-            let delBtn = (isSystemAdmin || isApp) ? '<button style="background:#dc3545;color:white;border:none;padding:5px 8px;border-radius:4px;cursor:pointer;margin-right:5px;" onclick="deleteTicketRequest(' + req.id + ')">Smazat</button>' : '';
-            let mailBtn = isSystemAdmin ? '<button style="background:#17a2b8;color:white;border:none;padding:5px 8px;border-radius:4px;cursor:pointer;" onclick="sendStatusEmail(' + req.id + ')">✉ Mail</button>' : '';
-            
-            // Sestavení 9 přesných sloupců, které dokonale lícují s vaším obrázkem:
-            tr.innerHTML = '<td><strong>'+req.action+'</strong></td>' + // 1. AKCE
-                '<td>'+req.employee+'</td>' + // 2. ŽADATEL
-                '<td>'+req.customer+'</td>' + // 3. ZÁKAZNÍK
-                '<td><small style="line-height:1.2; display:block; max-width:200px; word-break:break-word;">'+(req.reason || '')+'</small></td>' + // 4. DŮVOD PŘIDĚLENÍ
-                '<td><strong>'+(req.turnover ? parseInt(req.turnover).toLocaleString('cs-CZ') : '0')+' EUR</strong></td>' + // 5. OBRAT
-                '<td><span class="status status-'+sClass1+'">'+req.status1+'</span><br><div style="margin-top:5px;"><button onclick="setStatus1('+req.id+',\'Schváleno\')" '+dMgr+'>Ano</button> <button onclick="setStatus1('+req.id+',\'Zamítnuto\')" '+dMgr+'>Ne</button></div></td>' + // 6. 1. SCHVALOVATEL
-                '<td><span class="status status-'+sClass2+'">'+req.status2+'</span><br><div style="margin-top:5px;"><button onclick="setStatus2('+req.id+',\'Schváleno\')" '+dAdm+'>Ano</button> <button onclick="setStatus2('+req.id+',\'Zamítnuto\')" '+dAdm+'>Ne</button> <button class="btn-action" style="background:#17a2b8;color:white;" onclick="setStatus2('+req.id+',\'Náhradník\')" '+dAdm+'>Náhradník</button></div></td>' + // 7. 2. SCHVALOVATEL
-                '<td>1. Šéf: <b>'+req.status1+'</b><br>2. Šéf: <b>'+req.status2+'</b></td>' + // 8. STAV REZERVACE
-                '<td>' + delBtn + mailBtn + '</td>'; // 9. ZASLÁNÍ STAVU REZERVACE
-            tbody.appendChild(tr);
-        });
-    }
-
+        if(requests.length === 0) { 
+            tbody.innerHTML = '<tr><td colspan="9">Žádné žádosti o lístky.</td></tr>'; 
+            return; 
+        }
         
         requests.forEach(function(req) {
             // Správné ověření rolí pro Coca-Cola HBC
