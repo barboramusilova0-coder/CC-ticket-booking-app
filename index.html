@@ -49,10 +49,18 @@
         input:focus, select:focus, textarea:focus { border-color: var(--cc-red); outline: none; box-shadow: 0 0 0 4px rgba(228, 30, 38, 0.08); }
         button.btn-submit { background-color: var(--cc-red); color: white; border: none; padding: 14px 28px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 700; width: 100%; transition: background .15s; box-shadow: 0 4px 12px rgba(228, 30, 38, 0.15); }
         button.btn-submit:hover { background-color: var(--cc-red-hover); }
-        table { width: 100%; border-collapse: collapse; margin-top: 12px; margin-bottom: 36px; font-size: 14px; }
-        th, td { padding: 16px 20px; border-bottom: 1px solid var(--border); text-align: left; }
-        th { background-color: #f8fafc; color: #475569; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0; }
-        tr:hover { background-color: rgba(224, 30, 38, 0.02); }
+                /* Luxusní korporátní vzhled tabulek pro Coca-Cola HBC */
+        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 16px; margin-bottom: 40px; font-size: 14px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); }
+        th, td { padding: 18px 24px; border-bottom: 1px solid var(--border); text-align: left; line-height: 1.5; }
+        th { background-color: #f8fafc; color: #475569; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.08em; border-bottom: 2px solid #e2e8f0; }
+        tr:last-child td { border-bottom: none; }
+        
+        /* Sexy efekt: řádek se při najetí myší jemně podbarví firemní červenou a zvýrazní */
+        tr:hover td { background-color: rgba(224, 30, 38, 0.03); color: #000000; transition: background-color 0.15s ease; }
+        
+        /* Odrážky pro schválené lidi, aby text splýval čistěji */
+        td small br { content: ""; display: block; margin-bottom: 4px; }
+
         
         .status { padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; display: inline-block; text-align: center; }
         .status-cekajici { background-color: #fef3c7; color: #b45309; }
