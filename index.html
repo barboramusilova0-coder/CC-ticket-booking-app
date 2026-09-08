@@ -915,4 +915,39 @@ function renderTable() {
         }
     })();
 </script>
+    <script>
+    // 🔥 AUTOMATICKÉ DOPLNĚNÍ VIZUÁLNÍHO BOXU PRO SEZNAM SCHVÁLENÝCH LIDÍ
+    (function() {
+        // Spustíme kontrolu ihned po načtení stránky
+        setTimeout(function() {
+            var tab2 = document.getElementById('tab2');
+            
+            // Pokud na stránce chybí ten vizuální kontejner, tak ho sami vytvoříme na konci druhé záložky
+            if (tab2 && !document.getElementById('rsmActionsSection')) {
+                var novyPanel = document.createElement('div');
+                novyPanel.id = 'rsmActionsSection';
+                novyPanel.className = 'box-section';
+                novyPanel.style.cssText = 'margin-top: 40px; padding: 28px; border: 1px solid var(--border); border-radius: 12px; background: #ffffff;';
+                
+                novyPanel.innerHTML = '<h3>📊 Aktuální seznam akcí, obsazenost a pořadník náhradníků</h3>' +
+                                      '<div style="overflow-x: auto;">' +
+                                      '<table style="width: 100%; border-collapse: separate; border-spacing: 0;">' +
+                                      '<thead><tr>' +
+                                      '<th style="background:#f8fafc; padding:12px; font-weight:700; text-transform:uppercase; font-size:11px; border-bottom:2px solid #e2e8f0;">Akce / Kdy a Kde</th>' +
+                                      '<th style="background:#f8fafc; padding:12px; font-weight:700; text-transform:uppercase; font-size:11px; border-bottom:2px solid #e2e8f0;">Kapacita / Schváleno</th>' +
+                                      '<th style="background:#f8fafc; padding:12px; font-weight:700; text-transform:uppercase; font-size:11px; border-bottom:2px solid #e2e8f0;">Stav akce</th>' +
+                                      '<th style="background:#f8fafc; padding:12px; font-weight:700; text-transform:uppercase; font-size:11px; border-bottom:2px solid #e2e8f0;">Schválení lidé a náhradníci</th>' +
+                                      '</tr></thead>' +
+                                      '<tbody id="rsmActionsTableBody"></tbody>' +
+                                      '</table></div>';
+                
+                tab2.appendChild(novyPanel);
+                
+                // Jakmile box vytvoříme, okamžitě do něj necháme JavaScriptem vteřinově vypsat lidi
+                if (typeof window.renderRsmSection === 'function') window.renderRsmSection();
+                if (typeof window.renderAdminSection === 'function') window.renderAdminSection();
+            }
+        }, 300);
+    })();
+</script>
 </html>
