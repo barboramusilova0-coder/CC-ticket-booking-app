@@ -339,27 +339,50 @@
         b += '\n\nS pozdravem,\nHlavní správce'; window.location.href = 'mailto:' + r.manager + '?subject=' + encodeURIComponent(s) + '&body=' + encodeURIComponent(b);
     }
     function renderTable() {
-        const tbody = document.getElementById('requestsTableBody'); if(!tbody) return; tbody.innerHTML = '';
-        if(requests.length === 0) { tbody.innerHTML = '<tr><td colspan="9">Žádné žádosti.</td></tr>'; return; }
+        const tbody = document.getElementById('requestsTableBody'); 
+        if(!tbody) return; 
+        tbody.innerHTML = '';
+        
+        if(requests.length === 0) { 
+            tbody.innerHTML = '<tr><td colspan="9">Žádné žádosti o lístky.</td></tr>'; 
+            return; 
+        }
+        
         requests.forEach(function(req) {
-                        // Ověření rolí přihlášeného uživatele pro Coca-Cola HBC
+            // Správné ověření rolí pro Coca-Cola HBC
             const isSef1 = currentUser && currentUser.role === 'manager' && currentUser.email === req.manager;
             const isSef2 = currentUser && currentUser.role === 'rsm_praha';
             const isSystemAdmin = currentUser && currentUser.role === 'admin';
 
-            // Postupný schvalovací zámek (2. stupeň čeká na 1. stupeň)
+            // Zámky na tlačítka (2. stupeň čeká na schválení od 1. stupně)
             const dMgr = (isSef1 || isSystemAdmin) ? '' : 'disabled';
             const dAdm = ((isSef2 && req.status1 === 'Schváleno') || isSystemAdmin) ? '' : 'disabled';
-
-            const tr = document.createElement('tr');
+            
+            const tr = document.createElement('tr'); 
+            let sClass1 = 'cekajici', sClass2 = 'cekajici';
+            if(req.status1 === 'Schváleno') sClass1 = 'schvaleno'; 
+            if(req.status1 === 'Zamítnuto') sClass1 = 'zamitnuto';
+            if(req.status2 === 'Schváleno') sClass2 = 'schvaleno'; 
+            if(req.status2 === 'Zamítnuto') sClass2 = 'zamitnuto'; 
+            if(req.status2 === 'Náhradník') sClass2 = 'nahradnik';
+            
             const isApp = !currentUser || (currentUser && currentUser.role === 'applicant');
-
-            let delBtn = (isAdmin || isApp) ? '<button style="background:#dc3545;color:white;" onclick="deleteTicketRequest(' + req.id + ')">Smazat</button>' : '';
-            let mailBtn = isAdmin ? '<button style="background:#17a2b8;color:white;" onclick="sendStatusEmail(' + req.id + ')">✉ Mail</button>' : '';
-            tr.innerHTML = '<td><strong>'+req.action+'</strong></td><td>'+req.employee+'</td><td>'+req.customer+'</td><td>'+req.status1+'</td><td>'+req.status2+'</td><td><button onclick="setStatus1('+req.id+',\'Schváleno\')" '+dMgr+'>Ano</button> <button onclick="setStatus1('+req.id+',\'Zamítnuto\')" '+dMgr+'>Ne</button></td><td><button onclick="setStatus2('+req.id+',\'Schváleno\')" '+dAdm+'>Ano</button> <button onclick="setStatus2('+req.id+',\'Zamítnuto\')" '+dAdm+'>Ne</button> <button class="btn-action" style="background:#17a2b8;color:white;" onclick="setStatus2('+req.id+',\'Náhradník\')" '+dAdm+'>Náhradník</button></td><td>'+delBtn+'</td><td>'+mailBtn+'</td>';
+            let delBtn = (isSystemAdmin || isApp) ? '<button style="background:#dc3545;color:white;border:none;padding:5px 8px;border-radius:4px;cursor:pointer;" onclick="deleteTicketRequest(' + req.id + ')">Smazat</button>' : '';
+            let mailBtn = isSystemAdmin ? '<button style="background:#17a2b8;color:white;" onclick="sendStatusEmail(' + req.id + ')">✉ Mail</button>' : '';
+            
+            tr.innerHTML = '<td><strong>'+req.action+'</strong></td>' +
+                '<td>'+req.employee+'</td>' +
+                '<td>'+req.customer+'</td>' +
+                '<td><span class="status status-'+sClass1+'">'+req.status1+'</span></td>' +
+                '<td><span class="status status-'+sClass2+'">'+req.status2+'</span></td>' +
+                '<td><button onclick="setStatus1('+req.id+',\'Schváleno\')" '+dMgr+'>Ano</button> <button onclick="setStatus1('+req.id+',\'Zamítnuto\')" '+dMgr+'>Ne</button></td>' +
+                '<td><button onclick="setStatus2('+req.id+',\'Schváleno\')" '+dAdm+'>Ano</button> <button onclick="setStatus2('+req.id+',\'Zamítnuto\')" '+dAdm+'>Ne</button> <button class="btn-action" style="background:#17a2b8;color:white;" onclick="setStatus2('+req.id+',\'Náhradník\')" '+dAdm+'>Náhradník</button></td>' +
+                '<td>'+delBtn+'</td>' +
+                '<td>'+mailBtn+'</td>';
             tbody.appendChild(tr);
         });
     }
+
     function exportToExcel() {
         if (requests.length === 0) return; let csv = 'Akce;Zadatel;Zakaznik;Stav\r\n';
         requests.forEach(function(r) { csv += r.action + ';' + r.employee + ';' + r.customer + ';' + r.status2 + '\r\n'; });
