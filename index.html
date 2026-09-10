@@ -1984,6 +1984,216 @@ window.deleteCompanyAction = function(id) {
         }, 1000);
     })();
 </script>
+<!-- 🌐 VEŘEJNÁ ZÁLOŽKA: 1. ČÁST - GRAFIKA A CHRONOLOGICKÝ ENGINE -->
+<style>
+    .cc-public-grid { display: flex; gap: 15px; flex-wrap: wrap; text-align: left; margin-top: 15px; }
+    
+    .cc-public-card {
+        flex: 1 1 calc(25% - 15px);
+        min-width: 220px;
+        height: 90px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 15px;
+        background: #ffffff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+        cursor: default;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+    }
+    
+    .cc-public-card:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transform: translateY(-2px);
+    }
+    
+    .cc-card-title { font-weight: 700; font-size: 13px; color: #0f172a; margin-bottom: 4px; line-height: 1.3; }
+    .cc-card-date { font-size: 11px; color: #64748b; font-weight: 600; }
+    
+    .cc-public-card .cc-tooltip {
+        position: absolute;
+        bottom: 115%; 
+        left: 50%;
+        transform: translateX(-50%) translateY(5px);
+        background: #0f172a;
+        color: #ffffff;
+        padding: 10px 14px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        width: 200px;
+        text-align: left;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: all 0.2s ease;
+        z-index: 9999;
+        line-height: 1.4;
+    }
+    
+    .cc-public-card .cc-tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%; left: 50%;
+        transform: translateX(-50%);
+        border-width: 5px;
+        border-style: solid;
+        border-color: #0f172a transparent transparent transparent;
+    }
+    
+    .cc-public-card:hover .cc-tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) translateY(0);
+    }
+</style>
+
+<script>
+    (function() {
+        // Funkce pro řazení akcí od nejbližší po nejvzdálenější
+        function seradAkceChronologicky(poleAkci) {
+            return poleAkci.sort(function(a, b) {
+                var datumA = a.date ? a.date.trim() : '9999-12-31';
+                var datumB = b.date ? b.date.trim() : '9999-12-31';
+                
+                if (datumA.indexOf('.') > -1) { var pA = datumA.split('.'); if(pA.length===3) datumA = pA[2]+'-'+pA[1].padStart(2,'0')+'-'+pA[0].padStart(2,'0'); }
+                if (datumB.indexOf('.') > -1) { var pB = datumB.split('.'); if(pB.length===3) datumB = pB[2]+'-'+pB[1].padStart(2,'0')+'-'+pB[0].padStart(2,'0'); }
+                
+                if (datumA < datumB) return -1;
+                if (datumA > datumB) return 1;
+                
+                var casA = a.time ? a.time.trim() : '23:59';
+                var casB = b.time ? b.time.trim() : '23:59';
+                return casA.localeCompare(casB);
+            });
+        }
+        // 📅 2. ČÁST: MONTOVÁNÍ ZÁLOŽKY NA ZAČÁTEK MENU A GENEROVÁNÍ VIP KARET
+        function namontujVerejnyPrehledAkciNaZacatek() {
+            var tabsMenu = document.querySelector('.tabs');
+            var container = document.querySelector('.container');
+            if (!tabsMenu || !container || document.getElementById('btn-prehled')) return;
+
+            var btnPrehled = document.createElement('button');
+            btnPrehled.id = 'btn-prehled';
+            btnPrehled.className = 'tab-btn';
+            btnPrehled.innerText = '📅 Přehled akcí';
+            
+            tabsMenu.insertBefore(btnPrehled, tabsMenu.firstChild);
+
+            var tab5 = document.createElement('div');
+            tab5.id = 'tab5';
+            tab5.className = 'tab-content';
+            tab5.innerHTML = '<h2 style="text-align:left; font-size:18px; margin-bottom:5px; color:#0f172a; font-weight:800; text-transform:uppercase; letter-spacing:0.02em;">Aktuální nabídka akcí</h2>' +
+                             '<p style="text-align:left; font-size:13px; color:#64748b; margin-bottom:20px;">Vítejte v rezervačním portálu. Zde naleznete kompletní přehled firemních lístků seřazený chronologicky. Najetím myši na akci zobrazíte podrobnosti o místě a obsazenosti.</p>' +
+                             '<div class="cc-public-grid" id="cc-public-tiles-container"></div>';
+            container.appendChild(tab5);
+
+            btnPrehled.addEventListener('click', function() {
+                vykresliVerejneDlaždiceAkci();
+                localStorage.setItem('activeCcTab', '5');
+                
+                document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+                btnPrehled.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
+                document.getElementById('tab5').classList.add('active');
+                
+                if (typeof window.openTab === 'function') {
+                    for (var i = 1; i <= 4; i++) { var t = document.getElementById('tab' + i); if (t) t.classList.remove('active'); }
+                }
+            });
+            
+            var minuleUlozeno = localStorage.getItem('activeCcTab');
+            if (!minuleUlozeno || minuleUlozeno === '1' || minuleUlozeno === '5') {
+                setTimeout(function() { btnPrehled.click(); }, 150);
+            }
+        }
+
+        function vykresliVerejneDlaždiceAkci() {
+            var grid = document.getElementById('cc-public-tiles-container');
+            if (!grid) return;
+
+            var akceRaw = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+            var zadosti = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
+            
+            if (akceRaw.length === 0) {
+                grid.innerHTML = '<div style="color:#94a3b8; font-size:13px; padding:20px; text-align:left; width:100%;">Momentálně nejsou vytvořeny žádné akce.</div>';
+                return;
+            }
+
+            var akce = seradAkceChronologicky([...akceRaw]);
+            var htmlKaret = '';
+
+            akce.forEach(function(act) {
+                if (act.status === 'Zrušena') return;
+
+                var schvaleneZadosti = zadosti.filter(function(r) {
+                    return r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno';
+                });
+                var obsazenoListku = 0;
+                schvaleneZadosti.forEach(function(z) { obsazenoListku += parseInt(z.tickets || 1); });
+
+                var m = act.place ? act.place : 'Místo neurčeno';
+                var kat = act.category ? act.category : 'Nespecifikováno';
+                
+                htmlKaret += '<div class="cc-public-card">' +
+                                '<div class="cc-card-title">' + act.name + '</div>' +
+                                '<div class="cc-card-date">📅 ' + (act.date || 'Termín upřesníme') + '</div>' +
+                                
+                                '<div class="cc-tooltip">' +
+                                    '<strong style="color:var(--cc-red); display:block; margin-bottom:4px; text-transform:uppercase; font-size:10px;">Podrobnosti akce</strong>' +
+                                    '📍 Místo: ' + m + '<br>' +
+                                    '🏷️ Typ: ' + kat + '<br>' +
+                                    '⏰ Čas: ' + (act.time || 'Nespecifikován') + '<br>' +
+                                    '<span style="display:block; margin-top:5px; padding-top:5px; border-top:1px solid #334155; font-weight:700;">' +
+                                    '📊 Obsazenost: ' + obsazenoListku + ' / ' + act.capacity + ' ks' +
+                                    '</span>' +
+                                '</div>' +
+                             '</div>';
+            });
+
+            if (grid.innerHTML !== htmlKaret) {
+                grid.innerHTML = htmlKaret;
+            }
+        }
+
+        // 🛠️ POJISTKA PRO ROLETKU FORMULÁŘE: Řazení i ve vnitřním rezervačním výběru
+        window.odfiltrujRoletkuAkciPodleDlazdice = function() {
+            var roletka = document.getElementById('actionSelect') || document.querySelector('#ticketForm select');
+            var vybranaKat = window.vybranaKategoriePortalu || "";
+            if (!roletka || !vybranaKat) return;
+
+            var akceRaw = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+            var akce = seradAkceChronologicky([...akceRaw]);
+            
+            var html = '<option value="">-- Vyberte konkrétní zápas / koncert --</option>';
+            var maZapas = false;
+
+            akce.forEach(function(a) {
+                var katAkce = a.category ? a.category.trim() : '';
+                if (katAkce === vybranaKat && (a.status === 'Aktivní' || !a.status)) {
+                    var d = a.date || '';
+                    var m = a.place || '';
+                    html += '<option value="' + a.name + '">' + a.name + (d ? ' | ' + d : '') + (m ? ' (' + m + ')' : '') + '</option>';
+                    maZapas = true;
+                }
+            });
+
+            if (!maZapas) { html = '<option value="">V této kategorii momentálně nejsou žádné volné lístky</option>'; }
+            roletka.innerHTML = html;
+        };
+
+        setInterval(namontujVerejnyPrehledAkciNaZacatek, 450);
+        setInterval(function() {
+            var t5 = document.getElementById('tab5');
+            if (t5 && t5.classList.contains('active')) { vykresliVerejneDlaždiceAkci(); }
+        }, 1000);
+    })();
+</script>
 
 </body>
 </html>
