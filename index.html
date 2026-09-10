@@ -1965,6 +1965,34 @@ window.deleteCompanyAction = function(id) {
     else install();
 })();
 </script>
+<!-- 🧽 AUTOMATICKÉ VYMAZÁNÍ POLÍČKA MÍSTO KONÁNÍ Z ADMINISTRACE -->
+<script>
+    (function() {
+        function vymažMístoKonáníZFormulářeAkcí() {
+            // Najdeme text popisku "Místo konání:" uvnitř administrace (Záložka 4)
+            var vsechnyPopisky = document.querySelectorAll('#tab4 label, #actionForm label');
+            
+            vsechnyPopisky.forEach(function(label) {
+                if (lblText = label.innerText, lblText.indexOf('Místo konání') > -1 || lblText.indexOf('Skybox') > -1) {
+                    // Najdeme celou tu obalovou krabičku (form-group), ve které toto políčko i s popiskem žije
+                    var obalPolicka = label.closest('.form-group') || label.parentNode;
+                    if (obalPolicka) {
+                        obalPolicka.remove();
+                        console.log("Políčko Místo konání bylo úspěšně odstraněno z administrace!");
+                    }
+                }
+            });
+            
+            // Pojistka: Pokud by políčko nemělo obalový div, smažeme samotný input podle jeho placeholderu
+            var inputMista = document.getElementById('actionPlace') || document.querySelector('input[placeholder*="Skybox"]');
+            if (inputMista) {
+                inputMista.remove();
+            }
+        }
 
+        // Kontrolujeme a čistíme formulář na pozadí při každém překliknutí záložek
+        setInterval(vymažMístoKonáníZFormulářeAkcí, 400);
+    })();
+</script>
 </body>
 </html>
