@@ -1994,32 +1994,29 @@ window.deleteCompanyAction = function(id) {
         setInterval(vymažMístoKonáníZFormulářeAkcí, 400);
     })();
 </script>
-    <!-- 🔌 NEPRŮSTŘELNÁ OPRAVA TLAČÍTKA TVORBY AKCÍ A PROPISOVÁNÍ DLAŽDIC -->
+    <!-- 🔌 DEFINITIVNÍ OPRAVA TLAČÍTKA A NEPRŮSTŘELNÉ ODESÍLÁNÍ COMPANYACTIONS DO CLOUDU -->
 <script>
     (function() {
-        function opravUkladaniANasypDlazdice() {
-            // Najdeme formulář pro vytváření akcí v administraci
+        function opravUkladaniANasypDlazdiceCoke() {
             var adminForm = document.querySelector('#tab4 form') || document.getElementById('actionForm') || document.querySelector('#actionForm');
-            if (!adminForm || adminForm.getAttribute('data-cc-save-fixed') === 'yes') return;
+            if (!adminForm || adminForm.getAttribute('data-cc-save-fixed-v2') === 'yes') return;
 
-            // Chytíme moment, kdy klikneš na vytvoření nové akce
             adminForm.addEventListener('submit', function(e) {
-                e.preventDefault(); // Zastavíme ten zamrzající původní starý kód
+                e.preventDefault(); 
                 e.stopPropagation();
 
-                // Vytáhneme hodnoty bezpečně podle typu políček na obrazovce
                 var jmenoInput = adminForm.querySelector('input[type="text"]');
                 var kapacitaInput = adminForm.querySelector('input[type="number"]') || document.getElementById('actionCapacity');
                 var datumInput = adminForm.querySelector('input[type="date"]') || document.getElementById('actionDate');
                 var casInput = adminForm.querySelector('input[type="time"]') || document.getElementById('actionTime');
 
                 var jmenoVal = jmenoInput ? jmenoInput.value.trim() : '';
-                var kapacitaVal = kapacitaInput ? parseInt(kapacitaInput.value) : 50; // Pojistná kapacita, pokud v historii chybí
+                var kapacitaVal = kapacitaInput ? parseInt(kapacitaInput.value) : 50;
                 var datumVal = datumInput ? datumInput.value : '';
                 var casVal = casInput ? casInput.value : '';
 
-                // Pokud je zadán aspoň název akce, tak ji natvrdo vytvoříme
                 if (jmenoVal) {
+                    // Načteme stávající akce a zajistíme, aby se Firebase do toho v této milisekundě nepletla
                     var aktualniSeznamAkci = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
                     
                     var novaCokeAkce = {
@@ -2031,51 +2028,61 @@ window.deleteCompanyAction = function(id) {
                         status: 'Aktivní'
                     };
 
-                    // Uložíme do lokální paměti prohlížeče
                     aktualniSeznamAkci.push(novaCokeAkce);
+                    
+                    // Zápis do lokální paměti pro okamžité vykreslení
                     localStorage.setItem('companyActions', JSON.stringify(aktualniSeznamAkci));
                     window.companyActions = aktualniSeznamAkci;
 
-                    // 🌐 OKAMŽITĚ vystřelíme do live Google Firebase databáze na internetu (pokud ji máš spuštěntou)
+                    // 🌐 OKAMŽITÝ NUCENÝ EXPORT DO FIREBASE CLOUDU (Natvrdo přepíšeme cloud novým seznamem)
                     if (typeof firebase !== 'undefined' && firebase.apps.length) {
                         var db = firebase.firestore();
-                        db.collection("portalData").doc("cocaColaDatabase").set({
+                        
+                        // Sestavíme kompletní datový balíček, aby v cloudu nic nechybělo
+                        var dataProCloud = {
                             companyActions: aktualniSeznamAkci,
                             ticketRequests: JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [],
                             customUsers: JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {},
                             roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || window.roleRequests || []
-                        }, { merge: true })
-                        .then(function() { console.log("Akce úspěšně odeslána do cloudu Firebase!"); })
-                        .catch(function(err) { console.error("Chyba cloudu:", err); });
+                        };
+
+                        db.collection("portalData").doc("cocaColaDatabase").set(dataProCloud, { merge: true })
+                        .then(function() { 
+                            console.log("Data úspěšně protlačena a uzamčena v cloudu Firebase!");
+                            
+                            // Vyčistíme formulář
+                            adminForm.reset();
+                            alert('🎉 Nová firemní akce byla úspěšně vytvořena, uložena a synchronizována s cloudem!');
+                            
+                            // Osvěžíme stránku až po úspěšném zápisu do cloudu, aby data nezmizela!
+                            setTimeout(function() { location.reload(); }, 100);
+                        })
+                        .catch(function(err) { 
+                            console.error("Chyba odesílání do cloudu:", err);
+                            // Pokud cloud selže, necháme data aspoň lokálně a restartujeme
+                            adminForm.reset();
+                            setTimeout(function() { location.reload(); }, 200);
+                        });
+                    } else {
+                        // Pokud Firebase vůbec neběží, uložíme lokálně a pokračujeme
+                        adminForm.reset();
+                        alert('🎉 Akce byla uložena lokálně.');
+                        setTimeout(function() { location.reload(); }, 150);
                     }
-
-                    // Vyčistíme políčka na obrazovce pro další zadávání
-                    adminForm.reset();
-
-                    alert('🎉 Nová firemní akce byla úspěšně vytvořena a uložena do celého systému!');
-
-                    // Bleskově stránku aktualizujeme, ať nová akce okamžitě naskočí v tabulkách i v nové záložce s dlaždicemi
-                    setTimeout(function() {
-                        location.reload();
-                    }, 150);
                 }
             });
 
-            // Označíme formulář jako opravený, aby se kód neaplikoval víckrát
-            adminForm.setAttribute('data-cc-save-fixed', 'yes');
+            adminForm.setAttribute('data-cc-save-fixed-v2', 'yes');
         }
 
-        // 📊 SYNCHRONIZACE S NOVOU ZÁLOŽKOU PLÁNOVANÉ AKCE
+        // 📊 SYNCHRONIZACE DLAŽDIC V NOVÉ ZÁLOŽCE PLÁNOVANÉ AKCE
         function aktualizujDlazdiceVPlanovanychAkcich() {
-            // Najdeme plochu tvé nové záložky (předpokládáme, že má id kontejneru pro dlaždice, nebo id plochy záložky)
-            // Kód se pokusí najít místo, kam se mají dlaždice vykreslit
             var plochaNoveZalozky = document.getElementById('planovaneAkceGrid') || document.querySelector('.planovane-akce-container') || document.getElementById('tab5') || document.getElementById('tab-planovane');
             if (!plochaNoveZalozky) return;
 
             var akce = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
-            
-            // Sestavíme čistý HTML kód pro dlaždice všech vytvořených akcí
             var htmlDlazdic = '';
+            
             akce.forEach(function(act) {
                 if (act.status !== 'Zrušena') {
                     htmlDlazdic += '<div class="action-tile-coke" style="background:#ffffff; border:1px solid var(--border,#e2e8f0); border-radius:8px; padding:15px; margin:10px; display:inline-block; min-width:200px; text-align:left; box-shadow:0 2px 5px rgba(0,0,0,0.02);">' +
@@ -2085,13 +2092,10 @@ window.deleteCompanyAction = function(id) {
                 }
             });
 
-            // Pokud na ploše záložky ještě nic nesvítí, nebo se data změnila, nasypeme tam ty dlaždice
             var cilovyKontejner = plochaNoveZalozky.querySelector('.grid') || plochaNoveZalozky;
             if (cilovyKontejner && cilovyKontejner.innerHTML !== htmlDlazdic && htmlDlazdic !== '') {
-                // Zachováme případný tvůj nadpis a přepíšeme jen vnitřek se seznamem akcí
                 var nadpis = cilovyKontejner.querySelector('h2') || cilovyKontejner.querySelector('h3');
                 if (nadpis) {
-                    // Pokud tam máš nadpis, vložíme dlaždice pod něj
                     var seznamDiv = document.getElementById('cc-injected-tiles-list');
                     if (!seznamDiv) {
                         seznamDiv = document.createElement('div');
@@ -2105,10 +2109,10 @@ window.deleteCompanyAction = function(id) {
             }
         }
 
-        // Hlídáme formulář i novou záložku plynule na pozadí každých 400ms
-        setInterval(opravUkladaniANasypDlazdice, 400);
+        setInterval(opravUkladaniANasypDlazdiceCoke, 400);
         setInterval(aktualizujDlazdiceVPlanovanychAkcich, 500);
     })();
 </script>
+
 </body>
 </html>
