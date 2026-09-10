@@ -1371,78 +1371,79 @@ window.deleteCompanyAction = function(id) {
         document.addEventListener('click', function() { setTimeout(doplnDatumACasDoSchvalovani, 100); });
     })();
 </script>
-    <!-- 🌐 FILTR SCHVALOVÁNÍ: 1. ČÁST - PŘIDÁNÍ ROLETKY DO MANAŽERSKÉ LIŠTY -->
+  <!-- 🌐 FILTR REZERVACÍ: 1. ČÁST - HORIZONTÁLNÍ VLOŽENÍ HNED NA DRUHOU POZICI V SEZNAMU ŽÁDOSTÍ -->
 <script>
     (function() {
-        function namontujFiltrAkciDoZadosti() {
-            // Najdeme tvůj stávající šedý kontejner/lištu s filtry v záložce 2
-            // Hledáme místo podle políček filterEmployee nebo filterStatus
-            var empFilter = document.getElementById('filterEmployee') || document.querySelector('input[placeholder*="Jméno"]');
-            if (!empFilter) return;
+        function vklasniFiltrAkciDoHlavniListyZadosti() {
+            // Zaměříme se přesně na políčko filterStatus, které vidíš na svém obrázku
+            var stavSelect = document.getElementById('filterStatus');
+            if (!stavSelect) return;
             
-            var lištaFiltru = empFilter.parentNode;
-            if (lištaFiltru && !document.getElementById('cc-action-filter-tab2')) {
-                // Vytvoříme elegantní svislý sloupeček pro filtr akcí, aby přesně ladil se jménem a stavem
-                var sloupecFiltru = document.createElement('div');
-                sloupecFiltru.className = 'filter-group'; // Přebírá tvůj stávající styl z CSS
-                sloupecFiltru.style.cssText = 'display: flex; flex-direction: column; gap: 5px;';
+            // Najdeme celou tu obalovou krabičku (sloupeček), ve které Stav schválení sedí
+            var sloupecStavu = stavSelect.closest('.filter-group') || stavSelect.parentNode;
+            if (sloupecStavu && !document.getElementById('cc-main-action-filter')) {
                 
-                sloupecFiltru.innerHTML = '<label style="font-weight: 700; font-size: 12px; color: #475569;">Podle akce:</label>' +
-                                          '<select id="cc-action-filter-tab2" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 600; cursor: pointer; background: #fff; min-width: 200px;"></select>';
+                // Vytvoříme úplně stejný sloupeček, jaký máš na obrázku u ostatních polí
+                var novySloupecProAkce = document.createElement('div');
+                novySloupecProAkce.className = sloupecStavu.className || 'filter-group';
+                novySloupecProAkce.style.cssText = 'display: flex; flex-direction: column; gap: 5px; min-width: 200px; text-align: left;';
                 
-                // Vložíme ho do lišty vedle ostatních filtrů
-                lištaFiltru.appendChild(sloupecFiltru);
+                // Vložíme do něj popisek a bílou roletku se stejným zaoblením a výškou jako máš na obrázku
+                novySloupecProAkce.innerHTML = '<label style="font-weight: 700; font-size: 13px; color: #334155; display: block;">Název akce:</label>' +
+                                              '<select id="cc-main-action-filter" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 600; cursor: pointer; background: #fff; height: 38px; color: #334155; font-size: 14px; box-sizing: border-box;"></select>';
                 
-                // Naučíme roletku reagovat na změnu
-                document.getElementById('cc-action-filter-tab2').addEventListener('change', spustFiltraciZadostiCoke);
+                // 🔥 KLÍČOVÝ KROK: Vložíme nové pole přesně ZA sloupeček stavu a PŘED sloupeček jména žadatele
+                sloupecStavu.parentNode.insertBefore(novySloupecProAkce, sloupecStavu.nextSibling);
+                
+                // Naučíme filtr okamžitě reagovat při změně
+                document.getElementById('cc-main-action-filter').addEventListener('change', spustBleskovouFiltraciZadostiLiskty);
             }
 
-            // Plynule plníme roletku aktuálními akcemi z tvého systému
-            var roletkaTab2 = document.getElementById('cc-action-filter-tab2');
-            if (roletkaTab2) {
+            // Plynule krmíme roletku aktuálními akcemi z databáze
+            var roletkaAkci = document.getElementById('cc-main-action-filter');
+            if (roletkaAkci) {
                 var akceZPameti = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
-                var stareVybraneID = roletkaTab2.value;
+                var stareVybraneID = roletkaAkci.value;
                 
                 var htmlMožností = '<option value="vse">--- Všechny akce ---</option>';
                 akceZPameti.forEach(function(a) {
                     if (a.status !== 'Zrušena') {
-                        htmlMožností += '<option value="' + a.name + '">' + a.name + (a.date ? ' (' + a.date + ')' : '') + '</option>';
+                        htmlMožností += '<option value="' + a.name + '">' + a.name + '</option>';
                     }
                 });
 
-                if (roletkaTab2.innerHTML !== htmlMožností) {
-                    roletkaTab2.innerHTML = htmlMožností;
-                    if (stareVybraneID) roletkaTab2.value = stareVybraneID;
+                if (roletkaAkci.innerHTML !== htmlMožností) {
+                    roletkaAkci.innerHTML = htmlMožností;
+                    if (stareVybraneID) roletkaAkci.value = stareVybraneID;
                 }
             }
         }
 
-        // Hlídáme přítomnost lišty na pozadí plynule každou půl vteřinu
-        setInterval(namontujFiltrAkciDoZadosti, 500);
-        // 🔍 FILTR SCHVALOVÁNÍ: 2. ČÁST - MECHANISMUS BLESKOVÉHO SCHOVÁVÁNÍ ŘÁDKŮ
-        function spustFiltraciZadostiCoke() {
-            var roletkaAkce = document.getElementById('cc-action-filter-tab2');
+        // Plynule hlídáme lištu na pozadí každou půl vteřinu
+        setInterval(vklasniFiltrAkciDoHlavniListyZadosti, 500);
+        // 🔍 FILTR REZERVACÍ: 2. ČÁST - MECHANISMUS BLESKOVÉHO SCHOVÁVÁNÍ ŽÁDOSTÍ V TABULCE
+        function spustBleskovouFiltraciZadostiLiskty() {
+            var roletkaAkce = document.getElementById('cc-main-action-filter');
             if (!roletkaAkce) return;
             
             var vybranaAkce = roletkaAkce.value;
-            // Najdeme všechny řádky v hlavní tabulce žádostí ke schválení
-            var radkyTabulky = document.querySelectorAll('#requestsTableBody tr, #tab2 table tbody tr');
+            // Najdeme všechny řádky v hlavní schvalovací tabulce žádostí o lístky
+            var radkyTabulky = document.querySelectorAll('#requestsTableBody tr');
 
             radkyTabulky.forEach(function(row) {
                 // Pojistka pro prázdnou zprávu v tabulce
                 if (row.cells.length < 2) return;
 
-                // Vyhledáme název akce v řádku. Standardně bývá v prvním nebo druhém sloupečku.
-                var textBunkyAkce = row.cells[0].innerText.trim();
-                var textDruheBunky = row.cells[1] ? row.cells[1].innerText.trim() : '';
+                // Vytáhneme si text z buněk v řádku, kde se nachází název akce
+                var celyTextRadku = row.innerText || "";
 
-                // Zkontrolujeme, zda řádek odpovídá vybranému filtru
                 var odpovidaFiltru = false;
-                if (vybranaAkce === 'vse' || textBunkyAkce.indexOf(vybranaAkce) > -1 || textDruheBunky.indexOf(vybranaAkce) > -1) {
+                // Pokud je vybráno "Všechny akce" nebo řádek obsahuje přesný název vybrané akce
+                if (vybranaAkce === 'vse' || celyTextRadku.indexOf(vybranaAkce) > -1) {
                     odpovidaFiltru = true;
                 }
 
-                // Pokud odpovídá, necháme ho zobrazený, jinak ho schováme
+                // Pokud řádek odpovídá výběru, necháme ho zobrazený, jinak ho okamžitě schováme
                 if (odpovidaFiltru) {
                     row.style.setProperty('display', '', 'important');
                 } else {
@@ -1451,19 +1452,18 @@ window.deleteCompanyAction = function(id) {
             });
         }
 
-        // Propojíme filtraci s tvým stávajícím vyhledáváním textu, aby spolu filtry spolupracovaly
+        // Propojíme filtraci s tvým stávajícím vyhledáváním (Jméno žadatele, Zákazník, Stav), aby spolu filtry spolupracovaly
         document.addEventListener('input', function(e) {
-            if (e.target && (e.target.id === 'filterEmployee' || e.target.id === 'filterStatus')) {
-                setTimeout(spustFiltraciZadostiCoke, 50);
+            if (e.target && (e.target.id === 'filterEmployee' || e.target.id === 'filterCustomer' || e.target.id === 'filterStatus')) {
+                setTimeout(spustBleskovouFiltraciZadostiLiskty, 60);
             }
         });
         document.addEventListener('change', function(e) {
             if (e.target && (e.target.id === 'filterStatus')) {
-                setTimeout(spustFiltraciZadostiCoke, 50);
+                setTimeout(spustBleskovouFiltraciZadostiLiskty, 60);
             }
         });
     })();
 </script>
-
 </body>
 </html>
