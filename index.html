@@ -2521,53 +2521,112 @@ window.deleteCompanyAction = function(id) {
         setInterval(opravChybejiciVstupniPoleAdminu, 400);
     })();
 </script>
-    <!-- 📧 AUTOMATICKÝ GENERÁTOR OUTLOOK E-MAILŮ PRO SCHVÁLENÉ KÓDY -->
+    <!-- 📧 AUTOMATICKÝ GENERÁTOR OUTLOOK E-MAILŮ: PRVOTNÍ REGISTRACE A PŘÍSTUPOVÁ OPRAVNĚNÍ -->
 <script>
     (function() {
-        function pridejTlacitkoEmailuDoAdminu() {
-            var radkyUzivatelu = document.querySelectorAll('#tab4 table tbody tr, #customUsersTableBody tr');
-            
-            radkyUzivatelu.forEach(function(row) {
+        function generujRegistracniEmailyVAdminu() {
+            // ==========================================
+            // SCÉNÁŘ A: SCHVÁLENÍ PRVOTNÍ REGISTRACE (ZÁLOŽKA 4 - Tabulka kódů)
+            // ==========================================
+            var radkyKodu = document.querySelectorAll('#tab4 table tbody tr, #customUsersTableBody tr');
+            radkyKodu.forEach(function(row) {
                 if (row.cells.length < 2) return;
-
                 var bunky = row.cells;
-                var emailZamestnance = "";
-                var vygenerovanyKod = "";
+                var emailZam = "", vygenerovanyKod = "";
 
                 for (var i = 0; i < bunky.length; i++) {
                     var txt = bunky[i].innerText.trim();
-                    if (txt.indexOf('@') > -1) emailZamestnance = txt;
+                    if (txt.indexOf('@') > -1) emailZam = txt;
                     if (txt.length === 5 && !isNaN(txt)) vygenerovanyKod = txt;
                 }
 
-                if (emailZamestnance && vygenerovanyKod && !bunky[bunky.length - 1].querySelector('.cc-email-btn')) {
+                if (emailZam && vygenerovanyKod && !bunky[bunky.length - 1].querySelector('.cc-email-approve-reg-btn')) {
+                    // Čistý text o schválení účtu a předání kódu
+                    var textSchvaleniReg = "Dobrý den,\n\nVaše prvotní registrace do rezervačního portálu byla úspěšně schválena.\n\nVáš unikátní přístupový kód pro přihlášení: " + vygenerovanyKod + "\n\nTento kód prosím bezpečně uschovejte pro budoucí přístupy.\n\nS pozdravem,\nTým Coca-Cola HBC";
+                    var predmetSchvaleniReg = "Schválení registrace a přístupový kód – Coca-Cola HBC";
                     
-                    // 📝 TADY SI MŮŽEŠ UPRAVIT TEXT EMAIILU PODLE SEBE (Znak \n znamená nový řádek)
-                    var textZpravy = "Dobrý den,\n\nVaše žádost registraci byla úspěšně schválena.\n\nVáš unikátní přístupový kód: " + vygenerovanyKod + "\n\nTento kód prosím nikomu nesdělujte.\n\nS pozdravem,\nCC Tikects Booking App";
-                    
-                    // 🏷️ TADY SI MŮŽEŠ UPRAVIT PŘEDMĚT EMAIILU
-                    var predmetEmaillu = "Registrace – Coca-Cola HBC (KÓD: " + vygenerovanyKod + ")";
-                    
-                    var mailtoUrl = "mailto:" + emailZamestnance + 
-                                    "?subject=" + encodeURIComponent(predmetEmaillu) + 
-                                    "&body=" + encodeURIComponent(textZpravy);
+                    vytvorEmailTlacitko(bunky[bunky.length - 1], emailZam, predmetSchvaleniReg, textSchvaleniReg, "📧 Kód Schválit", "#10b981", "cc-email-approve-reg-btn");
+                }
+            });
 
-                    var emailBtn = document.createElement('a');
-                    emailBtn.className = 'cc-email-btn';
-                    emailBtn.href = mailtoUrl;
-                    emailBtn.style.cssText = 'display: inline-block; background: #e41e26; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-decoration: none; text-transform: uppercase; margin-left: 8px; transition: background 0.2s;';
-                    emailBtn.innerText = '📧 E-mail';
-                    
-                    emailBtn.addEventListener('mouseenter', function() { this.style.background = '#b81118'; });
-                    emailBtn.addEventListener('mouseleave', function() { this.style.background = '#e41e26'; });
+            // ==========================================
+            // SCÉNÁŘ B: ZAMÍTNUTÍ PRVOTNÍ REGISTRACE (ZÁLOŽKA 4 - Žádosti o účet)
+            // ==========================================
+            var radkyZadostiReg = document.querySelectorAll('#requestsTableBody tr, #roleRequestsTableBody tr, #tab4 table tr');
+            radkyZadostiReg.forEach(function(row) {
+                if (row.cells.length < 2) return;
+                var bunky = row.cells;
+                var emailZam = "";
 
-                    bunky[bunky.length - 1].appendChild(emailBtn);
+                for (var i = 0; i < bunky.length; i++) {
+                    if (bunky[i].innerText.indexOf('@') > -1) { emailZam = bunky[i].innerText.trim(); break; }
+                }
+
+                var posledniBunka = bunky[bunky.length - 1];
+                // Pojistka: Generujeme zamítací tlačítko registrace, pokud tam ještě nesedí
+                if (emailZam && !posledniBunka.querySelector('.cc-email-reject-reg-btn') && (posledniBunka.innerText.toLowerCase().indexOf('smazat') > -1 || posledniBunka.innerText.toLowerCase().indexOf('ne') > -1)) {
+                    var textZamítnutíReg = "Dobrý den,\n\nVaše žádost o prvotní registraci do rezervačního portálu Coca-Cola HBC byla z interních nebo bezpečnostních důvodů zamítnuta.\n\nPokud se jedná o omyl, kontaktujte prosím administrátora systému.\n\nS pozdravem,\nTým Coca-Cola HBC";
+                    var predmetZamítnutíReg = "Zamítnutí žádosti o registraci – Coca-Cola HBC";
+                    
+                    vytvorEmailTlacitko(posledniBunka, emailZam, predmetZamítnutíReg, textZamítnutíReg, "❌ Mail Zamítnout", "#ef4444", "cc-email-reject-reg-btn");
+                }
+            });
+
+            // ==========================================
+            // SCÉNÁŘ C: ZMĚNA NEBO ÚPRAVA ROLÍ ADMINEM (ZÁLOŽKA 4 - Správa uživatelů a oprávnění)
+            // ==========================================
+            var radkyZmenyRoli = document.querySelectorAll('#roleRequestsTableBody tr, #tab4 .role-table tr, #roleApprovalTable tbody tr, #customUsersTableBody tr');
+            radkyZmenyRoli.forEach(function(row) {
+                if (row.cells.length < 2) return;
+                var bunky = row.cells;
+                var emailZam = "";
+                var schvalenaRole = "";
+
+                for (var i = 0; i < bunky.length; i++) {
+                    var txt = bunky[i].innerText.trim();
+                    if (txt.indexOf('@') > -1) emailZam = txt;
+                    
+                    // Sledujeme, zda je v buňce výběrová roletka se změnou role
+                    var selectEl = bunky[i].querySelector('select');
+                    if (selectEl) {
+                        schvalenaRole = selectEl.options[selectEl.selectedIndex].text;
+                    }
+                }
+
+                var posledniBunka = bunky[bunky.length - 1];
+                // Pokud byla detekována změna role v tabulce uživatelů
+                if (emailZam && schvalenaRole && !posledniBunka.querySelector('.cc-role-change-email-btn')) {
+                    var textZmenyRole = "Dobrý den,\n\nVaše přístupová oprávnění (role) v rezervačním portálu Coca-Cola HBC byla administrátorem změněna.\n\nVaše nová úroveň přístupu: " + schvalenaRole + "\n\nTato změna je platná okamžitě. Váš stávající 5místný přístupový kód zůstává beze změny.\n\nS pozdravem,\nTým Coca-Cola HBC";
+                    var predmetZmenyRole = "Změna přístupových oprávnění (role) – Coca-Cola HBC";
+                    
+                    vytvorEmailTlacitko(posledniBunka, emailZam, predmetZmenyRole, textZmenyRole, "🔄 Mail Role", "#0284c7", "cc-role-change-email-btn");
                 }
             });
         }
 
-        setInterval(pridejTlacitkoEmailuDoAdminu, 500);
+        // Pomocná funkce pro bezpečné vykreslování červených/modrých/zelených tlačítek
+        function vytvorEmailTlacitko(targetCell, email, subject, body, label, customBg, uniqueClassName) {
+            if (targetCell.querySelector('.' + uniqueClassName)) return;
+
+            var bg = customBg || "#e41e26";
+            var mailtoUrl = "mailto:" + email + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+
+            var btn = document.createElement('a');
+            btn.className = 'cc-email-btn ' + uniqueClassName;
+            btn.href = mailtoUrl;
+            btn.style.cssText = 'display: inline-block; background: ' + bg + '; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-decoration: none; text-transform: uppercase; margin-left: 5px; margin-top: 2px; transition: opacity 0.2s;';
+            btn.innerText = label;
+            
+            btn.addEventListener('mouseenter', function() { this.style.opacity = '0.8'; });
+            btn.addEventListener('mouseleave', function() { this.style.opacity = '1'; });
+
+            targetCell.appendChild(btn);
+        }
+
+        // Kontrola běžící hladce na pozadí
+        setInterval(generujRegistracniEmailyVAdminu, 600);
     })();
+</script>
 </script>
 <!-- 🔌 NEPRŮSTŘELNÁ OPRAVA TLAČÍTKA TVORBY NOVÉ AKCE -->
 <script>
