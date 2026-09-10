@@ -275,20 +275,9 @@
                         <input type="time" id="actNewTime" required>
                     </div>
                 </div>
-                <div class="form-group" style="margin-bottom: 15px; text-align: left;">
-    <label for="actionCategory" style="font-weight: 600; font-size: 13px; color: #475569;">Typ / Kategorie akce 🌟:</label>
-    <select id="actionCategory" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border); font-weight: 600; background: #fff;">
-        <option value="">-- Vyberte kategorii --</option>
-        <option value="O2 Arena - Hokej">🏟️ O2 Arena - Hokej</option>
-        <option value="O2 Arena - Koncerty">🎵 O2 Arena - Koncerty</option>
-        <option value="Fotbal">⚽ Fotbal</option>
-        <option value="Extraliga">🏒 Extraliga</option>
-        <option value="Reprezentace">🇨🇿 Reprezentace</option>
-    </select>
-</div>
                 <div class="form-group">
-                    <label></label>
-                    <label for="actionPlace" style="font-weight: 600; font-size: 13px; color: #475569;">Informace pro Tooltip (Detaily akce) 📝:</label>
+                    <label>Místo konání:</label>
+                    <input type="text" id="actNewPlace" required placeholder="např. Skybox">
                 </div>
                 <div class="form-group">
                     <label>Kapacita lístků (celkem):</label>
@@ -1171,290 +1160,216 @@ window.deleteCompanyAction = function(id) {
     });
 })();
 </script>
-<!-- 🌐 1. ČÁST: GRAFIKA A CHRONOLOGICKÝ REZERVAČNÍ ENGINE -->
-<style>
-    .cc-public-grid { display: flex; gap: 15px; flex-wrap: wrap; text-align: left; margin-top: 15px; }
-    .cc-public-card { flex: 1 1 calc(25% - 15px); min-width: 220px; height: 90px; border: 1px solid var(--border); border-radius: 8px; padding: 15px; background: #ffffff; display: flex; flex-direction: column; justify-content: center; position: relative; cursor: default; transition: all 0.2s ease; box-shadow: 0 1px 4px rgba(0,0,0,0.02); }
-    .cc-public-card:hover { border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: translateY(-2px); }
-    .cc-card-title { font-weight: 700; font-size: 13px; color: #0f172a; margin-bottom: 4px; line-height: 1.3; }
-    .cc-card-date { font-size: 11px; color: #64748b; font-weight: 600; }
-    
-    #cc-tiles-container .cc-tile, .cc-public-card { position: relative !important; overflow: visible !important; }
-    #cc-tiles-container .cc-tooltip, .cc-public-card .cc-tooltip { position: absolute !important; bottom: 125% !important; left: 50% !important; transform: translateX(-50%) translateY(5px) !important; background: #0f172a !important; color: #ffffff !important; padding: 10px 14px !important; border-radius: 6px !important; font-size: 11px !important; font-weight: 600 !important; width: 220px !important; text-align: left !important; box-shadow: 0 4px 15px rgba(0,0,0,0.15) !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; transition: all 0.2s ease-in-out !important; z-index: 999999 !important; line-height: 1.4 !important; }
-    #cc-tiles-container .cc-tooltip::after, .cc-public-card .cc-tooltip::after { content: '' !important; position: absolute !important; top: 100% !important; left: 50% !important; transform: translateX(-50%) !important; border-width: 5px !important; border-style: solid !important; border-color: #0f172a transparent transparent transparent !important; display: block !important; }
-    #cc-tiles-container .cc-tile:hover .cc-tooltip, .cc-public-card:hover .cc-tooltip { opacity: 1 !important; visibility: visible !important; transform: translateX(-50%) translateY(0) !important; }
+<script>
+    // 🎟️ INFORMAČNÍ ROLETKA: Propisuje do výběru název akce, datum, čas i místo konání
+    (function() {
+        function natvrdoPropisAkceDoRoletky() {
+            var roletkaSelect = document.getElementById('actionSelect') || document.querySelector('select');
+            if (!roletkaSelect) return;
 
-    #cc-tiles-container .cc-tile-grid { display: flex !important; gap: 12px !important; margin-bottom: 25px !important; text-align: left !important; width: 100% !important; justify-content: space-between !important; flex-direction: row !important; flex-wrap: nowrap !important; }
-    #cc-tiles-container .cc-tile { flex: 1 !important; height: 55px !important; border: 2px solid var(--border) !important; border-radius: 8px !important; padding: 5px 10px !important; text-align: center !important; cursor: pointer !important; transition: all 0.2s ease !important; box-shadow: 0 1px 4px rgba(0,0,0,0.02) !important; display: flex !important; align-items: center !important; justify-content: center !important; position: relative !important; background-image: none !important; background-color: #ffffff !important; }
-    #cc-tiles-container .cc-tile::before { display: none !important; }
-    #cc-tiles-container .cc-tile:hover { transform: translateY(-2px) !important; box-shadow: 0 4px 12px rgba(228,30,38,0.1) !important; border-color: var(--cc-red) !important; background-color: #fff5f5 !important; }
-    #cc-tiles-container .cc-tile.active { border-color: var(--cc-red) !important; box-shadow: 0 0 10px rgba(228,30,38,0.15) !important; background-color: #fef2f2 !important; }
-    #cc-tiles-container .cc-tile-title { font-weight: 800 !important; font-size: 11px !important; color: #1e293b !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; margin: 0 !important; text-shadow: none !important; }
-    #cc-tiles-container .cc-tile.active .cc-tile-title { color: var(--cc-red) !important; }
-    #cc-tiles-container .cc-tile-icon { display: none !important; }
-    #cc-tiles-container .cc-sub-tile-grid { display: none; width: 100% !important; flex-basis: 100% !important; gap: 12px !important; margin-top: 15px !important; padding: 12px !important; background: #f8fafc !important; border-radius: 8px !important; border: 1px dashed #cbd5e1 !important; }
-</style>
+            // Načteme si aktuální akce z paměti
+            var seznamAkciZPameti = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+            
+            // Základní úvodní text
+            var vysledneOptions = '<option value="">-- Vyberte akci --</option>';
+            var nalezenaAktivni = false;
+
+            // Projdeme všechny akce a poskládáme jejich texty do jednoho přehledného řádku
+            seznamAkciZPameti.forEach(function(akce) {
+                if (akce.status === 'Aktivní' || !akce.status) {
+                    
+                    // Připravíme si hezké formátování data, času a místa, pokud jsou vyplněné
+                    var d = akce.date ? akce.date : '';
+                    var c = akce.time ? akce.time : '';
+                    var m = akce.place ? akce.place : '';
+                    
+                    // Vytvoříme přehledný popisek: Název akce | 15.10.2026 v 18:00 (Praha)
+                    var plnyPopisekAkce = akce.name;
+                    if (d || c || m) {
+                        plnyPopisekAkce += ' | ' + d + (c ? ' v ' + c : '') + (m ? ' (' + m + ')' : '');
+                    }
+
+                    // Do hodnoty (value) uložíme čistý název akce pro schvalování, ale uživateli ukážeme plný popisek
+                    vysledneOptions += '<option value="' + akce.name + '">' + plnyPopisekAkce + '</option>';
+                    nalezenaAktivni = true;
+                }
+            });
+
+            if (!nalezenaAktivni) {
+                vysledneOptions = '<option value="">❌ V systému není žádná aktivní akce</option>';
+            }
+
+            // Pokud se obsah liší, bleskově roletku občerstvíme
+            if (roletkaSelect.innerHTML !== vysledneOptions) {
+                roletkaSelect.innerHTML = vysledneOptions;
+                console.log("Roletka byla úspěšně aktualizována o detaily akcí!");
+            }
+        }
+
+        // Hlídáme roletku každou vteřinu na pozadí, aby se tam nové akce hned objevily
+        setTimeout(natvrdoPropisAkceDoRoletky, 250);
+        document.addEventListener('click', function() { setTimeout(natvrdoPropisAkceDoRoletky, 50); });
+        
+        if (window.openTab) {
+            var originalniZalozky = window.openTab;
+            window.openTab = function(num) {
+                originalniZalozky(num);
+                if (num === 1) { setTimeout(natvrdoPropisAkceDoRoletky, 50); }
+            };
+        }
+    })();
+</script>
+   <!-- 🔌 AUTOMATICKÝ ENHANCER ROLETEK S NEPRŮSTŘELNÝM FILTREM PRO ADMINA -->
+<style id="cc-admin-filter-style"></style>
 
 <script>
     (function() {
-        function seradAkceChronologicky(poleAkci) {
-            return poleAkci.sort(function(a, b) {
-                var datumA = a.date ? a.date.trim() : '9999-12-31';
-                var datumB = b.date ? b.date.trim() : '9999-12-31';
-                if (datumA.indexOf('.') > -1) { var pA = datumA.split('.'); if(pA.length===3) datumA = pA[2]+'-'+pA[1].padStart(2,'0')+'-'+pA[0].padStart(2,'0'); }
-                if (datumB.indexOf('.') > -1) { var pB = datumB.split('.'); if(pB.length===3) datumB = pB[2]+'-'+pB[1].padStart(2,'0')+'-'+pB[0].padStart(2,'0'); }
-                if (datumA < datumB) return -1;
-                if (datumA > datumB) return 1;
-                var casA = a.time ? a.time.trim() : '23:59';
-                var casB = b.time ? b.time.trim() : '23:59';
-                return casA.localeCompare(casB);
-            });
-        }
-        // 📅 2. ČÁST: GENEROVÁNÍ ZÁLOŽEK A ČISTÉHO MINIMALISTICKÉHO REZERVAČNÍHO PORTÁLU
-        function namontujVerejnyPrehledAkciNaZacatek() {
-            var tabsMenu = document.querySelector('.tabs');
-            var container = document.querySelector('.container');
-            if (!tabsMenu || !container || document.getElementById('btn-prehled')) return;
+        function opravVsechnyRoletkyVSystemu() {
+            var akceZPameti = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+            if (akceZPameti.length === 0) return;
 
-            var btnPrehled = document.createElement('button');
-            btnPrehled.id = 'btn-prehled';
-            btnPrehled.className = 'tab-btn';
-            btnPrehled.innerText = '📅 Přehled akcí';
-            tabsMenu.insertBefore(btnPrehled, tabsMenu.firstChild);
-
-            var tab5 = document.createElement('div');
-            tab5.id = 'tab5';
-            tab5.className = 'tab-content';
-            tab5.innerHTML = '<h2 style="text-align:left; font-size:18px; margin-bottom:5px; color:#0f172a; font-weight:800; text-transform:uppercase; letter-spacing:0.02em;">Aktuální nabídka akcí</h2>' +
-                             '<p style="text-align:left; font-size:13px; color:#64748b; margin-bottom:20px;">Vítejte v rezervačním portálu. Zde naleznete kompletní přehled firemních lístků seřazený chronologicky. Najetím myši na akci zobrazíte podrobnosti o místě a obsazenosti.</p>' +
-                             '<div class="cc-public-grid" id="cc-public-tiles-container"></div>';
-            container.appendChild(tab5);
-
-            btnPrehled.addEventListener('click', function() {
-                vykresliVerejneDlaždiceAkci();
-                localStorage.setItem('activeCcTab', '5');
-                document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-                btnPrehled.classList.add('active');
-                document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
-                document.getElementById('tab5').classList.add('active');
-                if (typeof window.openTab === 'function') {
-                    for (var i = 1; i <= 4; i++) { var t = document.getElementById('tab' + i); if (t) t.classList.remove('active'); }
-                }
-            });
-            
-            var minuleUlozeno = localStorage.getItem('activeCcTab');
-            if (!minuleUlozeno || minuleUlozeno === '1' || minuleUlozeno === '5') {
-                setTimeout(function() { btnPrehled.click(); }, 150);
-            }
-        }
-
-        function vykresliVerejneDlaždiceAkci() {
-            var grid = document.getElementById('cc-public-tiles-container');
-            if (!grid) return;
-
-            var akceRaw = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
-            var zadosti = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
-            if (akceRaw.length === 0) {
-                grid.innerHTML = '<div style="color:#94a3b8; font-size:13px; padding:20px; text-align:left; width:100%;">Momentálně nejsou vytvořeny žádné akce.</div>';
-                return;
+            // 1. KROK: Roletka ve formuláři Nové rezervace
+            var roletkaForm = document.getElementById('actionSelect') || document.querySelector('#tab1 select');
+            if (roletkaForm) {
+                aktualizujKonkretniRoletku(roletkaForm, akceZPameti, "-- Vyberte akci --");
             }
 
-            var akce = seradAkceChronologicky([...akceRaw]);
-            var htmlKaret = '';
-
-            akce.forEach(function(act) {
-                if (act.status === 'Zrušena') return;
-                var schvaleneZadosti = zadosti.filter(function(r) { return r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno'; });
-                var obsazeno = 0; schvaleneZadosti.forEach(function(z) { obsazeno += parseInt(z.tickets || 1); });
-                var txtAdmin = act.place || "Žádné další detaily nebyly zadány.";
-
-                htmlKaret += '<div class="cc-public-card">' +
-                                '<div class="cc-card-title">' + act.name + '</div>' +
-                                '<div class="cc-card-date">📅 ' + (act.date || 'Termín upřesníme') + '</div>' +
-                                '<div class="cc-tooltip">' +
-                                    '<strong style="color:var(--cc-red); display:block; margin-bottom:4px; text-transform:uppercase; font-size:10px;">Podrobnosti akce</strong>' +
-                                    '🏷️ Typ: ' + (act.category || 'Nespecifikováno') + '<br>' +
-                                    '⏰ Čas: ' + (act.time || 'Nespecifikován') + '<br>' +
-                                    '📝 Informace k akci: <span style="color:#cbd5e1; font-weight:500;">' + txtAdmin + '</span><br>' +
-                                    '<span style="display:block; margin-top:5px; padding-top:5px; border-top:1px solid #334155; font-weight:700;">Obsazenost: ' + obsazeno + ' / ' + act.capacity + ' ks</span>' +
-                                '</div>' +
-                             '</div>';
-            });
-            if (grid.innerHTML !== htmlKaret) grid.innerHTML = htmlKaret;
-        }
-
-        window.odfiltrujRoletkuAkciPodleDlazdice = function() {
-            var roletka = document.getElementById('actionSelect') || document.querySelector('#ticketForm select');
-            var vybranaKat = window.vybranaKategoriePortalu || "";
-            if (!roletka || !vybranaKat) return;
-
-            var akceRaw = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
-            var akce = seradAkceChronologicky([...akceRaw]);
-            var html = '<option value="">-- Vyberte konkrétní zápas / koncert --</option>';
-            var maZapas = false;
-
-            akce.forEach(function(a) {
-                var katAkce = a.category ? a.category.trim() : '';
-                if (katAkce === vybranaKat && (a.status === 'Aktivní' || !a.status)) {
-                    html += '<option value="' + a.name + '">' + a.name + (a.date ? ' | ' + a.date : '') + '</option>';
-                    maZapas = true;
-                }
-            });
-            if (!maZapas) html = '<option value="">V této kategorii momentálně nejsou žádné volné lístky</option>';
-            roletka.innerHTML = html;
-        };
-        // 🛠️ 3. ČÁST: OPRAVA FORMULÁŘE TVORBY AKCÍ, OUTLOOK PANELU A ČIŠTĚNÍ VYDANÝCH KÓDŮ
-        function opravZaseknuteUkladaniAkciPropojene() {
-            var adminForm = document.querySelector('#tab4 form') || document.getElementById('actionForm') || document.querySelector('#tab4 #actionForm');
-            if (!adminForm || adminForm.getAttribute('data-cc-fixed-final') === 'yes') return;
-
-            adminForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                var nameVal = adminForm.querySelector('input[type="text"]') ? adminForm.querySelector('input[type="text"]').value.trim() : '';
-                var capVal = adminForm.querySelector('input[type="number"]') ? parseInt(adminForm.querySelector('input[type="number"]').value) : 0;
-                var dateVal = adminForm.querySelector('input[type="date"]') ? adminForm.querySelector('input[type="date"]').value : '';
-                var timeVal = adminForm.querySelector('input[type="time"]') ? adminForm.querySelector('input[type="time"]').value : '';
+            // 2. KROK: Vytvoření a hlídání roletky pro Admina nad tabulkou obsazenosti (tab4)
+            var adminTab4 = document.getElementById('tab4');
+            if (adminTab4) {
+                var nadpisSeznamu = adminTab4.querySelector('h3');
+                var tbodyL = document.getElementById('adminActionsTableBody');
                 
-                var placeEl = document.getElementById('actionPlace') || adminForm.querySelector('input[placeholder*="Sektor"]');
-                var catEl = document.getElementById('actionCategory') || adminForm.querySelector('select');
-
-                var placeVal = placeEl ? placeEl.value.trim() : '';
-                var catVal = catEl ? catEl.value : '';
-
-                if (nameVal && capVal > 0) {
-                    var aktualniAkce = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+                if (nadpisSeznamu && tbodyL) {
+                    var roletkaAdmin = document.getElementById('cc-admin-action-filter');
                     
-                    var novaAkce = {
-                        id: Date.now(),
-                        name: nameVal,
-                        capacity: capVal,
-                        date: dateVal,
-                        time: timeVal,
-                        place: placeVal,
-                        category: catVal,         
-                        actionCategory: catVal,   
-                        status: 'Aktivní'
-                    };
-
-                    aktualniAkce.push(novaAkce);
-                    localStorage.setItem('companyActions', JSON.stringify(aktualniAkce));
-                    window.companyActions = aktualniAkce;
-
-                    if (typeof firebase !== 'undefined' && firebase.apps.length) {
-                        var db = firebase.firestore();
-                        db.collection("portalData").doc("cocaColaDatabase").set({
-                            companyActions: aktualniAkce,
-                            ticketRequests: JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [],
-                            customUsers: JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {},
-                            roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || window.roleRequests || []
-                        }, { merge: true });
+                    if (!roletkaAdmin) {
+                        var filterDiv = document.createElement('div');
+                        filterDiv.id = 'cc-admin-filter-wrapper';
+                        filterDiv.style.cssText = 'margin-top: 10px; margin-bottom: 20px; background: #f8fafc; padding: 15px; border: 1px solid var(--border); border-radius: 8px; text-align: left;';
+                        filterDiv.innerHTML = '<label style="font-weight: 700; font-size: 13px; color: #475569; display: block; margin-bottom: 6px;">🔎 Rychlý filtr obsazenosti (Vyberte akci):</label>' +
+                                              '<select id="cc-admin-action-filter" style="width: 100%; max-width: 500px; padding: 10px 14px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 600; cursor: pointer; background: #fff;"></select>';
+                        
+                        nadpisSeznamu.parentNode.insertBefore(filterDiv, nadpisSeznamu.nextSibling);
+                        roletkaAdmin = document.getElementById('cc-admin-action-filter');
+                        
+                        // Při změně roletky okamžitě aplikujeme hardwarový filtr
+                        roletkaAdmin.addEventListener('change', aplikujHardwarovyAdminFiltr);
                     }
-
-                    adminForm.reset();
-                    alert('🎉 Nová firemní akce byla úspěšně vytvořena a uložena!');
-                    setTimeout(function() { location.reload(); }, 150);
-                }
-            });
-            adminForm.setAttribute('data-cc-fixed-final', 'yes');
-        }
-
-        function panelSprávceABleskovéEmaily() {
-            var radkyZadosti = document.querySelectorAll('#roleRequestsTableBody tr, #tab4 table tbody tr');
-            radkyZadosti.forEach(function(row) {
-                if (row.cells.length < 3 || row.getAttribute('data-cc-styled') === 'yes') return;
-                var bunky = row.cells;
-                var posledniBunka = bunky[bunky.length - 1];
-                
-                var emailUzivatele = "";
-                for (var i = 0; i < bunky.length; i++) {
-                    if (bunky[i].innerText.trim().indexOf('@') > -1) { emailUzivatele = bunky[i].innerText.trim(); break; }
-                }
-                if (!emailUzivatele) return;
-
-                var tlacitka = posledniBunka.querySelectorAll('button');
-                tlacitka.forEach(function(btn) {
-                    var txt = btn.innerText.toLowerCase();
-                    if (txt.indexOf('schválit') > -1) {
-                        btn.style.cssText = 'background:#10b981!important;color:white!important;border:none!important;padding:6px 12px!important;border-radius:6px!important;font-size:12px!important;font-weight:700!important;cursor:pointer!important;margin-right:4px!important;text-transform:uppercase;';
-                        btn.addEventListener('click', function() {
-                            setTimeout(function() {
-                                var customUsers = JSON.parse(localStorage.getItem('customUsers')) || {};
-                                var nalezenyKod = "12345";
-                                for (var kod in customUsers) { if (customUsers[kod].email === emailUzivatele) { nalezenyKod = kod; break; } }
-                                var txtMail = "Dobrý den,\n\nVaše prvotní registrace do rezervačního portálu byla úspěšně schválena.\n\nVáš unikátní přístupový kód pro přihlášení: " + nalezenyKod + "\n\nS pozdravem,\nTým Coca-Cola HBC";
-                                window.location.href = "mailto:" + emailUzivatele + "?subject=" + encodeURIComponent("Schválení registrace – Coca-Cola HBC") + "&body=" + encodeURIComponent(txtMail);
-                            }, 200);
-                        });
+                    
+                    if (roletkaAdmin) {
+                        aktualizujKonkretniRoletku(roletkaAdmin, akceZPameti, "--- Zobrazit všechny vytvořené akce naráz ---");
                     }
-                    if (txt.indexOf('upravit') > -1) {
-                        btn.style.cssText = 'background:#0284c7!important;color:white!important;border:none!important;padding:6px 12px!important;border-radius:6px!important;font-size:12px!important;font-weight:700!important;cursor:pointer!important;margin-right:4px!important;text-transform:uppercase;';
-                    }
-                    if (txt.indexOf('smazat') > -1) {
-                        breakStyle: btn.style.cssText = 'background:#64748b!important;color:white!important;border:none!important;padding:6px 12px!important;border-radius:6px!important;font-size:12px!important;font-weight:700!important;cursor:pointer!important;transition:opacity 0.2s!important;text-transform:uppercase;';
-                    }
-                });
-
-                if (!posledniBunka.querySelector('.cc-live-reject-btn')) {
-                    var btnZamitnout = document.createElement('button');
-                    btnZamitnout.className = 'cc-live-reject-btn';
-                    btnZamitnout.innerText = 'Zamítnout';
-                    btnZamitnout.style.cssText = 'background:#ef4444!important;color:white!important;border:none!important;padding:6px 12px!important;border-radius:6px!important;font-size:12px!important;font-weight:700!important;cursor:pointer!important;margin-right:4px!important;text-transform:uppercase;';
-                    btnZamitnout.addEventListener('click', function(e) {
-                        e.preventDefault(); e.stopPropagation();
-                        if (confirm('Opravdu chcete registraci zamítnout?')) {
-                            var txtZam = "Dobrý den,\n\nVaše žádost o prvotní registraci do rezervačního portálu byla zamítnuta.\n\nS pozdravem,\nTým Coca-Cola HBC";
-                            window.location.href = "mailto:" + emailUzivatele + "?subject=" + encodeURIComponent("Zamítnutí registrace – Coca-Cola HBC") + "&body=" + encodeURIComponent(txtZam);
-                            var puvodniSmazat = posledniBunka.querySelector('button[onclick*="delete"], button[onclick*="Delete"], button:last-of-type');
-                            if (puvodniSmazat) { var oldC = window.confirm; window.confirm = function() { return true; }; puvodniSmazat.click(); setTimeout(function() { window.confirm = oldC; }, 100); }
-                        }
-                    });
-                    posledniBunka.insertBefore(btnZamitnout, posledniBunka.querySelector('button:nth-child(2)') || posledniBunka.firstChild);
                 }
-                posledniBunka.setAttribute('data-cc-styled', 'yes');
-            });
-        }
-
-        function cisteniVydanychKodu() {
-            var radkyVydanych = document.querySelectorAll('#customUsersTableBody tr');
-            radkyVydanych.forEach(function(row) {
-                if (row.cells.length >= 4) {
-                    var posledniB = row.cells[row.cells.length - 1];
-                    posledniB.querySelectorAll('button, a').forEach(function(el) {
-                        var txt = el.innerText.toLowerCase();
-                        if (txt.indexOf('zamítnout') > -1 || txt.indexOf('mail') > -1) el.remove();
-                    });
-                }
-            });
-        }
-
-        var rsmPuvodniOpenTab = window.openTab;
-        window.openTab = function(num) {
-            localStorage.setItem('activeCcTab', num);
-            if (typeof rsmPuvodniOpenTab === 'function') { rsmPuvodniOpenTab(num); }
-            var b5 = document.getElementById('btn-prehled');
-            var t5 = document.getElementById('tab5');
-            if (num === 5) {
-                if (b5) b5.classList.add('active'); if (t5) t5.classList.add('active');
-                vykresliVerejneDlaždiceAkci();
-            } else {
-                if (b5) b5.classList.remove('active'); if (t5) t5.classList.remove('active');
             }
-        };
+        }
 
-        setInterval(namontujVerejnyPrehledAkciNaZacatek, 450);
-        setInterval(opravZaseknuteUkladaniAkciPropojene, 400);
-        setInterval(panelSprávceABleskovéEmaily, 500);
-        setInterval(cisteniVydanychKodu, 400);
+        function aktualizujKonkretniRoletku(selectElement, akceList, uvodniText) {
+            var aktualniVyber = selectElement.value;
+            var html = '<option value="' + (uvodniText.indexOf('všechny') > -1 ? 'vse' : '') + '">' + uvodniText + '</option>';
+            var maAktivni = false;
 
-        setTimeout(function() {
-            var zapStrana = localStorage.getItem('activeCcTab') ? parseInt(localStorage.getItem('activeCcTab')) : 5;
-            if (zapStrana === 5) { var b5 = document.getElementById('btn-prehled'); if (b5) b5.click(); } 
-            else { window.openTab(zapStrana); }
-        }, 300);
+            akceList.forEach(function(act) {
+                if (act.status === 'Aktivní' || !act.status || uvodniText.indexOf('všechny') > -1) {
+                    var d = act.date || '';
+                    var c = act.time || '';
+                    var m = act.place || '';
+                    var plnyPopisek = act.name;
+                    if (d || c || m) { plnyPopisek += ' | ' + d + (c ? ' v ' + c : '') + (m ? ' (' + m + ')' : ''); }
+                    
+                    html += '<option value="' + act.name + '">' + plnyPopisek + '</option>';
+                    maAktivni = true;
+                }
+            });
+
+            if (!maAktivni) { html = '<option value="">❌ V systému není žádná aktivní akce</option>'; }
+
+            if (selectElement.innerHTML !== html) {
+                selectElement.innerHTML = html;
+                if (aktualniVyber) selectElement.value = aktualniVyber;
+            }
+        }
+
+        // 🎛️ NEPRŮSTŘELNÝ HARDWAROVÝ FILTR: Označí řádky unikátním atributem a nepustí je na obrazovku
+        function aplikujHardwarovyAdminFiltr() {
+            var roletka = document.getElementById('cc-admin-action-filter');
+            var styleTag = document.getElementById('cc-admin-filter-style');
+            if (!roletka || !styleTag) return;
+
+            var vybranaAkce = roletka.value;
+
+            // Každému řádku v tabulce natvrdo vpíšeme do značky jeho název, aby na něj CSS vidělo
+            var rows = document.querySelectorAll('#adminActionsTableBody tr');
+            rows.forEach(function(row) {
+                var st = row.querySelector('strong');
+                if (st) {
+                    row.setAttribute('data-action-name', st.innerText.trim());
+                }
+            });
+
+            // Vygenerujeme silné CSS pravidlo, které okamžitě schová všechno kromě vybrané akce
+            if (vybranaAkce === 'vse' || vybranaAkce === '') {
+                styleTag.innerHTML = ""; // Ukáže vše
+            } else {
+                styleTag.innerHTML = "#adminActionsTableBody tr { display: none !important; } " +
+                                     "#adminActionsTableBody tr[data-action-name=\"" + vybranaAkce + "\"] { display: table-row !important; }";
+            }
+        }
+
+        // Plynulé udržování filtrů na pozadí
+        setInterval(opravVsechnyRoletkyVSystemu, 500);
+        setInterval(aplikujHardwarovyAdminFiltr, 300); // Hlídá tabulku každých 300ms, aby se po refreshu z cloudu hned zase smrštila
+        document.addEventListener('click', function() { setTimeout(aplikujHardwarovyAdminFiltr, 50); });
     })();
 </script>
+    <!-- 🔌 AUTOMATICKÝ DOPLŇOVAČ DATA A ČASU DO HLAVNÍ SCHVALOVACÍ TABULKY -->
+<script>
+    (function() {
+        function doplnDatumACasDoSchvalovani() {
+            // Načteme si aktuální akce z paměti, abychom z nich vytáhli termíny
+            var akceZPameti = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+            if (akceZPameti.length === 0) return;
 
+            // Najdeme všechny řádky v hlavní tabulce žádostí ke schválení
+            var radkyTabulky = document.querySelectorAll('#requestsTableBody tr');
+            
+            radkyTabulky.forEach(function(row) {
+                // Pojistka pro prázdnou zprávu v tabulce
+                if (row.cells.length < 2) return;
+
+                // První buňka (index 0) obsahuje název akce
+                var bunkaAkce = row.cells[0];
+                var cistyNazevAkce = bunkaAkce.querySelector('strong') ? bunkaAkce.querySelector('strong').innerText.trim() : bunkaAkce.innerText.trim();
+
+                // Najdeme k této akci odpovídající datum a čas z databáze akcí
+                var nalezenaAkce = akceZPameti.find(function(a) {
+                    return a.name.trim() === cistyNazevAkce;
+                });
+
+                if (nalezenaAkce) {
+                    var d = nalezenaAkce.date || '';
+                    var c = nalezenaAkce.time || '';
+                    
+                    // Pokud má akce vyplněné datum nebo čas a ještě jsme to do buňky nedopsali
+                    if ((d || c) && !bunkaAkce.querySelector('.cc-tab-term')) {
+                        var termSpan = document.createElement('span');
+                        termSpan.className = 'cc-tab-term';
+                        termSpan.style.cssText = 'display: block; font-size: 11px; color: #64748b; font-weight: 600; margin-top: 4px; line-height: 1.2;';
+                        
+                        // Sestavíme pěkný popisek s ikonkami hodin a kalendáře
+                        termSpan.innerHTML = '📅 ' + d + (c ? ' ⏰ ' + c : '');
+                        
+                        // Vložíme pod podtučněný název akce
+                        bunkaAkce.appendChild(termSpan);
+                    }
+                }
+            });
+        }
+
+        // Hlídáme tabulku plynule na pozadí, protože se často překresluje při schvalování nebo filtrování
+        setInterval(doplnDatumACasDoSchvalovani, 600);
+        document.addEventListener('click', function() { setTimeout(doplnDatumACasDoSchvalovani, 100); });
+    })();
+</script>
 </body>
 </html>
