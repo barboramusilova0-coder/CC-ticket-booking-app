@@ -1712,7 +1712,17 @@ window.deleteCompanyAction = function(id) {
     }
     
     /* Menší pod-řada pro O2 arenu */
-    #cc-tiles-container .cc-sub-tile-grid { display: none; width: 100% !important; gap: 12px !important; margin-top: 15px !important; padding: 10px !important; background: #f8fafc !important; border-radius: 8px !important; border: 1px dashed #cbd5e1 !important; }
+        #cc-tiles-container .cc-sub-tile-grid { 
+        display: none; 
+        width: 100% !important; 
+        flex-basis: 100% !important; /* 🔥 KLÍČOVÝ PŘÍKAZ: Hodí pod-nabídku na úplně nový samostatný řádek */
+        gap: 12px !important; 
+        margin-top: 15px !important; 
+        padding: 12px !important; 
+        background: #f8fafc !important; 
+        border-radius: 8px !important; 
+        border: 1px dashed #cbd5e1 !important; 
+    }
 </style>
 
 <script>
@@ -2207,5 +2217,114 @@ window.deleteCompanyAction = function(id) {
         flex-wrap: wrap !important; /* Povolí dlaždicím pustit pod-nabídku pod sebe */
     }
 </style>
+    <!-- 🔌 AUTOMATICKÁ OPRAVA TOOLTIPŮ A DYNAMICKÉ PROPOJENÍ POZNÁMKY ADMINA -->
+<style>
+    /* 🔥 OPRAVA HARDWAROVÉHO ZOBRAZENÍ OKÉNEK PRO OBĚ ZÁLOŽKY */
+    #cc-tiles-container .cc-tile,
+    .cc-public-card {
+        position: relative !important;
+        overflow: visible !important; /* Nutné, aby okénko mohlo vyjet ven z dlaždice */
+    }
+
+    /* Sjednocený čistý design nápovědných okének */
+    #cc-tiles-container .cc-tooltip,
+    .cc-public-card .cc-tooltip {
+        position: absolute !important;
+        bottom: 125% !important; /* Bezpečně nad dlaždicí */
+        left: 50% !important;
+        transform: translateX(-50%) translateY(5px) !important;
+        background: #0f172a !important; /* Temný minimalistický VIP vzhled */
+        color: #ffffff !important;
+        padding: 10px 14px !important;
+        border-radius: 6px !important;
+        font-size: 11px !important;
+        font-weight: 600 !important;
+        width: 210px !important;
+        text-align: left !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15) !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        transition: all 0.2s ease-in-out !important;
+        z-index: 999999 !important;
+        line-height: 1.4 !important;
+    }
+
+    /* Šipka směřující dolů */
+    #cc-tiles-container .cc-tooltip::after,
+    .cc-public-card .cc-tooltip::after {
+        content: '' !important;
+        position: absolute !important;
+        top: 100% !important; 
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        border-width: 5px !important;
+        border-style: solid !important;
+        border-color: #0f172a transparent transparent transparent !important;
+        display: block !important;
+    }
+
+    /* 🏎️ REAKCE NA NAJETÍ MYŠI - Okénko plynule naskočí */
+    #cc-tiles-container .cc-tile:hover .cc-tooltip,
+    .cc-public-card:hover .cc-tooltip {
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: translateX(-50%) translateY(0) !important;
+    }
+</style>
+
+<script>
+    (function() {
+        // 🔄 DYNAMICKÉ PŘEPSÁNÍ VIP PŘEHLEDU (Výměna Místa konání za Poznámku Admina)
+        function aktualizujVipOkénkaSPoznámkou() {
+            var grid = document.getElementById('cc-public-tiles-container');
+            if (!grid) return;
+
+            var akce = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+            var zadosti = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
+            if (akce.length === 0) return;
+
+            var publicCards = grid.querySelectorAll('.cc-public-card');
+            publicCards.forEach(function(card) {
+                var titleEl = card.querySelector('.cc-card-title');
+                if (!titleEl) return;
+                var jmenoAkce = titleEl.innerText.trim();
+
+                // Najdeme odpovídající akci v paměti
+                var nalezenaAkce = akce.find(function(a) { return a.name.trim() === jmenoAkce; });
+                if (nalezenaAkce) {
+                    var tooltipEl = card.querySelector('.cc-tooltip');
+                    if (tooltipEl) {
+                        // Spočítáme aktuální obsazenost
+                        var schvalene = zadosti.filter(function(r) {
+                            return r.action === nalezenaAkce.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno';
+                        });
+                        var obsazeno = 0;
+                        schvalene.forEach(function(z) { obsazeno += parseInt(z.tickets || 1); });
+
+                        // Vytáhneme text z políčka poznámky (reason / description / note podle tvé struktury formuláře)
+                        // Kód se podívá do všech možných sloupečků, kde by poznámka mohla být uložena
+                        var poznamkaAdmina = nalezenaAkce.reason || nalezenaAkce.description || nalezenaAkce.note || nalezenaAkce.place || "Žádné další detaily nebyly specifikovány.";
+
+                        var kat = nalezenaAkce.category ? nalezenaAkce.category : 'Nespecifikováno';
+                        var c = nalezenaAkce.time ? nalezenaAkce.time : 'Nespecifikován';
+
+                        // Sestavíme nový vnitřek okénka: Kompletně bez "Místo konání", místo toho svítí text z dalšího řádku!
+                        tooltipEl.innerHTML = '<strong style="color:var(--cc-red); display:block; margin-bottom:5px; text-transform:uppercase; font-size:10px; letter-spacing:0.03em;">Podrobnosti akce</strong>' +
+                            '🏷️ Typ: ' + kat + '<br>' +
+                            '⏰ Čas: ' + c + '<br>' +
+                            '📝 Detaily akce: <span style="color:#cbd5e1; font-weight:500;">' + poznamkaAdmina + '</span><br>' +
+                            '<span style="display:block; margin-top:6px; padding-top:6px; border-top:1px solid #334155; font-weight:700;">' +
+                            '📊 Obsazenost: ' + obsazeno + ' / ' + nalezenaAkce.capacity + ' ks' +
+                            '</span>';
+                    }
+                }
+            });
+        }
+
+        // Plynule udržujeme okénka prolnutá a živá
+        setInterval(aktualizujVipOkénkaSPoznámkou, 600);
+    })();
+</script>
 </body>
 </html>
