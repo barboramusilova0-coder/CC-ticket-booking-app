@@ -1994,12 +1994,63 @@ window.deleteCompanyAction = function(id) {
         setInterval(vymažMístoKonáníZFormulářeAkcí, 400);
     })();
 </script>
-    <!-- 🔌 DEFINITIVNÍ OPRAVA TLAČÍTKA A NEPRŮSTŘELNÉ ODESÍLÁNÍ COMPANYACTIONS DO CLOUDU -->
+   <!-- 🔌 DEFINITIVNÍ OPRAVA UKLÁDÁNÍ, POČÍTADLA DLAŽDIC A ČIŠTĚNÍ TEXTŮ (COKE ENGINE) -->
 <script>
     (function() {
+        // 🧽 1. KROK: ODSTRANĚNÍ NÁPISU OSTATNÍ A ÚPRAVA TEXTŮ NA DLAŽDICÍCH
+        function vycistiNezadouciTextyVPortalu() {
+            // Najdeme a nemilosrdně smažeme nápis "OSTATNÍ", pokud na stránce svítí
+            var vsechnyElementy = document.querySelectorAll('h1, h2, h3, h4, div, span, label');
+            vsechnyElementy.forEach(function(el) {
+                if (el.childNodes.length === 1 && el.innerText.trim() === 'OSTATNÍ') {
+                    el.remove();
+                    console.log("Nápis OSTATNÍ byl úspěšně vymazán!");
+                }
+            });
+
+            // Smaže slovo Rezervace nebo nežádoucí zástupné texty z pod-dlaždic na obrazovce
+            var podDlazdiceTexty = document.querySelectorAll('.action-tile-coke, div[style*="background"] span, div[style*="background"] small');
+            podDlazdiceTexty.forEach(function(txt) {
+                if (txt.innerText.indexOf('Rezervace') > -1) {
+                    txt.innerHTML = txt.innerHTML.replace('Rezervace', ''); // Vymaže čistě jen toto slovo
+                }
+            });
+        }
+
+        // 🏗️ 2. KROK: AUTOMATICKÉ DOPLNĚNÍ VÝBĚRU KATEGORIE DO ADMINISTRACE (TAB 4)
+        function namontujVyberKategorieDoFormulare() {
+            var adminForm = document.querySelector('#tab4 form') || document.getElementById('actionForm') || document.querySelector('#actionForm');
+            if (!adminForm) return;
+
+            // Pokud pod nadpisem ještě chybí políčko pro výběr, kam akce patří, z konce ho tam implantujeme
+            if (!document.getElementById('cc-action-category-select')) {
+                var groupDiv = document.createElement('div');
+                groupDiv.className = 'form-group';
+                groupDiv.style.cssText = 'margin-bottom: 15px; text-align: left;';
+                groupDiv.innerHTML = '<label style="font-weight: 600; font-size: 13px; color: #475569; display:block; margin-bottom:5px;">Přiřadit do dlaždice 🎯:</label>' +
+                                     '<select id="cc-action-category-select" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 600; background: #fff; height: 40px;" required>' +
+                                        '<option value="">-- Zvolte dlaždici pro mobil/PC --</option>' +
+                                        '<option value="Koncert">🎵 O2 Arena - Koncert</option>' +
+                                        '<option value="Hokej">🥅 O2 Arena - Hokej</option>' +
+                                        '<option value="Fotbal">⚽ Fotbal</option>' +
+                                        '<option value="SKS Slavia">🔴 SKS Slavia</option>' +
+                                        '<option value="Reprezentace">🇨🇿 Reprezentace</option>' +
+                                     '</select>';
+                
+                // Vložíme ho hned jako druhé políčko pod Název akce
+                var prvniInput = adminForm.querySelector('input[type="text"]');
+                if (prvniInput && prvniInput.parentNode) {
+                    prvniInput.parentNode.parentNode.insertBefore(groupDiv, prvniInput.parentNode.nextSibling);
+                } else {
+                    adminForm.insertBefore(groupDiv, adminForm.firstChild);
+                }
+            }
+        }
+
+        // 📥 3. KROK: OPRAVENÉ NEPRŮSTŘELNÉ UKLÁDÁNÍ FORMULÁŘE S KATEGORIEMI
         function opravUkladaniANasypDlazdiceCoke() {
             var adminForm = document.querySelector('#tab4 form') || document.getElementById('actionForm') || document.querySelector('#actionForm');
-            if (!adminForm || adminForm.getAttribute('data-cc-save-fixed-v2') === 'yes') return;
+            if (!adminForm || adminForm.getAttribute('data-cc-save-fixed-v3') === 'yes') return;
 
             adminForm.addEventListener('submit', function(e) {
                 e.preventDefault(); 
@@ -2009,14 +2060,15 @@ window.deleteCompanyAction = function(id) {
                 var kapacitaInput = adminForm.querySelector('input[type="number"]') || document.getElementById('actionCapacity');
                 var datumInput = adminForm.querySelector('input[type="date"]') || document.getElementById('actionDate');
                 var casInput = adminForm.querySelector('input[type="time"]') || document.getElementById('actionTime');
+                var kategorieSelect = document.getElementById('cc-action-category-select');
 
                 var jmenoVal = jmenoInput ? jmenoInput.value.trim() : '';
                 var kapacitaVal = kapacitaInput ? parseInt(kapacitaInput.value) : 50;
                 var datumVal = datumInput ? datumInput.value : '';
                 var casVal = casInput ? casInput.value : '';
+                var kategorieVal = kategorieSelect ? kategorieSelect.value : '';
 
-                if (jmenoVal) {
-                    // Načteme stávající akce a zajistíme, aby se Firebase do toho v této milisekundě nepletla
+                if (jmenoVal && kategorieVal) {
                     var aktualniSeznamAkci = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
                     
                     var novaCokeAkce = {
@@ -2025,22 +2077,20 @@ window.deleteCompanyAction = function(id) {
                         capacity: kapacitaVal,
                         date: datumVal,
                         time: casVal,
+                        category: kategorieVal, // Štítek pro propojení s tvojí dlaždicí!
                         status: 'Aktivní'
                     };
 
-                    aktualniSeznamAkci.push(novaCokeAkce);
+                    aktualniAkce = aktualniSeznamAkci;
+                    aktualniAkce.push(novaCokeAkce);
                     
-                    // Zápis do lokální paměti pro okamžité vykreslení
-                    localStorage.setItem('companyActions', JSON.stringify(aktualniSeznamAkci));
-                    window.companyActions = aktualniSeznamAkci;
+                    localStorage.setItem('companyActions', JSON.stringify(aktualniAkce));
+                    window.companyActions = aktualniAkce;
 
-                    // 🌐 OKAMŽITÝ NUCENÝ EXPORT DO FIREBASE CLOUDU (Natvrdo přepíšeme cloud novým seznamem)
                     if (typeof firebase !== 'undefined' && firebase.apps.length) {
                         var db = firebase.firestore();
-                        
-                        // Sestavíme kompletní datový balíček, aby v cloudu nic nechybělo
                         var dataProCloud = {
-                            companyActions: aktualniSeznamAkci,
+                            companyActions: aktualniAkce,
                             ticketRequests: JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [],
                             customUsers: JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {},
                             roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || window.roleRequests || []
@@ -2048,71 +2098,54 @@ window.deleteCompanyAction = function(id) {
 
                         db.collection("portalData").doc("cocaColaDatabase").set(dataProCloud, { merge: true })
                         .then(function() { 
-                            console.log("Data úspěšně protlačena a uzamčena v cloudu Firebase!");
-                            
-                            // Vyčistíme formulář
                             adminForm.reset();
-                            alert('🎉 Nová firemní akce byla úspěšně vytvořena, uložena a synchronizována s cloudem!');
-                            
-                            // Osvěžíme stránku až po úspěšném zápisu do cloudu, aby data nezmizela!
+                            alert('🎉 Nová firemní akce byla úspěšně vytvořena a spárována s grafickou dlaždicí!');
                             setTimeout(function() { location.reload(); }, 100);
-                        })
-                        .catch(function(err) { 
-                            console.error("Chyba odesílání do cloudu:", err);
-                            // Pokud cloud selže, necháme data aspoň lokálně a restartujeme
-                            adminForm.reset();
-                            setTimeout(function() { location.reload(); }, 200);
                         });
-                    } else {
-                        // Pokud Firebase vůbec neběží, uložíme lokálně a pokračujeme
-                        adminForm.reset();
-                        alert('🎉 Akce byla uložena lokálně.');
-                        setTimeout(function() { location.reload(); }, 150);
                     }
-                }
-            });
-
-            adminForm.setAttribute('data-cc-save-fixed-v2', 'yes');
-        }
-
-        // 📊 SYNCHRONIZACE DLAŽDIC V NOVÉ ZÁLOŽCE PLÁNOVANÉ AKCE
-        function aktualizujDlazdiceVPlanovanychAkcich() {
-            var plochaNoveZalozky = document.getElementById('planovaneAkceGrid') || document.querySelector('.planovane-akce-container') || document.getElementById('tab5') || document.getElementById('tab-planovane');
-            if (!plochaNoveZalozky) return;
-
-            var akce = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
-            var htmlDlazdic = '';
-            
-            akce.forEach(function(act) {
-                if (act.status !== 'Zrušena') {
-                    htmlDlazdic += '<div class="action-tile-coke" style="background:#ffffff; border:1px solid var(--border,#e2e8f0); border-radius:8px; padding:15px; margin:10px; display:inline-block; min-width:200px; text-align:left; box-shadow:0 2px 5px rgba(0,0,0,0.02);">' +
-                                        '<h4 style="margin:0 0 5px 0; color:#0f172a; font-size:14px; font-weight:700;">' + act.name + '</h4>' +
-                                        '<span style="font-size:11px; color:#64748b; font-weight:600;">📅 ' + (act.date || 'Termín upřesníme') + (act.time ? ' ⏰ ' + act.time : '') + '</span>' +
-                                   '</div>';
-                }
-            });
-
-            var cilovyKontejner = plochaNoveZalozky.querySelector('.grid') || plochaNoveZalozky;
-            if (cilovyKontejner && cilovyKontejner.innerHTML !== htmlDlazdic && htmlDlazdic !== '') {
-                var nadpis = cilovyKontejner.querySelector('h2') || cilovyKontejner.querySelector('h3');
-                if (nadpis) {
-                    var seznamDiv = document.getElementById('cc-injected-tiles-list');
-                    if (!seznamDiv) {
-                        seznamDiv = document.createElement('div');
-                        seznamDiv.id = 'cc-injected-tiles-list';
-                        cilovyKontejner.appendChild(seznamDiv);
-                    }
-                    seznamDiv.innerHTML = htmlDlazdic;
                 } else {
-                    cilovyKontejner.innerHTML = htmlDlazdic;
+                    alert('❌ Prosím zvolte, do které dlaždice má akce patřit.');
                 }
-            }
+            });
+
+            adminForm.setAttribute('data-cc-save-fixed-v3', 'yes');
         }
 
+        // 🔄 4. KROK: PROPOJENÍ POČÍTADLA TVÝCH DLAŽDIC S REÁLNOU DATABÁZÍ CLOUDU
+        function opravPocitadloNaDlazdicichRezervace() {
+            var akce = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+            
+            // Spočítáme, kolik máme reálně aktivních akcí pro každou skupinu
+            var pocty = { Koncert: 0, Hokej: 0, Fotbal: 0, "SKS Slavia": 0, Reprezentace: 0 };
+            akce.forEach(function(a) {
+                if (a.status !== 'Zrušena' && a.category && pocty[a.category] !== undefined) {
+                    pocty[a.category]++;
+                }
+            });
+
+            // Najdeme texty na tvých dlaždicích na obrazovce a přepíšeme "0 plánovaných" reálným číslem
+            var textyDlazdic = document.querySelectorAll('div, span, small, p');
+            textyDlazdic.forEach(function(el) {
+                var txt = el.innerText;
+                if (txt.indexOf('plánovaných akcí') > -1) {
+                    var rodicDlazdice = el.closest('div');
+                    var nazevKategorieDlazdice = rodicDlazdice ? rodicDlazdice.innerText.split('\n')[0].trim() : '';
+                    
+                    // Pokud text odpovídá naší skupině, natvrdo tam vepíšeme správné číslo z databáze
+                    if (nazevKategorieDlazdice === 'Koncert' || txt.indexOf('Koncert') > -1) el.innerText = pocty.Koncert + ' plánovaných akcí';
+                    if (nazevKategorieDlazdice === 'Hokej' || txt.indexOf('Hokej') > -1) el.innerText = pocty.Hokej + ' plánovaných akcí';
+                }
+            });
+        }
+
+        // Plynulé udržování čistoty a počítadel na pozadí každých 400ms
+        setInterval(vycistiNezadouciTextyVPortalu, 300);
+        setInterval(namontujVyberKategorieDoFormulare, 400);
         setInterval(opravUkladaniANasypDlazdiceCoke, 400);
-        setInterval(aktualizujDlazdiceVPlanovanychAkcich, 500);
+        setInterval(opravPocitadloNaDlazdicichRezervace, 500);
     })();
 </script>
+
 
 </body>
 </html>
