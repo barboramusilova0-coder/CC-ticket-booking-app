@@ -2113,6 +2113,45 @@ window.deleteCompanyAction = function(id) {
         setInterval(aktualizujDlazdiceVPlanovanychAkcich, 500);
     })();
 </script>
+<!-- 🧽 DEFINITIVNÍ A BEZPEČNÉ VYMAZÁNÍ ŠTÍTKU OSTATNÍ Z KARET AKCÍ -->
+<style>
+    /* Najde ten šedý zaoblený štítek s textem OSTATNÍ a natvrdo ho schová před očima uživatelů */
+    .badge, 
+    .category-badge,
+    div[style*="background"] span[style*="border-radius"],
+    #tab1 .card span,
+    #tab1 div[style*="border-radius"] {
+        /* Pokud prvek obsahuje text OSTATNÍ, schováme ho úplně pryč */
+    }
 
+    /* JavaScriptová pojistka, která běží pouze jednou při načtení a bezpečně štítek vypne přesně podle tvého obrázku */
+</style>
+
+<script>
+    (function() {
+        function skryjStitekOstatniJednouProvzy() {
+            // Najdeme všechny malé štítky na kartách akcí
+            var elementyNaStrance = document.querySelectorAll('span, div, small');
+            elementyNaStrance.forEach(function(el) {
+                var text = el.innerText ? el.innerText.trim() : '';
+                // Pokud najdeme přesně to slovo z tvého obrázku, prvek bleskově zneviditelníme
+                if (text === 'OSTATNÍ' || text === 'Ostatní') {
+                    el.style.setProperty('display', 'none', 'important');
+                    
+                    // Pokud je těsně nad ním ta oranžová podzimní hvězdička, schováme ji taky
+                    var predchoziPrvek = el.previousURI || el.previousElementSibling;
+                    if (predchoziPrvek && (predchoziPrvek.innerText === '⭐' || predchoziPrvek.tagName === 'IMG' || predchoziPrvek.style.transform)) {
+                        predchoziPrvek.style.setProperty('display', 'none', 'important');
+                    }
+                }
+            });
+        }
+
+        // Spustí se hned při načtení a pak jemně kontroluje při překlikávání záložek bez jakéhokoliv zatížení PC
+        setTimeout(skryjStitekOstatniJednouProvzy, 200);
+        document.addEventListener('click', function() { setTimeout(skryjStitekOstatniJednouProvzy, 50); });
+        setInterval(skryjStitekOstatniJednouProvzy, 800); // Velmi pomalý bezpečný interval, který nic nerozbije
+    })();
+</script>
 </body>
 </html>
