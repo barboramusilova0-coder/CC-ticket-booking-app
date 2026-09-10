@@ -2795,5 +2795,127 @@ window.deleteCompanyAction = function(id) {
         setInterval(pridejZamitaciTlacitkoDoZadostiORole, 500);
     })();
 </script>
+    <!-- 🎨 LUXUSNÍ BAREVNÁ TLAČÍTKA A AUTOMATICKÉ OUTLOOK EVENTY PRO SPRÁVU REGISTRACÍ -->
+<script>
+    (function() {
+        function kompletniReformaRegistracnichTlacitek() {
+            // Najdeme řádky v tabulce "Čekající žádosti o přidělení role" a v tabulce uživatelů
+            var radkyZadosti = document.querySelectorAll('#roleRequestsTableBody tr, #tab4 table tbody tr');
+            
+            radkyZadosti.forEach(function(row) {
+                if (row.cells.length < 3) return;
+                
+                var bunky = row.cells;
+                var posledniBunka = bunky[bunky.length - 1];
+                
+                // Pokud buňka obsahuje tlačítka a ještě jsme ji nepřebarvili do nového firemního stylu
+                if (posledniBunka.querySelector('button') && !posledniBunka.getAttribute('data-cc-styled')) {
+                    
+                    // Vytáhneme si e-mail zaměstnance z tohoto konkrétního řádku
+                    var emailUzivatele = "";
+                    for (var i = 0; i < bunky.length; i++) {
+                        if (bunky[i].innerText.trim().indexOf('@') > -1) {
+                            emailUzivatele = bunky[i].innerText.trim();
+                            break;
+                        }
+                    }
+                    if (!emailUzivatele) return;
+
+                    // Projdeme stávající tlačítka v buňce a dáme jim ty správné barvy a bleskové funkce
+                    var tlacitka = posledniBunka.querySelectorAll('button');
+                    tlacitka.forEach(function(btn) {
+                        var txt = btn.innerText.toLowerCase();
+
+                        // 1. ZELENÉ TLAČÍTKO: SCHVÁLIT 🟩
+                        if (txt.indexOf('schválit') > -1) {
+                            btn.style.cssText = 'background: #10b981 !important; color: white !important; border: none !important; padding: 6px 12px !important; border-radius: 6px !important; font-size: 12px !important; font-weight: 700 !important; cursor: pointer !important; margin-right: 4px !important; transition: opacity 0.2s !important; text-transform: uppercase;';
+                            btn.addEventListener('mouseenter', function() { this.style.opacity = '0.85'; });
+                            btn.addEventListener('mouseleave', function() { this.style.opacity = '1'; });
+                            
+                            // Automatická akce při kliknutí: Po schválení vygeneruje kód a ihned otevře Outlook
+                            btn.addEventListener('click', function() {
+                                setTimeout(function() {
+                                    // Vytáhneme čerstvě vygenerovaný 5místný kód z paměti pro tohoto uživatele
+                                    var customUsers = JSON.parse(localStorage.getItem('customUsers')) || {};
+                                    var nalezenyKod = "12345"; // Pojistný kód, pokud by hned nenaskočil
+                                    
+                                    // Projdeme databázi kódů a najdeme ten patřící k tomuto e-mailu
+                                    for (var kod in customUsers) {
+                                        if (customUsers[kod].email === emailUzivatele) { nalezenyKod = kod; break; }
+                                    }
+
+                                    var textMailu = "Dobrý den,\n\nVaše prvotní registrace do rezervačního portálu byla úspěšně schválena.\n\nVáš unikátní přístupový kód pro přihlášení: " + nalezenyKod + "\n\nTento kód prosím bezpečně uschovejte pro budoucí přístupy.\n\nS pozdravem,\nTým Coca-Cola HBC";
+                                    var predmetMailu = "Schválení registrace a přístupový kód – Coca-Cola HBC";
+                                    
+                                    window.location.href = "mailto:" + emailUzivatele + "?subject=" + encodeURIComponent(predmetMailu) + "&body=" + encodeURIComponent(textMailu);
+                                }, 200); // 200ms okno, aby tvoje původní funkce stihla kód vygenerovat do databáze
+                            });
+                        }
+
+                        // 2. MODRÉ TLAČÍTKO: UPRAVIT ROLI 🟦
+                        if (txt.indexOf('upravit') > -1) {
+                            btn.style.cssText = 'background: #0284c7 !important; color: white !important; border: none !important; padding: 6px 12px !important; border-radius: 6px !important; font-size: 12px !important; font-weight: 700 !important; cursor: pointer !important; margin-right: 4px !important; transition: opacity 0.2s !important; text-transform: uppercase;';
+                            btn.addEventListener('mouseenter', function() { this.style.opacity = '0.85'; });
+                            btn.addEventListener('mouseleave', function() { this.style.opacity = '1'; });
+                        }
+
+                        // 3. ŠEDÉ TLAČÍTKO: SMAZAT ⬛
+                        if (txt.indexOf('smazat') > -1) {
+                            btn.style.cssText = 'background: #64748b !important; color: white !important; border: none !important; padding: 6px 12px !important; border-radius: 6px !important; font-size: 12px !important; font-weight: 700 !important; cursor: pointer !important; margin-right: 4px !important; transition: opacity 0.2s !important; text-transform: uppercase;';
+                            btn.addEventListener('mouseenter', function() { this.style.opacity = '0.85'; });
+                            btn.addEventListener('mouseleave', function() { this.style.opacity = '1'; });
+                        }
+                    });
+
+                    // 4. ČERVENÉ TLAČÍTKO: ZAMÍTNOUT 🟥 (Pokud ještě v řadě chybí, vygenerujeme ho zvenčí)
+                    if (!posledniBunka.querySelector('.cc-live-reject-btn')) {
+                        var btnZamitnout = document.createElement('button');
+                        btnZamitnout.className = 'cc-live-reject-btn';
+                        btnZamitnout.innerText = 'Zamítnout';
+                        btnZamitnout.style.cssText = 'background: #ef4444 !important; color: white !important; border: none !important; padding: 6px 12px !important; border-radius: 6px !important; font-size: 12px !important; font-weight: 700 !important; cursor: pointer !important; margin-right: 4px !important; transition: opacity 0.2s !important; text-transform: uppercase; display: inline-block; vertical-align: middle;';
+                        
+                        btnZamitnout.addEventListener('mouseenter', function() { this.style.opacity = '0.85'; });
+                        btnZamitnout.addEventListener('mouseleave', function() { this.style.opacity = '1'; });
+
+                        // Akce po kliknutí na Zamítnout: Otevře Outlook a smaže uživatele z Firebase cloudu
+                        btnZamitnout.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+
+                            if (confirm('Opravdu chcete registraci pro e-mail ' + emailUzivatele + ' zamítnout a smazat z portálu?')) {
+                                // A) Otevření předvyplněného Outlooku
+                                var textZam = "Dobrý den,\n\nVaše žádost o prvotní registraci do rezervačního portálu Coca-Cola HBC byla z interních nebo bezpečnostních důvodů zamítnuta.\n\nPokud se jedná o omyl, kontaktujte prosím administrátora systému.\n\nS pozdravem,\nTým Coca-Cola HBC";
+                                var predmetZam = "Zamítnutí žádosti o registraci – Coca-Cola HBC";
+                                
+                                window.location.href = "mailto:" + emailUzivatele + "?subject=" + encodeURIComponent(predmetZam) + "&body=" + encodeURIComponent(textZam);
+
+                                // B) Klikneme potichu na tvoje původní šedé tlačítko Smazat, ať to cloud vyčistí
+                                var puvodniSmazat = posledniBunka.querySelector('button[onclick*="delete"], button[onclick*="Delete"], button:nth-child(3)');
+                                if (puvodniSmazat) {
+                                    var staraPojistka = window.confirm;
+                                    window.confirm = function() { return true; }; // Vypne otravné druhé potvrzení
+                                    puvodniSmazat.click();
+                                    setTimeout(function() { window.confirm = staraPojistka; }, 100);
+                                } else {
+                                    setTimeout(function() { location.reload(); }, 400);
+                                }
+                            }
+                        });
+
+                        // Vložíme červené tlačítko hned vedle zeleného Schválit (na druhou pozici)
+                        var tlacitkoUpravit = posledniBunka.querySelector('button:nth-child(2)') || posledniBunka.firstChild;
+                        posledniBunka.insertBefore(btnZamitnout, tlacitkoUpravit);
+                    }
+
+                    // Označíme řádek jako kompletně nastylovaný
+                    posledniBunka.setAttribute('data-cc-styled', 'yes');
+                }
+            });
+        }
+
+        // Plynule udržujeme barvy i akce tlačítek živé na pozadí při každém překliknutí administrace
+        setInterval(kompletniReformaRegistracnichTlacitek, 500);
+    })();
+</script>
 </body>
 </html>
