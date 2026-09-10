@@ -2113,5 +2113,68 @@ window.deleteCompanyAction = function(id) {
         setInterval(aktualizujDlazdiceVPlanovanychAkcich, 500);
     })();
 </script>
+    <!-- 🎨 MODERNÍ A PŘÍVĚTIVÝ DESIGN PRO POLÍČKA DATA A ČASU -->
+<style>
+    /* Natvrdo přebarvíme a nastylujeme políčka data a času v administraci */
+    #tab4 input[type="date"],
+    #tab4 input[type="time"],
+    #actionForm input[type="date"],
+    #actionForm input[type="time"] {
+        width: 100% !important;
+        height: 44px !important; /* Vyšší a pohodlnější pro klikání */
+        padding: 10px 14px !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 8px !important; /* Moderní zaoblení */
+        font-family: inherit !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        color: #334155 !important;
+        background-color: #ffffff !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+        box-sizing: border-box !important;
+        transition: border-color 0.2s, box-shadow 0.2s !important;
+        cursor: pointer !important;
+    }
+
+    /* Efekt při kliknutí nebo najetí myší – elegantní firemní červená linka */
+    #tab4 input[type="date"]:focus,
+    #tab4 input[type="time"]:focus,
+    #tab4 input[type="date"]:hover,
+    #tab4 input[type="time"]:hover {
+        border-color: var(--cc-red, #e41e26) !important;
+        box-shadow: 0 0 0 3px rgba(228, 30, 38, 0.1) !important;
+        outline: none !important;
+    }
+
+    /* Úprava vnitřních ikon kalendáře a hodin v prohlížeči, aby vypadaly čistěji */
+    ::-webkit-calendar-picker-indicator {
+        background-color: transparent !important;
+        cursor: pointer !important;
+        padding: 5px !important;
+        filter: invert(15%) sepia(15%) saturate(1000%) hue-rotate(340deg) brightness(95%) contrast(90%); /* Sladění barvy ikon */
+    }
+</style>
+
+<script>
+    (function() {
+        function vylepsiZadavaniDataACasu() {
+            // Najdeme políčka na obrazovce
+            var dateInp = document.querySelector('#tab4 input[type="date"]') || document.getElementById('actionDate');
+            var timeInp = document.querySelector('#tab4 input[type="time"]') || document.getElementById('actionTime');
+            
+            // Pokud políčka existují, přidáme jim moderní pomocné atributy
+            if (dateInp && !dateInp.getAttribute('data-cc-ready')) {
+                // Nastavíme jako minimální volitelné datum dnešek, aby Admin nemohl omylem vytvořit akci v minulosti!
+                var dnes = new Date().toISOString().split('T')[0];
+                dateInp.setAttribute('min', dnes);
+                dateInp.setAttribute('data-cc-ready', 'yes');
+            }
+        }
+
+        // Kontrolujeme a udržujeme vzhled na pozadí při překlikávání záložek
+        setInterval(vylepsiZadavaniDataACasu, 500);
+    })();
+</script>
+
 </body>
 </html>
