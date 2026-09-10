@@ -2197,12 +2197,61 @@ window.deleteCompanyAction = function(id) {
             roletka.innerHTML = html;
         };
 
+                // 🚀 NEPRŮSTŘELNÁ PAMĚŤ ZÁLOŽEK PRO F5 (FIX AUTOMATICKÉHO ODHAZOVÁNÍ)
+        var rsmPuvodniOpenTab = window.openTab;
+        window.openTab = function(num) {
+            localStorage.setItem('activeCcTab', num);
+            if (typeof rsmPuvodniOpenTab === 'function') { rsmPuvodniOpenTab(num); }
+            
+            // Ručně ošetříme nasvícení té naší nové první záložky (Tab 5)
+            var b5 = document.getElementById('btn-prehled');
+            var t5 = document.getElementById('tab5');
+            if (num === 5) {
+                if (b5) b5.classList.add('active');
+                if (t5) t5.classList.add('active');
+                vykresliVerejneDlaždiceAkci();
+            } else {
+                if (b5) b5.classList.remove('active');
+                if (t5) t5.classList.remove('active');
+            }
+        };
+
+        // Hlídáme klikání na všechna tlačítka záložek v menu, abychom ihned zapsali změnu do paměti
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('tab-btn')) {
+                var id = e.target.id;
+                if (id === 'btn-prehled') window.openTab(5);
+                if (id === 'btn-nova') window.openTab(1);
+                if (id === 'btn-seznam') window.openTab(2);
+                if (id === 'btn-zadost-role') window.openTab(3);
+                if (id === 'btn-admin') window.openTab(4);
+            }
+        });
+
+        // HLAVNÍ START SYSTÉMU S POJISTKOU PAMĚTI
         setInterval(namontujVerejnyPrehledAkciNaZacatek, 450);
         setInterval(function() {
             var t5 = document.getElementById('tab5');
             if (t5 && t5.classList.contains('active')) { vykresliVerejneDlaždiceAkci(); }
         }, 1000);
+
+        // Jakmile se stránka načte, podíváme se do paměti a skočíme přesně tam, kde se skončilo
+        setTimeout(function() {
+            var zapamatovanaStrana = localStorage.getItem('activeCcTab') ? parseInt(localStorage.getItem('activeCcTab')) : 5;
+            
+            // Pokud je uživatel host a nemá práva, hodíme ho na žádost o roli (Tab 3)
+            if (window.currentUser && currentUser.role === 'guest') zapamatovanaStrana = 3;
+            
+            // Natvrdo aktivujeme správné okno
+            if (zapamatovanaStrana === 5) {
+                var b5 = document.getElementById('btn-prehled');
+                if (b5) b5.click();
+            } else {
+                window.openTab(zapamatovanaStrana);
+            }
+        }, 300);
     })();
+</script>
 </script>
 <!-- 🔥 NEPRŮSTŘELNÁ OPRAVA ZALOMENÍ O2 ARENY NA NOVÝ ŘÁDEK -->
 <style>
