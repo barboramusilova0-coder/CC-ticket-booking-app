@@ -2628,36 +2628,34 @@ window.deleteCompanyAction = function(id) {
     })();
 </script>
 </script>
-<!-- 🔌 DEFINITIVNÍ NEPRŮSTŘELNÁ OPRAVA TLAČÍTKA TVORBY NOVÉ AKCE -->
+<!-- 🔌 DEFINITIVNÍ A STOPROCENTNÍ OPRAVA UKLÁDÁNÍ AKCÍ DO CLOUDU I PRO REZERVACE -->
 <script>
     (function() {
-        function opravZaseknuteUkladaniAkciDefinitivne() {
-            // Najdeme formulář pro vytváření akcí (v tab4)
+        function opravZaseknuteUkladaniAkciPropojene() {
             var adminForm = document.querySelector('#tab4 form') || document.getElementById('actionForm') || document.querySelector('#tab4 #actionForm');
-            if (!adminForm || adminForm.getAttribute('data-cc-fixed-v2') === 'yes') return;
+            if (!adminForm || adminForm.getAttribute('data-cc-fixed-v3') === 'yes') return;
 
-            // Chytíme odeslání formuláře pro novou akci
             adminForm.addEventListener('submit', function(e) {
-                e.preventDefault(); // Zastavíme ten zamrzající původní kód
+                e.preventDefault();
                 e.stopPropagation();
 
-                // Vytáhneme hodnoty bezpečně z formuláře, i kdyby políčka neměla ID
+                // Vytáhneme hodnoty bezpečně z formuláře podle pořadí políček na obrazovce
                 var nameVal = adminForm.querySelector('input[type="text"]') ? adminForm.querySelector('input[type="text"]').value.trim() : '';
                 var capVal = adminForm.querySelector('input[type="number"]') ? parseInt(adminForm.querySelector('input[type="number"]').value) : 0;
                 var dateVal = adminForm.querySelector('input[type="date"]') ? adminForm.querySelector('input[type="date"]').value : '';
                 var timeVal = adminForm.querySelector('input[type="time"]') ? adminForm.querySelector('input[type="time"]').value : '';
                 
-                // Naše speciální přidaná políčka (Tooltip a Kategorie)
+                // Naše přidaná políčka (Tooltip a Výběr kategorie)
                 var placeEl = document.getElementById('actionPlace') || adminForm.querySelector('input[placeholder*="Sektor"]');
                 var catEl = document.getElementById('actionCategory') || adminForm.querySelector('select');
 
                 var placeVal = placeEl ? placeEl.value.trim() : '';
                 var catVal = catEl ? catEl.value : '';
 
-                // Pokud máme zadaný aspoň název a kapacitu, vytvoříme akci natvrdo
                 if (nameVal && capVal > 0) {
                     var aktualniAkce = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
                     
+                    // Vytvoříme novou čistou akci a pojistíme oba názvy kategorií naráz, ať to vyhovuje všem funkcím!
                     var novaAkce = {
                         id: Date.now(),
                         name: nameVal,
@@ -2665,16 +2663,16 @@ window.deleteCompanyAction = function(id) {
                         date: dateVal,
                         time: timeVal,
                         place: placeVal,
-                        category: catVal,
+                        category: catVal,         // Pojistka pro rezervační dlaždice
+                        actionCategory: catVal,   // Pojistka pro administrátorský filtr
                         status: 'Aktivní'
                     };
 
-                    // Přidáme do paměti
                     aktualniAkce.push(novaAkce);
                     localStorage.setItem('companyActions', JSON.stringify(aktualniAkce));
                     window.companyActions = aktualniAkce;
 
-                    // OKAMŽITĚ vystřelíme do live Google Firebase databáze na internetu
+                    // Okamžitě odešleme do internetové live databáze Firebase
                     if (typeof firebase !== 'undefined' && firebase.apps.length) {
                         var db = firebase.firestore();
                         var dataProCloud = {
@@ -2689,12 +2687,9 @@ window.deleteCompanyAction = function(id) {
                             .catch(function(err) { console.error("Chyba cloudu:", err); });
                     }
 
-                    // Resetujeme políčka na prázdná, ať se dá zadávat další akce
                     adminForm.reset();
+                    alert('🎉 Nová firemní akce byla úspěšně vytvořena, uložena a propojena s Přehledem akcí!');
 
-                    alert('🎉 Nová firemní akce byla úspěšně vytvořena a uložena!');
-
-                    // Bleskově osvěžíme stránku, ať nová akce ihned naskočí v tabulkách i v Přehledu akcí
                     setTimeout(function() {
                         location.reload();
                     }, 150);
@@ -2703,14 +2698,13 @@ window.deleteCompanyAction = function(id) {
                 }
             });
 
-            // Označíme formulář jako opravený
-            adminForm.setAttribute('data-cc-fixed-v2', 'yes');
+            adminForm.setAttribute('data-cc-fixed-v3', 'yes');
         }
 
-        // Kontrolujeme formulář plynule na pozadí
-        setInterval(opravZaseknuteUkladaniAkciDefinitivne, 400);
+        setInterval(opravZaseknuteUkladaniAkciPropojene, 400);
     })();
 </script>
+
 </script>
     <!-- 🔌 IMPLANTACE TLAČÍTKA ZAMÍTNOUT DO ČEKAJÍCÍCH ŽÁDOSTÍ O ROLI -->
 <script>
