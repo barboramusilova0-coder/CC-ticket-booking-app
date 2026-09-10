@@ -2194,6 +2194,18 @@ window.deleteCompanyAction = function(id) {
         }, 1000);
     })();
 </script>
-
+<!-- 🔥 NEPRŮSTŘELNÁ OPRAVA ZALOMENÍ O2 ARENY NA NOVÝ ŘÁDEK -->
+<style>
+    #cc-tiles-container .cc-sub-tile-grid,
+    .cc-sub-tile-grid { 
+        flex-basis: 100% !important; /* Vynutí odskočení pod-nabídky na nový samostatný řádek */
+        width: 100% !important;
+        display: none; /* Výchozí stav zůstane schovaný, dokud se neklikne */
+    }
+    #cc-tiles-container .cc-tile-grid,
+    .cc-tile-grid {
+        flex-wrap: wrap !important; /* Povolí dlaždicím pustit pod-nabídku pod sebe */
+    }
+</style>
 </body>
 </html>
