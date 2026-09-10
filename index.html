@@ -1171,918 +1171,46 @@ window.deleteCompanyAction = function(id) {
     });
 })();
 </script>
-<script>
-    // 🎟️ INFORMAČNÍ ROLETKA: Propisuje do výběru název akce, datum, čas i místo konání
-    (function() {
-        function natvrdoPropisAkceDoRoletky() {
-            var roletkaSelect = document.getElementById('actionSelect') || document.querySelector('select');
-            if (!roletkaSelect) return;
-
-            // Načteme si aktuální akce z paměti
-            var seznamAkciZPameti = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
-            
-            // Základní úvodní text
-            var vysledneOptions = '<option value="">-- Vyberte akci --</option>';
-            var nalezenaAktivni = false;
-
-            // Projdeme všechny akce a poskládáme jejich texty do jednoho přehledného řádku
-            seznamAkciZPameti.forEach(function(akce) {
-                if (akce.status === 'Aktivní' || !akce.status) {
-                    
-                    // Připravíme si hezké formátování data, času a místa, pokud jsou vyplněné
-                    var d = akce.date ? akce.date : '';
-                    var c = akce.time ? akce.time : '';
-                    var m = akce.place ? akce.place : '';
-                    
-                    // Vytvoříme přehledný popisek: Název akce | 15.10.2026 v 18:00 (Praha)
-                    var plnyPopisekAkce = akce.name;
-                    if (d || c || m) {
-                        plnyPopisekAkce += ' | ' + d + (c ? ' v ' + c : '') + (m ? ' (' + m + ')' : '');
-                    }
-
-                    // Do hodnoty (value) uložíme čistý název akce pro schvalování, ale uživateli ukážeme plný popisek
-                    vysledneOptions += '<option value="' + akce.name + '">' + plnyPopisekAkce + '</option>';
-                    nalezenaAktivni = true;
-                }
-            });
-
-            if (!nalezenaAktivni) {
-                vysledneOptions = '<option value="">❌ V systému není žádná aktivní akce</option>';
-            }
-
-            // Pokud se obsah liší, bleskově roletku občerstvíme
-            if (roletkaSelect.innerHTML !== vysledneOptions) {
-                roletkaSelect.innerHTML = vysledneOptions;
-                console.log("Roletka byla úspěšně aktualizována o detaily akcí!");
-            }
-        }
-
-        // Hlídáme roletku každou vteřinu na pozadí, aby se tam nové akce hned objevily
-        setTimeout(natvrdoPropisAkceDoRoletky, 250);
-        document.addEventListener('click', function() { setTimeout(natvrdoPropisAkceDoRoletky, 50); });
-        
-        if (window.openTab) {
-            var originalniZalozky = window.openTab;
-            window.openTab = function(num) {
-                originalniZalozky(num);
-                if (num === 1) { setTimeout(natvrdoPropisAkceDoRoletky, 50); }
-            };
-        }
-    })();
-</script>
-<style id="cc-dynamic-table-filters"></style>
-
-<script>
-    (function() {
-        function oživPodzimníFiltryVSystemu() {
-            var akceZPameti = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
-            
-            // --- A) FORMULÁŘ REZERVACÍ (TAB 1) ---
-            var roletkaForm = document.getElementById('actionSelect') || document.querySelector('#tab1 select');
-            if (roletkaForm) { buildFullOptionsForSelect(roletkaForm, akceZPameti, "-- Vyberte akci --", false); }
-
-            // --- B) MANAŽERSKÁ LIŠTA SCHVALOVÁNÍ (TAB 2) ---
-            var filterBarWrapper = document.getElementById('cc-filter-bar-wrapper');
-            if (filterBarWrapper && !document.getElementById('cc-action-filter-tab2')) {
-                // Přidáme filtr akcí jako čtvrtý sloupec přímo do stávající šedé lišty
-                var newFilterDiv = document.createElement('div');
-                newFilterDiv.style.cssText = 'display:flex; flex-direction:column; gap:4px;';
-                newFilterDiv.innerHTML = '<label style="font-weight:700; font-size:12px; color:#475569;">Podle akce:</label>' +
-                                         '<select id="cc-action-filter-tab2" style="width:220px; padding:8px 12px; border-radius:6px; border:1px solid #cbd5e1; font-weight:600; cursor:pointer; background:#fff;"></select>';
-                filterBarWrapper.appendChild(newFilterDiv);
-                document.getElementById('cc-action-filter-tab2').addEventListener('change', spustFiltraciZadostiTab2);
-            }
-            var roletkaTab2 = document.getElementById('cc-action-filter-tab2');
-            if (roletkaTab2) { buildFullOptionsForSelect(roletkaTab2, akceZPameti, "--- Všechny akce ---", true); }
-
-            // --- C) PŘESUN FILTRU U ADMINA POD FORMULÁŘ (TAB 4) ---
-            var adminTab4 = document.getElementById('tab4');
-            var tbodyL = document.getElementById('adminActionsTableBody');
-            if (adminTab4 && tbodyL) {
-                var roletkaAdmin = document.getElementById('cc-admin-action-filter');
-                
-                // Pokud ještě neexistuje, vytvoříme ji a namontujeme ji PŘESNĚ nad tabulku (pod formulář)
-                if (!roletkaAdmin) {
-                    var filterDiv = document.createElement('div');
-                    filterDiv.id = 'cc-admin-filter-wrapper';
-                    filterDiv.style.cssText = 'margin-top: 30px; margin-bottom: 15px; background: #f8fafc; padding: 15px; border: 1px solid var(--border); border-radius: 8px; text-align: left;';
-                    filterDiv.innerHTML = '<label style="font-weight: 700; font-size: 13px; color: #475569; display: block; margin-bottom: 6px;">🔎 Rychlý filtr obsazenosti (Vyberte akci):</label>' +
-                                          '<select id="cc-admin-action-filter" style="width: 100%; max-width: 500px; padding: 10px 14px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 600; cursor: pointer; background: #fff;"></select>';
-                    
-                    // Vložíme ho přesně nad nadřazený element tabulky, aby spadl pod formulář
-                    tbodyL.closest('div').parentNode.insertBefore(filterDiv, tbodyL.closest('div'));
-                    roletkaAdmin = document.getElementById('cc-admin-action-filter');
-                    roletkaAdmin.addEventListener('change', aplikujHardwarovyAdminFiltr);
-                }
-                if (roletkaAdmin) { buildFullOptionsForSelect(roletkaAdmin, akceZPameti, "--- Zobrazit všechny vytvořené akce naráz ---", true); }
-            }
-        }
-
-        // Generátor textů s kategoriemi: Název | [Kategorie] Datum (Místo)
-        function buildFullOptionsForSelect(selectEl, list, headText, showAll) {
-            var oldVal = selectEl.value;
-            var html = '<option value="' + (headText.indexOf('všechny') > -1 || headText.indexOf('Všechny') > -1 ? 'vse' : '') + '">' + headText + '</option>';
-            
-            list.forEach(function(a) {
-                if (a.status === 'Aktivní' || !a.status || showAll) {
-                    var d = a.date || '';
-                    var m = a.place || '';
-                    var kat = a.category ? ' [' + a.category + ']' : '';
-                    
-                    var popisek = a.name + kat;
-                    if (d || m) { popisek += ' | ' + d + (m ? ' (' + m + ')' : ''); }
-                    
-                    html += '<option value="' + a.name + '">' + popisek + '</option>';
-                }
-            });
-
-            if (selectEl.innerHTML !== html) {
-                selectEl.innerHTML = html;
-                if (oldVal) selectEl.value = oldVal;
-            }
-        }
-
-        // Hardwarové filtrování Adminovy tabulky akcí
-        function aplikujHardwarovyAdminFiltr() {
-            var r = document.getElementById('cc-admin-action-filter');
-            var s = document.getElementById('cc-dynamic-table-filters');
-            if (!r || !s) return;
-            var val = r.value;
-            
-            document.querySelectorAll('#adminActionsTableBody tr').forEach(function(row) {
-                var st = row.querySelector('strong');
-                if (st) row.setAttribute('data-act-name', st.innerText.trim());
-            });
-
-            if (val === 'vse' || val === '') { s.innerHTML = ""; } 
-            else { s.innerHTML = "#adminActionsTableBody tr { display: none !important; } #adminActionsTableBody tr[data-act-name=\"" + val + "\"] { display: table-row !important; }"; }
-        }
-
-        // Filtrování Seznamu žádostí (Tab 2) podle vybrané konkrétní akce
-        function spustFiltraciZadostiTab2() {
-            var roletkaAkce = document.getElementById('cc-action-filter-tab2');
-            if (!roletkaAkce) return;
-            var vybranaAkce = roletkaAkce.value;
-
-            document.querySelectorAll('#requestsTableBody tr').forEach(function(row) {
-                if (row.cells.length < 2) return;
-                
-                // Přečteme název akce z prvního sloupečku
-                var b = row.cells[0];
-                var jmenoAkce = b.querySelector('strong') ? b.querySelector('strong').innerText.trim() : b.innerText.trim();
-                
-                // Propojíme s ostatními filtry (stav, jméno, zákazník) z včerejška
-                if (vybranaAkce === 'vse' || vybranaAkce === '' || jmenoAkce === vybranaAkce) {
-                    row.setAttribute('data-cc-action-match', 'yes');
-                } else {
-                    row.setAttribute('data-cc-action-match', 'no');
-                }
-            });
-            
-            // Propojíme pravidlo do stylů pro Tab 2
-            var styleTag = document.getElementById('cc-dynamic-table-filters');
-            if (vybranaAkce !== 'vse' && vybranaAkce !== '') {
-                styleTag.innerHTML += " #requestsTableBody tr[data-cc-action-match='no'] { display: none !important; }";
-            }
-        }
-
-        // POJISTKA PRO UKLÁDÁNÍ KATEGORIE DO DATABÁZE
-        document.addEventListener('submit', function(e) {
-            // Pokud ukládáme novou akci, vytáhneme hodnotu z našeho nového selectu
-            var catEl = document.getElementById('actionCategory');
-            if (catEl && catEl.value) {
-                setTimeout(function() {
-                    var seznam = JSON.parse(localStorage.getItem('companyActions')) || [];
-                    if (seznam.length > 0 && !seznam[seznam.length - 1].category) {
-                        seznam[seznam.length - 1].category = catEl.value;
-                        localStorage.setItem('companyActions', JSON.stringify(seznam));
-                        catEl.value = ''; // Vyčistíme políčko
-                    }
-                }, 50);
-            }
-        });
-
-        // Plynulé udržování na pozadí
-        setInterval(oživPodzimníFiltryVSystemu, 500);
-        setInterval(aplikujHardwarovyAdminFiltr, 350);
-        document.addEventListener('input', function() { setTimeout(spustFiltraciZadostiTab2, 50); });
-        document.addEventListener('change', function() { setTimeout(spustFiltraciZadostiTab2, 50); });
-    })();
-</script>
-    <!-- 🔌 AUTOMATICKÝ DOPLŇOVAČ DATA A ČASU DO HLAVNÍ SCHVALOVACÍ TABULKY -->
-<script>
-    (function() {
-        function doplnDatumACasDoSchvalovani() {
-            // Načteme si aktuální akce z paměti, abychom z nich vytáhli termíny
-            var akceZPameti = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
-            if (akceZPameti.length === 0) return;
-
-            // Najdeme všechny řádky v hlavní tabulce žádostí ke schválení
-            var radkyTabulky = document.querySelectorAll('#requestsTableBody tr');
-            
-            radkyTabulky.forEach(function(row) {
-                // Pojistka pro prázdnou zprávu v tabulce
-                if (row.cells.length < 2) return;
-
-                // První buňka (index 0) obsahuje název akce
-                var bunkaAkce = row.cells[0];
-                var cistyNazevAkce = bunkaAkce.querySelector('strong') ? bunkaAkce.querySelector('strong').innerText.trim() : bunkaAkce.innerText.trim();
-
-                // Najdeme k této akci odpovídající datum a čas z databáze akcí
-                var nalezenaAkce = akceZPameti.find(function(a) {
-                    return a.name.trim() === cistyNazevAkce;
-                });
-
-                if (nalezenaAkce) {
-                    var d = nalezenaAkce.date || '';
-                    var c = nalezenaAkce.time || '';
-                    
-                    // Pokud má akce vyplněné datum nebo čas a ještě jsme to do buňky nedopsali
-                    if ((d || c) && !bunkaAkce.querySelector('.cc-tab-term')) {
-                        var termSpan = document.createElement('span');
-                        termSpan.className = 'cc-tab-term';
-                        termSpan.style.cssText = 'display: block; font-size: 11px; color: #64748b; font-weight: 600; margin-top: 4px; line-height: 1.2;';
-                        
-                        // Sestavíme pěkný popisek s ikonkami hodin a kalendáře
-                        termSpan.innerHTML = '📅 ' + d + (c ? ' ⏰ ' + c : '');
-                        
-                        // Vložíme pod podtučněný název akce
-                        bunkaAkce.appendChild(termSpan);
-                    }
-                }
-            });
-        }
-
-        // Hlídáme tabulku plynule na pozadí, protože se často překresluje při schvalování nebo filtrování
-        setInterval(doplnDatumACasDoSchvalovani, 600);
-        document.addEventListener('click', function() { setTimeout(doplnDatumACasDoSchvalovani, 100); });
-    })();
-</script>
-   <!-- 🧱 DLAŽDICE S OFICIÁLNÍMI LOGY KLUBŮ PŘED REZERVACÍ -->
+<!-- 🌐 1. ČÁST: GRAFIKA A CHRONOLOGICKÝ REZERVAČNÍ ENGINE -->
 <style>
-    .cc-tile-grid { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px; text-align: left; }
-    .cc-tile { 
-        flex: 1 1 calc(25% - 15px); 
-        min-width: 170px; 
-        height: 140px;
-        border: 2px solid var(--border); 
-        border-radius: 12px; 
-        padding: 15px; 
-        text-align: center; 
-        cursor: pointer; 
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); 
-        box-shadow: 0 4px 10px rgba(0,0,0,0.04); 
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        overflow: hidden;
-        background-size: 65px; /* Velikost loga uvnitř dlaždice */
-        background-repeat: no-repeat;
-        background-position: center 20px; /* Umístění loga nad textem */
-        background-color: #ffffff;
-    }
-    
-    /* Světlý závoj pro čistý podzimní korporátní design */
-    .cc-tile::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(255, 255, 255, 0.82); 
-        transition: all 0.25s ease;
-        z-index: 1;
-    }
-    
-    /* Speciální úprava pro fotku O2 Areny, aby ladila se zbytkem */
-    #tile-o2, #tile-koncert {
-        background-size: cover;
-        background-position: center;
-    }
-    #tile-o2::before, #tile-koncert::before {
-        background: rgba(15, 23, 42, 0.65);
-    }
-    #tile-o2 .cc-tile-title, #tile-koncert .cc-tile-title {
-        color: #ffffff;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.6);
-    }
-
-    .cc-tile:hover { 
-        transform: translateY(-4px); 
-        box-shadow: 0 8px 20px rgba(228, 30, 38, 0.18); 
-        border-color: var(--cc-red);
-    }
-    
-    .cc-tile:hover::before {
-        background: rgba(255, 255, 255, 0.4); /* Při najetí myší logo více vynikne */
-    }
-    
-    .cc-tile.active { 
-        border-color: var(--cc-red); 
-        box-shadow: 0 0 15px rgba(228, 30, 38, 0.3);
-        background-color: #fef2f2;
-    }
-    .cc-tile.active::before {
-        background: rgba(255, 255, 255, 0.2);
-    }
-    
-    .cc-tile-icon { font-size: 24px; margin-bottom: 4px; display: block; z-index: 2; position: relative; }
-    
-    /* Vylepšený, skvěle čitelný text */
-    .cc-tile-title { 
-        font-weight: 800; 
-        font-size: 13px; 
-        color: #1e293b; 
-        z-index: 2; 
-        position: relative; 
-        text-transform: uppercase; 
-        letter-spacing: 0.03em;
-        margin-top: auto; /* Posune text na úplný spodek dlaždice pod logo */
-    }
-    
-    .cc-sub-tile-grid { display: none; width: 100%; gap: 12px; margin-top: 15px; padding: 12px; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1; }
-</style>
-
-<script>
-    (function() {
-        var vybranaKategoriePortalu = "";
-
-        function nasadKrasneDlazdiceDoFormulare() {
-            var tForm = document.getElementById('ticketForm');
-            if (!tForm || document.getElementById('cc-tiles-container')) return;
-
-            var container = document.createElement('div');
-            container.id = 'cc-tiles-container';
-            container.style.marginBottom = '25px';
-            
-            var htmlDlazdic = '<h3 style="text-align:left; font-size:16px; margin-bottom:15px; color:#475569; font-weight:700;">🌟 KROK 1: Vyberte typ nebo místo konání akce:</h3>' +
-                '<div class="cc-tile-grid">' +
-                    // 1. O2 Arena (Fotka haly)
-                    '<div class="cc-tile" data-cat="O2 Arena" id="tile-o2" style="background-image: url(\'https://unsplash.com\');"><span class="cc-tile-icon">🏟️</span><span class="cc-tile-title">O2 Arena</span></div>' +
-                    // 2. Fotbal (Logo SK Slavia Praha)
-                    '<div class="cc-tile" data-cat="Fotbal" style="background-image: url(\'https://wikimedia.org\'); background-size: 55px;"><span class="cc-tile-icon">⚽</span><span class="cc-tile-title">Fotbal</span></div>' +
-                    // 3. Extraliga (Hokejový puk / univerzální led)
-                    '<div class="cc-tile" data-cat="Extraliga" style="background-image: url(\'https://unsplash.com\'); background-size: cover;"><span class="cc-tile-icon">🏒</span><span class="cc-tile-title" style="color:#fff; text-shadow:0 1px 3px rgba(0,0,0,0.8);">Extraliga</span></div>' +
-                    // 4. Reprezentace (Česká vlajka na pozadí)
-                    '<div class="cc-tile" data-cat="Reprezentace" style="background-image: url(\'https://wikimedia.org\'); background-size: cover;"><span class="cc-tile-icon">🇨🇿</span><span class="cc-tile-title" style="color:#fff; text-shadow:0 1px 4px rgba(0,0,0,0.9);">Reprezentace</span></div>' +
-                    
-                    // Pod-prokliknutí po kliknutí na O2 Arenu
-                    '<div class="cc-sub-tile-grid" id="cc-o2-sub-grid">' +
-                        // O2 Arena - Hokej (Logo HC Sparta Praha)
-                        '<div class="cc-tile" data-cat="O2 Arena - Hokej" style="flex:1; height:120px; background-image: url(\'https://wikimedia.org\'); background-size: 50px;"><span class="cc-tile-icon">🥅</span><span class="cc-tile-title">O2 Arena - Hokej</span></div>' +
-                        // O2 Arena - Koncerty (Atmosféra koncertu)
-                        '<div class="cc-tile" data-cat="O2 Arena - Koncerty" id="tile-koncert" style="flex:1; height:120px; background-image: url(\'https://unsplash.com\');"><span class="cc-tile-icon">🎵</span><span class="cc-tile-title">O2 Arena - Koncerty</span></div>' +
-                    '</div>' +
-                '</div>';
-                
-            container.innerHTML = htmlDlazdic;
-            tForm.parentNode.insertBefore(container, tForm);
-            tForm.style.display = 'none';
-
-            container.querySelectorAll('.cc-tile').forEach(function(tile) {
-                tile.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    var cat = this.getAttribute('data-cat');
-                    
-                    if (cat === 'O2 Arena') {
-                        container.querySelectorAll('.cc-tile').forEach(function(el) { el.classList.remove('active'); });
-                        this.classList.add('active');
-                        document.getElementById('cc-o2-sub-grid').style.display = 'flex';
-                        tForm.style.display = 'none';
-                        return;
-                    }
-
-                    container.querySelectorAll('.cc-tile').forEach(function(el) { el.classList.remove('active'); });
-                    this.classList.add('active');
-                    
-                    if (cat.indexOf('O2 Arena -') > -1) {
-                        document.getElementById('tile-o2').classList.add('active');
-                    } else {
-                        document.getElementById('cc-o2-sub-grid').style.display = 'none';
-                    }
-
-                    vybranaKategoriePortalu = cat;
-                    tForm.style.display = 'block';
-                    odfiltrujRoletkuAkciPodleDlazdice();
-                });
-            });
-        }
-
-        function odfiltrujRoletkuAkciPodleDlazdice() {
-            var roletka = document.getElementById('actionSelect') || document.querySelector('#ticketForm select');
-            if (!roletka || !vybranaKategoriePortalu) return;
-
-            var akceZPameti = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
-            var html = '<option value="">-- Vyberte konkrétní zápas / koncert --</option>';
-            var maZapas = false;
-
-            akceZPameti.forEach(function(a) {
-                var katAkce = a.category ? a.category.trim() : '';
-                if (katAkce === vybranaKategoriePortalu && (a.status === 'Aktivní' || !a.status)) {
-                    var d = a.date || '';
-                    var m = a.place || '';
-                    html += '<option value="' + a.name + '">' + a.name + (d ? ' | ' + d : '') + (m ? ' (' + m + ')' : '') + '</option>';
-                    maZapas = true;
-                }
-            });
-
-            if (!maZapas) {
-                html = '<option value="">❌ V této kategorii momentálně nejsou žádné volné lístky</option>';
-            }
-            roletka.innerHTML = html;
-        }
-
-        setInterval(function() {
-            var tab1 = document.getElementById('tab1');
-            if (tab1 && tab1.classList.contains('active')) {
-                nasadKrasneDlazdiceDoFormulare();
-            } else {
-                var container = document.getElementById('cc-tiles-container');
-                var tForm = document.getElementById('ticketForm');
-                if (container) container.remove();
-                if (tForm) tForm.style.display = 'block';
-            }
-        }, 400);
-    })();
-</script>
-<!-- 🧱 FINÁLNÍ MINIMALISTICKÉ ČISTÉ DLAŽDICE V JEDNÉ LINII (NÁVRAT K DOKONALOSTI) -->
-<style>
-    /* Neopustitelné vynucení jedné rovné linky pro všechny 4 dlaždice */
-    #cc-tiles-container .cc-tile-grid { 
-        display: flex !important; 
-        gap: 12px !important; 
-        margin-bottom: 25px !important; 
-        text-align: left !important; 
-        width: 100% !important; 
-        justify-content: space-between !important;
-        flex-direction: row !important; /* Blokuje skákání pod sebe */
-        flex-wrap: nowrap !important; /* Nutí dlaždice držet v jedné řadě */
-    }
-    
-    #cc-tiles-container .cc-tile { 
-        flex: 1 !important; /* Všechny dlaždice budou matematicky stejně široké */
-        height: 55px !important; /* Krásná čistá nízká výška pro elegantní firemní vzhled */
-        border: 2px solid var(--border) !important; 
-        border-radius: 8px !important; 
-        padding: 5px 10px !important; 
-        text-align: center !important; 
-        cursor: pointer !important; 
-        transition: all 0.2s ease !important; 
-        box-shadow: 0 1px 4px rgba(0,0,0,0.02) !important; 
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        position: relative !important;
-        background-image: none !important; /* Kompletní odstranění obrázků na pozadí */
-        background-color: #ffffff !important;
-    }
-    
-    #cc-tiles-container .cc-tile::before {
-        display: none !important; /* Smaže ten starý tmavý/světlý závoj */
-    }
-    
-    #cc-tiles-container .cc-tile:hover { 
-        transform: translateY(-2px) !important; 
-        box-shadow: 0 4px 12px rgba(228, 30, 38, 0.1) !important; 
-        border-color: var(--cc-red) !important;
-        background-color: #fff5f5 !important; /* Jemný rudý nádech při najetí myši */
-    }
-    
-    #cc-tiles-container .cc-tile.active { 
-        border-color: var(--cc-red) !important; 
-        box-shadow: 0 0 10px rgba(228, 30, 38, 0.15) !important;
-        background-color: #fef2f2 !important;
-    }
-    
-    /* Čistý a vysoce kontrastní text bez emotikonů */
-    #cc-tiles-container .cc-tile-title { 
-        font-weight: 800 !important; 
-        font-size: 12px !important; 
-        color: #1e293b !important; 
-        text-transform: uppercase !important; 
-        letter-spacing: 0.05em !important;
-        margin: 0 !important;
-        text-shadow: none !important;
-    }
-    
-    #cc-tiles-container .cc-tile.active .cc-tile-title {
-        color: var(--cc-red) !important;
-    }
-    
-    /* Odstranění ikon a emoji natvrdo z kódu */
-    #cc-tiles-container .cc-tile-icon {
-        display: none !important;
-    }
-    
-    /* 📋 ČISTÉ NÁPOVĚDNÉ OKÉNKO (TOOLTIP) NAD DLAŽDICÍ */
-    #cc-tiles-container .cc-tooltip {
-        position: absolute !important;
-        bottom: 130% !important; 
-        left: 50% !important;
-        transform: translateX(-50%) translateY(5px) !important;
-        background: #0f172a !important; 
-        color: #ffffff !important;
-        padding: 8px 12px !important;
-        border-radius: 6px !important;
-        font-size: 11px !important;
-        font-weight: 600 !important;
-        width: 190px !important;
-        text-align: center !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
-        opacity: 0 !important;
-        visibility: hidden !important;
-        pointer-events: none !important;
-        transition: all 0.2s ease !important;
-        z-index: 99999 !important;
-        line-height: 1.3 !important;
-    }
-    #cc-tiles-container .cc-tooltip::after {
-        content: '' !important;
-        position: absolute !important;
-        top: 100% !important; left: 50% !important;
-        transform: translateX(-50%) !important;
-        border-width: 5px !important;
-        border-style: solid !important;
-        border-color: #0f172a transparent transparent transparent !important;
-    }
-    #cc-tiles-container .cc-tile:hover .cc-tooltip {
-        opacity: 1 !important;
-        visibility: visible !important;
-        transform: translateX(-50%) translateY(0) !important;
-    }
-    
-    /* Menší pod-řada pro O2 arenu */
-        #cc-tiles-container .cc-sub-tile-grid { 
-        display: none; 
-        width: 100% !important; 
-        flex-basis: 100% !important; /* 🔥 KLÍČOVÝ PŘÍKAZ: Hodí pod-nabídku na úplně nový samostatný řádek */
-        gap: 12px !important; 
-        margin-top: 15px !important; 
-        padding: 12px !important; 
-        background: #f8fafc !important; 
-        border-radius: 8px !important; 
-        border: 1px dashed #cbd5e1 !important; 
-    }
-</style>
-
-<script>
-    (function() {
-        var vybranaKatP = "";
-
-        function nasadMinimalistickeCisteDlazdice() {
-            var tForm = document.getElementById('ticketForm');
-            if (!tForm || document.getElementById('cc-tiles-container')) return;
-
-            // Vytvoříme silný obalový prvek
-            var container = document.createElement('div');
-            container.id = 'cc-tiles-container';
-            container.style.marginBottom = '20px';
-            
-            var htmlDlazdic = '<h3 style="text-align:left; font-size:13px; margin-bottom:12px; color:#475569; font-weight:700; text-transform: uppercase; letter-spacing: 0.02em;">Krok 1: Vyberte typ nebo místo konání akce:</h3>' +
-                '<div class="cc-tile-grid">' +
-                    '<div class="cc-tile" data-cat="O2 Arena" id="tile-o2"><span class="cc-tile-title">O2 Arena</span><div class="cc-tooltip">Koncerty a hokejové zápasy v O2 Areně.</div></div>' +
-                    '<div class="cc-tile" data-cat="Fotbal"><span class="cc-tile-title">SK Slavia Praha</span><div class="cc-tooltip">Domácí fotbalová utkání a zápasy SK Slavia Praha.</div></div>' +
-                    '<div class="cc-tile" data-cat="Extraliga"><span class="cc-tile-title">Extraliga</span><div class="cc-tooltip">Zápasy nejvyšší české hokejové soutěže.</div></div>' +
-                    '<div class="cc-tile" data-cat="Reprezentace"><span class="cc-tile-title">Reprezentace</span><div class="cc-tooltip">Mezinárodní a reprezentační utkání českého národního týmu.</div></div>' +
-                '</div>' +
-                
-                '<div class="cc-sub-tile-grid" id="cc-o2-sub-grid">' +
-                    '<div class="cc-tile" data-cat="O2 Arena - Hokej" style="height:50px !important;"><span class="cc-tile-title">HC Sparta Praha</span><div class="cc-tooltip">Domácí hokejové zápasy HC Sparta Praha v O2 Areně.</div></div>' +
-                    '<div class="cc-tile" data-cat="O2 Arena - Koncerty" style="height:50px !important;"><span class="cc-tile-title">Koncerty</span><div class="cc-tooltip">Hudební akce, shows a koncerty v O2 Areně.</div></div>' +
-                '</div>';
-                
-            container.innerHTML = htmlDlazdic;
-            tForm.parentNode.insertBefore(container, tForm);
-            tForm.style.display = 'none';
-
-            container.querySelectorAll('.cc-tile').forEach(function(tile) {
-                tile.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    var cat = this.getAttribute('data-cat');
-                    
-                    if (cat === 'O2 Arena') {
-                        container.querySelectorAll('.cc-tile').forEach(function(el) { el.classList.remove('active'); });
-                        this.classList.add('active');
-                        document.getElementById('cc-o2-sub-grid').style.display = 'flex';
-                        tForm.style.display = 'none';
-                        return;
-                    }
-
-                    container.querySelectorAll('.cc-tile').forEach(function(el) { el.classList.remove('active'); });
-                    this.classList.add('active');
-                    
-                    if (cat === 'O2 Arena - Hokej' || cat === 'O2 Arena - Koncerty') {
-                        document.getElementById('tile-o2').classList.add('active');
-                    } else {
-                        document.getElementById('cc-o2-sub-grid').style.display = 'none';
-                    }
-
-                    vybranaKatP = cat;
-                    tForm.style.display = 'block';
-                    odfiltrujRoletkuAkciPodleDlazdice();
-                });
-            });
-        }
-
-        function odfiltrujRoletkuAkciPodleDlazdice() {
-            var roletka = document.getElementById('actionSelect') || document.querySelector('#ticketForm select');
-            if (!roletka || !vybranaKatP) return;
-
-            var akceZPameti = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
-            var html = '<option value="">-- Vyberte konkrétní zápas / koncert --</option>';
-            var maZapas = false;
-
-            akceZPameti.forEach(function(a) {
-                var katAkce = a.category ? a.category.trim() : '';
-                if (katAkce === vybranaKatP && (a.status === 'Aktivní' || !a.status)) {
-                    var d = a.date || '';
-                    var m = a.place || '';
-                    html += '<option value="' + a.name + '">' + a.name + (d ? ' | ' + d : '') + (m ? ' (' + m + ')' : '') + '</option>';
-                    maZapas = true;
-                }
-            });
-
-            if (!maZapas) { html = '<option value="">V této kategorii momentálně nejsou žádné volné lístky</option>'; }
-            roletka.innerHTML = html;
-        }
-
-        setInterval(function() {
-            var tab1 = document.getElementById('tab1');
-            if (tab1 && tab1.classList.contains('active')) {
-                nasadMinimalistickeCisteDlazdice();
-            } else {
-                var container = document.getElementById('cc-tiles-container');
-                var tForm = document.getElementById('ticketForm');
-                if (container) container.remove();
-                if (tForm) tForm.style.display = 'block';
-            }
-        }, 400);
-    })();
-</script>
-
-    <!-- 🌐 NOVÁ VEŘEJNÁ ZÁLOŽKA: PŘEHLED AKCÍ S TOOLTIPY VE STYLU VIP ZÓNY -->
-<style>
-    /* Grafický styl pro mřížku firemních akcí */
     .cc-public-grid { display: flex; gap: 15px; flex-wrap: wrap; text-align: left; margin-top: 15px; }
-    
-    .cc-public-card {
-        flex: 1 1 calc(25% - 15px);
-        min-width: 220px;
-        height: 90px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 15px;
-        background: #ffffff;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        position: relative;
-        cursor: default;
-        transition: all 0.2s ease;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.02);
-    }
-    
-    .cc-public-card:hover {
-        border-color: #cbd5e1;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        transform: translateY(-2px);
-    }
-    
+    .cc-public-card { flex: 1 1 calc(25% - 15px); min-width: 220px; height: 90px; border: 1px solid var(--border); border-radius: 8px; padding: 15px; background: #ffffff; display: flex; flex-direction: column; justify-content: center; position: relative; cursor: default; transition: all 0.2s ease; box-shadow: 0 1px 4px rgba(0,0,0,0.02); }
+    .cc-public-card:hover { border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: translateY(-2px); }
     .cc-card-title { font-weight: 700; font-size: 13px; color: #0f172a; margin-bottom: 4px; line-height: 1.3; }
     .cc-card-date { font-size: 11px; color: #64748b; font-weight: 600; }
     
-    /* 📋 VIP TOOLTIP PRO VEŘEJNÝ PŘEHLED AKCÍ */
-    .cc-public-card .cc-tooltip {
-        position: absolute;
-        bottom: 115%; /* Vyjede bezpečně nad kartu */
-        left: 50%;
-        transform: translateX(-50%) translateY(5px);
-        background: #0f172a;
-        color: #ffffff;
-        padding: 10px 14px;
-        border-radius: 6px;
-        font-size: 11px;
-        font-weight: 600;
-        width: 200px;
-        text-align: left;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-        transition: all 0.2s ease;
-        z-index: 9999;
-        line-height: 1.4;
-    }
-    
-    .cc-public-card .cc-tooltip::after {
-        content: '';
-        position: absolute;
-        top: 100%; left: 50%;
-        transform: translateX(-50%);
-        border-width: 5px;
-        border-style: solid;
-        border-color: #0f172a transparent transparent transparent;
-    }
-    
-    .cc-public-card:hover .cc-tooltip {
-        opacity: 1;
-        visibility: visible;
-        transform: translateX(-50%) translateY(0);
-    }
+    #cc-tiles-container .cc-tile, .cc-public-card { position: relative !important; overflow: visible !important; }
+    #cc-tiles-container .cc-tooltip, .cc-public-card .cc-tooltip { position: absolute !important; bottom: 125% !important; left: 50% !important; transform: translateX(-50%) translateY(5px) !important; background: #0f172a !important; color: #ffffff !important; padding: 10px 14px !important; border-radius: 6px !important; font-size: 11px !important; font-weight: 600 !important; width: 220px !important; text-align: left !important; box-shadow: 0 4px 15px rgba(0,0,0,0.15) !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; transition: all 0.2s ease-in-out !important; z-index: 999999 !important; line-height: 1.4 !important; }
+    #cc-tiles-container .cc-tooltip::after, .cc-public-card .cc-tooltip::after { content: '' !important; position: absolute !important; top: 100% !important; left: 50% !important; transform: translateX(-50%) !important; border-width: 5px !important; border-style: solid !important; border-color: #0f172a transparent transparent transparent !important; display: block !important; }
+    #cc-tiles-container .cc-tile:hover .cc-tooltip, .cc-public-card:hover .cc-tooltip { opacity: 1 !important; visibility: visible !important; transform: translateX(-50%) translateY(0) !important; }
+
+    #cc-tiles-container .cc-tile-grid { display: flex !important; gap: 12px !important; margin-bottom: 25px !important; text-align: left !important; width: 100% !important; justify-content: space-between !important; flex-direction: row !important; flex-wrap: nowrap !important; }
+    #cc-tiles-container .cc-tile { flex: 1 !important; height: 55px !important; border: 2px solid var(--border) !important; border-radius: 8px !important; padding: 5px 10px !important; text-align: center !important; cursor: pointer !important; transition: all 0.2s ease !important; box-shadow: 0 1px 4px rgba(0,0,0,0.02) !important; display: flex !important; align-items: center !important; justify-content: center !important; position: relative !important; background-image: none !important; background-color: #ffffff !important; }
+    #cc-tiles-container .cc-tile::before { display: none !important; }
+    #cc-tiles-container .cc-tile:hover { transform: translateY(-2px) !important; box-shadow: 0 4px 12px rgba(228,30,38,0.1) !important; border-color: var(--cc-red) !important; background-color: #fff5f5 !important; }
+    #cc-tiles-container .cc-tile.active { border-color: var(--cc-red) !important; box-shadow: 0 0 10px rgba(228,30,38,0.15) !important; background-color: #fef2f2 !important; }
+    #cc-tiles-container .cc-tile-title { font-weight: 800 !important; font-size: 11px !important; color: #1e293b !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; margin: 0 !important; text-shadow: none !important; }
+    #cc-tiles-container .cc-tile.active .cc-tile-title { color: var(--cc-red) !important; }
+    #cc-tiles-container .cc-tile-icon { display: none !important; }
+    #cc-tiles-container .cc-sub-tile-grid { display: none; width: 100% !important; flex-basis: 100% !important; gap: 12px !important; margin-top: 15px !important; padding: 12px !important; background: #f8fafc !important; border-radius: 8px !important; border: 1px dashed #cbd5e1 !important; }
 </style>
 
 <script>
     (function() {
-        // Funkce, která dynamicky vytvoří pátou záložku v menu a její obsahovou plochu
-        function namontujVerejnyPrehledAkci() {
-            var tabsMenu = document.querySelector('.tabs');
-            var container = document.querySelector('.container');
-            if (!tabsMenu || !container || document.getElementById('btn-prehled')) return;
-
-            // 1. KROK: Přidáme tlačítko "Přehled akcí" do hlavního horního menu
-            var btnPrehled = document.createElement('button');
-            btnPrehled.id = 'btn-prehled';
-            btnPrehled.className = 'tab-btn';
-            btnPrehled.innerText = '📅 Přehled akcí';
-            tabsMenu.appendChild(btnPrehled);
-
-            // 2. KROK: Vytvoříme skrytou obsahovou plochu (Tab 5) pro zobrazení dlaždic
-            var tab5 = document.createElement('div');
-            tab5.id = 'tab5';
-            tab5.className = 'tab-content';
-            tab5.innerHTML = '<h2 style="text-align:left; font-size:18px; margin-bottom:5px; color:#0f172a; font-weight:800; text-transform:uppercase; letter-spacing:0.02em;">Aktuální nabídka akcí</h2>' +
-                             '<p style="text-align:left; font-size:13px; color:#64748b; margin-bottom:20px;">Zde naleznete kompletní přehled firemních lístků. Najetím myši na akci zobrazíte podrobnosti o místě a obsazenosti.</p>' +
-                             '<div class="cc-public-grid" id="cc-public-tiles-container"></div>';
-            container.appendChild(tab5);
-
-            // 3. KROK: Propojíme přepínání, aby fungovala i pátá záložka
-            btnPrehled.addEventListener('click', function() {
-                vykresliVerejneDlaždiceAkci();
-                if (typeof window.openTab === 'function') {
-                    window.openTab(5);
-                    // Ručně doladíme aktivní podsvícení tlačítka
-                    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-                    btnPrehled.classList.add('active');
-                    document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
-                    document.getElementById('tab5').classList.add('active');
-                }
-            });
-            
-            // Hlídáme paměť, pokud byla pátá záložka aktivní před refreshem (F5)
-            if (localStorage.getItem('activeCcTab') === '5') {
-                setTimeout(function() { btnPrehled.click(); }, 300);
-            }
-        }
-
-        // Funkce, která nasype vytvořené akce do dlaždic včetně výpočtu obsazenosti
-        function vykresliVerejneDlaždiceAkci() {
-            var grid = document.getElementById('cc-public-tiles-container');
-            if (!grid) return;
-
-            var akce = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
-            var zadosti = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
-            
-            if (akce.length === 0) {
-                grid.innerHTML = '<div style="color:#94a3b8; font-size:13px; padding:20px; text-align:left; width:100%;">Momentálně nejsou vytvořeny žádné akce.</div>';
-                return;
-            }
-
-            var htmlKaret = '';
-            akce.forEach(function(act) {
-                // Zobrazujeme pouze aktivní akce
-                if (act.status === 'Zrušena') return;
-
-                // Spočítáme schválené lístky pro tuto konkrétní akci z tabulky žádostí
-                var schvaleneZadosti = zadosti.filter(function(r) {
-                    return r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno';
-                });
-                var obsazenoListku = 0;
-                schvaleneZadosti.forEach(function(z) { obsazenoListku += parseInt(z.tickets || 1); });
-
-                // Sestavení textů pro nápovědné okénko (Tooltip)
-                var kat = act.category ? act.category : 'Nespecifikováno';
-                var m = act.place ? act.place : 'Místo neurčeno';
-                var t = act.time ? ' v ' + act.time : '';
-                
-                htmlKaret += '<div class="cc-public-card">' +
-                                '<div class="cc-card-title">' + act.name + '</div>' +
-                                '<div class="cc-card-date">📅 ' + (act.date || 'Termín upřesníme') + '</div>' +
-                                
-                                // VIP Tooltip okénko
-                                '<div class="cc-tooltip">' +
-                                    '<strong style="color:var(--cc-red); display:block; margin-bottom:4px; text-transform:uppercase; font-size:10px;">Podrobnosti akce</strong>' +
-                                    '📍 Místo: ' + m + '<br>' +
-                                    '🏷️ Typ: ' + kat + '<br>' +
-                                    '⏰ Čas: ' + (act.time || 'Nespecifikován') + '<br>' +
-                                    '<span style="display:block; margin-top:5px; padding-top:5px; border-top:1px solid #334155; font-weight:700;">' +
-                                    '📊 Obsazenost: ' + obsazenoListku + ' / ' + act.capacity + ' ks' +
-                                    '</span>' +
-                                '</div>' +
-                             '</div>';
-            });
-
-            if (grid.innerHTML !== htmlKaret) {
-                grid.innerHTML = htmlKaret || '<div style="color:#94a3b8; font-size:13px; padding:20px;">Žádné aktivní akce k zobrazení.</div>';
-            }
-        }
-
-        // Spouštíme na pozadí, aby nová záložka spolehlivě naskočila a aktualizovala data
-        setInterval(namontujVerejnyPrehledAkci, 500);
-        setInterval(function() {
-            var t5 = document.getElementById('tab5');
-            if (t5 && t5.classList.contains('active')) { vykresliVerejneDlaždiceAkci(); }
-        }, 1000);
-    })();
-</script>
-<!-- 🌐 VEŘEJNÁ ZÁLOŽKA: 1. ČÁST - GRAFIKA A CHRONOLOGICKÝ ENGINE -->
-<style>
-    .cc-public-grid { display: flex; gap: 15px; flex-wrap: wrap; text-align: left; margin-top: 15px; }
-    
-    .cc-public-card {
-        flex: 1 1 calc(25% - 15px);
-        min-width: 220px;
-        height: 90px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 15px;
-        background: #ffffff;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        position: relative;
-        cursor: default;
-        transition: all 0.2s ease;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.02);
-    }
-    
-    .cc-public-card:hover {
-        border-color: #cbd5e1;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        transform: translateY(-2px);
-    }
-    
-    .cc-card-title { font-weight: 700; font-size: 13px; color: #0f172a; margin-bottom: 4px; line-height: 1.3; }
-    .cc-card-date { font-size: 11px; color: #64748b; font-weight: 600; }
-    
-    .cc-public-card .cc-tooltip {
-        position: absolute;
-        bottom: 115%; 
-        left: 50%;
-        transform: translateX(-50%) translateY(5px);
-        background: #0f172a;
-        color: #ffffff;
-        padding: 10px 14px;
-        border-radius: 6px;
-        font-size: 11px;
-        font-weight: 600;
-        width: 200px;
-        text-align: left;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-        transition: all 0.2s ease;
-        z-index: 9999;
-        line-height: 1.4;
-    }
-    
-    .cc-public-card .cc-tooltip::after {
-        content: '';
-        position: absolute;
-        top: 100%; left: 50%;
-        transform: translateX(-50%);
-        border-width: 5px;
-        border-style: solid;
-        border-color: #0f172a transparent transparent transparent;
-    }
-    
-    .cc-public-card:hover .cc-tooltip {
-        opacity: 1;
-        visibility: visible;
-        transform: translateX(-50%) translateY(0);
-    }
-</style>
-
-<script>
-    (function() {
-        // Funkce pro řazení akcí od nejbližší po nejvzdálenější
         function seradAkceChronologicky(poleAkci) {
             return poleAkci.sort(function(a, b) {
                 var datumA = a.date ? a.date.trim() : '9999-12-31';
                 var datumB = b.date ? b.date.trim() : '9999-12-31';
-                
                 if (datumA.indexOf('.') > -1) { var pA = datumA.split('.'); if(pA.length===3) datumA = pA[2]+'-'+pA[1].padStart(2,'0')+'-'+pA[0].padStart(2,'0'); }
                 if (datumB.indexOf('.') > -1) { var pB = datumB.split('.'); if(pB.length===3) datumB = pB[2]+'-'+pB[1].padStart(2,'0')+'-'+pB[0].padStart(2,'0'); }
-                
                 if (datumA < datumB) return -1;
                 if (datumA > datumB) return 1;
-                
                 var casA = a.time ? a.time.trim() : '23:59';
                 var casB = b.time ? b.time.trim() : '23:59';
                 return casA.localeCompare(casB);
             });
         }
-        // 📅 2. ČÁST: MONTOVÁNÍ ZÁLOŽKY NA ZAČÁTEK MENU A GENEROVÁNÍ VIP KARET
+        // 📅 2. ČÁST: GENEROVÁNÍ ZÁLOŽEK A ČISTÉHO MINIMALISTICKÉHO REZERVAČNÍHO PORTÁLU
         function namontujVerejnyPrehledAkciNaZacatek() {
             var tabsMenu = document.querySelector('.tabs');
             var container = document.querySelector('.container');
@@ -2092,7 +1220,6 @@ window.deleteCompanyAction = function(id) {
             btnPrehled.id = 'btn-prehled';
             btnPrehled.className = 'tab-btn';
             btnPrehled.innerText = '📅 Přehled akcí';
-            
             tabsMenu.insertBefore(btnPrehled, tabsMenu.firstChild);
 
             var tab5 = document.createElement('div');
@@ -2106,12 +1233,10 @@ window.deleteCompanyAction = function(id) {
             btnPrehled.addEventListener('click', function() {
                 vykresliVerejneDlaždiceAkci();
                 localStorage.setItem('activeCcTab', '5');
-                
                 document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
                 btnPrehled.classList.add('active');
                 document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
                 document.getElementById('tab5').classList.add('active');
-                
                 if (typeof window.openTab === 'function') {
                     for (var i = 1; i <= 4; i++) { var t = document.getElementById('tab' + i); if (t) t.classList.remove('active'); }
                 }
@@ -2129,7 +1254,6 @@ window.deleteCompanyAction = function(id) {
 
             var akceRaw = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
             var zadosti = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
-            
             if (akceRaw.length === 0) {
                 grid.innerHTML = '<div style="color:#94a3b8; font-size:13px; padding:20px; text-align:left; width:100%;">Momentálně nejsou vytvořeny žádné akce.</div>';
                 return;
@@ -2140,38 +1264,25 @@ window.deleteCompanyAction = function(id) {
 
             akce.forEach(function(act) {
                 if (act.status === 'Zrušena') return;
+                var schvaleneZadosti = zadosti.filter(function(r) { return r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno'; });
+                var obsazeno = 0; schvaleneZadosti.forEach(function(z) { obsazeno += parseInt(z.tickets || 1); });
+                var txtAdmin = act.place || "Žádné další detaily nebyly zadány.";
 
-                var schvaleneZadosti = zadosti.filter(function(r) {
-                    return r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno';
-                });
-                var obsazenoListku = 0;
-                schvaleneZadosti.forEach(function(z) { obsazenoListku += parseInt(z.tickets || 1); });
-
-                var m = act.place ? act.place : 'Místo neurčeno';
-                var kat = act.category ? act.category : 'Nespecifikováno';
-                
                 htmlKaret += '<div class="cc-public-card">' +
                                 '<div class="cc-card-title">' + act.name + '</div>' +
                                 '<div class="cc-card-date">📅 ' + (act.date || 'Termín upřesníme') + '</div>' +
-                                
                                 '<div class="cc-tooltip">' +
                                     '<strong style="color:var(--cc-red); display:block; margin-bottom:4px; text-transform:uppercase; font-size:10px;">Podrobnosti akce</strong>' +
-                                    '📍 Místo: ' + m + '<br>' +
-                                    '🏷️ Typ: ' + kat + '<br>' +
+                                    '🏷️ Typ: ' + (act.category || 'Nespecifikováno') + '<br>' +
                                     '⏰ Čas: ' + (act.time || 'Nespecifikován') + '<br>' +
-                                    '<span style="display:block; margin-top:5px; padding-top:5px; border-top:1px solid #334155; font-weight:700;">' +
-                                    '📊 Obsazenost: ' + obsazenoListku + ' / ' + act.capacity + ' ks' +
-                                    '</span>' +
+                                    '📝 Informace k akci: <span style="color:#cbd5e1; font-weight:500;">' + txtAdmin + '</span><br>' +
+                                    '<span style="display:block; margin-top:5px; padding-top:5px; border-top:1px solid #334155; font-weight:700;">Obsazenost: ' + obsazeno + ' / ' + act.capacity + ' ks</span>' +
                                 '</div>' +
                              '</div>';
             });
-
-            if (grid.innerHTML !== htmlKaret) {
-                grid.innerHTML = htmlKaret;
-            }
+            if (grid.innerHTML !== htmlKaret) grid.innerHTML = htmlKaret;
         }
 
-        // 🛠️ POJISTKA PRO ROLETKU FORMULÁŘE: Řazení i ve vnitřním rezervačním výběru
         window.odfiltrujRoletkuAkciPodleDlazdice = function() {
             var roletka = document.getElementById('actionSelect') || document.querySelector('#ticketForm select');
             var vybranaKat = window.vybranaKategoriePortalu || "";
@@ -2179,473 +1290,33 @@ window.deleteCompanyAction = function(id) {
 
             var akceRaw = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
             var akce = seradAkceChronologicky([...akceRaw]);
-            
             var html = '<option value="">-- Vyberte konkrétní zápas / koncert --</option>';
             var maZapas = false;
 
             akce.forEach(function(a) {
                 var katAkce = a.category ? a.category.trim() : '';
                 if (katAkce === vybranaKat && (a.status === 'Aktivní' || !a.status)) {
-                    var d = a.date || '';
-                    var m = a.place || '';
-                    html += '<option value="' + a.name + '">' + a.name + (d ? ' | ' + d : '') + (m ? ' (' + m + ')' : '') + '</option>';
+                    html += '<option value="' + a.name + '">' + a.name + (a.date ? ' | ' + a.date : '') + '</option>';
                     maZapas = true;
                 }
             });
-
-            if (!maZapas) { html = '<option value="">V této kategorii momentálně nejsou žádné volné lístky</option>'; }
+            if (!maZapas) html = '<option value="">V této kategorii momentálně nejsou žádné volné lístky</option>';
             roletka.innerHTML = html;
         };
-
-                // 🚀 NEPRŮSTŘELNÁ PAMĚŤ ZÁLOŽEK PRO F5 (FIX AUTOMATICKÉHO ODHAZOVÁNÍ)
-        var rsmPuvodniOpenTab = window.openTab;
-        window.openTab = function(num) {
-            localStorage.setItem('activeCcTab', num);
-            if (typeof rsmPuvodniOpenTab === 'function') { rsmPuvodniOpenTab(num); }
-            
-            // Ručně ošetříme nasvícení té naší nové první záložky (Tab 5)
-            var b5 = document.getElementById('btn-prehled');
-            var t5 = document.getElementById('tab5');
-            if (num === 5) {
-                if (b5) b5.classList.add('active');
-                if (t5) t5.classList.add('active');
-                vykresliVerejneDlaždiceAkci();
-            } else {
-                if (b5) b5.classList.remove('active');
-                if (t5) t5.classList.remove('active');
-            }
-        };
-
-        // Hlídáme klikání na všechna tlačítka záložek v menu, abychom ihned zapsali změnu do paměti
-        document.addEventListener('click', function(e) {
-            if (e.target && e.target.classList.contains('tab-btn')) {
-                var id = e.target.id;
-                if (id === 'btn-prehled') window.openTab(5);
-                if (id === 'btn-nova') window.openTab(1);
-                if (id === 'btn-seznam') window.openTab(2);
-                if (id === 'btn-zadost-role') window.openTab(3);
-                if (id === 'btn-admin') window.openTab(4);
-            }
-        });
-
-        // HLAVNÍ START SYSTÉMU S POJISTKOU PAMĚTI
-        setInterval(namontujVerejnyPrehledAkciNaZacatek, 450);
-        setInterval(function() {
-            var t5 = document.getElementById('tab5');
-            if (t5 && t5.classList.contains('active')) { vykresliVerejneDlaždiceAkci(); }
-        }, 1000);
-
-        // Jakmile se stránka načte, podíváme se do paměti a skočíme přesně tam, kde se skončilo
-        setTimeout(function() {
-            var zapamatovanaStrana = localStorage.getItem('activeCcTab') ? parseInt(localStorage.getItem('activeCcTab')) : 5;
-            
-            // Pokud je uživatel host a nemá práva, hodíme ho na žádost o roli (Tab 3)
-            if (window.currentUser && currentUser.role === 'guest') zapamatovanaStrana = 3;
-            
-            // Natvrdo aktivujeme správné okno
-            if (zapamatovanaStrana === 5) {
-                var b5 = document.getElementById('btn-prehled');
-                if (b5) b5.click();
-            } else {
-                window.openTab(zapamatovanaStrana);
-            }
-        }, 300);
-    })();
-</script>
-</script>
-<!-- 🔥 NEPRŮSTŘELNÁ OPRAVA ZALOMENÍ O2 ARENY NA NOVÝ ŘÁDEK -->
-<style>
-    #cc-tiles-container .cc-sub-tile-grid,
-    .cc-sub-tile-grid { 
-        flex-basis: 100% !important; /* Vynutí odskočení pod-nabídky na nový samostatný řádek */
-        width: 100% !important;
-        display: none; /* Výchozí stav zůstane schovaný, dokud se neklikne */
-    }
-    #cc-tiles-container .cc-tile-grid,
-    .cc-tile-grid {
-        flex-wrap: wrap !important; /* Povolí dlaždicím pustit pod-nabídku pod sebe */
-    }
-</style>
-    <!-- 🔌 AUTOMATICKÁ OPRAVA TOOLTIPŮ A DYNAMICKÉ PROPOJENÍ POZNÁMKY ADMINA -->
-<style>
-    /* 🔥 OPRAVA HARDWAROVÉHO ZOBRAZENÍ OKÉNEK PRO OBĚ ZÁLOŽKY */
-    #cc-tiles-container .cc-tile,
-    .cc-public-card {
-        position: relative !important;
-        overflow: visible !important; /* Nutné, aby okénko mohlo vyjet ven z dlaždice */
-    }
-
-    /* Sjednocený čistý design nápovědných okének */
-    #cc-tiles-container .cc-tooltip,
-    .cc-public-card .cc-tooltip {
-        position: absolute !important;
-        bottom: 125% !important; /* Bezpečně nad dlaždicí */
-        left: 50% !important;
-        transform: translateX(-50%) translateY(5px) !important;
-        background: #0f172a !important; /* Temný minimalistický VIP vzhled */
-        color: #ffffff !important;
-        padding: 10px 14px !important;
-        border-radius: 6px !important;
-        font-size: 11px !important;
-        font-weight: 600 !important;
-        width: 210px !important;
-        text-align: left !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.15) !important;
-        opacity: 0 !important;
-        visibility: hidden !important;
-        pointer-events: none !important;
-        transition: all 0.2s ease-in-out !important;
-        z-index: 999999 !important;
-        line-height: 1.4 !important;
-    }
-
-    /* Šipka směřující dolů */
-    #cc-tiles-container .cc-tooltip::after,
-    .cc-public-card .cc-tooltip::after {
-        content: '' !important;
-        position: absolute !important;
-        top: 100% !important; 
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        border-width: 5px !important;
-        border-style: solid !important;
-        border-color: #0f172a transparent transparent transparent !important;
-        display: block !important;
-    }
-
-    /* 🏎️ REAKCE NA NAJETÍ MYŠI - Okénko plynule naskočí */
-    #cc-tiles-container .cc-tile:hover .cc-tooltip,
-    .cc-public-card:hover .cc-tooltip {
-        opacity: 1 !important;
-        visibility: visible !important;
-        transform: translateX(-50%) translateY(0) !important;
-    }
-</style>
-
-<script>
-    (function() {
-        // 🔄 DYNAMICKÉ PŘEPSÁNÍ VIP PŘEHLEDU (Výměna Místa konání za Poznámku Admina)
-        function aktualizujVipOkénkaSPoznámkou() {
-            var grid = document.getElementById('cc-public-tiles-container');
-            if (!grid) return;
-
-            var akce = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
-            var zadosti = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
-            if (akce.length === 0) return;
-
-            var publicCards = grid.querySelectorAll('.cc-public-card');
-            publicCards.forEach(function(card) {
-                var titleEl = card.querySelector('.cc-card-title');
-                if (!titleEl) return;
-                var jmenoAkce = titleEl.innerText.trim();
-
-                // Najdeme odpovídající akci v paměti
-                var nalezenaAkce = akce.find(function(a) { return a.name.trim() === jmenoAkce; });
-                if (nalezenaAkce) {
-                    var tooltipEl = card.querySelector('.cc-tooltip');
-                    if (tooltipEl) {
-                        // Spočítáme aktuální obsazenost
-                        var schvalene = zadosti.filter(function(r) {
-                            return r.action === nalezenaAkce.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno';
-                        });
-                        var obsazeno = 0;
-                        schvalene.forEach(function(z) { obsazeno += parseInt(z.tickets || 1); });
-
-                        // Vytáhneme text z políčka poznámky (reason / description / note podle tvé struktury formuláře)
-                        // Kód se podívá do všech možných sloupečků, kde by poznámka mohla být uložena
-                        var poznamkaAdmina = nalezenaAkce.reason || nalezenaAkce.description || nalezenaAkce.note || nalezenaAkce.place || "Žádné další detaily nebyly specifikovány.";
-
-                        var kat = nalezenaAkce.category ? nalezenaAkce.category : 'Nespecifikováno';
-                        var c = nalezenaAkce.time ? nalezenaAkce.time : 'Nespecifikován';
-
-                        // Sestavíme nový vnitřek okénka: Kompletně bez "Místo konání", místo toho svítí text z dalšího řádku!
-                        tooltipEl.innerHTML = '<strong style="color:var(--cc-red); display:block; margin-bottom:5px; text-transform:uppercase; font-size:10px; letter-spacing:0.03em;">Podrobnosti akce</strong>' +
-                            '🏷️ Typ: ' + kat + '<br>' +
-                            '⏰ Čas: ' + c + '<br>' +
-                            '📝 Detaily akce: <span style="color:#cbd5e1; font-weight:500;">' + poznamkaAdmina + '</span><br>' +
-                            '<span style="display:block; margin-top:6px; padding-top:6px; border-top:1px solid #334155; font-weight:700;">' +
-                            '📊 Obsazenost: ' + obsazeno + ' / ' + nalezenaAkce.capacity + ' ks' +
-                            '</span>';
-                    }
-                }
-            });
-        }
-
-        // Plynule udržujeme okénka prolnutá a živá
-        setInterval(aktualizujVipOkénkaSPoznámkou, 600);
-    })();
-</script>
-    <!-- 🔌 AUTOMATICKÁ OPRAVA TOOLTIPŮ A DYNAMICKÉ PROPOJENÍ POZNÁMKY ADMINA -->
-<style>
-    /* 🔥 OPRAVA HARDWAROVÉHO ZOBRAZENÍ OKÉNEK PRO OBĚ ZÁLOŽKY */
-    #cc-tiles-container .cc-tile,
-    .cc-public-card {
-        position: relative !important;
-        overflow: visible !important; /* Nutné, aby okénko mohlo vyjet ven z dlaždice */
-    }
-
-    /* Sjednocený čistý design nápovědných okének */
-    #cc-tiles-container .cc-tooltip,
-    .cc-public-card .cc-tooltip {
-        position: absolute !important;
-        bottom: 125% !important; /* Bezpečně nad dlaždicí */
-        left: 50% !important;
-        transform: translateX(-50%) translateY(5px) !important;
-        background: #0f172a !important; /* Temný minimalistický VIP vzhled */
-        color: #ffffff !important;
-        padding: 10px 14px !important;
-        border-radius: 6px !important;
-        font-size: 11px !important;
-        font-weight: 600 !important;
-        width: 220px !important;
-        text-align: left !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.15) !important;
-        opacity: 0 !important;
-        visibility: hidden !important;
-        pointer-events: none !important;
-        transition: all 0.2s ease-in-out !important;
-        z-index: 999999 !important;
-        line-height: 1.4 !important;
-    }
-
-    /* Šipka směřující dolů */
-    #cc-tiles-container .cc-tooltip::after,
-    .cc-public-card .cc-tooltip::after {
-        content: '' !important;
-        position: absolute !important;
-        top: 100% !important; 
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        border-width: 5px !important;
-        border-style: solid !important;
-        border-color: #0f172a transparent transparent transparent !important;
-        display: block !important;
-    }
-
-    /* 🏎️ REAKCE NA NAJETÍ MYŠI - Okénko plynule naskočí */
-    #cc-tiles-container .cc-tile:hover .cc-tooltip,
-    .cc-public-card:hover .cc-tooltip {
-        opacity: 1 !important;
-        visibility: visible !important;
-        transform: translateX(-50%) translateY(0) !important;
-    }
-</style>
-
-<script>
-    (function() {
-        // 🔄 DYNAMICKÉ PŘEPSÁNÍ VIP PŘEHLEDU (Výměna Místa konání za Tvůj zadaný text z administrace)
-        function aktualizujVipOkénkaSPoznámkou() {
-            var grid = document.getElementById('cc-public-tiles-container');
-            if (!grid) return;
-
-            var akce = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
-            var zadosti = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
-            if (akce.length === 0) return;
-
-            var publicCards = grid.querySelectorAll('.cc-public-card');
-            publicCards.forEach(function(card) {
-                var titleEl = card.querySelector('.cc-card-title');
-                if (!titleEl) return;
-                var jmenoAkce = titleEl.innerText.trim();
-
-                // Najdeme odpovídající akci v paměti
-                var nalezenaAkce = akce.find(function(a) { return a.name.trim() === jmenoAkce; });
-                if (nalezenaAkce) {
-                    var tooltipEl = card.querySelector('.cc-tooltip');
-                    if (tooltipEl) {
-                        // Spočítáme aktuální obsazenost lístků
-                        var schvalene = zadosti.filter(function(r) {
-                            return r.action === nalezenaAkce.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno';
-                        });
-                        var obsazeno = 0;
-                        schvalene.forEach(function(z) { obsazeno += parseInt(z.tickets || 1); });
-
-                        // Vytáhneme přesně ten tvůj text, který jsi zadala do nového řádku v administraci
-                        var textZAdminu = nalezenaAkce.place || nalezenaAkce.reason || nalezenaAkce.description || "Žádné další detaily k akci nebyly zadány.";
-
-                        var kat = nalezenaAkce.category ? nalezenaAkce.category : 'Nespecifikováno';
-                        var c = nalezenaAkce.time ? nalezenaAkce.time : 'Nespecifikován';
-
-                        // Sestavíme nový vnitřek okénka: Kompletně bez "Místo konání", svítí tam tvůj zadaný text!
-                        tooltipEl.innerHTML = '<strong style="color:var(--cc-red); display:block; margin-bottom:5px; text-transform:uppercase; font-size:10px; letter-spacing:0.03em;">Podrobnosti akce</strong>' +
-                            '🏷️ Typ: ' + kat + '<br>' +
-                            '⏰ Čas: ' + c + '<br>' +
-                            '📝 Informace k akci: <span style="color:#cbd5e1; font-weight:500;">' + textZAdminu + '</span><br>' +
-                            '<span style="display:block; margin-top:6px; padding-top:6px; border-top:1px solid #334155; font-weight:700;">' +
-                            '📊 Obsazenost: ' + obsazeno + ' / ' + nalezenaAkce.capacity + ' ks' +
-                            '</span>';
-                    }
-                }
-            });
-        }
-
-        // Plynule udržujeme okénka prolnutá a živá
-        setInterval(aktualizujVipOkénkaSPoznámkou, 600);
-    })();
-</script>
-    <!-- 🔌 AUTOMATICKÁ IMPLANTACE TEXTOVÉHO POLE PRO TOOLTIP DO ADMINISTRACE -->
-<script>
-    (function() {
-        function opravChybejiciVstupniPoleAdminu() {
-            // Najdeme text popisku v administraci
-            var vsechnyLabels = document.querySelectorAll('#tab4 label');
-            var cilovyLabel = null;
-            
-            vsechnyLabels.forEach(function(lbl) {
-                if (lbl.innerText.indexOf('Informace pro Tooltip') > -1) {
-                    cilovyLabel = lbl;
-                }
-            });
-
-            // Pokud text popisku najdeme a políčko pod ním ještě neexistuje, z konce ho tam implantujeme
-            if (cilovyLabel && !document.getElementById('actionPlace')) {
-                // Nastavíme popisku správný styl, ať se neslepí s dalším řádkem
-                cilovyLabel.style.display = 'block';
-                cilovyLabel.style.marginBottom = '5px';
-
-                // Vytvoříme zbrusu nové textové pole
-                var novyInput = document.createElement('input');
-                novyInput.type = 'text';
-                novyInput.id = 'actionPlace';
-                novyInput.placeholder = 'Např. Sektor 102, teplý raut v ceně...';
-                novyInput.style.cssText = 'width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border); font-weight: 600; background: #ffffff; color: #334155; box-sizing: border-box; margin-bottom: 15px; display: block;';
-                novyInput.required = true;
-
-                // Vložíme políčko přesně pod popisek před oči Admina
-                cilovyLabel.parentNode.insertBefore(novyInput, cilovyLabel.nextSibling);
-                console.log("Textové pole pro Tooltip bylo úspěšně implantováno z konce souboru!");
-            }
-        }
-
-        // Plynule kontrolujeme přítomnost políčka na pozadí (při překlikávání záložek)
-        setInterval(opravChybejiciVstupniPoleAdminu, 400);
-    })();
-</script>
-    <!-- 📧 AUTOMATICKÝ GENERÁTOR OUTLOOK E-MAILŮ: PRVOTNÍ REGISTRACE A PŘÍSTUPOVÁ OPRAVNĚNÍ -->
-<script>
-    (function() {
-        function generujRegistracniEmailyVAdminu() {
-            // ==========================================
-            // SCÉNÁŘ A: SCHVÁLENÍ PRVOTNÍ REGISTRACE (ZÁLOŽKA 4 - Tabulka kódů)
-            // ==========================================
-            var radkyKodu = document.querySelectorAll('#tab4 table tbody tr, #customUsersTableBody tr');
-            radkyKodu.forEach(function(row) {
-                if (row.cells.length < 2) return;
-                var bunky = row.cells;
-                var emailZam = "", vygenerovanyKod = "";
-
-                for (var i = 0; i < bunky.length; i++) {
-                    var txt = bunky[i].innerText.trim();
-                    if (txt.indexOf('@') > -1) emailZam = txt;
-                    if (txt.length === 5 && !isNaN(txt)) vygenerovanyKod = txt;
-                }
-
-                if (emailZam && vygenerovanyKod && !bunky[bunky.length - 1].querySelector('.cc-email-approve-reg-btn')) {
-                    // Čistý text o schválení účtu a předání kódu
-                    var textSchvaleniReg = "Dobrý den,\n\nVaše prvotní registrace do rezervačního portálu byla úspěšně schválena.\n\nVáš unikátní přístupový kód pro přihlášení: " + vygenerovanyKod + "\n\nTento kód prosím bezpečně uschovejte pro budoucí přístupy.\n\nS pozdravem,\nTým Coca-Cola HBC";
-                    var predmetSchvaleniReg = "Schválení registrace a přístupový kód – Coca-Cola HBC";
-                    
-                    vytvorEmailTlacitko(bunky[bunky.length - 1], emailZam, predmetSchvaleniReg, textSchvaleniReg, "📧 Kód Schválit", "#10b981", "cc-email-approve-reg-btn");
-                }
-            });
-
-            // ==========================================
-            // SCÉNÁŘ B: ZAMÍTNUTÍ PRVOTNÍ REGISTRACE (ZÁLOŽKA 4 - Žádosti o účet)
-            // ==========================================
-            var radkyZadostiReg = document.querySelectorAll('#requestsTableBody tr, #roleRequestsTableBody tr, #tab4 table tr');
-            radkyZadostiReg.forEach(function(row) {
-                if (row.cells.length < 2) return;
-                var bunky = row.cells;
-                var emailZam = "";
-
-                for (var i = 0; i < bunky.length; i++) {
-                    if (bunky[i].innerText.indexOf('@') > -1) { emailZam = bunky[i].innerText.trim(); break; }
-                }
-
-                var posledniBunka = bunky[bunky.length - 1];
-                // Pojistka: Generujeme zamítací tlačítko registrace, pokud tam ještě nesedí
-                if (emailZam && !posledniBunka.querySelector('.cc-email-reject-reg-btn') && (posledniBunka.innerText.toLowerCase().indexOf('smazat') > -1 || posledniBunka.innerText.toLowerCase().indexOf('ne') > -1)) {
-                    var textZamítnutíReg = "Dobrý den,\n\nVaše žádost o prvotní registraci do rezervačního portálu Coca-Cola HBC byla z interních nebo bezpečnostních důvodů zamítnuta.\n\nPokud se jedná o omyl, kontaktujte prosím administrátora systému.\n\nS pozdravem,\nTým Coca-Cola HBC";
-                    var predmetZamítnutíReg = "Zamítnutí žádosti o registraci – Coca-Cola HBC";
-                    
-                    vytvorEmailTlacitko(posledniBunka, emailZam, predmetZamítnutíReg, textZamítnutíReg, "❌ Mail Zamítnout", "#ef4444", "cc-email-reject-reg-btn");
-                }
-            });
-
-            // ==========================================
-            // SCÉNÁŘ C: ZMĚNA NEBO ÚPRAVA ROLÍ ADMINEM (ZÁLOŽKA 4 - Správa uživatelů a oprávnění)
-            // ==========================================
-            var radkyZmenyRoli = document.querySelectorAll('#roleRequestsTableBody tr, #tab4 .role-table tr, #roleApprovalTable tbody tr, #customUsersTableBody tr');
-            radkyZmenyRoli.forEach(function(row) {
-                if (row.cells.length < 2) return;
-                var bunky = row.cells;
-                var emailZam = "";
-                var schvalenaRole = "";
-
-                for (var i = 0; i < bunky.length; i++) {
-                    var txt = bunky[i].innerText.trim();
-                    if (txt.indexOf('@') > -1) emailZam = txt;
-                    
-                    // Sledujeme, zda je v buňce výběrová roletka se změnou role
-                    var selectEl = bunky[i].querySelector('select');
-                    if (selectEl) {
-                        schvalenaRole = selectEl.options[selectEl.selectedIndex].text;
-                    }
-                }
-
-                var posledniBunka = bunky[bunky.length - 1];
-                // Pokud byla detekována změna role v tabulce uživatelů
-                if (emailZam && schvalenaRole && !posledniBunka.querySelector('.cc-role-change-email-btn')) {
-                    var textZmenyRole = "Dobrý den,\n\nVaše přístupová oprávnění (role) v rezervačním portálu Coca-Cola HBC byla administrátorem změněna.\n\nVaše nová úroveň přístupu: " + schvalenaRole + "\n\nTato změna je platná okamžitě. Váš stávající 5místný přístupový kód zůstává beze změny.\n\nS pozdravem,\nTým Coca-Cola HBC";
-                    var predmetZmenyRole = "Změna přístupových oprávnění (role) – Coca-Cola HBC";
-                    
-                    vytvorEmailTlacitko(posledniBunka, emailZam, predmetZmenyRole, textZmenyRole, "🔄 Mail Role", "#0284c7", "cc-role-change-email-btn");
-                }
-            });
-        }
-
-        // Pomocná funkce pro bezpečné vykreslování červených/modrých/zelených tlačítek
-        function vytvorEmailTlacitko(targetCell, email, subject, body, label, customBg, uniqueClassName) {
-            if (targetCell.querySelector('.' + uniqueClassName)) return;
-
-            var bg = customBg || "#e41e26";
-            var mailtoUrl = "mailto:" + email + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
-
-            var btn = document.createElement('a');
-            btn.className = 'cc-email-btn ' + uniqueClassName;
-            btn.href = mailtoUrl;
-            btn.style.cssText = 'display: inline-block; background: ' + bg + '; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-decoration: none; text-transform: uppercase; margin-left: 5px; margin-top: 2px; transition: opacity 0.2s;';
-            btn.innerText = label;
-            
-            btn.addEventListener('mouseenter', function() { this.style.opacity = '0.8'; });
-            btn.addEventListener('mouseleave', function() { this.style.opacity = '1'; });
-
-            targetCell.appendChild(btn);
-        }
-
-        // Kontrola běžící hladce na pozadí
-        setInterval(generujRegistracniEmailyVAdminu, 600);
-    })();
-</script>
-</script>
-<!-- 🔌 DEFINITIVNÍ A STOPROCENTNÍ OPRAVA UKLÁDÁNÍ AKCÍ DO CLOUDU I PRO REZERVACE -->
-<script>
-    (function() {
+        // 🛠️ 3. ČÁST: OPRAVA FORMULÁŘE TVORBY AKCÍ, OUTLOOK PANELU A ČIŠTĚNÍ VYDANÝCH KÓDŮ
         function opravZaseknuteUkladaniAkciPropojene() {
             var adminForm = document.querySelector('#tab4 form') || document.getElementById('actionForm') || document.querySelector('#tab4 #actionForm');
-            if (!adminForm || adminForm.getAttribute('data-cc-fixed-v3') === 'yes') return;
+            if (!adminForm || adminForm.getAttribute('data-cc-fixed-final') === 'yes') return;
 
             adminForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
 
-                // Vytáhneme hodnoty bezpečně z formuláře podle pořadí políček na obrazovce
                 var nameVal = adminForm.querySelector('input[type="text"]') ? adminForm.querySelector('input[type="text"]').value.trim() : '';
                 var capVal = adminForm.querySelector('input[type="number"]') ? parseInt(adminForm.querySelector('input[type="number"]').value) : 0;
                 var dateVal = adminForm.querySelector('input[type="date"]') ? adminForm.querySelector('input[type="date"]').value : '';
                 var timeVal = adminForm.querySelector('input[type="time"]') ? adminForm.querySelector('input[type="time"]').value : '';
                 
-                // Naše přidaná políčka (Tooltip a Výběr kategorie)
                 var placeEl = document.getElementById('actionPlace') || adminForm.querySelector('input[placeholder*="Sektor"]');
                 var catEl = document.getElementById('actionCategory') || adminForm.querySelector('select');
 
@@ -2655,7 +1326,6 @@ window.deleteCompanyAction = function(id) {
                 if (nameVal && capVal > 0) {
                     var aktualniAkce = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
                     
-                    // Vytvoříme novou čistou akci a pojistíme oba názvy kategorií naráz, ať to vyhovuje všem funkcím!
                     var novaAkce = {
                         id: Date.now(),
                         name: nameVal,
@@ -2663,8 +1333,8 @@ window.deleteCompanyAction = function(id) {
                         date: dateVal,
                         time: timeVal,
                         place: placeVal,
-                        category: catVal,         // Pojistka pro rezervační dlaždice
-                        actionCategory: catVal,   // Pojistka pro administrátorský filtr
+                        category: catVal,         
+                        actionCategory: catVal,   
                         status: 'Aktivní'
                     };
 
@@ -2672,285 +1342,117 @@ window.deleteCompanyAction = function(id) {
                     localStorage.setItem('companyActions', JSON.stringify(aktualniAkce));
                     window.companyActions = aktualniAkce;
 
-                    // Okamžitě odešleme do internetové live databáze Firebase
                     if (typeof firebase !== 'undefined' && firebase.apps.length) {
                         var db = firebase.firestore();
-                        var dataProCloud = {
+                        db.collection("portalData").doc("cocaColaDatabase").set({
                             companyActions: aktualniAkce,
                             ticketRequests: JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [],
                             customUsers: JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {},
                             roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || window.roleRequests || []
-                        };
-                        
-                        db.collection("portalData").doc("cocaColaDatabase").set(dataProCloud, { merge: true })
-                            .then(function() { console.log("Akce byla úspěšně odeslána do cloudu!"); })
-                            .catch(function(err) { console.error("Chyba cloudu:", err); });
+                        }, { merge: true });
                     }
 
                     adminForm.reset();
-                    alert('🎉 Nová firemní akce byla úspěšně vytvořena, uložena a propojena s Přehledem akcí!');
-
-                    setTimeout(function() {
-                        location.reload();
-                    }, 150);
-                } else {
-                    alert('❌ Prosím, vyplňte název akce a kapacitu.');
+                    alert('🎉 Nová firemní akce byla úspěšně vytvořena a uložena!');
+                    setTimeout(function() { location.reload(); }, 150);
                 }
             });
-
-            adminForm.setAttribute('data-cc-fixed-v3', 'yes');
+            adminForm.setAttribute('data-cc-fixed-final', 'yes');
         }
 
-        setInterval(opravZaseknuteUkladaniAkciPropojene, 400);
-    })();
-</script>
-
-</script>
-    <!-- 🔌 IMPLANTACE TLAČÍTKA ZAMÍTNOUT DO ČEKAJÍCÍCH ŽÁDOSTÍ O ROLI -->
-<script>
-    (function() {
-        function pridejZamitaciTlacitkoDoZadostiORole() {
-            // Zaměříme se přesně na tabulku v sekci "Čekající žádosti o přidělení role"
-            var radkyZadostiRole = document.querySelectorAll('#roleRequestsTableBody tr, #tab4 table tr');
-            
-            radkyZadostiRole.forEach(function(row) {
-                // Hledáme řádky, kde se nachází tlačítka Schválit, Upravit, Smazat
-                var bunky = row.cells;
-                if (!bunky || bunky.length < 3) return;
-
-                var posledniBunka = bunky[bunky.length - 1];
-                var textPosledniBunky = posledniBunka.innerText.toLowerCase();
-
-                // Pokud v buňce vidíme tlačítko Smazat / Schválit a naše nové tlačítko tam ještě nesedí
-                if ((textPosledniBunky.indexOf('smazat') > -1 || textPosledniBunky.indexOf('schválit') > -1) && !posledniBunka.querySelector('.cc-direct-reject-btn')) {
-                    
-                    // Vytáhneme z řádku e-mail a jméno uživatele pro e-mail
-                    var emailUzivatele = "";
-                    var jmenoUzivatele = bunky[0] ? bunky[0].innerText.trim() : "kolego / kolegyně";
-
-                    for (var i = 0; i < bunky.length; i++) {
-                        var textBunky = bunky[i].innerText.trim();
-                        if (textBunky.indexOf('@') > -1) {
-                            emailUzivatele = textBunky;
-                            break;
-                        }
-                    }
-
-                    // Pokud máme e-mail, můžeme tlačítko bezpečně vygenerovat
-                    if (emailUzivatele) {
-                        var btnZamitnout = document.createElement('button');
-                        btnZamitnout.className = 'cc-direct-reject-btn';
-                        btnZamitnout.innerText = 'Zamítnout';
-                        btnZamitnout.style.cssText = 'background: #ef4444; color: white; border: 1px solid #dc2626; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; margin-left: 5px; transition: background 0.2s; vertical-align: middle;';
-                        
-                        btnZamitnout.addEventListener('mouseenter', function() { this.style.background = '#dc2626'; });
-                        btnZamitnout.addEventListener('mouseleave', function() { this.style.background = '#ef4444'; });
-
-                        // KLÍČOVÁ AKCE PO KLIKNUTÍ: Smazání ze systému + Otevření Outlooku
-                        btnZamitnout.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-
-                            if (confirm('Opravdu chcete registraci pro uživatele ' + jmenoUzivatele + ' zamítnout, smazat ze systému a poslat mu e-mail?')) {
-                                
-                                // 1. KROK: Příprava a otevření předvyplněného Outlooku
-                                var textMailu = "Dobrý den,\n\nVaše žádost o prvotní registraci a přidělení přístupových oprávnění do rezervačního portálu Coca-Cola HBC byla z interních nebo bezpečnostních důvodů zamítnuta.\n\nPokud se jedná o omyl, kontaktujte prosím administrátora systému.\n\nS pozdravem,\nTým Coca-Cola HBC";
-                                var predmetMailu = "Zamítnutí žádosti o registraci – Coca-Cola HBC";
-                                
-                                var mailtoUrl = "mailto:" + emailUzivatele + "?subject=" + encodeURIComponent(predmetMailu) + "&body=" + encodeURIComponent(textMailu);
-                                window.location.href = mailtoUrl;
-
-                                // 2. KROK: Najdeme a na dálku klikneme na tvoje původní tlačítko "Smazat" v tomto řádku, aby se data vymazala z paměti i z Firebase
-                                var puvodniSmazatBtn = posledniBunka.querySelector('button[onclick*="delete"], button[onclick*="Delete"], button:last-of-type');
-                                if (puvodniSmazatBtn && puvodniSmazatBtn !== btnZamitnout) {
-                                    // Vypneme natvrdo confirm u původního mazání, aby to neotravovalo podruhé
-                                    var puvodniConfirm = window.confirm;
-                                    window.confirm = function() { return true; };
-                                    
-                                    puvodniSmazatBtn.click();
-                                    
-                                    // Vrátíme confirm zpět do původního stavu
-                                    setTimeout(function() { window.confirm = puvodniConfirm; }, 100);
-                                } else {
-                                    // Pojistný plán: Pokud by tlačítko kliknout nešlo, obnovíme stránku
-                                    setTimeout(function() { location.reload(); }, 500);
-                                }
-                            }
-                        });
-
-                        // Vložíme tlačítko do řádku jako poslední akci
-                        posledniBunka.appendChild(btnZamitnout);
-                    }
-                }
-            });
-        }
-
-        // Plynule hlídáme tabulku na pozadí, aby tam tlačítko hned naskočilo
-        setInterval(pridejZamitaciTlacitkoDoZadostiORole, 500);
-    })();
-</script>
-    <!-- 🎨 LUXUSNÍ BAREVNÁ TLAČÍTKA A AUTOMATICKÉ OUTLOOK EVENTY PRO SPRÁVU REGISTRACÍ -->
-<script>
-    (function() {
-        function kompletniReformaRegistracnichTlacitek() {
-            // Najdeme řádky v tabulce "Čekající žádosti o přidělení role" a v tabulce uživatelů
+        function panelSprávceABleskovéEmaily() {
             var radkyZadosti = document.querySelectorAll('#roleRequestsTableBody tr, #tab4 table tbody tr');
-            
             radkyZadosti.forEach(function(row) {
-                if (row.cells.length < 3) return;
-                
+                if (row.cells.length < 3 || row.getAttribute('data-cc-styled') === 'yes') return;
                 var bunky = row.cells;
                 var posledniBunka = bunky[bunky.length - 1];
                 
-                // Pokud buňka obsahuje tlačítka a ještě jsme ji nepřebarvili do nového firemního stylu
-                if (posledniBunka.querySelector('button') && !posledniBunka.getAttribute('data-cc-styled')) {
-                    
-                    // Vytáhneme si e-mail zaměstnance z tohoto konkrétního řádku
-                    var emailUzivatele = "";
-                    for (var i = 0; i < bunky.length; i++) {
-                        if (bunky[i].innerText.trim().indexOf('@') > -1) {
-                            emailUzivatele = bunky[i].innerText.trim();
-                            break;
-                        }
+                var emailUzivatele = "";
+                for (var i = 0; i < bunky.length; i++) {
+                    if (bunky[i].innerText.trim().indexOf('@') > -1) { emailUzivatele = bunky[i].innerText.trim(); break; }
+                }
+                if (!emailUzivatele) return;
+
+                var tlacitka = posledniBunka.querySelectorAll('button');
+                tlacitka.forEach(function(btn) {
+                    var txt = btn.innerText.toLowerCase();
+                    if (txt.indexOf('schválit') > -1) {
+                        btn.style.cssText = 'background:#10b981!important;color:white!important;border:none!important;padding:6px 12px!important;border-radius:6px!important;font-size:12px!important;font-weight:700!important;cursor:pointer!important;margin-right:4px!important;text-transform:uppercase;';
+                        btn.addEventListener('click', function() {
+                            setTimeout(function() {
+                                var customUsers = JSON.parse(localStorage.getItem('customUsers')) || {};
+                                var nalezenyKod = "12345";
+                                for (var kod in customUsers) { if (customUsers[kod].email === emailUzivatele) { nalezenyKod = kod; break; } }
+                                var txtMail = "Dobrý den,\n\nVaše prvotní registrace do rezervačního portálu byla úspěšně schválena.\n\nVáš unikátní přístupový kód pro přihlášení: " + nalezenyKod + "\n\nS pozdravem,\nTým Coca-Cola HBC";
+                                window.location.href = "mailto:" + emailUzivatele + "?subject=" + encodeURIComponent("Schválení registrace – Coca-Cola HBC") + "&body=" + encodeURIComponent(txtMail);
+                            }, 200);
+                        });
                     }
-                    if (!emailUzivatele) return;
+                    if (txt.indexOf('upravit') > -1) {
+                        btn.style.cssText = 'background:#0284c7!important;color:white!important;border:none!important;padding:6px 12px!important;border-radius:6px!important;font-size:12px!important;font-weight:700!important;cursor:pointer!important;margin-right:4px!important;text-transform:uppercase;';
+                    }
+                    if (txt.indexOf('smazat') > -1) {
+                        breakStyle: btn.style.cssText = 'background:#64748b!important;color:white!important;border:none!important;padding:6px 12px!important;border-radius:6px!important;font-size:12px!important;font-weight:700!important;cursor:pointer!important;transition:opacity 0.2s!important;text-transform:uppercase;';
+                    }
+                });
 
-                    // Projdeme stávající tlačítka v buňce a dáme jim ty správné barvy a bleskové funkce
-                    var tlacitka = posledniBunka.querySelectorAll('button');
-                    tlacitka.forEach(function(btn) {
-                        var txt = btn.innerText.toLowerCase();
-
-                        // 1. ZELENÉ TLAČÍTKO: SCHVÁLIT 🟩
-                        if (txt.indexOf('schválit') > -1) {
-                            btn.style.cssText = 'background: #10b981 !important; color: white !important; border: none !important; padding: 6px 12px !important; border-radius: 6px !important; font-size: 12px !important; font-weight: 700 !important; cursor: pointer !important; margin-right: 4px !important; transition: opacity 0.2s !important; text-transform: uppercase;';
-                            btn.addEventListener('mouseenter', function() { this.style.opacity = '0.85'; });
-                            btn.addEventListener('mouseleave', function() { this.style.opacity = '1'; });
-                            
-                            // Automatická akce při kliknutí: Po schválení vygeneruje kód a ihned otevře Outlook
-                            btn.addEventListener('click', function() {
-                                setTimeout(function() {
-                                    // Vytáhneme čerstvě vygenerovaný 5místný kód z paměti pro tohoto uživatele
-                                    var customUsers = JSON.parse(localStorage.getItem('customUsers')) || {};
-                                    var nalezenyKod = "12345"; // Pojistný kód, pokud by hned nenaskočil
-                                    
-                                    // Projdeme databázi kódů a najdeme ten patřící k tomuto e-mailu
-                                    for (var kod in customUsers) {
-                                        if (customUsers[kod].email === emailUzivatele) { nalezenyKod = kod; break; }
-                                    }
-
-                                    var textMailu = "Dobrý den,\n\nVaše prvotní registrace do rezervačního portálu byla úspěšně schválena.\n\nVáš unikátní přístupový kód pro přihlášení: " + nalezenyKod + "\n\nTento kód prosím bezpečně uschovejte pro budoucí přístupy.\n\nS pozdravem,\nTým Coca-Cola HBC";
-                                    var predmetMailu = "Schválení registrace a přístupový kód – Coca-Cola HBC";
-                                    
-                                    window.location.href = "mailto:" + emailUzivatele + "?subject=" + encodeURIComponent(predmetMailu) + "&body=" + encodeURIComponent(textMailu);
-                                }, 200); // 200ms okno, aby tvoje původní funkce stihla kód vygenerovat do databáze
-                            });
-                        }
-
-                        // 2. MODRÉ TLAČÍTKO: UPRAVIT ROLI 🟦
-                        if (txt.indexOf('upravit') > -1) {
-                            btn.style.cssText = 'background: #0284c7 !important; color: white !important; border: none !important; padding: 6px 12px !important; border-radius: 6px !important; font-size: 12px !important; font-weight: 700 !important; cursor: pointer !important; margin-right: 4px !important; transition: opacity 0.2s !important; text-transform: uppercase;';
-                            btn.addEventListener('mouseenter', function() { this.style.opacity = '0.85'; });
-                            btn.addEventListener('mouseleave', function() { this.style.opacity = '1'; });
-                        }
-
-                        // 3. ŠEDÉ TLAČÍTKO: SMAZAT ⬛
-                        if (txt.indexOf('smazat') > -1) {
-                            btn.style.cssText = 'background: #64748b !important; color: white !important; border: none !important; padding: 6px 12px !important; border-radius: 6px !important; font-size: 12px !important; font-weight: 700 !important; cursor: pointer !important; margin-right: 4px !important; transition: opacity 0.2s !important; text-transform: uppercase;';
-                            btn.addEventListener('mouseenter', function() { this.style.opacity = '0.85'; });
-                            btn.addEventListener('mouseleave', function() { this.style.opacity = '1'; });
+                if (!posledniBunka.querySelector('.cc-live-reject-btn')) {
+                    var btnZamitnout = document.createElement('button');
+                    btnZamitnout.className = 'cc-live-reject-btn';
+                    btnZamitnout.innerText = 'Zamítnout';
+                    btnZamitnout.style.cssText = 'background:#ef4444!important;color:white!important;border:none!important;padding:6px 12px!important;border-radius:6px!important;font-size:12px!important;font-weight:700!important;cursor:pointer!important;margin-right:4px!important;text-transform:uppercase;';
+                    btnZamitnout.addEventListener('click', function(e) {
+                        e.preventDefault(); e.stopPropagation();
+                        if (confirm('Opravdu chcete registraci zamítnout?')) {
+                            var txtZam = "Dobrý den,\n\nVaše žádost o prvotní registraci do rezervačního portálu byla zamítnuta.\n\nS pozdravem,\nTým Coca-Cola HBC";
+                            window.location.href = "mailto:" + emailUzivatele + "?subject=" + encodeURIComponent("Zamítnutí registrace – Coca-Cola HBC") + "&body=" + encodeURIComponent(txtZam);
+                            var puvodniSmazat = posledniBunka.querySelector('button[onclick*="delete"], button[onclick*="Delete"], button:last-of-type');
+                            if (puvodniSmazat) { var oldC = window.confirm; window.confirm = function() { return true; }; puvodniSmazat.click(); setTimeout(function() { window.confirm = oldC; }, 100); }
                         }
                     });
-
-                    // 4. ČERVENÉ TLAČÍTKO: ZAMÍTNOUT 🟥 (Pokud ještě v řadě chybí, vygenerujeme ho zvenčí)
-                    if (!posledniBunka.querySelector('.cc-live-reject-btn')) {
-                        var btnZamitnout = document.createElement('button');
-                        btnZamitnout.className = 'cc-live-reject-btn';
-                        btnZamitnout.innerText = 'Zamítnout';
-                        btnZamitnout.style.cssText = 'background: #ef4444 !important; color: white !important; border: none !important; padding: 6px 12px !important; border-radius: 6px !important; font-size: 12px !important; font-weight: 700 !important; cursor: pointer !important; margin-right: 4px !important; transition: opacity 0.2s !important; text-transform: uppercase; display: inline-block; vertical-align: middle;';
-                        
-                        btnZamitnout.addEventListener('mouseenter', function() { this.style.opacity = '0.85'; });
-                        btnZamitnout.addEventListener('mouseleave', function() { this.style.opacity = '1'; });
-
-                        // Akce po kliknutí na Zamítnout: Otevře Outlook a smaže uživatele z Firebase cloudu
-                        btnZamitnout.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-
-                            if (confirm('Opravdu chcete registraci pro e-mail ' + emailUzivatele + ' zamítnout a smazat z portálu?')) {
-                                // A) Otevření předvyplněného Outlooku
-                                var textZam = "Dobrý den,\n\nVaše žádost o prvotní registraci do rezervačního portálu Coca-Cola HBC byla z interních nebo bezpečnostních důvodů zamítnuta.\n\nPokud se jedná o omyl, kontaktujte prosím administrátora systému.\n\nS pozdravem,\nTým Coca-Cola HBC";
-                                var predmetZam = "Zamítnutí žádosti o registraci – Coca-Cola HBC";
-                                
-                                window.location.href = "mailto:" + emailUzivatele + "?subject=" + encodeURIComponent(predmetZam) + "&body=" + encodeURIComponent(textZam);
-
-                                // B) Klikneme potichu na tvoje původní šedé tlačítko Smazat, ať to cloud vyčistí
-                                var puvodniSmazat = posledniBunka.querySelector('button[onclick*="delete"], button[onclick*="Delete"], button:nth-child(3)');
-                                if (puvodniSmazat) {
-                                    var staraPojistka = window.confirm;
-                                    window.confirm = function() { return true; }; // Vypne otravné druhé potvrzení
-                                    puvodniSmazat.click();
-                                    setTimeout(function() { window.confirm = staraPojistka; }, 100);
-                                } else {
-                                    setTimeout(function() { location.reload(); }, 400);
-                                }
-                            }
-                        });
-
-                        // Vložíme červené tlačítko hned vedle zeleného Schválit (na druhou pozici)
-                        var tlacitkoUpravit = posledniBunka.querySelector('button:nth-child(2)') || posledniBunka.firstChild;
-                        posledniBunka.insertBefore(btnZamitnout, tlacitkoUpravit);
-                    }
-
-                    // Označíme řádek jako kompletně nastylovaný
-                    posledniBunka.setAttribute('data-cc-styled', 'yes');
+                    posledniBunka.insertBefore(btnZamitnout, posledniBunka.querySelector('button:nth-child(2)') || posledniBunka.firstChild);
                 }
+                posledniBunka.setAttribute('data-cc-styled', 'yes');
             });
         }
 
-        // Plynule udržujeme barvy i akce tlačítek živé na pozadí při každém překliknutí administrace
-        setInterval(kompletniReformaRegistracnichTlacitek, 500);
-    })();
-</script>
-    <!-- 🧽 CHYTRÝ ČISTIČ TLAČÍTEK PRO TABULKU VYDANÝCH KÓDŮ -->
-<script>
-    (function() {
-        function vymazZamitaciTlacitkaZVydanychKodu() {
-            // Najdeme přesně řádky v sekci "Aktivní schvalovatelé (Vydané kódy)"
-            // Podíváme se do tabulky v tab4, která obsahuje ID customUsersTableBody nebo text Přihlašovací kód
-            var radkyVydanychKodu = document.querySelectorAll('#customUsersTableBody tr, #tab4 table tr');
-            
-            radkyVydanychKodu.forEach(function(row) {
-                // Pojistka: Hledáme pouze ty řádky, které v sobě mají napsaný 5místný přihlašovací kód (písmena/čísla)
+        function cisteniVydanychKodu() {
+            var radkyVydanych = document.querySelectorAll('#customUsersTableBody tr');
+            radkyVydanych.forEach(function(row) {
                 if (row.cells.length >= 4) {
-                    var textPrihlasovacihoKodu = row.cells[3] ? row.cells[3].innerText.trim() : '';
-                    
-                    // Pokud buňka obsahuje kód (např. 69ALS jako na fotce), jedná se o tabulku vydaných kódů
-                    if (textPrihlasovacihoKodu.length === 5) {
-                        var posledniBunkaAkci = row.cells[row.cells.length - 1];
-                        
-                        // Najdeme v této buňce všechna tlačítka a odkazy, které obsahují text "zamítnout" nebo třídy zamítnutí
-                        var vsetkyZamitaciElementy = posledniBunkaAkci.querySelectorAll('button, a');
-                        
-                        vsetkyZamitaciElementy.forEach(function(el) {
-                            var txt = el.innerText.toLowerCase();
-                            // Pokud to není naše oblíbené šedé tlačítko Smazat, tak ho nemilosrdně smažeme z obrazovky
-                            if (txt.indexOf('zamítnout') > -1 || txt.indexOf('mail') > -1 || el.classList.contains('cc-email-reject-btn') || el.classList.contains('cc-live-reject-btn')) {
-                                el.remove();
-                            }
-                        });
-                        
-                        // Zajistíme, aby původní tlačítko SMAZAT mělo správný, čistý styl
-                        var tlacitkoSmazat = posledniBunkaAkci.querySelector('button');
-                        if (tlacitkoSmazat && tlacitkoSmazat.innerText.toLowerCase().indexOf('smazat') > -1) {
-                            tlacitkoSmazat.style.cssText = 'background: #64748b !important; color: white !important; border: none !important; padding: 6px 12px !important; border-radius: 6px !important; font-size: 12px !important; font-weight: 700 !important; cursor: pointer !important; transition: opacity 0.2s !important; text-transform: uppercase;';
-                        }
-                    }
+                    var posledniB = row.cells[row.cells.length - 1];
+                    posledniB.querySelectorAll('button, a').forEach(function(el) {
+                        var txt = el.innerText.toLowerCase();
+                        if (txt.indexOf('zamítnout') > -1 || txt.indexOf('mail') > -1) el.remove();
+                    });
                 }
             });
         }
 
-        // Spouštíme bleskovou čistku plynule každých 300ms, aby červená tlačítka neměla šanci ani probliknout
-        setInterval(vymazZamitaciTlacitkaZVydanychKodu, 300);
+        var rsmPuvodniOpenTab = window.openTab;
+        window.openTab = function(num) {
+            localStorage.setItem('activeCcTab', num);
+            if (typeof rsmPuvodniOpenTab === 'function') { rsmPuvodniOpenTab(num); }
+            var b5 = document.getElementById('btn-prehled');
+            var t5 = document.getElementById('tab5');
+            if (num === 5) {
+                if (b5) b5.classList.add('active'); if (t5) t5.classList.add('active');
+                vykresliVerejneDlaždiceAkci();
+            } else {
+                if (b5) b5.classList.remove('active'); if (t5) t5.classList.remove('active');
+            }
+        };
+
+        setInterval(namontujVerejnyPrehledAkciNaZacatek, 450);
+        setInterval(opravZaseknuteUkladaniAkciPropojene, 400);
+        setInterval(panelSprávceABleskovéEmaily, 500);
+        setInterval(cisteniVydanychKodu, 400);
+
+        setTimeout(function() {
+            var zapStrana = localStorage.getItem('activeCcTab') ? parseInt(localStorage.getItem('activeCcTab')) : 5;
+            if (zapStrana === 5) { var b5 = document.getElementById('btn-prehled'); if (b5) b5.click(); } 
+            else { window.openTab(zapStrana); }
+        }, 300);
     })();
 </script>
 
