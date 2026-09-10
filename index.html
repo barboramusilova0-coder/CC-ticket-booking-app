@@ -1418,15 +1418,13 @@ window.deleteCompanyAction = function(id) {
         document.addEventListener('click', function() { setTimeout(doplnDatumACasDoSchvalovani, 100); });
     })();
 </script>
-    <!-- 🧱 FOTOGRAFICKÉ DLAŽDICE PRO VÝBĚR KATEGORIE PŘED REZERVACÍ -->
+   <!-- 🧱 DLAŽDICE S OFICIÁLNÍMI LOGY KLUBŮ PŘED REZERVACÍ -->
 <style>
     .cc-tile-grid { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px; text-align: left; }
-    
-    /* Hlavní styl pro dlaždice s luxusním obrázkem na pozadí */
     .cc-tile { 
         flex: 1 1 calc(25% - 15px); 
         min-width: 170px; 
-        height: 130px;
+        height: 140px;
         border: 2px solid var(--border); 
         border-radius: 12px; 
         padding: 15px; 
@@ -1440,42 +1438,68 @@ window.deleteCompanyAction = function(id) {
         justify-content: center;
         position: relative;
         overflow: hidden;
-        background-size: cover;
-        background-position: center;
+        background-size: 65px; /* Velikost loga uvnitř dlaždice */
+        background-repeat: no-repeat;
+        background-position: center 20px; /* Umístění loga nad textem */
+        background-color: #ffffff;
     }
     
-    /* Tmavý závoj přes obrázek, aby krásně vynikl bílý text */
+    /* Světlý závoj pro čistý podzimní korporátní design */
     .cc-tile::before {
         content: '';
         position: absolute;
         top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(15, 23, 42, 0.55); /* Elegantní temný filtr */
-        transition: background 0.25s ease;
+        background: rgba(255, 255, 255, 0.82); 
+        transition: all 0.25s ease;
         z-index: 1;
     }
     
+    /* Speciální úprava pro fotku O2 Areny, aby ladila se zbytkem */
+    #tile-o2, #tile-koncert {
+        background-size: cover;
+        background-position: center;
+    }
+    #tile-o2::before, #tile-koncert::before {
+        background: rgba(15, 23, 42, 0.65);
+    }
+    #tile-o2 .cc-tile-title, #tile-koncert .cc-tile-title {
+        color: #ffffff;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+    }
+
     .cc-tile:hover { 
         transform: translateY(-4px); 
-        box-shadow: 0 8px 20px rgba(228, 30, 38, 0.25); 
+        box-shadow: 0 8px 20px rgba(228, 30, 38, 0.18); 
+        border-color: var(--cc-red);
     }
     
     .cc-tile:hover::before {
-        background: rgba(228, 30, 38, 0.65); /* Při najetí myší dlaždice zčervená ve stylu Coca-Cola */
+        background: rgba(255, 255, 255, 0.4); /* Při najetí myší logo více vynikne */
     }
     
     .cc-tile.active { 
         border-color: var(--cc-red); 
-        box-shadow: 0 0 15px rgba(228, 30, 38, 0.4);
+        box-shadow: 0 0 15px rgba(228, 30, 38, 0.3);
+        background-color: #fef2f2;
     }
     .cc-tile.active::before {
-        background: rgba(228, 30, 38, 0.75); /* Aktivní dlaždice drží sytou firemní barvu */
+        background: rgba(255, 255, 255, 0.2);
     }
     
-    /* Vynesení textu a ikonky nad tmavý filtr */
-    .cc-tile-icon { font-size: 28px; margin-bottom: 6px; display: block; z-index: 2; position: relative; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
-    .cc-tile-title { font-weight: 800; font-size: 15px; color: #ffffff; z-index: 2; position: relative; text-shadow: 0 2px 4px rgba(0,0,0,0.6); text-transform: uppercase; letter-spacing: 0.02em; }
+    .cc-tile-icon { font-size: 24px; margin-bottom: 4px; display: block; z-index: 2; position: relative; }
     
-    /* Pod-mřížka pro O2 arenu */
+    /* Vylepšený, skvěle čitelný text */
+    .cc-tile-title { 
+        font-weight: 800; 
+        font-size: 13px; 
+        color: #1e293b; 
+        z-index: 2; 
+        position: relative; 
+        text-transform: uppercase; 
+        letter-spacing: 0.03em;
+        margin-top: auto; /* Posune text na úplný spodek dlaždice pod logo */
+    }
+    
     .cc-sub-tile-grid { display: none; width: 100%; gap: 12px; margin-top: 15px; padding: 12px; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1; }
 </style>
 
@@ -1493,16 +1517,21 @@ window.deleteCompanyAction = function(id) {
             
             var htmlDlazdic = '<h3 style="text-align:left; font-size:16px; margin-bottom:15px; color:#475569; font-weight:700;">🌟 KROK 1: Vyberte typ nebo místo konání akce:</h3>' +
                 '<div class="cc-tile-grid">' +
-                    // Dlaždice s linkovanými obrázky z fotobanky na pozadí
+                    // 1. O2 Arena (Fotka haly)
                     '<div class="cc-tile" data-cat="O2 Arena" id="tile-o2" style="background-image: url(\'https://unsplash.com\');"><span class="cc-tile-icon">🏟️</span><span class="cc-tile-title">O2 Arena</span></div>' +
-                    '<div class="cc-tile" data-cat="Fotbal" style="background-image: url(\'https://unsplash.com\');"><span class="cc-tile-icon">⚽</span><span class="cc-tile-title">Fotbal</span></div>' +
-                    '<div class="cc-tile" data-cat="Extraliga" style="background-image: url(\'https://unsplash.com\');"><span class="cc-tile-icon">🏒</span><span class="cc-tile-title">Extraliga</span></div>' +
-                    '<div class="cc-tile" data-cat="Reprezentace" style="background-image: url(\'https://unsplash.com\');"><span class="cc-tile-icon">🇨🇿</span><span class="cc-tile-title">Reprezentace</span></div>' +
+                    // 2. Fotbal (Logo SK Slavia Praha)
+                    '<div class="cc-tile" data-cat="Fotbal" style="background-image: url(\'https://wikimedia.org\'); background-size: 55px;"><span class="cc-tile-icon">⚽</span><span class="cc-tile-title">Fotbal</span></div>' +
+                    // 3. Extraliga (Hokejový puk / univerzální led)
+                    '<div class="cc-tile" data-cat="Extraliga" style="background-image: url(\'https://unsplash.com\'); background-size: cover;"><span class="cc-tile-icon">🏒</span><span class="cc-tile-title" style="color:#fff; text-shadow:0 1px 3px rgba(0,0,0,0.8);">Extraliga</span></div>' +
+                    // 4. Reprezentace (Česká vlajka na pozadí)
+                    '<div class="cc-tile" data-cat="Reprezentace" style="background-image: url(\'https://wikimedia.org\'); background-size: cover;"><span class="cc-tile-icon">🇨🇿</span><span class="cc-tile-title" style="color:#fff; text-shadow:0 1px 4px rgba(0,0,0,0.9);">Reprezentace</span></div>' +
                     
-                    // Pod-prokliknutí pro O2 Arenu
+                    // Pod-prokliknutí po kliknutí na O2 Arenu
                     '<div class="cc-sub-tile-grid" id="cc-o2-sub-grid">' +
-                        '<div class="cc-tile" data-cat="O2 Arena - Hokej" style="flex:1; height:100px; background-image: url(\'https://unsplash.com\');"><span class="cc-tile-icon" style="font-size:22px;">🥅</span><span class="cc-tile-title" style="font-size:13px;">O2 Arena - Hokej</span></div>' +
-                        '<div class="cc-tile" data-cat="O2 Arena - Koncerty" style="flex:1; height:100px; background-image: url(\'https://unsplash.com\');"><span class="cc-tile-icon" style="font-size:22px;">🎵</span><span class="cc-tile-title" style="font-size:13px;">O2 Arena - Koncerty</span></div>' +
+                        // O2 Arena - Hokej (Logo HC Sparta Praha)
+                        '<div class="cc-tile" data-cat="O2 Arena - Hokej" style="flex:1; height:120px; background-image: url(\'https://wikimedia.org\'); background-size: 50px;"><span class="cc-tile-icon">🥅</span><span class="cc-tile-title">O2 Arena - Hokej</span></div>' +
+                        // O2 Arena - Koncerty (Atmosféra koncertu)
+                        '<div class="cc-tile" data-cat="O2 Arena - Koncerty" id="tile-koncert" style="flex:1; height:120px; background-image: url(\'https://unsplash.com\');"><span class="cc-tile-icon">🎵</span><span class="cc-tile-title">O2 Arena - Koncerty</span></div>' +
                     '</div>' +
                 '</div>';
                 
@@ -1544,7 +1573,7 @@ window.deleteCompanyAction = function(id) {
             if (!roletka || !vybranaKategoriePortalu) return;
 
             var akceZPameti = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
-            var html = '<option value="">-- Vyberte konkrétní zápis / koncert --</option>';
+            var html = '<option value="">-- Vyberte konkrétní zápas / koncert --</option>';
             var maZapas = false;
 
             akceZPameti.forEach(function(a) {
@@ -1563,7 +1592,6 @@ window.deleteCompanyAction = function(id) {
             roletka.innerHTML = html;
         }
 
-        // Sledování záložek
         setInterval(function() {
             var tab1 = document.getElementById('tab1');
             if (tab1 && tab1.classList.contains('active')) {
@@ -1577,5 +1605,6 @@ window.deleteCompanyAction = function(id) {
         }, 400);
     })();
 </script>
+
 </body>
 </html>
