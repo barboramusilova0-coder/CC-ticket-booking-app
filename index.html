@@ -2628,51 +2628,53 @@ window.deleteCompanyAction = function(id) {
     })();
 </script>
 </script>
-<!-- 🔌 NEPRŮSTŘELNÁ OPRAVA TLAČÍTKA TVORBY NOVÉ AKCE -->
+<!-- 🔌 DEFINITIVNÍ NEPRŮSTŘELNÁ OPRAVA TLAČÍTKA TVORBY NOVÉ AKCE -->
 <script>
     (function() {
-        function opravZaseknuteUkladaniAkci() {
-            var adminForm = document.querySelector('#tab4 form') || document.getElementById('actionForm');
-            if (!adminForm || adminForm.getAttribute('data-cc-fixed') === 'yes') return;
+        function opravZaseknuteUkladaniAkciDefinitivne() {
+            // Najdeme formulář pro vytváření akcí (v tab4)
+            var adminForm = document.querySelector('#tab4 form') || document.getElementById('actionForm') || document.querySelector('#tab4 #actionForm');
+            if (!adminForm || adminForm.getAttribute('data-cc-fixed-v2') === 'yes') return;
 
             // Chytíme odeslání formuláře pro novou akci
             adminForm.addEventListener('submit', function(e) {
-                // Vytáhneme hodnoty přímo z políček na obrazovce
-                var nameEl = document.getElementById('actionName');
-                var capEl = document.getElementById('actionCapacity');
-                var dateEl = document.getElementById('actionDate');
-                var timeEl = document.getElementById('actionTime');
-                var placeEl = document.getElementById('actionPlace'); // Naše políčko pro Tooltip
-                var catEl = document.getElementById('actionCategory'); // Naše políčko pro O2 Arenu/Slavii
+                e.preventDefault(); // Zastavíme ten zamrzající původní kód
+                e.stopPropagation();
 
-                // Pokud políčka existují a mají vyplněný název a kapacitu
-                if (nameEl && capEl && nameEl.value && capEl.value) {
-                    e.preventDefault(); // Zastavíme ten zaseknutý původní kód
-                    e.stopPropagation();
+                // Vytáhneme hodnoty bezpečně z formuláře, i kdyby políčka neměla ID
+                var nameVal = adminForm.querySelector('input[type="text"]') ? adminForm.querySelector('input[type="text"]').value.trim() : '';
+                var capVal = adminForm.querySelector('input[type="number"]') ? parseInt(adminForm.querySelector('input[type="number"]').value) : 0;
+                var dateVal = adminForm.querySelector('input[type="date"]') ? adminForm.querySelector('input[type="date"]').value : '';
+                var timeVal = adminForm.querySelector('input[type="time"]') ? adminForm.querySelector('input[type="time"]').value : '';
+                
+                // Naše speciální přidaná políčka (Tooltip a Kategorie)
+                var placeEl = document.getElementById('actionPlace') || adminForm.querySelector('input[placeholder*="Sektor"]');
+                var catEl = document.getElementById('actionCategory') || adminForm.querySelector('select');
 
-                    // Načteme stávající akce z paměti
+                var placeVal = placeEl ? placeEl.value.trim() : '';
+                var catVal = catEl ? catEl.value : '';
+
+                // Pokud máme zadaný aspoň název a kapacitu, vytvoříme akci natvrdo
+                if (nameVal && capVal > 0) {
                     var aktualniAkce = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
                     
-                    // Vytvoříme novou čistou akci včetně kategorie a tooltipu
                     var novaAkce = {
                         id: Date.now(),
-                        name: nameEl.value.trim(),
-                        capacity: parseInt(capEl.value),
-                        date: dateEl ? dateEl.value : '',
-                        time: timeEl ? timeEl.value : '',
-                        place: placeEl ? placeEl.value.trim() : '',
-                        category: catEl ? catEl.value : '',
+                        name: nameVal,
+                        capacity: capVal,
+                        date: dateVal,
+                        time: timeVal,
+                        place: placeVal,
+                        category: catVal,
                         status: 'Aktivní'
                     };
 
-                    // Přidáme novou akci na konec seznamu
+                    // Přidáme do paměti
                     aktualniAkce.push(novaAkce);
-                    
-                    // Bezpečně uložíme do lokální paměti prohlížeče
                     localStorage.setItem('companyActions', JSON.stringify(aktualniAkce));
                     window.companyActions = aktualniAkce;
 
-                    // Pokud v aplikaci běží Firebase cloud databáze, vystřelíme data ihned na internet
+                    // OKAMŽITĚ vystřelíme do live Google Firebase databáze na internetu
                     if (typeof firebase !== 'undefined' && firebase.apps.length) {
                         var db = firebase.firestore();
                         var dataProCloud = {
@@ -2683,33 +2685,114 @@ window.deleteCompanyAction = function(id) {
                         };
                         
                         db.collection("portalData").doc("cocaColaDatabase").set(dataProCloud, { merge: true })
-                            .then(function() { console.log("Nová akce úspěšně odeslána do cloudu!"); })
-                            .catch(function(err) { console.error("Chyba cloudu při tvorbě akce:", err); });
+                            .then(function() { console.log("Akce byla úspěšně odeslána do cloudu!"); })
+                            .catch(function(err) { console.error("Chyba cloudu:", err); });
                     }
 
-                    // Vyčistíme textová políčka formuláře pro další použití
-                    nameEl.value = '';
-                    capEl.value = '';
-                    if (dateEl) dateEl.value = '';
-                    if (timeEl) timeEl.value = '';
-                    if (placeEl) placeEl.value = '';
-                    if (catEl) catEl.value = '';
+                    // Resetujeme políčka na prázdná, ať se dá zadávat další akce
+                    adminForm.reset();
 
-                    alert('🎉 Nová firemní akce byla úspěšně vytvořena a propojena s mobilními dlaždicemi!');
+                    alert('🎉 Nová firemní akce byla úspěšně vytvořena a uložena!');
 
                     // Bleskově osvěžíme stránku, ať nová akce ihned naskočí v tabulkách i v Přehledu akcí
                     setTimeout(function() {
                         location.reload();
                     }, 150);
+                } else {
+                    alert('❌ Prosím, vyplňte název akce a kapacitu.');
                 }
             });
 
-            // Označíme formulář jako opravený, ať se nám pravidlo neaplikuje víckrát
-            adminForm.setAttribute('data-cc-fixed', 'yes');
+            // Označíme formulář jako opravený
+            adminForm.setAttribute('data-cc-fixed-v2', 'yes');
         }
 
-        // Plynule hlídáme formulář na pozadí při překlikávání administrace
-        setInterval(opravZaseknuteUkladaniAkci, 400);
+        // Kontrolujeme formulář plynule na pozadí
+        setInterval(opravZaseknuteUkladaniAkciDefinitivne, 400);
+    })();
+</script>
+</script>
+    <!-- 🔌 IMPLANTACE TLAČÍTKA ZAMÍTNOUT DO ČEKAJÍCÍCH ŽÁDOSTÍ O ROLI -->
+<script>
+    (function() {
+        function pridejZamitaciTlacitkoDoZadostiORole() {
+            // Zaměříme se přesně na tabulku v sekci "Čekající žádosti o přidělení role"
+            var radkyZadostiRole = document.querySelectorAll('#roleRequestsTableBody tr, #tab4 table tr');
+            
+            radkyZadostiRole.forEach(function(row) {
+                // Hledáme řádky, kde se nachází tlačítka Schválit, Upravit, Smazat
+                var bunky = row.cells;
+                if (!bunky || bunky.length < 3) return;
+
+                var posledniBunka = bunky[bunky.length - 1];
+                var textPosledniBunky = posledniBunka.innerText.toLowerCase();
+
+                // Pokud v buňce vidíme tlačítko Smazat / Schválit a naše nové tlačítko tam ještě nesedí
+                if ((textPosledniBunky.indexOf('smazat') > -1 || textPosledniBunky.indexOf('schválit') > -1) && !posledniBunka.querySelector('.cc-direct-reject-btn')) {
+                    
+                    // Vytáhneme z řádku e-mail a jméno uživatele pro e-mail
+                    var emailUzivatele = "";
+                    var jmenoUzivatele = bunky[0] ? bunky[0].innerText.trim() : "kolego / kolegyně";
+
+                    for (var i = 0; i < bunky.length; i++) {
+                        var textBunky = bunky[i].innerText.trim();
+                        if (textBunky.indexOf('@') > -1) {
+                            emailUzivatele = textBunky;
+                            break;
+                        }
+                    }
+
+                    // Pokud máme e-mail, můžeme tlačítko bezpečně vygenerovat
+                    if (emailUzivatele) {
+                        var btnZamitnout = document.createElement('button');
+                        btnZamitnout.className = 'cc-direct-reject-btn';
+                        btnZamitnout.innerText = 'Zamítnout';
+                        btnZamitnout.style.cssText = 'background: #ef4444; color: white; border: 1px solid #dc2626; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; margin-left: 5px; transition: background 0.2s; vertical-align: middle;';
+                        
+                        btnZamitnout.addEventListener('mouseenter', function() { this.style.background = '#dc2626'; });
+                        btnZamitnout.addEventListener('mouseleave', function() { this.style.background = '#ef4444'; });
+
+                        // KLÍČOVÁ AKCE PO KLIKNUTÍ: Smazání ze systému + Otevření Outlooku
+                        btnZamitnout.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+
+                            if (confirm('Opravdu chcete registraci pro uživatele ' + jmenoUzivatele + ' zamítnout, smazat ze systému a poslat mu e-mail?')) {
+                                
+                                // 1. KROK: Příprava a otevření předvyplněného Outlooku
+                                var textMailu = "Dobrý den,\n\nVaše žádost o prvotní registraci a přidělení přístupových oprávnění do rezervačního portálu Coca-Cola HBC byla z interních nebo bezpečnostních důvodů zamítnuta.\n\nPokud se jedná o omyl, kontaktujte prosím administrátora systému.\n\nS pozdravem,\nTým Coca-Cola HBC";
+                                var predmetMailu = "Zamítnutí žádosti o registraci – Coca-Cola HBC";
+                                
+                                var mailtoUrl = "mailto:" + emailUzivatele + "?subject=" + encodeURIComponent(predmetMailu) + "&body=" + encodeURIComponent(textMailu);
+                                window.location.href = mailtoUrl;
+
+                                // 2. KROK: Najdeme a na dálku klikneme na tvoje původní tlačítko "Smazat" v tomto řádku, aby se data vymazala z paměti i z Firebase
+                                var puvodniSmazatBtn = posledniBunka.querySelector('button[onclick*="delete"], button[onclick*="Delete"], button:last-of-type');
+                                if (puvodniSmazatBtn && puvodniSmazatBtn !== btnZamitnout) {
+                                    // Vypneme natvrdo confirm u původního mazání, aby to neotravovalo podruhé
+                                    var puvodniConfirm = window.confirm;
+                                    window.confirm = function() { return true; };
+                                    
+                                    puvodniSmazatBtn.click();
+                                    
+                                    // Vrátíme confirm zpět do původního stavu
+                                    setTimeout(function() { window.confirm = puvodniConfirm; }, 100);
+                                } else {
+                                    // Pojistný plán: Pokud by tlačítko kliknout nešlo, obnovíme stránku
+                                    setTimeout(function() { location.reload(); }, 500);
+                                }
+                            }
+                        });
+
+                        // Vložíme tlačítko do řádku jako poslední akci
+                        posledniBunka.appendChild(btnZamitnout);
+                    }
+                }
+            });
+        }
+
+        // Plynule hlídáme tabulku na pozadí, aby tam tlačítko hned naskočilo
+        setInterval(pridejZamitaciTlacitkoDoZadostiORole, 500);
     })();
 </script>
 </body>
