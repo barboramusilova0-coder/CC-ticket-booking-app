@@ -287,7 +287,7 @@
     </select>
 </div>
                 <div class="form-group">
-                    <label>Místo konání:</label>
+                    <label></label>
                     <label for="actionPlace" style="font-weight: 600; font-size: 13px; color: #475569;">Informace pro Tooltip (Detaily akce) 📝:</label>
                 </div>
                 <div class="form-group">
@@ -2481,6 +2481,44 @@ window.deleteCompanyAction = function(id) {
 
         // Plynule udržujeme okénka prolnutá a živá
         setInterval(aktualizujVipOkénkaSPoznámkou, 600);
+    })();
+</script>
+    <!-- 🔌 AUTOMATICKÁ IMPLANTACE TEXTOVÉHO POLE PRO TOOLTIP DO ADMINISTRACE -->
+<script>
+    (function() {
+        function opravChybejiciVstupniPoleAdminu() {
+            // Najdeme text popisku v administraci
+            var vsechnyLabels = document.querySelectorAll('#tab4 label');
+            var cilovyLabel = null;
+            
+            vsechnyLabels.forEach(function(lbl) {
+                if (lbl.innerText.indexOf('Informace pro Tooltip') > -1) {
+                    cilovyLabel = lbl;
+                }
+            });
+
+            // Pokud text popisku najdeme a políčko pod ním ještě neexistuje, z konce ho tam implantujeme
+            if (cilovyLabel && !document.getElementById('actionPlace')) {
+                // Nastavíme popisku správný styl, ať se neslepí s dalším řádkem
+                cilovyLabel.style.display = 'block';
+                cilovyLabel.style.marginBottom = '5px';
+
+                // Vytvoříme zbrusu nové textové pole
+                var novyInput = document.createElement('input');
+                novyInput.type = 'text';
+                novyInput.id = 'actionPlace';
+                novyInput.placeholder = 'Např. Sektor 102, teplý raut v ceně...';
+                novyInput.style.cssText = 'width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border); font-weight: 600; background: #ffffff; color: #334155; box-sizing: border-box; margin-bottom: 15px; display: block;';
+                novyInput.required = true;
+
+                // Vložíme políčko přesně pod popisek před oči Admina
+                cilovyLabel.parentNode.insertBefore(novyInput, cilovyLabel.nextSibling);
+                console.log("Textové pole pro Tooltip bylo úspěšně implantováno z konce souboru!");
+            }
+        }
+
+        // Plynule kontrolujeme přítomnost políčka na pozadí (při překlikávání záložek)
+        setInterval(opravChybejiciVstupniPoleAdminu, 400);
     })();
 </script>
 </body>
