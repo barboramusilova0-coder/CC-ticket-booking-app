@@ -1371,5 +1371,600 @@ window.deleteCompanyAction = function(id) {
         document.addEventListener('click', function() { setTimeout(doplnDatumACasDoSchvalovani, 100); });
     })();
 </script>
+
+<style id="cc-new-category-system">
+/* ===== NOVÝ SYSTÉM KATEGORIÍ A PLÁNOVANÝCH AKCÍ ===== */
+.cc-category-grid{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:18px;
+    margin:24px 0 30px;
+}
+.cc-category-card{
+    min-height:150px;
+    border:1px solid #e2e8f0;
+    border-radius:16px;
+    background:#fff;
+    box-shadow:0 5px 18px rgba(15,23,42,.07);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:22px 16px;
+    cursor:pointer;
+    transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+}
+.cc-category-card:hover{
+    transform:translateY(-3px);
+    box-shadow:0 10px 24px rgba(15,23,42,.11);
+    border-color:var(--cc-red);
+}
+.cc-category-icon{font-size:42px;margin-bottom:12px}
+.cc-category-title{font-size:18px;font-weight:800;color:#0f172a}
+.cc-category-sub{font-size:12px;color:#64748b;margin-top:6px}
+.cc-action-panel{
+    margin:0 0 28px;
+    padding:22px;
+    border:1px solid var(--border);
+    border-radius:16px;
+    background:#f8fafc;
+}
+.cc-panel-title{margin:0 0 16px;font-size:18px;color:#0f172a}
+.cc-subcategory-row,.cc-action-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:14px;
+}
+.cc-action-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.cc-choice{
+    border:1px solid #dbe3ec;
+    background:#fff;
+    border-radius:12px;
+    padding:16px;
+    cursor:pointer;
+    text-align:left;
+    transition:.18s ease;
+}
+.cc-choice:hover{border-color:var(--cc-red);box-shadow:0 5px 15px rgba(15,23,42,.08);transform:translateY(-2px)}
+.cc-choice strong{display:block;color:#0f172a;font-size:15px}
+.cc-choice small{display:block;color:#64748b;margin-top:5px;line-height:1.4}
+.cc-back-btn{
+    border:0;background:transparent;color:#64748b;font-weight:700;cursor:pointer;
+    padding:6px 0;margin-bottom:8px;
+}
+.cc-selected-action{
+    padding:13px 16px;border-radius:10px;background:#fff;border:1px solid #dbe3ec;
+    margin-bottom:20px;font-weight:700;color:#0f172a;
+}
+.cc-planned-grid{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:20px;
+}
+.cc-event-card{
+    border:1px solid var(--border);border-radius:16px;background:#fff;
+    padding:22px;box-shadow:0 5px 18px rgba(15,23,42,.06);
+    transition:.18s ease;position:relative;overflow:hidden;
+}
+.cc-event-card:hover{transform:translateY(-3px);box-shadow:0 10px 25px rgba(15,23,42,.10)}
+.cc-event-category{
+    display:inline-block;padding:5px 9px;border-radius:999px;background:#f1f5f9;
+    color:#475569;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;
+}
+.cc-event-card h3{margin:13px 0 10px;color:#0f172a;font-size:19px}
+.cc-event-meta{color:#64748b;font-size:13px;line-height:1.7}
+.cc-event-capacity{margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:13px;color:#475569}
+.cc-event-reserve{
+    margin-top:16px;width:100%;border:0;border-radius:10px;padding:11px 14px;
+    background:var(--cc-red);color:#fff;font-weight:800;cursor:pointer;
+}
+.cc-empty-events{
+    padding:40px 24px;text-align:center;border:1px dashed #cbd5e1;border-radius:16px;
+    color:#64748b;background:#f8fafc;
+}
+.cc-filter-unified{
+    display:flex!important;gap:14px!important;flex-wrap:wrap!important;align-items:flex-end!important;
+    margin-top:15px!important;margin-bottom:25px!important;padding:18px!important;
+    background:#f8fafc!important;border:1px solid var(--border)!important;border-radius:12px!important;
+}
+.cc-filter-unified .cc-filter-item{display:flex;flex-direction:column;gap:6px;min-width:180px}
+.cc-filter-unified .cc-filter-item label{font-size:12px!important;margin:0!important;font-weight:700!important}
+.cc-filter-unified select,.cc-filter-unified input{width:100%!important;min-height:40px!important;padding:9px 12px!important;border-radius:8px!important}
+.cc-admin-category-box{
+    padding:16px;border:1px solid var(--border);border-radius:12px;background:#f8fafc;margin-bottom:18px;
+}
+.cc-admin-category-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:800px){
+    .cc-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .cc-planned-grid{grid-template-columns:1fr 1fr}
+    .cc-action-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:520px){
+    .cc-category-grid,.cc-planned-grid,.cc-action-grid,.cc-subcategory-row,.cc-admin-category-grid{grid-template-columns:1fr}
+    .cc-category-card{min-height:125px}
+}
+</style>
+
+<script>
+(function(){
+    'use strict';
+
+    var CATEGORY_DATA = {
+        'O2 Arena': {
+            icon:'🏟️',
+            description:'Koncert nebo hokej',
+            subcategories:['Koncert','Hokej']
+        },
+        'Fotbal': {
+            icon:'⚽',
+            description:'Fotbalové akce',
+            subcategories:[]
+        },
+        'SKS Slavia': {
+            icon:'🔴⚪',
+            description:'Akce SKS Slavia',
+            subcategories:[]
+        },
+        'Reprezentace': {
+            icon:'🇨🇿',
+            description:'Akce reprezentace',
+            subcategories:[]
+        }
+    };
+
+    function getActions(){
+        try { return JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || []; }
+        catch(e){ return window.companyActions || []; }
+    }
+
+    function escapeHtml(value){
+        return String(value == null ? '' : value)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    }
+
+    function formatDate(date){
+        if(!date) return '';
+        var parts = String(date).split('-');
+        if(parts.length===3) return parts[2]+'.'+parts[1]+'.'+parts[0];
+        return date;
+    }
+
+    function categoryOf(action){
+        return action && CATEGORY_DATA[action.category] ? action.category : (action && action.category ? action.category : 'Ostatní');
+    }
+
+    function subcategoryOf(action){
+        return action && action.subcategory ? action.subcategory : '';
+    }
+
+    function setActionSelection(actionName){
+        var sel=document.getElementById('actionSelect');
+        if(sel){
+            sel.value=actionName;
+            sel.dispatchEvent(new Event('change',{bubbles:true}));
+        }
+        var chosen=document.getElementById('cc-selected-action');
+        var action=getActions().find(function(a){return a.name===actionName;});
+        if(chosen && action){
+            chosen.innerHTML='🎟️ Vybraná akce: <strong>'+escapeHtml(action.name)+'</strong>';
+        }
+        var form=document.getElementById('ticketForm');
+        if(form) form.style.display='block';
+        var panel=document.getElementById('cc-action-panel');
+        if(panel) panel.style.display='none';
+        setTimeout(function(){
+            var formTop=form ? form.getBoundingClientRect().top + window.scrollY - 20 : 0;
+            if(formTop) window.scrollTo({top:formTop,behavior:'smooth'});
+        },50);
+        if(typeof toggleSubmitButtonByCompliance==='function') toggleSubmitButtonByCompliance();
+    }
+
+    function showCategory(category, subcategory){
+        var panel=document.getElementById('cc-action-panel');
+        if(!panel) return;
+        var actions=getActions().filter(function(a){
+            return (a.status==='Aktivní' || !a.status) &&
+                   categoryOf(a)===category &&
+                   (!subcategory || subcategoryOf(a)===subcategory);
+        });
+
+        var title=category;
+        if(subcategory) title += ' – '+subcategory;
+
+        var html='<button type="button" class="cc-back-btn" onclick="window.ccShowCategories()">← Zpět na kategorie</button>';
+        html+='<h3 class="cc-panel-title">'+escapeHtml(title)+'</h3>';
+
+        if(category==='O2 Arena' && !subcategory){
+            html+='<div class="cc-subcategory-row">';
+            ['Koncert','Hokej'].forEach(function(sub){
+                var count=getActions().filter(function(a){
+                    return (a.status==='Aktivní' || !a.status) && categoryOf(a)==='O2 Arena' && subcategoryOf(a)===sub;
+                }).length;
+                html+='<button type="button" class="cc-choice" onclick="window.ccShowCategory(\'O2 Arena\',\''+sub+'\')"><strong>'+sub+'</strong><small>'+count+' plánovaných akcí</small></button>';
+            });
+            html+='</div>';
+        } else {
+            html+='<div class="cc-action-grid">';
+            actions.forEach(function(a){
+                html+='<button type="button" class="cc-choice" onclick="window.ccSelectAction('+JSON.stringify(a.name)+')">';
+                html+='<strong>'+escapeHtml(a.name)+'</strong>';
+                html+='<small>'+formatDate(a.date)+(a.time?' · '+escapeHtml(a.time):'')+(a.place?' · '+escapeHtml(a.place):'')+'</small>';
+                html+='</button>';
+            });
+            if(actions.length===0) html+='<div class="cc-empty-events" style="grid-column:1/-1">V této kategorii zatím není žádná aktivní akce.</div>';
+            html+='</div>';
+        }
+        panel.innerHTML=html;
+        panel.style.display='block';
+        var form=document.getElementById('ticketForm');
+        if(form) form.style.display='none';
+    }
+
+    function buildReservationCategories(){
+        var tab=document.getElementById('tab1');
+        if(!tab || document.getElementById('cc-category-grid')) return;
+
+        var form=document.getElementById('ticketForm');
+        var h2=tab.querySelector('h2');
+
+        var intro=document.createElement('div');
+        intro.id='cc-reservation-selector';
+        intro.innerHTML=
+            '<div class="cc-selected-action" id="cc-selected-action">🎟️ Nejprve vyberte kategorii a poté konkrétní akci.</div>'+
+            '<div class="cc-category-grid" id="cc-category-grid"></div>'+
+            '<div class="cc-action-panel" id="cc-action-panel" style="display:none"></div>';
+
+        if(h2) h2.insertAdjacentElement('afterend',intro);
+        else tab.insertBefore(intro,tab.firstChild);
+
+        var grid=document.getElementById('cc-category-grid');
+        Object.keys(CATEGORY_DATA).forEach(function(category){
+            var data=CATEGORY_DATA[category];
+            var card=document.createElement('button');
+            card.type='button';
+            card.className='cc-category-card';
+            card.innerHTML='<span class="cc-category-icon">'+data.icon+'</span><span class="cc-category-title">'+escapeHtml(category)+'</span><span class="cc-category-sub">'+escapeHtml(data.description)+'</span>';
+            card.addEventListener('click',function(){ showCategory(category); });
+            grid.appendChild(card);
+        });
+
+        if(form) form.style.display='none';
+    }
+
+    window.ccShowCategories=function(){
+        var grid=document.getElementById('cc-category-grid');
+        var panel=document.getElementById('cc-action-panel');
+        var form=document.getElementById('ticketForm');
+        if(grid) grid.style.display='grid';
+        if(panel) panel.style.display='none';
+        if(form) form.style.display='none';
+        var chosen=document.getElementById('cc-selected-action');
+        if(chosen) chosen.innerHTML='🎟️ Nejprve vyberte kategorii a poté konkrétní akci.';
+    };
+    window.ccShowCategory=showCategory;
+    window.ccSelectAction=setActionSelection;
+
+    function buildPlannedTab(){
+        var main=document.getElementById('mainSystem');
+        if(!main || document.getElementById('cc-planned-tab')) return;
+
+        var content=document.createElement('div');
+        content.id='cc-planned-tab';
+        content.className='tab-content';
+        content.innerHTML='<h2>Plánované akce</h2>'+
+            '<p style="color:#64748b;margin-top:-8px;margin-bottom:24px;">Přehled všech aktuálně vytvořených akcí, na které je možné rezervovat lístky.</p>'+
+            '<div id="cc-planned-grid" class="cc-planned-grid"></div>';
+
+        var tab1=document.getElementById('tab1');
+        main.insertBefore(content,tab1);
+    }
+
+    window.renderPlannedEvents=function(){
+        var grid=document.getElementById('cc-planned-grid');
+        if(!grid) return;
+        var actions=getActions().filter(function(a){return a.status==='Aktivní' || !a.status;});
+        actions.sort(function(a,b){
+            var da=(a.date||'9999-99-99')+' '+(a.time||'99:99');
+            var db=(b.date||'9999-99-99')+' '+(b.time||'99:99');
+            return da.localeCompare(db);
+        });
+        if(!actions.length){
+            grid.innerHTML='<div class="cc-empty-events" style="grid-column:1/-1">Zatím nebyla vytvořena žádná aktivní akce.</div>';
+            return;
+        }
+        grid.innerHTML='';
+        actions.forEach(function(a){
+            var card=document.createElement('div');
+            card.className='cc-event-card';
+            var sub=a.subcategory ? ' · '+escapeHtml(a.subcategory) : '';
+            var capacity=Number(a.capacity)||0;
+            var approved=(requests||[]).filter(function(r){
+                return r.action===a.name && r.status1==='Schváleno' && r.status2==='Schváleno';
+            }).reduce(function(sum,r){return sum+(parseInt(r.tickets)||0);},0);
+            card.innerHTML=
+                '<span class="cc-event-category">'+escapeHtml(categoryOf(a))+sub+'</span>'+
+                '<h3>'+escapeHtml(a.name)+'</h3>'+
+                '<div class="cc-event-meta">'+
+                    (a.date?'📅 '+formatDate(a.date)+'<br>':'')+
+                    (a.time?'⏰ '+escapeHtml(a.time)+'<br>':'')+
+                    (a.place?'📍 '+escapeHtml(a.place):'')+
+                '</div>'+
+                '<div class="cc-event-capacity">🎟️ Obsazeno: <strong>'+approved+'</strong> / '+capacity+'</div>'+
+                '<button type="button" class="cc-event-reserve">Rezervovat lístky</button>';
+            card.querySelector('.cc-event-reserve').addEventListener('click',function(){
+                window.openTab(2);
+                setTimeout(function(){
+                    var cat=categoryOf(a);
+                    if(cat==='O2 Arena' && a.subcategory) showCategory('O2 Arena',a.subcategory);
+                    else showCategory(cat);
+                    setTimeout(function(){setActionSelection(a.name);},60);
+                },100);
+            });
+            grid.appendChild(card);
+        });
+    };
+
+    function addAdminCategoryFields(){
+        var form=document.querySelector('#tab4 form[onsubmit*="handleCreateActionSubmit"]');
+        if(!form || document.getElementById('cc-admin-category')) return;
+
+        var box=document.createElement('div');
+        box.id='cc-admin-category';
+        box.className='cc-admin-category-box';
+        box.innerHTML=
+            '<div class="cc-admin-category-grid">'+
+                '<div><label for="actNewCategory">Kategorie akce:</label>'+
+                '<select id="actNewCategory" required>'+
+                    '<option value="">-- Vyberte kategorii --</option>'+
+                    '<option value="O2 Arena">O2 Arena</option>'+
+                    '<option value="Fotbal">Fotbal</option>'+
+                    '<option value="SKS Slavia">SKS Slavia</option>'+
+                    '<option value="Reprezentace">Reprezentace</option>'+
+                '</select></div>'+
+                '<div id="cc-admin-subcategory-wrap"><label for="actNewSubcategory">Typ akce:</label>'+
+                '<select id="actNewSubcategory"><option value="">-- Pro O2 Arena vyberte Koncert/Hokej --</option></select></div>'+
+            '</div>';
+
+        var place=document.getElementById('actNewPlace');
+        if(place && place.parentElement) place.parentElement.insertAdjacentElement('afterend',box);
+        else form.insertBefore(box,form.lastElementChild);
+
+        var cat=document.getElementById('actNewCategory');
+        var sub=document.getElementById('actNewSubcategory');
+        cat.addEventListener('change',function(){
+            if(cat.value==='O2 Arena'){
+                sub.required=true;
+                sub.innerHTML='<option value="">-- Vyberte typ --</option><option value="Koncert">Koncert</option><option value="Hokej">Hokej</option>';
+            }else{
+                sub.required=false;
+                sub.innerHTML='<option value="">-- Není potřeba --</option>';
+                sub.value='';
+            }
+        });
+    }
+
+    function overrideCreateAction(){
+        window.handleCreateActionSubmit=function(e){
+            e.preventDefault();
+            var cat=document.getElementById('actNewCategory') ? document.getElementById('actNewCategory').value : '';
+            var sub=document.getElementById('actNewSubcategory') ? document.getElementById('actNewSubcategory').value : '';
+            if(!cat){alert('Vyberte kategorii akce.');return;}
+            if(cat==='O2 Arena' && !sub){alert('U akce O2 Arena vyberte Koncert nebo Hokej.');return;}
+
+            var action={
+                id:Date.now(),
+                name:document.getElementById('actNewName').value.trim(),
+                date:document.getElementById('actNewDate').value,
+                time:document.getElementById('actNewTime').value,
+                place:document.getElementById('actNewPlace').value.trim(),
+                capacity:parseInt(document.getElementById('actNewCapacity').value),
+                category:cat,
+                subcategory:sub,
+                status:'Aktivní'
+            };
+            companyActions.push(action);
+            localStorage.setItem('companyActions',JSON.stringify(companyActions));
+            e.target.reset();
+            if(document.getElementById('actNewSubcategory')){
+                document.getElementById('actNewSubcategory').innerHTML='<option value="">-- Pro O2 Arena vyberte Koncert/Hokej --</option>';
+            }
+            renderAdminSection();
+            updateActionSelectOptions();
+            renderPlannedEvents();
+            alert('Akce vytvořena a zařazena do kategorie '+cat+(sub?' – '+sub:'')+'.');
+        };
+    }
+
+    function addActionFilterToRequestList(){
+        var wrapper=document.getElementById('cc-filter-bar-wrapper');
+        if(!wrapper || document.getElementById('cc-action-filter')) return;
+
+        wrapper.classList.add('cc-filter-unified');
+
+        var item=document.createElement('div');
+        item.className='cc-filter-item';
+        item.innerHTML='<label for="cc-action-filter">Akce:</label><select id="cc-action-filter"><option value="">--- Všechny akce ---</option></select>';
+        wrapper.appendChild(item);
+
+        var select=item.querySelector('select');
+        var names=[];
+        getActions().forEach(function(a){if(names.indexOf(a.name)<0) names.push(a.name);});
+        names.sort(function(a,b){return a.localeCompare(b,'cs');});
+        names.forEach(function(name){
+            var o=document.createElement('option');
+            o.value=name;o.textContent=name;select.appendChild(o);
+        });
+        select.addEventListener('change',applyRequestActionFilter);
+    }
+
+    function applyRequestActionFilter(){
+        var select=document.getElementById('cc-action-filter');
+        if(!select) return;
+        var chosen=select.value;
+        document.querySelectorAll('#requestsTableBody tr').forEach(function(row){
+            if(row.cells.length<8) return;
+            var actionText=(row.cells[0].innerText||'').trim();
+            row.style.display=(!chosen || actionText.indexOf(chosen)===0)?'':'none';
+        });
+    }
+
+    function patchAdminTableCategory(){
+        var tbody=document.getElementById('adminActionsTableBody');
+        if(!tbody) return;
+        tbody.querySelectorAll('tr').forEach(function(row){
+            if(row.querySelector('.cc-admin-cat')) return;
+            var first=row.cells[0];
+            if(!first) return;
+            var name=first.querySelector('strong') ? first.querySelector('strong').innerText.trim() : first.innerText.trim();
+            var a=getActions().find(function(x){return x.name===name;});
+            if(a){
+                var span=document.createElement('span');
+                span.className='cc-admin-cat';
+                span.style.cssText='display:block;font-size:11px;color:#64748b;font-weight:700;margin-top:4px;';
+                span.textContent=categoryOf(a)+(a.subcategory?' · '+a.subcategory:'');
+                first.appendChild(span);
+            }
+        });
+    }
+
+    function installTabSystem(){
+        var tabs=document.querySelector('.tabs');
+        if(!tabs || document.getElementById('btn-planned')) return;
+
+        var plannedBtn=document.createElement('button');
+        plannedBtn.id='btn-planned';
+        plannedBtn.className='tab-btn';
+        plannedBtn.textContent='Plánované akce';
+        plannedBtn.onclick=function(){window.openTab(1);};
+        tabs.insertBefore(plannedBtn,tabs.firstChild);
+
+        var nova=document.getElementById('btn-nova');
+        var seznam=document.getElementById('btn-seznam');
+        var role=document.getElementById('btn-zadost-role');
+        var admin=document.getElementById('btn-admin');
+        if(nova) nova.onclick=function(){window.openTab(2);};
+        if(seznam) seznam.onclick=function(){window.openTab(3);};
+        if(role) role.onclick=function(){window.openTab(4);};
+        if(admin) admin.onclick=function(){window.openTab(5);};
+
+        window.openTab=function(num){
+            localStorage.setItem('activeCcTab',num);
+            var mapping={1:'cc-planned-tab',2:'tab1',3:'tab2',4:'tab3',5:'tab4'};
+            Object.keys(mapping).forEach(function(k){
+                var el=document.getElementById(mapping[k]);
+                if(el) el.classList.toggle('active',Number(k)===num);
+            });
+            ['btn-planned','btn-nova','btn-seznam','btn-zadost-role','btn-admin'].forEach(function(id){
+                var b=document.getElementById(id);
+                if(b) b.classList.toggle('active',
+                    (num===1&&id==='btn-planned')||(num===2&&id==='btn-nova')||
+                    (num===3&&id==='btn-seznam')||(num===4&&id==='btn-zadost-role')||
+                    (num===5&&id==='btn-admin'));
+            });
+            if(num===1) renderPlannedEvents();
+            if(num===3 && typeof renderTable==='function') renderTable();
+            if(num===5 && typeof renderAdminSection==='function') renderAdminSection();
+            if(num===2){
+                buildReservationCategories();
+                window.ccShowCategories();
+                if(typeof updateActionSelectOptions==='function') updateActionSelectOptions();
+            }
+        };
+
+        if(typeof currentUser !== 'undefined' && currentUser && currentUser.role==='guest'){
+            if(nova) nova.style.display='none';
+            if(seznam) seznam.style.display='none';
+            if(plannedBtn) plannedBtn.style.display='none';
+            if(admin) admin.style.display='none';
+        }
+    }
+
+    function overrideSession(){
+        window.openAccessRequestFromGate=function(){
+            document.getElementById('welcomeGate').style.display='none';
+            document.getElementById('mainSystem').style.display='block';
+            var p=document.getElementById('btn-planned');
+            var n=document.getElementById('btn-nova');
+            var s=document.getElementById('btn-seznam');
+            var r=document.getElementById('btn-zadost-role');
+            var a=document.getElementById('btn-admin');
+            if(p)p.style.display='none'; if(n)n.style.display='none'; if(s)s.style.display='none'; if(r)r.style.display='block'; if(a)a.style.display='none';
+            currentUser={name:'Anonymní žadatel',role:'guest'};
+            window.openTab(4);
+        };
+        window.saveAndStyleSession=function(){
+            localStorage.setItem('currentUser',JSON.stringify(currentUser));
+            document.getElementById('welcomeGate').style.display='none';
+            document.getElementById('mainSystem').style.display='block';
+            if(typeof updateLoginBar==='function') updateLoginBar();
+            var bRole=document.getElementById('btn-zadost-role');
+            var bExcel=document.getElementById('excelBtnContainer');
+            if(currentUser.role==='applicant'){
+                if(bRole)bRole.style.display='none';
+                if(bExcel)bExcel.style.display='none';
+                window.openTab(2);
+            }else{
+                if(bRole)bRole.style.display='block';
+                if(bExcel)bExcel.style.display='block';
+                window.openTab(3);
+            }
+        };
+        window.handleFormSubmit=function(e){
+            e.preventDefault();
+            var actVal=document.getElementById('actionSelect') ? document.getElementById('actionSelect').value : '';
+            var empVal=document.getElementById('employeeName') ? document.getElementById('employeeName').value.trim() : '';
+            var mgrVal=document.getElementById('managerEmail') ? document.getElementById('managerEmail').value.toLowerCase().trim() : '';
+            var custVal=document.getElementById('customerName') ? document.getElementById('customerName').value.trim() : '';
+            var tktVal=document.getElementById('ticketCount') ? document.getElementById('ticketCount').value : '1';
+            var reasonVal=document.getElementById('reason') ? document.getElementById('reason').value.trim() : '';
+            if(!actVal){alert('Nejprve vyberte konkrétní akci.');return;}
+            requests.push({
+                id:Date.now(),action:actVal,employee:empVal,manager:mgrVal,customer:custVal,
+                tickets:tktVal,reason:reasonVal,status1:'Čeká',status2:'Čeká',
+                approvedBy1:'',approvedBy2:'',
+                applicantEmail:(currentUser&&currentUser.email)?currentUser.email:''
+            });
+            localStorage.setItem('ticketRequests',JSON.stringify(requests));
+            document.getElementById('ticketForm').reset();
+            if(typeof toggleSubmitButtonByCompliance==='function') toggleSubmitButtonByCompliance();
+            window.ccShowCategories();
+            alert('Žádost o rezervaci lístků byla úspěšně odeslána!');
+            window.openTab(3);
+        };
+    }
+
+    function install(){
+        buildPlannedTab();
+        installTabSystem();
+        buildReservationCategories();
+        addAdminCategoryFields();
+        overrideCreateAction();
+        overrideSession();
+        window.renderPlannedEvents();
+        addActionFilterToRequestList();
+        patchAdminTableCategory();
+
+        // Udržení dynamických prvků po překreslení dat/Firebase.
+        setInterval(function(){
+            addAdminCategoryFields();
+            addActionFilterToRequestList();
+            patchAdminTableCategory();
+            renderPlannedEvents();
+            applyRequestActionFilter();
+        },500);
+
+        // Výchozí záložka: Plánované akce, pokud je uživatel přihlášen.
+        if(typeof currentUser !== 'undefined' && currentUser && currentUser.role!=='guest'){
+            setTimeout(function(){window.openTab(1);},350);
+        }
+    }
+
+    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',install);
+    else install();
+})();
+</script>
+
 </body>
 </html>
