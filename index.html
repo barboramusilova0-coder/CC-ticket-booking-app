@@ -2521,5 +2521,137 @@ window.deleteCompanyAction = function(id) {
         setInterval(opravChybejiciVstupniPoleAdminu, 400);
     })();
 </script>
+    <!-- 📧 AUTOMATICKÝ GENERÁTOR OUTLOOK E-MAILŮ PRO SCHVÁLENÉ KÓDY -->
+<script>
+    (function() {
+        function pridejTlacitkoEmailuDoAdminu() {
+            var radkyUzivatelu = document.querySelectorAll('#tab4 table tbody tr, #customUsersTableBody tr');
+            
+            radkyUzivatelu.forEach(function(row) {
+                if (row.cells.length < 2) return;
+
+                var bunky = row.cells;
+                var emailZamestnance = "";
+                var vygenerovanyKod = "";
+
+                for (var i = 0; i < bunky.length; i++) {
+                    var txt = bunky[i].innerText.trim();
+                    if (txt.indexOf('@') > -1) emailZamestnance = txt;
+                    if (txt.length === 5 && !isNaN(txt)) vygenerovanyKod = txt;
+                }
+
+                if (emailZamestnance && vygenerovanyKod && !bunky[bunky.length - 1].querySelector('.cc-email-btn')) {
+                    
+                    // 📝 TADY SI MŮŽEŠ UPRAVIT TEXT EMAIILU PODLE SEBE (Znak \n znamená nový řádek)
+                    var textZpravy = "Dobrý den,\n\nVaše žádost registraci byla úspěšně schválena.\n\nVáš unikátní přístupový kód: " + vygenerovanyKod + "\n\nTento kód prosím nikomu nesdělujte.\n\nS pozdravem,\nCC Tikects Booking App";
+                    
+                    // 🏷️ TADY SI MŮŽEŠ UPRAVIT PŘEDMĚT EMAIILU
+                    var predmetEmaillu = "Registrace – Coca-Cola HBC (KÓD: " + vygenerovanyKod + ")";
+                    
+                    var mailtoUrl = "mailto:" + emailZamestnance + 
+                                    "?subject=" + encodeURIComponent(predmetEmaillu) + 
+                                    "&body=" + encodeURIComponent(textZpravy);
+
+                    var emailBtn = document.createElement('a');
+                    emailBtn.className = 'cc-email-btn';
+                    emailBtn.href = mailtoUrl;
+                    emailBtn.style.cssText = 'display: inline-block; background: #e41e26; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-decoration: none; text-transform: uppercase; margin-left: 8px; transition: background 0.2s;';
+                    emailBtn.innerText = '📧 E-mail';
+                    
+                    emailBtn.addEventListener('mouseenter', function() { this.style.background = '#b81118'; });
+                    emailBtn.addEventListener('mouseleave', function() { this.style.background = '#e41e26'; });
+
+                    bunky[bunky.length - 1].appendChild(emailBtn);
+                }
+            });
+        }
+
+        setInterval(pridejTlacitkoEmailuDoAdminu, 500);
+    })();
+</script>
+<!-- 🔌 NEPRŮSTŘELNÁ OPRAVA TLAČÍTKA TVORBY NOVÉ AKCE -->
+<script>
+    (function() {
+        function opravZaseknuteUkladaniAkci() {
+            var adminForm = document.querySelector('#tab4 form') || document.getElementById('actionForm');
+            if (!adminForm || adminForm.getAttribute('data-cc-fixed') === 'yes') return;
+
+            // Chytíme odeslání formuláře pro novou akci
+            adminForm.addEventListener('submit', function(e) {
+                // Vytáhneme hodnoty přímo z políček na obrazovce
+                var nameEl = document.getElementById('actionName');
+                var capEl = document.getElementById('actionCapacity');
+                var dateEl = document.getElementById('actionDate');
+                var timeEl = document.getElementById('actionTime');
+                var placeEl = document.getElementById('actionPlace'); // Naše políčko pro Tooltip
+                var catEl = document.getElementById('actionCategory'); // Naše políčko pro O2 Arenu/Slavii
+
+                // Pokud políčka existují a mají vyplněný název a kapacitu
+                if (nameEl && capEl && nameEl.value && capEl.value) {
+                    e.preventDefault(); // Zastavíme ten zaseknutý původní kód
+                    e.stopPropagation();
+
+                    // Načteme stávající akce z paměti
+                    var aktualniAkce = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+                    
+                    // Vytvoříme novou čistou akci včetně kategorie a tooltipu
+                    var novaAkce = {
+                        id: Date.now(),
+                        name: nameEl.value.trim(),
+                        capacity: parseInt(capEl.value),
+                        date: dateEl ? dateEl.value : '',
+                        time: timeEl ? timeEl.value : '',
+                        place: placeEl ? placeEl.value.trim() : '',
+                        category: catEl ? catEl.value : '',
+                        status: 'Aktivní'
+                    };
+
+                    // Přidáme novou akci na konec seznamu
+                    aktualniAkce.push(novaAkce);
+                    
+                    // Bezpečně uložíme do lokální paměti prohlížeče
+                    localStorage.setItem('companyActions', JSON.stringify(aktualniAkce));
+                    window.companyActions = aktualniAkce;
+
+                    // Pokud v aplikaci běží Firebase cloud databáze, vystřelíme data ihned na internet
+                    if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                        var db = firebase.firestore();
+                        var dataProCloud = {
+                            companyActions: aktualniAkce,
+                            ticketRequests: JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [],
+                            customUsers: JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {},
+                            roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || window.roleRequests || []
+                        };
+                        
+                        db.collection("portalData").doc("cocaColaDatabase").set(dataProCloud, { merge: true })
+                            .then(function() { console.log("Nová akce úspěšně odeslána do cloudu!"); })
+                            .catch(function(err) { console.error("Chyba cloudu při tvorbě akce:", err); });
+                    }
+
+                    // Vyčistíme textová políčka formuláře pro další použití
+                    nameEl.value = '';
+                    capEl.value = '';
+                    if (dateEl) dateEl.value = '';
+                    if (timeEl) timeEl.value = '';
+                    if (placeEl) placeEl.value = '';
+                    if (catEl) catEl.value = '';
+
+                    alert('🎉 Nová firemní akce byla úspěšně vytvořena a propojena s mobilními dlaždicemi!');
+
+                    // Bleskově osvěžíme stránku, ať nová akce ihned naskočí v tabulkách i v Přehledu akcí
+                    setTimeout(function() {
+                        location.reload();
+                    }, 150);
+                }
+            });
+
+            // Označíme formulář jako opravený, ať se nám pravidlo neaplikuje víckrát
+            adminForm.setAttribute('data-cc-fixed', 'yes');
+        }
+
+        // Plynule hlídáme formulář na pozadí při překlikávání administrace
+        setInterval(opravZaseknuteUkladaniAkci, 400);
+    })();
+</script>
 </body>
 </html>
