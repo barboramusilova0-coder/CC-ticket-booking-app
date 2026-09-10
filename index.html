@@ -1813,5 +1813,180 @@ window.deleteCompanyAction = function(id) {
         }, 400);
     })();
 </script>
+    <!-- 🌐 NOVÁ VEŘEJNÁ ZÁLOŽKA: PŘEHLED AKCÍ S TOOLTIPY VE STYLU VIP ZÓNY -->
+<style>
+    /* Grafický styl pro mřížku firemních akcí */
+    .cc-public-grid { display: flex; gap: 15px; flex-wrap: wrap; text-align: left; margin-top: 15px; }
+    
+    .cc-public-card {
+        flex: 1 1 calc(25% - 15px);
+        min-width: 220px;
+        height: 90px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 15px;
+        background: #ffffff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+        cursor: default;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+    }
+    
+    .cc-public-card:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transform: translateY(-2px);
+    }
+    
+    .cc-card-title { font-weight: 700; font-size: 13px; color: #0f172a; margin-bottom: 4px; line-height: 1.3; }
+    .cc-card-date { font-size: 11px; color: #64748b; font-weight: 600; }
+    
+    /* 📋 VIP TOOLTIP PRO VEŘEJNÝ PŘEHLED AKCÍ */
+    .cc-public-card .cc-tooltip {
+        position: absolute;
+        bottom: 115%; /* Vyjede bezpečně nad kartu */
+        left: 50%;
+        transform: translateX(-50%) translateY(5px);
+        background: #0f172a;
+        color: #ffffff;
+        padding: 10px 14px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        width: 200px;
+        text-align: left;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: all 0.2s ease;
+        z-index: 9999;
+        line-height: 1.4;
+    }
+    
+    .cc-public-card .cc-tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%; left: 50%;
+        transform: translateX(-50%);
+        border-width: 5px;
+        border-style: solid;
+        border-color: #0f172a transparent transparent transparent;
+    }
+    
+    .cc-public-card:hover .cc-tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) translateY(0);
+    }
+</style>
+
+<script>
+    (function() {
+        // Funkce, která dynamicky vytvoří pátou záložku v menu a její obsahovou plochu
+        function namontujVerejnyPrehledAkci() {
+            var tabsMenu = document.querySelector('.tabs');
+            var container = document.querySelector('.container');
+            if (!tabsMenu || !container || document.getElementById('btn-prehled')) return;
+
+            // 1. KROK: Přidáme tlačítko "Přehled akcí" do hlavního horního menu
+            var btnPrehled = document.createElement('button');
+            btnPrehled.id = 'btn-prehled';
+            btnPrehled.className = 'tab-btn';
+            btnPrehled.innerText = '📅 Přehled akcí';
+            tabsMenu.appendChild(btnPrehled);
+
+            // 2. KROK: Vytvoříme skrytou obsahovou plochu (Tab 5) pro zobrazení dlaždic
+            var tab5 = document.createElement('div');
+            tab5.id = 'tab5';
+            tab5.className = 'tab-content';
+            tab5.innerHTML = '<h2 style="text-align:left; font-size:18px; margin-bottom:5px; color:#0f172a; font-weight:800; text-transform:uppercase; letter-spacing:0.02em;">Aktuální nabídka akcí</h2>' +
+                             '<p style="text-align:left; font-size:13px; color:#64748b; margin-bottom:20px;">Zde naleznete kompletní přehled firemních lístků. Najetím myši na akci zobrazíte podrobnosti o místě a obsazenosti.</p>' +
+                             '<div class="cc-public-grid" id="cc-public-tiles-container"></div>';
+            container.appendChild(tab5);
+
+            // 3. KROK: Propojíme přepínání, aby fungovala i pátá záložka
+            btnPrehled.addEventListener('click', function() {
+                vykresliVerejneDlaždiceAkci();
+                if (typeof window.openTab === 'function') {
+                    window.openTab(5);
+                    // Ručně doladíme aktivní podsvícení tlačítka
+                    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+                    btnPrehled.classList.add('active');
+                    document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
+                    document.getElementById('tab5').classList.add('active');
+                }
+            });
+            
+            // Hlídáme paměť, pokud byla pátá záložka aktivní před refreshem (F5)
+            if (localStorage.getItem('activeCcTab') === '5') {
+                setTimeout(function() { btnPrehled.click(); }, 300);
+            }
+        }
+
+        // Funkce, která nasype vytvořené akce do dlaždic včetně výpočtu obsazenosti
+        function vykresliVerejneDlaždiceAkci() {
+            var grid = document.getElementById('cc-public-tiles-container');
+            if (!grid) return;
+
+            var akce = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+            var zadosti = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
+            
+            if (akce.length === 0) {
+                grid.innerHTML = '<div style="color:#94a3b8; font-size:13px; padding:20px; text-align:left; width:100%;">Momentálně nejsou vytvořeny žádné akce.</div>';
+                return;
+            }
+
+            var htmlKaret = '';
+            akce.forEach(function(act) {
+                // Zobrazujeme pouze aktivní akce
+                if (act.status === 'Zrušena') return;
+
+                // Spočítáme schválené lístky pro tuto konkrétní akci z tabulky žádostí
+                var schvaleneZadosti = zadosti.filter(function(r) {
+                    return r.action === act.name && r.status1 === 'Schváleno' && r.status2 === 'Schváleno';
+                });
+                var obsazenoListku = 0;
+                schvaleneZadosti.forEach(function(z) { obsazenoListku += parseInt(z.tickets || 1); });
+
+                // Sestavení textů pro nápovědné okénko (Tooltip)
+                var kat = act.category ? act.category : 'Nespecifikováno';
+                var m = act.place ? act.place : 'Místo neurčeno';
+                var t = act.time ? ' v ' + act.time : '';
+                
+                htmlKaret += '<div class="cc-public-card">' +
+                                '<div class="cc-card-title">' + act.name + '</div>' +
+                                '<div class="cc-card-date">📅 ' + (act.date || 'Termín upřesníme') + '</div>' +
+                                
+                                // VIP Tooltip okénko
+                                '<div class="cc-tooltip">' +
+                                    '<strong style="color:var(--cc-red); display:block; margin-bottom:4px; text-transform:uppercase; font-size:10px;">Podrobnosti akce</strong>' +
+                                    '📍 Místo: ' + m + '<br>' +
+                                    '🏷️ Typ: ' + kat + '<br>' +
+                                    '⏰ Čas: ' + (act.time || 'Nespecifikován') + '<br>' +
+                                    '<span style="display:block; margin-top:5px; padding-top:5px; border-top:1px solid #334155; font-weight:700;">' +
+                                    '📊 Obsazenost: ' + obsazenoListku + ' / ' + act.capacity + ' ks' +
+                                    '</span>' +
+                                '</div>' +
+                             '</div>';
+            });
+
+            if (grid.innerHTML !== htmlKaret) {
+                grid.innerHTML = htmlKaret || '<div style="color:#94a3b8; font-size:13px; padding:20px;">Žádné aktivní akce k zobrazení.</div>';
+            }
+        }
+
+        // Spouštíme na pozadí, aby nová záložka spolehlivě naskočila a aktualizovala data
+        setInterval(namontujVerejnyPrehledAkci, 500);
+        setInterval(function() {
+            var t5 = document.getElementById('tab5');
+            if (t5 && t5.classList.contains('active')) { vykresliVerejneDlaždiceAkci(); }
+        }, 1000);
+    })();
+</script>
+
 </body>
 </html>
