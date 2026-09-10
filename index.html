@@ -1418,15 +1418,65 @@ window.deleteCompanyAction = function(id) {
         document.addEventListener('click', function() { setTimeout(doplnDatumACasDoSchvalovani, 100); });
     })();
 </script>
-    <!-- 🧱 GRAFICKÉ DLAŽDICE PRO VÝBĚR KATEGORIE PŘED REZERVACÍ -->
+    <!-- 🧱 FOTOGRAFICKÉ DLAŽDICE PRO VÝBĚR KATEGORIE PŘED REZERVACÍ -->
 <style>
     .cc-tile-grid { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px; text-align: left; }
-    .cc-tile { flex: 1 1 calc(25% - 15px); min-width: 160px; background: #ffffff; border: 2px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.25s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
-    .cc-tile:hover { border-color: var(--cc-red); transform: translateY(-3px); box-shadow: 0 6px 15px rgba(228, 30, 38, 0.15); }
-    .cc-tile.active { border-color: var(--cc-red); background: #fef2f2; box-shadow: 0 4px 12px rgba(228, 30, 38, 0.1); }
-    .cc-tile-icon { font-size: 32px; margin-bottom: 10px; display: block; }
-    .cc-tile-title { font-weight: 700; font-size: 14px; color: #334155; }
-    .cc-sub-tile-grid { display: none; width: 100%; gap: 12px; margin-top: 15px; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; }
+    
+    /* Hlavní styl pro dlaždice s luxusním obrázkem na pozadí */
+    .cc-tile { 
+        flex: 1 1 calc(25% - 15px); 
+        min-width: 170px; 
+        height: 130px;
+        border: 2px solid var(--border); 
+        border-radius: 12px; 
+        padding: 15px; 
+        text-align: center; 
+        cursor: pointer; 
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); 
+        box-shadow: 0 4px 10px rgba(0,0,0,0.04); 
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+        background-size: cover;
+        background-position: center;
+    }
+    
+    /* Tmavý závoj přes obrázek, aby krásně vynikl bílý text */
+    .cc-tile::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.55); /* Elegantní temný filtr */
+        transition: background 0.25s ease;
+        z-index: 1;
+    }
+    
+    .cc-tile:hover { 
+        transform: translateY(-4px); 
+        box-shadow: 0 8px 20px rgba(228, 30, 38, 0.25); 
+    }
+    
+    .cc-tile:hover::before {
+        background: rgba(228, 30, 38, 0.65); /* Při najetí myší dlaždice zčervená ve stylu Coca-Cola */
+    }
+    
+    .cc-tile.active { 
+        border-color: var(--cc-red); 
+        box-shadow: 0 0 15px rgba(228, 30, 38, 0.4);
+    }
+    .cc-tile.active::before {
+        background: rgba(228, 30, 38, 0.75); /* Aktivní dlaždice drží sytou firemní barvu */
+    }
+    
+    /* Vynesení textu a ikonky nad tmavý filtr */
+    .cc-tile-icon { font-size: 28px; margin-bottom: 6px; display: block; z-index: 2; position: relative; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+    .cc-tile-title { font-weight: 800; font-size: 15px; color: #ffffff; z-index: 2; position: relative; text-shadow: 0 2px 4px rgba(0,0,0,0.6); text-transform: uppercase; letter-spacing: 0.02em; }
+    
+    /* Pod-mřížka pro O2 arenu */
+    .cc-sub-tile-grid { display: none; width: 100%; gap: 12px; margin-top: 15px; padding: 12px; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1; }
 </style>
 
 <script>
@@ -1437,40 +1487,34 @@ window.deleteCompanyAction = function(id) {
             var tForm = document.getElementById('ticketForm');
             if (!tForm || document.getElementById('cc-tiles-container')) return;
 
-            // Vytvoříme hlavní obal na dlaždice
             var container = document.createElement('div');
             container.id = 'cc-tiles-container';
             container.style.marginBottom = '25px';
             
-            var htmlDlazdic = '<h3 style="text-align:left; font-size:16px; margin-bottom:15px; color:#475569;">🌟 Nejdříve zvolte typ / místo akce:</h3>' +
+            var htmlDlazdic = '<h3 style="text-align:left; font-size:16px; margin-bottom:15px; color:#475569; font-weight:700;">🌟 KROK 1: Vyberte typ nebo místo konání akce:</h3>' +
                 '<div class="cc-tile-grid">' +
-                    '<div class="cc-tile" data-cat="O2 Arena" id="tile-o2"><span class="cc-tile-icon">🏟️</span><span class="cc-tile-title">O2 Arena</span></div>' +
-                    '<div class="cc-tile" data-cat="Fotbal"><span class="cc-tile-icon">⚽</span><span class="cc-tile-title">Fotbal</span></div>' +
-                    '<div class="cc-tile" data-cat="Extraliga"><span class="cc-tile-icon">🏒</span><span class="cc-tile-title">Extraliga</span></div>' +
-                    '<div class="cc-tile" data-cat="Reprezentace"><span class="cc-tile-icon">🇨🇿</span><span class="cc-tile-title">Reprezentace</span></div>' +
+                    // Dlaždice s linkovanými obrázky z fotobanky na pozadí
+                    '<div class="cc-tile" data-cat="O2 Arena" id="tile-o2" style="background-image: url(\'https://unsplash.com\');"><span class="cc-tile-icon">🏟️</span><span class="cc-tile-title">O2 Arena</span></div>' +
+                    '<div class="cc-tile" data-cat="Fotbal" style="background-image: url(\'https://unsplash.com\');"><span class="cc-tile-icon">⚽</span><span class="cc-tile-title">Fotbal</span></div>' +
+                    '<div class="cc-tile" data-cat="Extraliga" style="background-image: url(\'https://unsplash.com\');"><span class="cc-tile-icon">🏒</span><span class="cc-tile-title">Extraliga</span></div>' +
+                    '<div class="cc-tile" data-cat="Reprezentace" style="background-image: url(\'https://unsplash.com\');"><span class="cc-tile-icon">🇨🇿</span><span class="cc-tile-title">Reprezentace</span></div>' +
                     
-                    // Pod-prokliknutí pro O2 Arenu (Hokej / Koncerty)
+                    // Pod-prokliknutí pro O2 Arenu
                     '<div class="cc-sub-tile-grid" id="cc-o2-sub-grid">' +
-                        '<div class="cc-tile" data-cat="O2 Arena - Hokej" style="flex:1; padding:12px;"><span class="cc-tile-icon" style="font-size:20px;">🥅</span><span class="cc-tile-title" style="font-size:12px;">O2 Arena - Hokej</span></div>' +
-                        '<div class="cc-tile" data-cat="O2 Arena - Koncerty" style="flex:1; padding:12px;"><span class="cc-tile-icon" style="font-size:20px;">🎵</span><span class="cc-tile-title" style="font-size:12px;">O2 Arena - Koncerty</span></div>' +
+                        '<div class="cc-tile" data-cat="O2 Arena - Hokej" style="flex:1; height:100px; background-image: url(\'https://unsplash.com\');"><span class="cc-tile-icon" style="font-size:22px;">🥅</span><span class="cc-tile-title" style="font-size:13px;">O2 Arena - Hokej</span></div>' +
+                        '<div class="cc-tile" data-cat="O2 Arena - Koncerty" style="flex:1; height:100px; background-image: url(\'https://unsplash.com\');"><span class="cc-tile-icon" style="font-size:22px;">🎵</span><span class="cc-tile-title" style="font-size:13px;">O2 Arena - Koncerty</span></div>' +
                     '</div>' +
                 '</div>';
                 
             container.innerHTML = htmlDlazdic;
-            
-            // Vložíme dlaždice na úplný začátek formuláře
             tForm.parentNode.insertBefore(container, tForm);
-
-            // Skryjeme původní formulář (bude se čekat na kliknutí na dlaždici)
             tForm.style.display = 'none';
 
-            // Naučíme dlaždice reagovat na kliknutí
             container.querySelectorAll('.cc-tile').forEach(function(tile) {
                 tile.addEventListener('click', function(e) {
                     e.stopPropagation();
                     var cat = this.getAttribute('data-cat');
                     
-                    // Pokud klikne na hlavní O2 Arenu, rozbalíme pod-nabídku a formulář ještě necháme schovaný
                     if (cat === 'O2 Arena') {
                         container.querySelectorAll('.cc-tile').forEach(function(el) { el.classList.remove('active'); });
                         this.classList.add('active');
@@ -1479,11 +1523,9 @@ window.deleteCompanyAction = function(id) {
                         return;
                     }
 
-                    // Pokud klikne na jakoukoliv finální kategorii
                     container.querySelectorAll('.cc-tile').forEach(function(el) { el.classList.remove('active'); });
                     this.classList.add('active');
                     
-                    // Pokud kliknul na hokej/koncert v O2 areně, podržíme hlavní dlaždici rozsvícenou
                     if (cat.indexOf('O2 Arena -') > -1) {
                         document.getElementById('tile-o2').classList.add('active');
                     } else {
@@ -1491,27 +1533,22 @@ window.deleteCompanyAction = function(id) {
                     }
 
                     vybranaKategoriePortalu = cat;
-                    
-                    // Odemkneme a plynule zobrazíme zbytek formuláře
                     tForm.style.display = 'block';
                     odfiltrujRoletkuAkciPodleDlazdice();
                 });
             });
         }
 
-        // Tato funkce zařídí, že v roletce zaměstnanec uvidí POUZE akce z vybrané dlaždice
         function odfiltrujRoletkuAkciPodleDlazdice() {
             var roletka = document.getElementById('actionSelect') || document.querySelector('#ticketForm select');
             if (!roletka || !vybranaKategoriePortalu) return;
 
             var akceZPameti = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
-            var html = '<option value="">-- Vyberte konkrétní akci --</option>';
+            var html = '<option value="">-- Vyberte konkrétní zápis / koncert --</option>';
             var maZapas = false;
 
             akceZPameti.forEach(function(a) {
-                // Hledáme pouze ty akce, jejichž kategorie odpovídá vybrané dlaždici
                 var katAkce = a.category ? a.category.trim() : '';
-                
                 if (katAkce === vybranaKategoriePortalu && (a.status === 'Aktivní' || !a.status)) {
                     var d = a.date || '';
                     var m = a.place || '';
@@ -1521,23 +1558,21 @@ window.deleteCompanyAction = function(id) {
             });
 
             if (!maZapas) {
-                html = '<option value="">❌ V této kategorii momentálně nejsou žádné lístky</option>';
+                html = '<option value="">❌ V této kategorii momentálně nejsou žádné volné lístky</option>';
             }
-
             roletka.innerHTML = html;
         }
 
-        // Hlídáme na pozadí překlikávání záložek, aby dlaždice naskočily na záložce 1
+        // Sledování záložek
         setInterval(function() {
             var tab1 = document.getElementById('tab1');
             if (tab1 && tab1.classList.contains('active')) {
                 nasadKrasneDlazdiceDoFormulare();
             } else {
-                // Pokud zrovna nejsme na Nové rezervaci, formulář vyčistíme pro příště
                 var container = document.getElementById('cc-tiles-container');
                 var tForm = document.getElementById('ticketForm');
-                if (container) { container.remove(); }
-                if (tForm) { tForm.style.display = 'block'; }
+                if (container) container.remove();
+                if (tForm) tForm.style.display = 'block';
             }
         }, 400);
     })();
