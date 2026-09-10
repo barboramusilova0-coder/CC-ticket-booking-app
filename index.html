@@ -2911,5 +2911,48 @@ window.deleteCompanyAction = function(id) {
         setInterval(kompletniReformaRegistracnichTlacitek, 500);
     })();
 </script>
+    <!-- 🧽 CHYTRÝ ČISTIČ TLAČÍTEK PRO TABULKU VYDANÝCH KÓDŮ -->
+<script>
+    (function() {
+        function vymazZamitaciTlacitkaZVydanychKodu() {
+            // Najdeme přesně řádky v sekci "Aktivní schvalovatelé (Vydané kódy)"
+            // Podíváme se do tabulky v tab4, která obsahuje ID customUsersTableBody nebo text Přihlašovací kód
+            var radkyVydanychKodu = document.querySelectorAll('#customUsersTableBody tr, #tab4 table tr');
+            
+            radkyVydanychKodu.forEach(function(row) {
+                // Pojistka: Hledáme pouze ty řádky, které v sobě mají napsaný 5místný přihlašovací kód (písmena/čísla)
+                if (row.cells.length >= 4) {
+                    var textPrihlasovacihoKodu = row.cells[3] ? row.cells[3].innerText.trim() : '';
+                    
+                    // Pokud buňka obsahuje kód (např. 69ALS jako na fotce), jedná se o tabulku vydaných kódů
+                    if (textPrihlasovacihoKodu.length === 5) {
+                        var posledniBunkaAkci = row.cells[row.cells.length - 1];
+                        
+                        // Najdeme v této buňce všechna tlačítka a odkazy, které obsahují text "zamítnout" nebo třídy zamítnutí
+                        var vsetkyZamitaciElementy = posledniBunkaAkci.querySelectorAll('button, a');
+                        
+                        vsetkyZamitaciElementy.forEach(function(el) {
+                            var txt = el.innerText.toLowerCase();
+                            // Pokud to není naše oblíbené šedé tlačítko Smazat, tak ho nemilosrdně smažeme z obrazovky
+                            if (txt.indexOf('zamítnout') > -1 || txt.indexOf('mail') > -1 || el.classList.contains('cc-email-reject-btn') || el.classList.contains('cc-live-reject-btn')) {
+                                el.remove();
+                            }
+                        });
+                        
+                        // Zajistíme, aby původní tlačítko SMAZAT mělo správný, čistý styl
+                        var tlacitkoSmazat = posledniBunkaAkci.querySelector('button');
+                        if (tlacitkoSmazat && tlacitkoSmazat.innerText.toLowerCase().indexOf('smazat') > -1) {
+                            tlacitkoSmazat.style.cssText = 'background: #64748b !important; color: white !important; border: none !important; padding: 6px 12px !important; border-radius: 6px !important; font-size: 12px !important; font-weight: 700 !important; cursor: pointer !important; transition: opacity 0.2s !important; text-transform: uppercase;';
+                        }
+                    }
+                }
+            });
+        }
+
+        // Spouštíme bleskovou čistku plynule každých 300ms, aby červená tlačítka neměla šanci ani probliknout
+        setInterval(vymazZamitaciTlacitkaZVydanychKodu, 300);
+    })();
+</script>
+
 </body>
 </html>
