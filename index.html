@@ -2175,6 +2175,118 @@ window.deleteCompanyAction = function(id) {
         setInterval(vylepsiZadavaniDataACasu, 500);
     })();
 </script>
+<!-- 🎨 MINI-DESIGN A ULTRA POHODLNÉ OVLÁDÁNÍ DATA A ČASU PRO PC -->
+<style>
+    /* Skryjeme ty staré neohrabané inputy, aby nám uvolnily místo */
+    #cc-custom-datetime-row {
+        display: flex !important;
+        gap: 12px !important;
+        width: 100% !important;
+        margin-bottom: 15px !important;
+    }
+    .cc-mini-group {
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 4px !important;
+        text-align: left !important;
+    }
+    .cc-mini-group label {
+        font-weight: 700 !important;
+        font-size: 12px !important;
+        color: #475569 !important;
+    }
+    
+    /* Luxusní úzká políčka lícující s moderním firemním designem */
+    .cc-mini-select, .cc-mini-date {
+        width: 100% !important;
+        height: 36px !important; /* Menší, kompaktnější výška na PC */
+        padding: 6px 12px !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 6px !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        color: #334155 !important;
+        background-color: #ffffff !important;
+        box-sizing: border-box !important;
+        cursor: pointer !important;
+        transition: border-color 0.15s, box-shadow 0.15s !important;
+    }
+    .cc-mini-select:hover, .cc-mini-date:hover, .cc-mini-select:focus, .cc-mini-date:focus {
+        border-color: var(--cc-red, #e41e26) !important;
+        outline: none !important;
+        box-shadow: 0 0 0 2px rgba(228, 30, 38, 0.08) !important;
+    }
+</style>
 
+<script>
+    (function() {
+        function transformujZadavaniNaPCObrazovce() {
+            // Najdeme stará políčka data a času ve formuláři tvorby akcí
+            var staraZackaData = document.getElementById('actionDate') || document.querySelector('input[type="date"]');
+            var staraZackaCas = document.getElementById('actionTime') || document.querySelector('input[type="time"]');
+            
+            if (!staraZackaData || !staraZackaCas) return;
+            
+            var obalFormulare = staraZackaData.parentNode;
+            if (obalFormulare && !document.getElementById('cc-custom-datetime-row')) {
+                // Schováme ty staré neforemné šedé inputy z tvého obrázku před očima uživatele
+                staraZackaData.style.setProperty('display', 'none', 'important');
+                staraZackaCas.style.setProperty('display', 'none', 'important');
+                
+                // Schováme i jejich původní textové nadpisy "Datum:" a "Čas:", ať nemáme texty dvakrát
+                var puvodniLabels = obalFormulare.querySelectorAll('label');
+                puvodniLabels.forEach(function(lbl) {
+                    if (lbl.innerText.indexOf('Datum') > -1 || lbl.innerText.indexOf('Čas') > -1) {
+                        lbl.style.setProperty('display', 'none', 'important');
+                    }
+                });
+
+                // Vytvoříme zbrusu novou, nádherně zarovnanou vodorovnou řadu s menšími panely
+                var novaRada = document.createElement('div');
+                novaRada.id = 'cc-custom-datetime-row';
+                
+                // Vygenerujeme přívětivý výběr času po půlhodinách (od 08:00 do 22:00) - nejčastější časy firemních akcí
+                var optionsCasu = '<option value="">-- Vyberte čas --</option>';
+                for (var h = 8; i = h, h <= 22; h++) {
+                    var hodStr = h < 10 ? '0' + h : h;
+                    optionsCasu += '<option value="' + hodStr + ':00">⏰ ' + hodStr + ':00</option>';
+                    optionsCasu += '<option value="' + hodStr + ':30">⏰ ' + hodStr + ':30</option>';
+                }
+
+                novaRada.innerHTML = 
+                    '<div class="cc-mini-group">' +
+                        '<label>Datum konání 📅:</label>' +
+                        '<input type="date" class="cc-mini-date" id="cc-visual-date" required>' +
+                    '</div>' +
+                    '<div class="cc-mini-group">' +
+                        '<label>Čas zahájení ⏰:</label>' +
+                        '<select class="cc-mini-select" id="cc-visual-time" required>' + optionsCasu + '</select>' +
+                    '</div>';
+
+                // Vložíme novou řadu přesně tam, kde byly staré prvky
+                staraZackaData.parentNode.insertBefore(novaRada, staraZackaData);
+
+                // Nastavíme bezpečné minimální datum na dnešek, ať se nekliká do minulosti
+                var dnes = new Date().toISOString().split('T')[0];
+                document.getElementById('cc-visual-date').setAttribute('min', dnes);
+
+                // PROPOJENÍ: Jakmile Admin klikne na naše nové přívětivé ovládání, okamžitě text potichu propíšeme do tvé původní databáze
+                document.getElementById('cc-visual-date').addEventListener('change', function() {
+                    staraZackaData.value = this.value;
+                    // Vyvoláme v systému zprávu, že se hodnota změnila, aby to tvá ukládací funkce postřehla
+                    staraZackaData.dispatchEvent(new Event('input', { bubbles: true }));
+                });
+                document.getElementById('cc-visual-time').addEventListener('change', function() {
+                    staraZackaCas.value = this.value;
+                    staraZackaCas.dispatchEvent(new Event('input', { bubbles: true }));
+                });
+            }
+        }
+
+        // Hlídáme a udržujeme moderní panely aktivní při každém kliknutí
+        setInterval(transformujZadavaniNaPCObrazovce, 450);
+    })();
+</script>
 </body>
 </html>
