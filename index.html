@@ -2288,76 +2288,84 @@ window.deleteCompanyAction = function(id) {
         setInterval(transformujZadavaniNaPCObrazovce, 450);
     })();
 </script>
-    <!-- 🔑 BEZPEČNÝ SYSTÉM PRO SAMOSTATNOU ZMĚNU HESLA UŽIVATELŮ -->
+   <!-- 🔑 UNIVERZÁLNÍ A NEPRŮSTŘELNÉ TLAČÍTKO PRO ZMĚNU HESLA (VIDITELNÉ VŽDY) -->
 <script>
     (function() {
-        function namontujTlacitkoProZmenuHesla() {
-            // Tlačítko ukážeme pouze tehdy, pokud je uživatel přihlášený (existuje currentUser) a není to anonymní guest
-            if (!window.currentUser || window.currentUser.role === 'guest') {
-                var stareTlacitko = document.getElementById('cc-change-password-btn');
-                if (stareTlacitko) stareTlacitko.remove();
-                return;
-            }
+        function namontujTlacitkoProZmenuHeslaVzdy() {
+            // Najdeme horní lištu s menu (tabs) nebo stavovou oblast v záhlaví portálu
+            var menuZalozek = document.querySelector('.tabs') || document.getElementById('userStatus') || document.querySelector('.container');
+            if (!menuZalozek || document.getElementById('cc-change-password-btn')) return;
 
-            // Najdeme horní lištu s uživatelským jménem nebo prostor vedle blikající svíčky
-            var userStatusArea = document.getElementById('userStatus') || document.querySelector('header') || document.querySelector('.container');
-            if (!userStatusArea || document.getElementById('cc-change-password-btn')) return;
-
-            // Vytvoříme elegantní, malé firemní tlačítko
+            // Vytvoříme elegantní, malé firemní šedé tlačítko
             var btnZmena = document.createElement('button');
             btnZmena.id = 'cc-change-password-btn';
             btnZmena.innerText = '🔑 Změnit heslo';
-            btnZmena.style.cssText = 'background: #64748b; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; margin-left: 10px; transition: background 0.2s; text-transform: uppercase; vertical-align: middle;';
+            
+            // Stylování: Posadíme tlačítko elegantně na konec horního menu záložek
+            btnZmena.style.cssText = 'background: #64748b; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: auto; margin-right: 10px; transition: background 0.2s; text-transform: uppercase; display: inline-block; height: 38px; align-self: center;';
             
             btnZmena.addEventListener('mouseenter', function() { this.style.background = '#475569'; });
             btnZmena.addEventListener('mouseleave', function() { this.style.background = '#64748b'; });
 
-            // KLÍČOVÁ AKCE: Změna hesla v počítači i v cloudu Firebase
+            // ⚡ AKCE PO KLIKNUTÍ: Změna hesla pro kohokoliv
             btnZmena.addEventListener('click', function() {
-                var stareHesloAktualnihoUzivatele = window.currentUser.code || localStorage.getItem('userCode') || '';
-                var noveHeslo = prompt('Zadejte své nové 5místné přístupové heslo (může obsahovat čísla i písmena):');
+                var aktualniEmailZadatele = localStorage.getItem('userEmail') || (window.currentUser ? window.currentUser.email : '') || '';
                 
-                if (noveHeslo === null) return; // Uživatel klikl na Storno
+                // Pokud nemáme uložený e-mail, zeptáme se pro jistotu nejprve na něj, abychom věděli, komu heslo měníme
+                if (!aktualniEmailZadatele) {
+                    aktualniEmailZadatele = prompt('Pro ověření zadejte svůj firemní e-mail, pod kterým jste v systému registrovaný/á:');
+                    if (aktualniEmailZadatele === null || aktualniEmailZadatele.trim() === '') return;
+                    aktualniEmailZadatele = aktualniEmailZadatele.trim();
+                }
+
+                var noveHeslo = prompt('Zadejte své nové 5místné přístupové heslo (může obsahovat čísla i písmena):');
+                if (noveHeslo === null) return; // Storno
                 
                 noveHeslo = noveHeslo.trim();
                 
-                // Bezpečnostní kontrola délky hesla
                 if (noveHeslo.length !== 5) {
                     alert('❌ Chyba: Nové heslo musí mít přesně 5 znaků!');
                     return;
                 }
 
-                if (confirm('Opravdu si přejete změnit své přístupové heslo na: ' + noveHeslo + '?')) {
-                    // 1. KROK: Aktualizace v lokální paměti prohlížeče
+                if (confirm('Opravdu si přejete trvale změnit své přístupové heslo na: ' + noveHeslo + '?')) {
+                    // Načteme celou databázi uživatelů z paměti počítače
                     var customUsers = JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {};
-                    
-                    // Pokud uživatel mění heslo, musíme ve staré struktuře smazat starý klíč a vytvořit nový
-                    if (customUsers[stareHesloAktualnihoUzivatele]) {
-                        var dataUzivatele = customUsers[stareHesloAktualnihoUzivatele];
-                        dataUzivatele.code = noveHeslo; // Aktualizace kódu uvnitř objektu
-                        
-                        delete customUsers[stareHesloAktualnihoUzivatele]; // Smažeme starý zámek
-                        customUsers[noveHeslo] = dataUzivatele; // Vytvoříme nový zámek s novým heslem
-                    } else {
-                        // Pojistný plán, pokud by uživatel v tabulce customUsers chyběl
+                    var hesloZmenenoVSeznamu = false;
+
+                    // Projdeme celou databázi a najdeme uživatele podle e-mailu
+                    for (var staryKod in customUsers) {
+                        if (customUsers[staryKod].email === aktualniEmailZadatele) {
+                            var ulozeneData = customUsers[staryKod];
+                            ulozeneData.code = noveHeslo; // Změníme vnitřní kód
+                            
+                            delete customUsers[staryKod]; // Odstraníme starý klíč
+                            customUsers[noveHeslo] = ulozeneData; // Vložíme pod novým heslem
+                            hesloZmenenoVSeznamu = true;
+                            break;
+                        }
+                    }
+
+                    // Pokud uživatel z nějakého důvodu v tabulce ještě neexistoval, vytvoříme mu tam čistý záznam
+                    if (!hesloZmenenoVSeznamu) {
                         customUsers[noveHeslo] = {
-                            email: window.currentUser.email || localStorage.getItem('userEmail') || '',
-                            role: window.currentUser.role || 'user',
+                            email: aktualniEmailZadatele,
+                            role: (window.currentUser ? window.currentUser.role : 'user'),
                             code: noveHeslo
                         };
                     }
 
+                    // Zapíšeme aktualizovanou databázi zpět do počítače
                     localStorage.setItem('customUsers', JSON.stringify(customUsers));
                     window.customUsers = customUsers;
                     
-                    // Aktualizujeme kód i v aktivní relaci, ať uživatele systém neodhlásí
-                    if (window.currentUser) window.currentUser.code = noveHeslo;
+                    // Uložíme nové heslo i do aktivní session, ať uživatele portál neodhlásí
                     localStorage.setItem('userCode', noveHeslo);
+                    if (window.currentUser) window.currentUser.code = noveHeslo;
 
-                    // 2. KROK: OKAMŽITÝ dálkový zápis a uzamčení ve Firebase cloudu na internetu
+                    // 🌐 OKAMŽITÝ dálkový update do internetové Google Firebase databáze
                     if (typeof firebase !== 'undefined' && firebase.apps.length) {
                         var db = firebase.firestore();
-                        
                         var dataProCloud = {
                             customUsers: customUsers,
                             companyActions: JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [],
@@ -2367,32 +2375,32 @@ window.deleteCompanyAction = function(id) {
 
                         db.collection("portalData").doc("cocaColaDatabase").set(dataProCloud, { merge: true })
                         .then(function() {
-                            alert('🎉 Vaše heslo bylo úspěšně změněno v celém systému! Při příštím přihlášení použijte kód: ' + noveHeslo);
-                            location.reload(); // Obnovíme stránku pro čisté načtení s novým heslem
+                            alert('🎉 Vaše heslo bylo úspěšně změněno na internetu i v počítači! Nový kód: ' + noveHeslo);
+                            location.reload();
                         })
                         .catch(function(err) {
-                            console.error("Chyba cloudu při ukládání hesla:", err);
-                            alert('🎉 Heslo změněno lokálně.');
+                            console.error("Chyba cloudu:", err);
+                            alert('🎉 Heslo uloženo lokálně.');
                             location.reload();
                         });
                     } else {
-                        alert('🎉 Heslo změněno lokálně.');
+                        alert('🎉 Heslo uloženo lokálně.');
                         location.reload();
                     }
                 }
             });
 
-            // Vložíme tlačítko bezpečně do stavové oblasti k uživatelskému jménu
-            if (userStatusArea.id === 'userStatus') {
-                userStatusArea.appendChild(btnZmena);
+            // Vložíme tlačítko přímo na konec řady do hlavního horního menu záložek (přesně vedle svíčky)
+            if (menuZalozek.classList.contains('tabs')) {
+                menuZalozek.appendChild(btnZmena);
             } else {
-                // Pojistka, pokud id neexistuje, připíchneme ho na začátek kontejneru
-                userStatusArea.insertBefore(btnZmena, userStatusArea.firstChild);
+                var hlavniMenu = document.querySelector('.tabs');
+                if (hlavniMenu) hlavniMenu.appendChild(btnZmena);
             }
         }
 
-        // Kontrolujeme přihlášení a udržujeme tlačítko viditelné na pozadí každou vteřinu
-        setInterval(namontujTlacitkoProZmenuHesla, 1000);
+        // Kontrolujeme stránku plynule každou vteřinu na pozadí, aby tlačítko ihned po přihlášení naskočilo
+        setInterval(namontujTlacitkoProZmenuHeslaVzdy, 1000);
     })();
 </script>
     <!-- 📧 AUTOMATICKÝ GENERÁTOR OUTLOOK E-MAILŮ PRO REGISTRAČNÍ KÓDY -->
