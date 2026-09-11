@@ -2467,119 +2467,89 @@ window.deleteCompanyAction = function(id) {
         setInterval(namontujEmailovaTlacitkaDoTabulkyKodu, 600);
     })();
 </script>
-  <!-- 📲 INSTALAČNÍ UKAZATEL S FUNKČNÍM QR KÓDEM ČISTĚ PRO PŘIHLAŠOVACÍ OBRAZOVKU (VPRAVO DOLE) -->
+  <!-- 📲 HORIZONTÁLNÍ INSTALAČNÍ TLAČÍTKO NA JEDNO KLIKNUTÍ (VPRAVO DOLE NA PŘIHLÁŠENÍ) -->
 <style>
-    #cc-login-download-card {
+    /* Elegantní a čisté firemní tlačítko v pravém dolním rohu */
+    #cc-direct-install-btn {
         position: fixed !important;
         bottom: 20px !important;
         right: 20px !important;
         background: #ffffff !important;
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 10px !important;
-        padding: 12px 16px !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.06) !important;
+        border: 2px solid var(--cc-red, #e41e26) !important; /* Výrazné červené ohraničení Coca-Cola */
+        border-radius: 8px !important;
+        padding: 10px 16px !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08) !important;
         z-index: 999999 !important;
         display: flex !important;
         align-items: center !important;
-        gap: 12px !important;
+        gap: 10px !important;
         cursor: pointer !important;
         transition: all 0.2s ease !important;
     }
-    #cc-login-download-card:hover {
+    #cc-direct-install-btn:hover {
         transform: translateY(-2px) !important;
-        box-shadow: 0 6px 20px rgba(228, 30, 38, 0.12) !important;
-        border-color: var(--cc-red, #e41e26) !important;
-    }
-
-    .cc-qr-modal {
-        display: none;
-        position: fixed !important;
-        top: 50% !important; left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        background: #ffffff !important;
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 12px !important;
-        padding: 25px !important;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
-        z-index: 9999999 !important;
-        width: 310px !important;
-        text-align: center !important;
-    }
-    .cc-qr-overlay {
-        display: none;
-        position: fixed !important;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(15, 23, 42, 0.3) !important;
-        z-index: 9999998 !important;
+        background: #fff5f5 !important;
+        box-shadow: 0 6px 20px rgba(228, 30, 38, 0.15) !important;
     }
 </style>
 
 <script>
     (function() {
-        function namontujInstalaciNaPrihlaseniCokeFunkcni() {
+        var zachycenyInstalacniPrompt = null;
+
+        // Prohlížeč nám dá vědět, že je web připraven ke stažení do PC/mobilu
+        window.addEventListener('beforeinstallprompt', function(e) {
+            // Schováme výchozí chování prohlížeče a uložíme si instalaci na naše tlačítko
+            e.preventDefault();
+            zachycenyInstalacniPrompt = e;
+            console.log("Systémová instalace na jedno kliknutí je plně připravena.");
+        });
+
+        function ridInstalaciNaPrihlaseniCoke() {
             var jePrihlasen = localStorage.getItem('userCode') || (window.currentUser && window.currentUser.role !== 'guest');
             
+            // Pokud už uživatel prošel přihlášením, tlačítko z rohu smažeme
             if (jePrihlasen) {
-                var existujiciKarta = document.getElementById('cc-login-download-card');
-                if (existujiciKarta) existujiciKarta.remove();
+                var existujiciBtn = document.getElementById('cc-direct-install-btn');
+                if (existujiciBtn) existujiciBtn.remove();
                 return;
             }
 
-            if (!document.getElementById('cc-login-download-card')) {
-                var card = document.createElement('div');
-                card.id = 'cc-login-download-card';
-                card.innerHTML = 
-                    '<div style="font-size: 24px; line-height: 1;">📲</div>' +
-                    '<div style="text-align: left;">' +
-                        '<div style="font-weight: 800; font-size: 11px; color: #0f172a; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 2px;">Stáhnout jako aplikaci</div>' +
-                        '<div style="font-size: 11px; color: #64748b; font-weight: 600;">Klikněte pro QR kód a návod</div>' +
+            // Pokud jsme na úvodní obrazovce a tlačítko tam ještě nestojí
+            if (!document.getElementById('cc-direct-install-btn')) {
+                var btn = document.createElement('div');
+                btn.id = 'cc-direct-install-btn';
+                btn.innerHTML = 
+                    '<div style="font-size: 20px; line-height: 1;">📲</div>' +
+                    '<div style="text-align: left; font-family: inherit;">' +
+                        '<div style="font-weight: 800; font-size: 12px; color: #e41e26; text-transform: uppercase; letter-spacing: 0.04em;">Stáhnout aplikaci</div>' +
+                        '<div style="font-size: 11px; color: #475569; font-weight: 600;">Kliknutím uložte na plochu</div>' +
                     '</div>';
 
-                document.body.appendChild(card);
+                document.body.appendChild(btn);
 
-                var overlay = document.createElement('div');
-                overlay.className = 'cc-qr-overlay';
-                overlay.id = 'cc-qr-overlay';
-                
-                var modal = document.createElement('div');
-                modal.className = 'cc-qr-modal';
-                modal.id = 'cc-qr-modal';
-
-                // 🌐 NOVÝ, STABILNÍ EVROPSKÝ GENERÁTOR QR KÓDŮ (QR Server)
-                var cistaAdresa = window.location.href.split('?')[0];
-                var qrUrl = "https://qrserver.com" + encodeURIComponent(cistaAdresa);
-
-                modal.innerHTML = 
-                    '<h3 style="margin:0 0 6px 0; color:#0f172a; font-size:15px; font-weight:800; text-transform:uppercase;">Uložit na plochu</h3>' +
-                    '<p style="font-size:12px; color:#64748b; margin:0 0 15px 0; line-height:1.4;">Pro stažení do PC klikněte na ikonu instalace (šipku) v pravé části adresního řádku prohlížeče.</p>' +
-                    '<div style="background:#f8fafc; padding:10px; border-radius:8px; display:inline-block; margin-bottom:12px; border:1px solid #e2e8f0;">' +
-                        '<img src="' + qrUrl + '" alt="Instalační QR Kód" style="display:block; width:180px; height:180px;">' +
-                    '</div>' +
-                    '<p style="font-size:11px; color:#94a3b8; margin:0 0 15px 0; font-weight:700; text-transform:uppercase;">Naskenujte mobilem</p>' +
-                    '<button id="cc-close-qr-btn" style="width:100%; background:#64748b; color:white; border:none; padding:8px; border-radius:6px; font-weight:700; cursor:pointer; text-transform:uppercase; font-size:12px;">Zavřít</button>';
-
-                document.body.appendChild(overlay);
-                document.body.appendChild(modal);
-
-                card.addEventListener('click', function() {
-                    overlay.style.display = 'block';
-                    modal.style.display = 'block';
-                });
-
-                document.getElementById('cc-close-qr-btn').addEventListener('click', function() {
-                    overlay.style.display = 'none';
-                    modal.style.display = 'none';
-                });
-                overlay.addEventListener('click', function() {
-                    overlay.style.display = 'none';
-                    modal.style.display = 'none';
+                // ⚡ AKCE PO KLIKNUTÍ: Spustí okamžité uložení do systému
+                btn.addEventListener('click', function() {
+                    if (zachycenyInstalacniPrompt) {
+                        // Spustíme to oficiální stažení od Googlu/Windows
+                        zachycenyInstalacniPrompt.prompt();
+                        zachycenyInstalacniPrompt.userChoice.then(function(vysledek) {
+                            if (vysledek.outcome === 'accepted') {
+                                console.log('Uživatel aplikaci úspěšně stáhl.');
+                            }
+                            zachycenyInstalacniPrompt = null;
+                        });
+                    } else {
+                        // Nápověda pro iPhony/Safari nebo pokud prohlížeč ještě prompt nenačetl
+                        alert('💡 Tip pro instalaci:\n\nPokud se nespustilo automatické okno:\n- Na PC: Klikněte na ikonu instalace (kolečko se šipkou) v pravém horním rohu adresního řádku.\n- Na iPhonu: Klikněte na tlačítko "Sdílet" dole v Safari a zvolte "Přidat na plochu".');
+                    }
                 });
             }
         }
 
-        setInterval(namontujInstalaciNaPrihlaseniCokeFunkcni, 1000);
+        // Hlídáme přihlášení plynule každou vteřinu na pozadí
+        setInterval(ridInstalaciNaPrihlaseniCoke, 1000);
     })();
 </script>
-
 </body>
 </html>
