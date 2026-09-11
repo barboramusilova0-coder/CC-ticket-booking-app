@@ -2395,5 +2395,69 @@ window.deleteCompanyAction = function(id) {
         setInterval(namontujTlacitkoProZmenuHesla, 1000);
     })();
 </script>
+    <!-- 📧 AUTOMATICKÝ GENERÁTOR OUTLOOK E-MAILŮ PRO REGISTRAČNÍ KÓDY -->
+<script>
+    (function() {
+        function namontujEmailovaTlacitkaDoTabulkyKodu() {
+            // Najdeme tabulku vydaných kódů v administraci (předpokládáme id customUsersTableBody nebo obecné řádky v tab4)
+            var radkyUzivatelu = document.querySelectorAll('#customUsersTableBody tr, #tab4 table tbody tr');
+            
+            radkyUzivatelu.forEach(function(row) {
+                // Pojistka pro prázdné nebo příliš krátké řádky
+                if (row.cells.length < 2) return;
+
+                var bunky = row.cells;
+                var emailZamestnance = "";
+                var vygenerovanyKod = "";
+
+                // Projdeme buňky v tomto řádku a najdeme e-mail a pětimístný kód
+                for (var i = 0; i < bunky.length; i++) {
+                    var textBunky = bunky[i].innerText.trim();
+                    
+                    // Detekce e-mailu
+                    if (textBunky.indexOf('@') > -1) {
+                        emailZamestnance = textBunky;
+                    }
+                    // Detekce 5místného kódu (může obsahovat čísla i písmena)
+                    if (textBunky.length === 5) {
+                        vygenerovanyKod = textBunky;
+                    }
+                }
+
+                // Pokud v řádku bezpečně vidíme kód i e-mail a tlačítko tam ještě nesedí
+                var posledniBunka = bunky[bunky.length - 1];
+                if (emailZamestnance && vygenerovanyKod && !posledniBunka.querySelector('.cc-code-email-btn')) {
+                    
+                    // 📝 TADY SI MŮŽEŠ UPRAVIT TEXT EMAILU PODLE SEBE (\n znamená nový řádek)
+                    var textZpravy = "Dobrý den,\n\nVaše žádost o přístup do rezervačního portálu Coca-Cola HBC byla úspěšně schválena.\n\nVáš unikátní 5místný přístupový kód pro přihlášení je: " + vygenerovanyKod + "\n\nTento kód prosím bezpečně uschovejte. Můžete si ho po přihlášení kdykoliv změnit v horní liště systému.\n\nS pozdravem,\nTým Coca-Cola HBC";
+                    
+                    // 🏷️ TADY SI MŮŽEŠ UPRAVIT PŘEDMĚT EMAILU
+                    var predmetEmailu = "Schválení registrace a přístupový kód – Coca-Cola HBC";
+                    
+                    // Sestavíme bezpečný mailto odkaz pro bleskové otevření Outlooku
+                    var mailtoUrl = "mailto:" + emailZamestnance + 
+                                    "?subject=" + encodeURIComponent(predmetEmailu) + 
+                                    "&body=" + encodeURIComponent(textZpravy);
+
+                    // Vytvoříme elegantní firemní červené tlačítko
+                    var emailBtn = document.createElement('a');
+                    emailBtn.className = 'cc-code-email-btn';
+                    emailBtn.href = mailtoUrl;
+                    emailBtn.style.cssText = 'display: inline-block; background: #e41e26; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-decoration: none; text-transform: uppercase; margin-left: 8px; transition: background 0.2s; vertical-align: middle;';
+                    emailBtn.innerText = '📧 E-mail';
+                    
+                    emailBtn.addEventListener('mouseenter', function() { this.style.background = '#b81118'; });
+                    emailBtn.addEventListener('mouseleave', function() { this.style.background = '#e41e26'; });
+
+                    // Přibalíme tlačítko do poslední buňky v řádku (vedle tlačítek Upravit/Smazat)
+                    posledniBunka.appendChild(emailBtn);
+                }
+            });
+        }
+
+        // Kontrolujeme a krmíme tabulku průběžně na pozadí každých 600ms
+        setInterval(namontujEmailovaTlacitkaDoTabulkyKodu, 600);
+    })();
+</script>
 </body>
 </html>
