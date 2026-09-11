@@ -2788,5 +2788,203 @@ window.deleteCompanyAction = function(id) {
         setInterval(vymazViseciNadpisObsazenosti, 400);
     })();
 </script>
+    <!-- 🎨 DYNAMICKÁ TÉMATA PORTÁLU: 1. ČÁST - GRAFICKÉ ANIMACE PADÁNÍ -->
+<style>
+    /* 🍁 Plynulé padání listí a sněhu bez sekání stránek */
+    .cc-falling-particle {
+        position: fixed !important;
+        top: -20px !important;
+        pointer-events: none !important;
+        z-index: 9999999 !important;
+        animation: ccFallLinear linear infinite !important;
+        user-select: none !important;
+    }
+    @keyframes ccFallLinear {
+        0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { transform: translateY(105vh) rotate(360deg); opacity: 0; }
+    }
+    
+    /* Elegantní vodorovná řada tlačítek pro výběr módu v Administraci */
+    .cc-theme-switcher-row {
+        display: flex !important;
+        gap: 10px !important;
+        margin-top: 15px !important;
+        margin-bottom: 15px !important;
+        width: 100% !important;
+    }
+    .cc-theme-btn {
+        flex: 1 !important;
+        height: 38px !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 6px !important;
+        background: #ffffff !important;
+        color: #334155 !important;
+        font-weight: 700 !important;
+        font-size: 13px !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+        text-transform: uppercase !important;
+    }
+    .cc-theme-btn:hover {
+        background: #f8fafc !important;
+        border-color: #94a3b8 !important;
+    }
+    .cc-theme-btn.active {
+        background: #e41e26 !important; /* Firemní červená pro aktivní mód */
+        color: #ffffff !important;
+        border-color: #e41e26 !important;
+        box-shadow: 0 2px 8px rgba(228, 30, 38, 0.2) !important;
+    }
+</style>
+
+<script>
+    (function() {
+        // Pomocná funkce, která na dálku vygeneruje padající prvky na pozadí portálu
+        function spustPadaniCastic(emojis) {
+            // Nejdřív smažeme případné staré padající věci z minula
+            document.querySelectorAll('.cc-falling-particle').forEach(function(p) { p.remove(); });
+            
+            if (emojis.length === 0) return; // Výchozí korporátní mód = čistá plocha
+
+            // Vygenerujeme 25 plynule padajících prvků s náhodnou rychlostí a pozicí
+            for (var i = 0; i < 25; i++) {
+                var p = document.createElement('div');
+                p.className = 'cc-falling-particle';
+                p.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+                
+                p.style.left = Math.random() * 100 + 'vw';
+                p.style.fontSize = (Math.random() * 15 + 12) + 'px';
+                p.style.animationDuration = (Math.random() * 6 + 5) + 's'; // Rychlost padání 5 až 11 vteřin
+                p.style.animationDelay = (Math.random() * 5) + 's';
+                
+                document.body.appendChild(p);
+            }
+        }
+        // 🎨 2. ČÁST: IMPLEMENTACE TLAČÍTEK DO ADMINISTRACE A CLOUDOVÉ PROPOJENÍ
+        var aktualniAktivniMod = "coke";
+
+        // Funkce, která podle vybraného klíče zapne ty správné ikony a padání
+        window.aktivujVybranyModPortalu = function(modKey, saveToCloud) {
+            aktualniAktivniMod = modKey;
+            
+            // Najdeme to naše hlavní svítící / blikající tlačítko v rohu (svíčku, dýni atd.)
+            var ikonaSvíčky = document.getElementById('candleBtn') || document.querySelector('.candle-btn') || document.querySelector('button[style*="position: fixed"]');
+            
+            var částiceProPadání = [];
+            var textIkony = "🕯️";
+
+            // ⚙️ NASTAVENÍ JEDNOTLIVÝCH MÓDŮ (Můžeš si ikony kdykoliv v uvozovkách změnit)
+            if (modKey === 'podzim') {
+                textIkony = "🎃";
+                částiceProPadání = ["🍁", "🍂", "🍃", "🎃"];
+            } else if (modKey === 'zima') {
+                textIkony = "🎄";
+                částiceProPadání = ["❄️", "🌨️", "✨"];
+            } else if (modKey === 'jaro') {
+                textIkony = "🐇";
+                částiceProPadání = ["🌸", "🥚", "🐥", "🌱"];
+            } else if (modKey === 'leto') {
+                textIkony = "☀️";
+                částiceProPadání = ["🌻", "🌺", "🏖️", "🍉"];
+            } else {
+                // Výchozí čistý Coca-Cola mód
+                textIkony = "CC";
+                částiceProPadání = [];
+            }
+
+            // Přepíšeme ikonu v rohu
+            if (ikonaSvíčky) {
+                // Zachováme blikající animaci, jen vyměníme vnitřní obrázek/emoji
+                var textSpan = ikonaSvíčky.querySelector('span') || ikonaSvíčky;
+                if (textSpan) textSpan.innerText = textIkony;
+            }
+
+            // Spustíme plynulé padání prvků na pozadí
+            spustPadaniCastic(částiceProPadání);
+
+            // Nasvítíme to správné červené tlačítko v Administraci jako aktivní
+            document.querySelectorAll('.cc-theme-btn').forEach(function(btn) {
+                if (btn.getAttribute('data-theme') === modKey) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Uložíme do paměti počítače pro příště
+            localStorage.setItem('cc_portal_theme_mode', modKey);
+
+            // 🌐 LIVE SYNC DO CLOUDU: Vystřelíme změnu do Firebase, aby se vteřinu poté změnila grafika všem lidem ve firmě naráz!
+            if (saveToCloud && typeof firebase !== 'undefined' && firebase.apps.length) {
+                var db = firebase.firestore();
+                db.collection("portalData").doc("cocaColaDatabase").set({
+                    cc_portal_theme_mode: modKey
+                }, { merge: true }).then(function() {
+                    console.log("Atmosféra portálu úspěšně změněna v cloudu Firebase!");
+                });
+            }
+        }
+
+        // Funkce, která namontuje panel s 5 vodorovnými tlačítky do tvé čtvrté rozbalovací záložky
+        function namontujPrepinacTematDoAdminu() {
+            var boxNastaveni = document.getElementById('cc-admin-reasons-group') || document.querySelector('#cc-acc-box-nastaveni .cc-accordion-content');
+            if (!boxNastaveni || document.getElementById('cc-theme-switcher-container')) return;
+
+            var containerSezón = document.createElement('div');
+            containerSezón.id = 'cc-theme-switcher-container';
+            containerSezón.style.cssText = 'margin-top: 20px; padding-top: 15px; border-top: 1px dashed #cbd5e1; text-align: left;';
+            
+            containerSezón.innerHTML = 
+                '<label style="font-weight: 700; font-size: 13px; color: #1e293b; display: block; margin-bottom: 4px;">🎨 Nastavení atmosféry portálu (Roční období):</label>' +
+                '<p style="font-size: 11px; color: #64748b; margin: 0 0 10px 0;">Zvolte aktuální mód. Změna se okamžitě projeví a rozbliká všem uživatelům na obrazovkách.</p>' +
+                '<div class="cc-theme-switcher-row">' +
+                    '<button class="cc-theme-btn" data-theme="podzim">🍁 Podzim</button>' +
+                    '<button class="cc-theme-btn" data-theme="zima">❄️ Zima</button>' +
+                    '<button class="cc-theme-btn" data-theme="jaro">🌸 Jaro</button>' +
+                    '<button class="cc-theme-btn" data-theme="leto">☀️ Léto</button>' +
+                    '<button class="cc-theme-btn" data-theme="coke">💼 Klasika</button>' +
+                '</div>';
+
+            boxNastaveni.appendChild(containerSezón);
+
+            // Naučíme tlačítka reagovat na kliknutí správce
+            containerSezón.querySelectorAll('.cc-theme-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var vybranyMod = this.getAttribute('data-theme');
+                    window.aktivujVybranyModPortalu(vybranyMod, true); // True = uložit na internet do Firebase
+                });
+            });
+
+            // Hned po vygenerování tlačítek tam aktivujeme ten mód, který je zrovna uložený v paměti
+            var minuleUlozeno = localStorage.getItem('cc_portal_theme_mode') || 'coke';
+            window.aktivujVybranyModPortalu(minuleUlozeno, false);
+        }
+
+        // POJISTKA PŘI STARTU: Načteme si aktuální atmosféru přímo z dálkového cloudu Firebase
+        if (typeof firebase !== 'undefined' && firebase.apps.length) {
+            var db = firebase.firestore();
+            db.collection("portalData").doc("cocaColaDatabase").onSnapshot(function(doc) {
+                if (doc.exists && doc.data().cc_portal_theme_mode) {
+                    var cloudMod = doc.data().cc_portal_theme_mode;
+                    if (cloudMod !== aktualniAktivniMod) {
+                        window.aktivujVybranyModPortalu(cloudMod, false);
+                    }
+                }
+            });
+        }
+
+        // Spouštíme hlídače panelu na pozadí každou půl vteřinu
+        setInterval(namontujPrepinacTematDoAdminu, 500);
+        
+        // Pomocný start hned po načtení stránky z lokální paměti počítače
+        setTimeout(function() {
+            var startMod = localStorage.getItem('cc_portal_theme_mode') || 'coke';
+            window.aktivujVybranyModPortalu(startMod, false);
+        }, 300);
+    })();
+</script>
+
 </body>
 </html>
