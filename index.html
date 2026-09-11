@@ -2610,5 +2610,162 @@ window.deleteCompanyAction = function(id) {
         setInterval(transformujRezervacniFormularNaDuvodyCoke, 450);
     })();
 </script>
+    <!-- 🗂️ HARMONIKOVÉ ZÁLOŽKY PRO ADMINA: 1. ČÁST - GRAFICKÝ DESIGN BOXŮ -->
+<style>
+    /* Stylování moderních rozbalovacích nadpisů v Administraci */
+    .cc-accordion-item {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 8px !important;
+        margin-bottom: 12px !important;
+        overflow: hidden !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
+        text-align: left !important;
+    }
+    
+    .cc-accordion-header {
+        background: #f8fafc !important;
+        padding: 14px 20px !important;
+        font-weight: 800 !important;
+        font-size: 14px !important;
+        color: #1e293b !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.03em !important;
+        cursor: pointer !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        user-select: none !important;
+        transition: background 0.2s !important;
+        border-bottom: 1px solid transparent !important;
+    }
+    .cc-accordion-header:hover {
+        background: #f1f5f9 !important;
+    }
+    
+    /* Šipka, která se při rozbalení elegantně otočí dolů */
+    .cc-accordion-arrow {
+        font-size: 12px !important;
+        transition: transform 0.2s ease !important;
+        color: #64748b !important;
+    }
+    
+    /* Obsahový prostor uvnitř záložky */
+    .cc-accordion-content {
+        display: none; /* Výchozí stav: Všechno je schované */
+        padding: 20px !important;
+        border-top: 1px solid #e2e8f0 !important;
+        background: #ffffff !important;
+    }
+    
+    /* Třídy pro aktivní (otevřený) stav, které JavaScript zapíná */
+    .cc-accordion-item.active .cc-accordion-content {
+        display: block !important;
+    }
+    .cc-accordion-item.active .cc-accordion-header {
+        border-bottom-color: #e2e8f0 !important;
+        background: #f1f5f9 !important;
+    }
+    .cc-accordion-item.active .cc-accordion-arrow {
+        transform: rotate(90deg) !important;
+    }
+</style>
+
+<script>
+    (function() {
+        // Pomocná funkce pro bezpečné zabalení stávajícího prvku do harmoniky
+        function zabalDoHarmoniky(nadpisText, elementyKPropojeni, unikatniID) {
+            var prvniEl = elementyKPropojeni[0];
+            if (!prvniEl || document.getElementById(unikatniID)) return;
+
+            var rodic = prvniEl.parentNode;
+            
+            // Vytvoříme celou strukturu nové záložky
+            var accordionItem = document.createElement('div');
+            accordionItem.className = 'cc-accordion-item';
+            accordionItem.id = unikatniID;
+            
+            var header = document.createElement('div');
+            header.className = 'cc-accordion-header';
+            header.innerHTML = '<span>' + nadpisText + '</span><span class="cc-accordion-arrow">▶</span>';
+            
+            var content = document.createElement('div');
+            content.className = 'cc-accordion-content';
+            
+            // Přesuneme původní tabulky/formuláře dovnitř rozbalovacího obsahu
+            rodic.insertBefore(accordionItem, prvniEl);
+            accordionItem.appendChild(header);
+            accordionItem.appendChild(content);
+            
+            elementyKPropojeni.forEach(function(el) {
+                content.appendChild(el);
+            });
+
+            // Naučíme nadpis reagovat na kliknutí (otevřít / zavřít)
+            header.addEventListener('click', function() {
+                accordionItem.classList.toggle('active');
+            });
+        }
+        // 🗂️ HARMONIKOVÉ ZÁLOŽKY PRO ADMINA: 2. ČÁST - SKLÁDÁNÍ TABULEK DO BOXŮ
+        function transformujAdministraciNaKompaktniZalozky() {
+            var adminTab = document.getElementById('tab4');
+            if (!adminTab) return;
+
+            // --- 1. BOX: TVORBA A SPRÁVA AKCÍ ---
+            // Najdeme formulář pro novou akci a tabulku, která je pod ním
+            var formAkci = adminTab.querySelector('form') || document.getElementById('actionForm');
+            var tabulkaAkci = adminTab.querySelector('table'); // První tabulka na stránce bývá přehled akcí
+            
+            if (formAkci && tabulkaAkci && !document.getElementById('cc-acc-box-akce')) {
+                zabalDoHarmoniky('📝 Tvorba a správa akcí', [formAkci, tabulkaAkci], 'cc-acc-box-akce');
+            }
+
+            // --- 2. BOX: ŽÁDOSTI O REGISTRACI A PŘÍSTUPY ---
+            // Najdeme sekci nebo nadpis Čekající žádosti o přidělení role a tabulku pod ní
+            var tabulkaZadostiRole = document.getElementById('roleRequestsTableBody') ? document.getElementById('roleRequestsTableBody').closest('table') : null;
+            if (!tabulkaZadostiRole) {
+                // Pojistný plán: zkusíme najít druhou tabulku na stránce
+                var vsechnyTabulky = adminTab.querySelectorAll('table');
+                if (vsechnyTabulky.length >= 2) tabulkaZadostiRole = vsechnyTabulky[1];
+            }
+            
+            if (tabulkaZadostiRole && !document.getElementById('cc-acc-box-registrace')) {
+                // Najdeme případný nadpis nad touto tabulkou, abychom ho schovali
+                var nadpisReg = tabulkaZadostiRole.previousElementSibling;
+                if (nadpisReg && (nadpisReg.tagName === 'H3' || nadpisReg.tagName === 'H4')) {
+                    nadpisReg.style.setProperty('display', 'none', 'important');
+                }
+                zabalDoHarmoniky('🔐 Žádosti o registraci a přístupy', [tabulkaZadostiRole], 'cc-acc-box-registrace');
+            }
+
+            // --- 3. BOX: AKTIVNÍ SCHVALOVATELÉ / VYDANÉ KÓDY ---
+            // Najdeme tabulku vydaných kódů (customUsersTableBody)
+            var tabulkaVydanychKodu = document.getElementById('customUsersTableBody') ? document.getElementById('customUsersTableBody').closest('table') : null;
+            if (!tabulkaVydanychKodu) {
+                var vsechnyTabulky = adminTab.querySelectorAll('table');
+                if (vsechnyTabulky.length >= 3) tabulkaVydanychKodu = vsechnyTabulky[2];
+            }
+
+            if (tabulkaVydanychKodu && !document.getElementById('cc-acc-box-kody')) {
+                var nadpisKody = tabulkaVydanychKodu.previousElementSibling;
+                if (nadpisKody && (nadpisKody.tagName === 'H3' || nadpisKody.tagName === 'H4')) {
+                    nadpisKody.style.setProperty('display', 'none', 'important');
+                }
+                zabalDoHarmoniky('🔑 Aktivní schvalovatelé / Vydané kódy', [tabulkaVydanychKodu], 'cc-acc-box-kody');
+            }
+
+            // --- 4. BOX: GLOBÁLNÍ NASTAVENÍ PORTÁLU (DŮVODY PRO ŠÉFA) ---
+            // Najdeme ten náš šedý kontejner pro správu důvodů z minulé zprávy
+            var boxDuvodu = document.getElementById('cc-admin-reasons-group');
+            if (boxDuvodu && !document.getElementById('cc-acc-box-nastaveni')) {
+                zabalDoHarmoniky('🛠️ Globální nastavení portálu', [boxDuvodu], 'cc-acc-box-nastaveni');
+            }
+        }
+
+        // Plynule provádíme transformaci na pozadí při překlikávání záložek
+        setInterval(transformujAdministraciNaKompaktniZalozky, 500);
+    })();
+</script>
+
 </body>
 </html>
