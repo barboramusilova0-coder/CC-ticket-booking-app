@@ -84,44 +84,6 @@
         .btn-action:disabled { background: #f1f5f9 !important; color: #cbd5e1 !important; border-color: #e2e8f0 !important; cursor: not-allowed; }
         .box-section { background: #ffffff; padding: 28px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 36px; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-            /* 🍁 PODZIMNÍ EFEKT: Animace padajícího listí v pozadí 🍁 */
-                .leaves-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99999 !important; overflow: hidden; opacity: 0.45; }
-        .leaf { position: absolute; top: -50px; display: block; background-size: contain; background-repeat: no-repeat; opacity: 0.85; animation: fall linear infinite; }
-        
-        /* Předpisy pro kroužení a snášení lístků */
-                /* Detailní fyzika padání podzimního listí */
-        @keyframes fall {
-            0% { transform: translateY(-50px) rotate(0deg) translateX(0); opacity: 0; }
-            10% { opacity: 0.65; }
-            50% { transform: translateY(50vh) rotate(180deg) translateX(40px); }
-            90% { opacity: 0.65; }
-            100% { transform: translateY(105vh) rotate(360deg) translateX(-30px); opacity: 0; }
-        }
-    </style>
-</head>
-<body>
-        <!-- Kontejner pro detailní podzimní lístky (Javor a Dub) -->
-    <div class="leaves-container">
-        <!-- 1. Javorový list (Sytě oranžový) -->
-        <div class="leaf" style="left: 8%; width: 42px; height: 42px; animation-duration: 14s; animation-delay: 0s;">
-            <svg viewBox="0 0 100 100" fill="#f97316"><path d="M50,5 L54,25 L68,18 L64,32 L82,30 L72,44 L92,52 L74,60 L80,78 L62,70 L58,90 L50,80 L42,90 L38,70 L20,78 L26,60 L8,52 L28,44 L18,30 L36,32 L32,18 L46,25 Z M50,45 L50,85" stroke="#ea580c" stroke-width="3" stroke-linecap="round"/></svg>
-        </div>
-        <!-- 2. Dubový list (Zlatavý) -->
-        <div class="leaf" style="left: 28%; width: 34px; height: 44px; animation-duration: 9s; animation-delay: 3s;">
-            <svg viewBox="0 0 100 100" fill="#eab308"><path d="M50,5 C40,15 35,25 40,35 C30,38 32,50 42,55 C32,60 36,75 45,78 L50,95 L55,78 C64,75 68,60 58,55 C68,50 70,38 60,35 C65,25 60,15 50,5 Z M50,5 L50,78" stroke="#ca8a04" stroke-width="3" stroke-linecap="round"/></svg>
-        </div>
-        <!-- 3. Javorový list (Temně červený) -->
-        <div class="leaf" style="left: 48%; width: 46px; height: 46px; animation-duration: 16s; animation-delay: 1s;">
-            <svg viewBox="0 0 100 100" fill="#b91c1c"><path d="M50,5 L54,25 L68,18 L64,32 L82,30 L72,44 L92,52 L74,60 L80,78 L62,70 L58,90 L50,80 L42,90 L38,70 L20,78 L26,60 L8,52 L28,44 L18,30 L36,32 L32,18 L46,25 Z M50,45 L50,85" stroke="#991b1b" stroke-width="3" stroke-linecap="round"/></svg>
-        </div>
-        <!-- 4. Dubový list (Hnědooranžový) -->
-        <div class="leaf" style="left: 68%; width: 36px; height: 46px; animation-duration: 11s; animation-delay: 5s;">
-            <svg viewBox="0 0 100 100" fill="#d97706"><path d="M50,5 C40,15 35,25 40,35 C30,38 32,50 42,55 C32,60 36,75 45,78 L50,95 L55,78 C64,75 68,60 58,55 C68,50 70,38 60,35 C65,25 60,15 50,5 Z M50,5 L50,78" stroke="#b45309" stroke-width="3" stroke-linecap="round"/></svg>
-        </div>
-        <!-- 5. Javorový list (Zlatě žlutý) -->
-        <div class="leaf" style="left: 85%; width: 38px; height: 38px; animation-duration: 8s; animation-delay: 2s;">
-            <svg viewBox="0 0 100 100" fill="#facc15"><path d="M50,5 L54,25 L68,18 L64,32 L82,30 L72,44 L92,52 L74,60 L80,78 L62,70 L58,90 L50,80 L42,90 L38,70 L20,78 L26,60 L8,52 L28,44 L18,30 L36,32 L32,18 L46,25 Z M50,45 L50,85" stroke="#eab308" stroke-width="3" stroke-linecap="round"/></svg>
-        </div>
     </div>
 <div id="welcomeGate" class="welcome-gate">
     <div style="font-size: 40px; margin-bottom: 10px;">🔴</div>
@@ -2985,6 +2947,173 @@ window.deleteCompanyAction = function(id) {
         }, 300);
     })();
 </script>
+<!-- 🎨 PREMIUM GRAFICKÁ TÉMATA PORTÁLU: 1. ČÁST - STYLY A GRAFICKÉ ŠABLONY -->
+<style>
+    /* Plynulé padání a rotace pro vektorové grafické prvky */
+    .cc-premium-particle {
+        position: fixed !important;
+        top: -40px !important;
+        pointer-events: none !important;
+        z-index: 9999999 !important;
+        animation: ccPremiumFall linear infinite !important;
+        user-select: none !important;
+        opacity: 0;
+    }
+    
+    @keyframes ccPremiumFall {
+        0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+        10% { opacity: 0.75; }
+        90% { opacity: 0.75; }
+        100% { transform: translateY(105vh) rotate(280deg); opacity: 0; }
+    }
 
+    /* Elegantní řada tlačitek pro přepínání v Administraci */
+    .cc-theme-switcher-row { display: flex !important; gap: 10px !important; margin-top: 15px !important; margin-bottom: 15px !important; width: 100% !important; }
+    .cc-theme-btn { flex: 1 !important; height: 38px !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; background: #ffffff !important; color: #334155 !important; font-weight: 700 !important; font-size: 12px !important; cursor: pointer !important; transition: all 0.2s ease !important; text-transform: uppercase !important; letter-spacing: 0.02em; }
+    .cc-theme-btn:hover { background: #f8fafc !important; border-color: #94a3b8 !important; }
+    .cc-theme-btn.active { background: #e41e26 !important; color: #ffffff !important; border-color: #e41e26 !important; box-shadow: 0 2px 8px rgba(228, 30, 38, 0.2) !important; }
+</style>
+
+<script>
+    (function() {
+        var aktualniAktivniMod = "coke";
+
+        // Vektorové SVG šablony pro čisté vykreslení tvarů bez použití textových ikon
+        var svgSablony = {
+            list: '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M12,2s-.5,4.3-3.2,6.5c-1.5,1.2-3.8,1.3-4.8,3.3-.8,1.6,0,3.9,1,5,2.4,2.5,7,4.2,7,4.2s4.6-1.7,7-4.2c1-1.1,1.8-3.4,1-5-1-2-3.3-2.1-4.8-3.3C12.5,6.3,12,2,12,2Z"/></svg>',
+            vlockka: '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M12,2v20M2,12h20M5,5l14,14M5,19l14-14M12,6l2,2M12,6l-2,2M12,18l2-2M12,18l-2-2M6,12l2,2M6,12l2-2M18,12l-2,2M18,12l-2-2"/></svg>',
+            kvet: '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M12,9a3,3,0,1,0,3,3A3,3,0,0,0,12,9Zm0-7a3,3,0,0,0-3,3,3,3,0,0,0,6,0A3,3,0,0,0,12,2Zm0,14a3,3,0,0,0-3,3,3,3,0,0,0,6,0A3,3,0,0,0,12,16Zm-7-7a3,3,0,0,0-3,3,3,3,0,0,0,6,0A3,3,0,0,0,5,9Zm14,0a3,3,0,0,0-3,3,3,3,0,0,0,6,0A3,3,0,0,0,19,9Z"/></svg>',
+            slunecnice: '<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="4"/><path d="M12,1l2,4l4-2l-2,4l4,2l-4,2l2,4l-4-2l-2,4l-2-4l-4,2l2-4l-4-2l4-2l-2-4l4,2Z"/></svg>',
+            
+            stromecek: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="vertical-align:middle;"><path d="M12,2L4,14h3v6h10v-6h3L12,2Z"/></svg>',
+            dyne: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="vertical-align:middle;"><path d="M12,2s.5,2,1,2c3,0,6,2,6,5s-2,7-7,7s-7-4-7-7s3-5,6-5C11.5,4,12,2,12,2Z"/></svg>',
+            vajicko: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="vertical-align:middle;"><path d="M12,2C7,2,4,9,4,14s3,8,8,8s8-3,8-8S17,2,12,2Z"/></svg>',
+            slunce: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="vertical-align:middle;"><circle cx="12" cy="12" r="5"/><path d="M12,1v3M12,20v3M1,12h3M20,12h3M4,4l2,2M18,18l2,2M4,20l2-2M18,6l2-2"/></svg>',
+            svicka: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="vertical-align:middle;"><path d="M9,10h6v12h-6v-12Zm3-8s1.5,3,1,4h-2s-.5-1,1-4Z"/></svg>'
+        };
+        // 🎨 PREMIUM GRAFICKÁ TÉMATA PORTÁLU: 2. ČÁST - PROGRAMOVÝ ENGINE A CLOUD SYNC
+        function spoustejCistePadaniGrafiky(typCastice, barvyPole) {
+            document.querySelectorAll('.cc-premium-particle').forEach(function(p) { p.remove(); });
+            if (!typCastice) return;
+
+            // Vygenerujeme 25 vkusných poloprůhledných vektorových objektů
+            for (var i = 0; i < 25; i++) {
+                var p = document.createElement('div');
+                p.className = 'cc-premium-particle';
+                p.innerHTML = svgSablony[typCastice];
+                
+                var svgEl = p.querySelector('svg');
+                if (svgEl) {
+                    var vybranaBarva = barvyPole[Math.floor(Math.random() * barvyPole.length)];
+                    svgEl.style.fill = vybranaBarva;
+                    svgEl.style.opacity = (Math.random() * 0.4 + 0.35); // Jemná průhlednost
+                }
+
+                p.style.left = Math.random() * 98 + 'vw';
+                var meritko = (Math.random() * 0.6 + 0.7); // Různé velikosti
+                p.style.transform = 'scale(' + meritko + ')';
+                p.style.animationDuration = (Math.random() * 6 + 6) + 's'; // Pomalý plynulý pád
+                p.style.animationDelay = (Math.random() * 6) + 's';
+                
+                document.body.appendChild(p);
+            }
+        }
+
+        window.aktivujVybranyModPortalu = function(modKey, saveToCloud) {
+            aktualniAktivniMod = modKey;
+            var ikonaSvíčky = document.getElementById('candleBtn') || document.querySelector('.candle-btn') || document.querySelector('button[style*="position: fixed"]');
+            
+            var typTvaru = null;
+            var barvy = [];
+            var htmlIkony = svgSablony.svicka;
+
+            if (modKey === 'podzim') {
+                htmlIkony = svgSablony.dyne; typTvaru = 'list';
+                barvy = ['#d97706', '#ea580c', '#dc2626', '#b45309'];
+            } else if (modKey === 'zima') {
+                htmlIkony = svgSablony.stromecek; typTvaru = 'vlockka';
+                barvy = ['#e2e8f0', '#f1f5f9', '#ffffff', '#cbd5e1'];
+            } else if (modKey === 'jaro') {
+                htmlIkony = svgSablony.vajicko; typTvaru = 'kvet';
+                barvy = ['#f472b6', '#fbcfe8', '#f497c3', '#fed7aa'];
+            } else if (modKey === 'leto') {
+                htmlIkony = svgSablony.slunce; typTvaru = 'slunecnice';
+                barvy = ['#facc15', '#f59e0b', '#fbbf24', '#fb923c'];
+            }
+
+            if (ikonaSvíčky) {
+                var textSpan = ikonaSvíčky.querySelector('span') || ikonaSvíčky;
+                if (textSpan) {
+                    textSpan.innerHTML = htmlIkony;
+                    ikonaSvíčky.style.display = 'flex';
+                    ikonaSvíčky.style.alignItems = 'center';
+                    ikonaSvíčky.style.justifyContent = 'center';
+                }
+            }
+
+            spoustejCistePadaniGrafiky(typTvaru, barvy);
+
+            document.querySelectorAll('.cc-theme-btn').forEach(function(btn) {
+                if (btn.getAttribute('data-theme') === modKey) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+
+            localStorage.setItem('cc_portal_theme_mode', modKey);
+
+            if (saveToCloud && typeof firebase !== 'undefined' && firebase.apps.length) {
+                var db = firebase.firestore();
+                db.collection("portalData").doc("cocaColaDatabase").set({ cc_portal_theme_mode: modKey }, { merge: true });
+            }
+        }
+
+        function namontujPrepinacTematDoAdminu() {
+            var boxNastaveni = document.getElementById('cc-admin-reasons-group') || document.querySelector('#cc-acc-box-nastaveni .cc-accordion-content');
+            if (!boxNastaveni || document.getElementById('cc-theme-switcher-container')) return;
+
+            var containerSezón = document.createElement('div');
+            containerSezón.id = 'cc-theme-switcher-container';
+            containerSezón.style.cssText = 'margin-top: 20px; padding-top: 15px; border-top: 1px dashed #cbd5e1; text-align: left;';
+            
+            containerSezón.innerHTML = 
+                '<label style="font-weight: 700; font-size: 13px; color: #1e293b; display: block; margin-bottom: 4px;">🎨 Nastavení atmosféry portálu (Roční období):</label>' +
+                '<p style="font-size: 11px; color: #64748b; margin: 0 0 10px 0;">Zvolte aktuální mód. Změna se okamžitě a bezpečně projeví všem uživatelům přes čistou vektorovou grafiku.</p>' +
+                '<div class="cc-theme-switcher-row">' +
+                    '<button class="cc-theme-btn" data-theme="podzim">🍁 Podzim</button>' +
+                    '<button class="cc-theme-btn" data-theme="zima">❄️ Zima</button>' +
+                    '<button class="cc-theme-btn" data-theme="jaro">🌸 Jaro</button>' +
+                    '<button class="cc-theme-btn" data-theme="leto">☀️ Léto</button>' +
+                    '<button class="cc-theme-btn" data-theme="coke">💼 Klasika</button>' +
+                '</div>';
+
+            boxNastaveni.appendChild(containerSezón);
+
+            containerSezón.querySelectorAll('.cc-theme-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    window.aktivujVybranyModPortalu(this.getAttribute('data-theme'), true);
+                });
+            });
+
+            var minuleUlozeno = localStorage.getItem('cc_portal_theme_mode') || 'coke';
+            window.aktivujVybranyModPortalu(minuleUlozeno, false);
+        }
+
+        if (typeof firebase !== 'undefined' && firebase.apps.length) {
+            var db = firebase.firestore();
+            db.collection("portalData").doc("cocaColaDatabase").onSnapshot(function(doc) {
+                if (doc.exists && doc.data().cc_portal_theme_mode) {
+                    var cloudMod = doc.data().cc_portal_theme_mode;
+                    if (cloudMod !== aktualniAktivniMod) window.aktivujVybranyModPortalu(cloudMod, false);
+                }
+            });
+        }
+
+        setInterval(namontujPrepinacTematDoAdminu, 500);
+        
+        setTimeout(function() {
+            var startMod = localStorage.getItem('cc_portal_theme_mode') || 'coke';
+            window.aktivujVybranyModPortalu(startMod, false);
+        }, 300);
+    })();
+</script>
 </body>
 </html>
