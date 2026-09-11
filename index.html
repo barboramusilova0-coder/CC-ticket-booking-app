@@ -2766,6 +2766,27 @@ window.deleteCompanyAction = function(id) {
         setInterval(transformujAdministraciNaKompaktniZalozky, 500);
     })();
 </script>
+<!-- 🧽 BEZPEČNÉ ODSTRANĚNÍ OSAMOCENÉHO NADPISU OBSAZENOSTI Z VENKOVNÍ PLOCHY -->
+<script>
+    (function() {
+        function vymazViseciNadpisObsazenosti() {
+            // Najdeme všechny nadpisy a textové elementy v Administraci (Záložka 4)
+            var elementyVAdminu = document.querySelectorAll('#tab4 h3, #tab4 h4, #tab4 p, #tab4 strong, #tab4 div');
+            
+            elementyVAdminu.forEach(function(el) {
+                var text = el.innerText ? el.innerText.trim() : '';
+                
+                // Pokud najdeme ten zapomenutý text z tvého obrázku, který zůstal viset VENKU mimo harmoniku
+                if ((text.indexOf('Aktuální seznam akcí') > -1 || text === '2. Čekající žádosti o přidělení role' || text === '3. Aktivní schvalovatelé (Vydané kódy)') && !el.closest('.cc-accordion-content')) {
+                    // Natvrdo ho zneviditelníme, ať nestraší na ploše
+                    el.style.setProperty('display', 'none', 'important');
+                }
+            });
+        }
 
+        // Plynule čistíme plochu na pozadí každých 400ms při překlikávání záložek
+        setInterval(vymazViseciNadpisObsazenosti, 400);
+    })();
+</script>
 </body>
 </html>
