@@ -2467,5 +2467,127 @@ window.deleteCompanyAction = function(id) {
         setInterval(namontujEmailovaTlacitkaDoTabulkyKodu, 600);
     })();
 </script>
+    <!-- 📲 INSTALAČNÍ UKAZATEL S QR KÓDEM ČISTĚ PRO PŘIHLAŠOVACÍ OBRAZOVKU (VPRAVO DOLE) -->
+<style>
+    /* Malá vkusná vizitka v pravém dolním rohu */
+    #cc-login-download-card {
+        position: fixed !important;
+        bottom: 20px !important;
+        right: 20px !important;
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 10px !important;
+        padding: 12px 16px !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06) !important;
+        z-index: 999999 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+    }
+    #cc-login-download-card:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 20px rgba(228, 30, 38, 0.12) !important;
+        border-color: var(--cc-red, #e41e26) !important;
+    }
+
+    /* Vyskakovací okno s QR kódem (Modal) */
+    .cc-qr-modal {
+        display: none;
+        position: fixed !important;
+        top: 50% !important; left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 12px !important;
+        padding: 25px !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+        z-index: 9999999 !important;
+        width: 310px !important;
+        text-align: center !important;
+    }
+    .cc-qr-overlay {
+        display: none;
+        position: fixed !important;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.3) !important;
+        z-index: 9999998 !important;
+    }
+</style>
+
+<script>
+    (function() {
+        function namontujInstalaciNaPrihlaseniCoke() {
+            // Zjistíme, zda je zobrazená přihlašovací obrazovka (hledáme tvůj přihlašovací div/form, např. loginSection nebo text "Zadejte přístupový kód")
+            // Pokud v paměti není uložený kód, uživatel je na úvodní stránce
+            var jePrihlasen = localStorage.getItem('userCode') || (window.currentUser && window.currentUser.role !== 'guest');
+            
+            // Pokud už je uživatel přihlášený uvnitř aplikace, spodní kartu úplně schováme/smažeme
+            if (jePrihlasen) {
+                var existujiciKarta = document.getElementById('cc-login-download-card');
+                if (existujiciKarta) existujiciKarta.remove();
+                return;
+            }
+
+            // Pokud jsme na přihlašovací obrazovce a karta ještě nestojí v rohu, vytvoříme ji
+            if (!document.getElementById('cc-login-download-card')) {
+                var card = document.createElement('div');
+                card.id = 'cc-login-download-card';
+                card.innerHTML = 
+                    '<div style="font-size: 24px; line-height: 1;">📲</div>' +
+                    '<div style="text-align: left;">' +
+                        '<div style="font-weight: 800; font-size: 11px; color: #0f172a; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 2px;">Stáhnout jako aplikaci</div>' +
+                        '<div style="font-size: 11px; color: #64748b; font-weight: 600;">Klikněte pro QR kód a návod</div>' +
+                    '</div>';
+
+                document.body.appendChild(card);
+
+                // Vytvoříme skryté okno s QR kódem
+                var overlay = document.createElement('div');
+                overlay.className = 'cc-qr-overlay';
+                overlay.id = 'cc-qr-overlay';
+                
+                var modal = document.createElement('div');
+                modal.className = 'cc-qr-modal';
+                modal.id = 'cc-qr-modal';
+
+                // Vyčištění adresy pro bezchybný QR kód
+                var cistaAdresa = window.location.href.split('?')[0];
+                var qrUrl = "https://googleapis.com" + encodeURIComponent(cistaAdresa) + "&choe=UTF-8";
+
+                modal.innerHTML = 
+                    '<h3 style="margin:0 0 6px 0; color:#0f172a; font-size:15px; font-weight:800; text-transform:uppercase;">Uložit na plochu</h3>' +
+                    '<p style="font-size:12px; color:#64748b; margin:0 0 15px 0; line-height:1.4;">Pro stažení do PC klikněte na ikonu instalace (šipku) v pravém horním rohu adresního řádku prohlížeče.</p>' +
+                    '<div style="background:#f8fafc; padding:8px; border-radius:8px; display:inline-block; margin-bottom:12px;">' +
+                        '<img src="' + qrUrl + '" alt="Instalační QR Kód" style="display:block; width:170px; height:180px;">' +
+                    '</div>' +
+                    '<p style="font-size:11px; color:#94a3b8; margin:0 0 15px 0; font-weight:700; text-transform:uppercase;">Naskenujte mobilem</p>' +
+                    '<button id="cc-close-qr-btn" style="width:100%; background:#64748b; color:white; border:none; padding:8px; border-radius:6px; font-weight:700; cursor:pointer; text-transform:uppercase; font-size:12px;">Zavřít</button>';
+
+                document.body.appendChild(overlay);
+                document.body.appendChild(modal);
+
+                // Otevírání a zavírání okna
+                card.addEventListener('click', function() {
+                    overlay.style.display = 'block';
+                    modal.style.display = 'block';
+                });
+
+                document.getElementById('cc-close-qr-btn').addEventListener('click', function() {
+                    overlay.style.display = 'none';
+                    modal.style.display = 'none';
+                });
+                overlay.addEventListener('click', function() {
+                    overlay.style.display = 'none';
+                    modal.style.display = 'none';
+                });
+            }
+        }
+
+        // Plynule hlídáme stav přihlášení každou vteřinu na pozadí
+        setInterval(namontujInstalaciNaPrihlaseniCoke, 1000);
+    })();
+</script>
 </body>
 </html>
