@@ -2467,6 +2467,148 @@ window.deleteCompanyAction = function(id) {
         setInterval(namontujEmailovaTlacitkaDoTabulkyKodu, 600);
     })();
 </script>
+<!-- 📊 DYNAMICKÉ DŮVODY A EUR OBRAT: 1. ČÁST - ADMIN SPRÁVA A FINANČNÍ INPUT -->
+<style>
+    /* Elegantní sladění nových políček, aby na PC i mobilu přesně lícovala s tvým designem */
+    .cc-row-split { display: flex !important; gap: 12px !important; width: 100% !important; margin-bottom: 15px !important; }
+    .cc-split-field { flex: 1 !important; display: flex !important; flex-direction: column !important; gap: 4px !important; text-align: left !important; }
+    .cc-split-field label { font-weight: 700 !important; font-size: 13px !important; color: #475569 !important; }
+    .cc-coke-input, .cc-coke-select { width: 100% !important; height: 38px !important; padding: 6px 12px !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; font-size: 13px !important; font-weight: 600 !important; color: #334155 !important; background-color: #ffffff !important; box-sizing: border-box !important; }
+    .cc-coke-input:focus, .cc-coke-select:focus { border-color: var(--cc-red, #e41e26) !important; outline: none !important; box-shadow: 0 0 0 2px rgba(228, 30, 38, 0.08) !important; }
+</style>
 
+<script>
+    (function() {
+        // Pomocná funkce pro získání seznamu důvodů (buď z databáze, nebo výchozí startovní sada)
+        function ziskejSeznamDuvodu() {
+            var uloženo = localStorage.getItem('cc_dynamic_reasons');
+            if (uloženo) return uloženo.split(',');
+            return ["Obchodní partner", "Motivace týmu", "Odměna pro zaměstnance", "VIP hosté"]; // Výchozí sada pro začátek
+        }
+
+        function namontujSpravuDuvoduVAdminu() {
+            var adminForm = document.querySelector('#tab4 form') || document.getElementById('actionForm');
+            if (!adminForm || document.getElementById('cc-admin-reasons-group')) return;
+
+            // Vytvoříme přehledný řádek v Administraci pro snadnou úpravu textů se šéfem
+            var divSpravy = document.createElement('div');
+            divSpravy.id = 'cc-admin-reasons-group';
+            divSpravy.className = 'form-group';
+            divSpravy.style.cssText = 'margin-top: 25px; margin-bottom: 20px; padding: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; text-align: left;';
+            
+            var aktualniText = ziskejSeznamDuvodu().join(', ');
+            divSpravy.innerHTML = 
+                '<label style="font-weight: 700; font-size: 13px; color: #1e293b; display: block; margin-bottom: 4px;">🛠️ Správa důvodů žádosti pro roletku:</label>' +
+                '<p style="font-size: 11px; color: #64748b; margin: 0 0 8px 0;">Důvody napište vedle sebe a oddělte je čárkou. Změna se ihned projeví uživatelům.</p>' +
+                '<input type="text" id="cc-admin-reasons-input" value="' + aktualniText + '" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 600; font-size: 13px; box-sizing: border-box; margin-bottom: 10px;">' +
+                '<button id="cc-save-reasons-btn" style="background: #e41e26; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; text-transform: uppercase;">💾 Uložit změny důvodů</button>';
+
+            adminForm.parentNode.appendChild(divSpravy);
+
+            // Akce po kliknutí na Uložit změny důvodů
+            document.getElementById('cc-save-reasons-btn').addEventListener('click', function() {
+                var inputVal = document.getElementById('cc-admin-reasons-input').value;
+                // Vyčistíme text od přebytečných mezer kolem čárek
+                var poleCiste = inputVal.split(',').map(function(item) { return item.trim(); }).filter(function(item) { return item !== ''; });
+                
+                localStorage.setItem('cc_dynamic_reasons', poleCiste.join(','));
+                
+                // 🌐 EXPORT DO FIREBASE CLOUDU: Ihned změnu odešleme na internet pro všechny ostatní počítače
+                if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                    var db = firebase.firestore();
+                    db.collection("portalData").doc("cocaColaDatabase").set({
+                        cc_dynamic_reasons: poleCiste.join(',')
+                    }, { merge: true }).then(function() {
+                        alert('🎉 Nabídka důvodů byla úspěšně aktualizována na internetu i v rezervačním formuláři!');
+                        location.reload();
+                    });
+                } else {
+                    alert('🎉 Nabídka důvodů byla úspěšně aktualizována!');
+                    location.reload();
+                }
+            });
+        }
+
+        // Synchronizace cloudu při startu stránky (přečteme si aktuální důvody z Firebase)
+        if (typeof firebase !== 'undefined' && firebase.apps.length) {
+            var db = firebase.firestore();
+            db.collection("portalData").doc("cocaColaDatabase").get().then(function(doc) {
+                if (doc.exists && doc.data().cc_dynamic_reasons) {
+                    localStorage.setItem('cc_dynamic_reasons', doc.data().cc_dynamic_reasons);
+                }
+            });
+        }
+
+        setInterval(namontujSpravuDuvoduVAdminu, 500);
+        // 📥 2. ČÁST: IMPLEMENTACE ROLETKY A POLE PRO EUR OBRAT DO REZERVAČNÍHO FORMULÁŘE
+        function transformujRezervacniFormularNaDuvodyCoke() {
+            // Najdeme tvé stávající textové políčko pro Důvod žádosti (podle ID reason nebo popisku v Tab 1)
+            var starePolickoDuvodu = document.getElementById('reason') || document.querySelector('#ticketForm input[placeholder*="důvod"]');
+            if (!starePolickoDuvodu) return;
+
+            var obalFormulare = starePolickoDuvodu.parentNode;
+            if (obalFormulare && !document.getElementById('cc-reasons-eur-row')) {
+                // Skryjeme to původní staré textové políčko, aby nám uvolnilo místo
+                starePolickoDuvodu.style.setProperty('display', 'none', 'important');
+
+                // Schováme i jeho původní samostatný popisek "Důvod žádosti", ať nemáme texty dvakrát
+                var puvodniLabels = obalFormulare.querySelectorAll('label');
+                puvodniLabels.forEach(function(lbl) {
+                    if (lbl.innerText.indexOf('Důvod') > -1 || lbl.getAttribute('for') === 'reason') {
+                        lbl.style.setProperty('display', 'none', 'important');
+                    }
+                });
+
+                // Sestavíme možnosti pro roletku z té tvé admin databáze
+                var seznamDuvodu = ziskejSeznamDuvodu();
+                var htmlOptions = '<option value="">-- Vyberte důvod --</option>';
+                seznamDuvodu.forEach(function(d) {
+                    htmlOptions += '<option value="' + d + '">' + d + '</option>';
+                });
+
+                // Vytvoříme zbrusu novou, dokonale zarovnanou vodorovnou řadu (Důvod vedle EUR obratu)
+                var novaRadaFields = document.createElement('div');
+                novaRadaFields.id = 'cc-reasons-eur-row';
+                novaRadaFields.className = 'cc-row-split';
+                novaRadaFields.innerHTML = 
+                    '<div class="cc-split-field">' +
+                        '<label>Důvod žádosti 🎯:</label>' +
+                        '<select class="cc-coke-select" id="cc-visual-reason-select" required>' + htmlOptions + '</select>' +
+                    '</div>' +
+                    '<div class="cc-split-field">' +
+                        '<label>Obrat v EUR (€) 📈:</label>' +
+                        '<input type="number" class="cc-coke-input" id="cc-visual-eur-input" placeholder="Např. 5000" min="0" required>' +
+                    '</div>';
+
+                // Vložíme novou řadu přesně tam, kde bylo staré políčko
+                starePolickoDuvodu.parentNode.insertBefore(novaRadaFields, starePolickoDuvodu);
+
+                // ⚡ AUTOMATICKÉ PROPOJENÍ: Jakmile uživatel vybere důvod nebo napíše eura, bleskově to spojíme do původní databáze
+                function propisDataDoPuvodnihoSystemuCoke() {
+                    var vybranyDuvod = document.getElementById('cc-visual-reason-select').value;
+                    var zadanaEura = document.getElementById('cc-visual-eur-input').value.trim();
+
+                    if (vybranyDuvod && zadanaEura) {
+                        // Spojíme to do formátu, který schvalovatelé okamžitě uvidí v tabulkách
+                        starePolickoDuvodu.value = vybranyDuvod + " (Obrat: " + zadanaEura + " EUR)";
+                    } else if (vybranyDuvod) {
+                        starePolickoDuvodu.value = vybranyDuvod;
+                    } else {
+                        starePolickoDuvodu.value = "";
+                    }
+                    
+                    // Vystřelíme do tvého systému signál, že se hodnota změnila, aby to tlačítko rezervace postřehlo
+                    starePolickoDuvodu.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+
+                document.getElementById('cc-visual-reason-select').addEventListener('change', propisDataDoPuvodnihoSystemuCoke);
+                document.getElementById('cc-visual-eur-input').addEventListener('input', propisDataDoPuvodnihoSystemuCoke);
+            }
+        }
+
+        // Hlídáme rezervační formulář plynule každých 450ms, aby se políčka správně nahradila
+        setInterval(transformujRezervacniFormularNaDuvodyCoke, 450);
+    })();
+</script>
 </body>
 </html>
