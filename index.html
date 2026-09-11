@@ -2467,15 +2467,14 @@ window.deleteCompanyAction = function(id) {
         setInterval(namontujEmailovaTlacitkaDoTabulkyKodu, 600);
     })();
 </script>
-  <!-- 📲 HORIZONTÁLNÍ INSTALAČNÍ TLAČÍTKO NA JEDNO KLIKNUTÍ (VPRAVO DOLE NA PŘIHLÁŠENÍ) -->
+  <!-- 📲 HORIZONTÁLNÍ INSTALAČNÍ PANEL S DYNAMICKOU NÁPOVĚDOU (VPRAVO DOLE) -->
 <style>
-    /* Elegantní a čisté firemní tlačítko v pravém dolním rohu */
     #cc-direct-install-btn {
         position: fixed !important;
         bottom: 20px !important;
         right: 20px !important;
         background: #ffffff !important;
-        border: 2px solid var(--cc-red, #e41e26) !important; /* Výrazné červené ohraničení Coca-Cola */
+        border: 2px solid var(--cc-red, #e41e26) !important;
         border-radius: 8px !important;
         padding: 10px 16px !important;
         box-shadow: 0 4px 15px rgba(0,0,0,0.08) !important;
@@ -2491,65 +2490,108 @@ window.deleteCompanyAction = function(id) {
         background: #fff5f5 !important;
         box-shadow: 0 6px 20px rgba(228, 30, 38, 0.15) !important;
     }
+
+    /* Šipka ukazující na horní lištu prohlížeče na PC */
+    #cc-pc-pointer-arrow {
+        display: none;
+        position: fixed !important;
+        top: 60px !important;
+        right: 40px !important;
+        background: #0f172a !important;
+        color: #ffffff !important;
+        padding: 10px 15px !important;
+        border-radius: 8px !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;
+        z-index: 9999999 !important;
+        animation: ccBounceArrow 1.5s infinite !important;
+    }
+    #cc-pc-pointer-arrow::after {
+        content: '' !important;
+        position: absolute !important;
+        bottom: 100% !important;
+        right: 15px !important;
+        border-width: 8px !important;
+        border-style: solid !important;
+        border-color: transparent transparent #0f172a transparent !important;
+    }
+
+    @keyframes ccBounceArrow {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+    }
 </style>
 
 <script>
     (function() {
         var zachycenyInstalacniPrompt = null;
 
-        // Prohlížeč nám dá vědět, že je web připraven ke stažení do PC/mobilu
         window.addEventListener('beforeinstallprompt', function(e) {
-            // Schováme výchozí chování prohlížeče a uložíme si instalaci na naše tlačítko
             e.preventDefault();
             zachycenyInstalacniPrompt = e;
-            console.log("Systémová instalace na jedno kliknutí je plně připravena.");
         });
 
         function ridInstalaciNaPrihlaseniCoke() {
             var jePrihlasen = localStorage.getItem('userCode') || (window.currentUser && window.currentUser.role !== 'guest');
-            
-            // Pokud už uživatel prošel přihlášením, tlačítko z rohu smažeme
             if (jePrihlasen) {
                 var existujiciBtn = document.getElementById('cc-direct-install-btn');
                 if (existujiciBtn) existujiciBtn.remove();
+                var existujiciArrow = document.getElementById('cc-pc-pointer-arrow');
+                if (existujiciArrow) existujiciArrow.remove();
                 return;
             }
 
-            // Pokud jsme na úvodní obrazovce a tlačítko tam ještě nestojí
             if (!document.getElementById('cc-direct-install-btn')) {
+                // Vytvoříme spodní tlačítko
                 var btn = document.createElement('div');
                 btn.id = 'cc-direct-install-btn';
                 btn.innerHTML = 
                     '<div style="font-size: 20px; line-height: 1;">📲</div>' +
-                    '<div style="text-align: left; font-family: inherit;">' +
-                        '<div style="font-weight: 800; font-size: 12px; color: #e41e26; text-transform: uppercase; letter-spacing: 0.04em;">Stáhnout aplikaci</div>' +
-                        '<div style="font-size: 11px; color: #475569; font-weight: 600;">Kliknutím uložte na plochu</div>' +
+                    '<div style="text-align: left;">' +
+                        '<div style="font-weight: 800; font-size: 12px; color: #e41e26; text-transform: uppercase; letter-spacing: 0.04em;">Přidat na plochu</div>' +
+                        '<div style="font-size: 11px; color: #475569; font-weight: 600;">Návod k instalaci</div>' +
                     '</div>';
-
                 document.body.appendChild(btn);
 
-                // ⚡ AKCE PO KLIKNUTÍ: Spustí okamžité uložení do systému
-                btn.addEventListener('click', function() {
+                // Vytvoříme plovoucí šipku pro PC nápovědu
+                var arrow = document.createElement('div');
+                arrow.id = 'cc-pc-pointer-arrow';
+                arrow.innerHTML = '⬆️ KLIKNĚTE SEM PRO STAŽENÍ DO PC';
+                document.body.appendChild(arrow);
+
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+
+                    // Pokud prohlížeč stahování povolil, rovnou ho odpálíme
                     if (zachycenyInstalacniPrompt) {
-                        // Spustíme to oficiální stažení od Googlu/Windows
                         zachycenyInstalacniPrompt.prompt();
-                        zachycenyInstalacniPrompt.userChoice.then(function(vysledek) {
-                            if (vysledek.outcome === 'accepted') {
-                                console.log('Uživatel aplikaci úspěšně stáhl.');
-                            }
-                            zachycenyInstalacniPrompt = null;
+                        zachycenyInstalacniPrompt.userChoice.then(function(v) {
+                            if (v.outcome === 'accepted') zachycenyInstalacniPrompt = null;
                         });
                     } else {
-                        // Nápověda pro iPhony/Safari nebo pokud prohlížeč ještě prompt nenačetl
-                        alert('💡 Tip pro instalaci:\n\nPokud se nespustilo automatické okno:\n- Na PC: Klikněte na ikonu instalace (kolečko se šipkou) v pravém horním rohu adresního řádku.\n- Na iPhonu: Klikněte na tlačítko "Sdílet" dole v Safari a zvolte "Přidat na plochu".');
+                        // Zjistíme, zda uživatel sedí u PC nebo u mobilu
+                        var jeMobil = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                        
+                        if (jeMobil) {
+                            alert('📱 INSTALACE DO MOBILU:\n\n- Na iPhonu (Safari): Klikněte dole na tlačítko "Sdílet" (čtvereček se šipkou nahoru) a zvolte "Přidat na plochu".\n\n- Na Androidu (Chrome): Klikněte vpravo nahoře na 3 tečky a zvolte "Přidat na domovskou obrazovku".');
+                        } else {
+                            // Na PC rozblikáme tu parádní šipku v pravém horním rohu adresního řádku
+                            var arrowEl = document.getElementById('cc-pc-pointer-arrow');
+                            if (arrowEl) {
+                                arrowEl.style.display = 'block';
+                                // Po 6 vteřinách šipka sama zmizí
+                                setTimeout(function() { arrowEl.style.display = 'none'; }, 6000);
+                            }
+                        }
                     }
                 });
             }
         }
 
-        // Hlídáme přihlášení plynule každou vteřinu na pozadí
         setInterval(ridInstalaciNaPrihlaseniCoke, 1000);
     })();
 </script>
+
 </body>
 </html>
