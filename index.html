@@ -3014,6 +3014,137 @@ setInterval(function(){
         setInterval(napojOdesilaniNaCokeCloudEngine, 400);
     })();
 </script>
+<!-- 🎛️ FILTRAČNÍ DLAŽDICE V PŘEHLEDU: 1. ČÁST - GRAFICKÝ DESIGN PŘEPÍNAČŮ -->
+<style>
+    /* Stylování vodorovného kontejneru pro dlaždice na úvodní stránce */
+    .cc-public-filter-row {
+        display: flex !important;
+        gap: 12px !important;
+        margin-top: 15px !important;
+        margin-bottom: 25px !important;
+        width: 100% !important;
+        overflow-x: auto !important; /* Pojistka pro mobilní telefony, aby šlo dlaždice posouvat prstem */
+        padding: 5px 2px !important;
+        text-align: left !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Vzhled jednotlivých velkých bílých dlaždic přesně podle tvého stylu */
+    .cc-public-filter-tile {
+        flex: 1 !important;
+        min-width: 150px !important;
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 10px !important;
+        padding: 12px 16px !important;
+        text-align: center !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.01) !important;
+        user-select: none !important;
+    }
+    .cc-public-filter-tile:hover {
+        border-color: #94a3b8 !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04) !important;
+    }
+
+    /* Zářivě aktivní stav po kliknutí – firemní červená linka a jemné červené pozadí */
+    .cc-public-filter-tile.active {
+        border-color: #e41e26 !important;
+        background: #fef2f2 !important;
+        box-shadow: 0 4px 12px rgba(228, 30, 38, 0.08) !important;
+    }
+
+    .cc-public-filter-tile h4 {
+        font-weight: 800 !important;
+        font-size: 13px !important;
+        color: #0f172a !important;
+        margin: 0 0 2px 0 !important;
+        text-transform: none !important;
+        line-height: 1.2 !important;
+    }
+    .cc-public-filter-tile span {
+        font-size: 11px !important;
+        color: #64748b !important;
+        font-weight: 600 !important;
+    }
+</style>
+
+<script>
+    (function() {
+        var ccZvolenyFiltrKategoriePrehledu = "vse";
+        // 🎛️ FILTRAČNÍ DLAŽDICE V PŘEHLEDU: 2. ČÁST - MONTOVÁNÍ A FUNKCE FILTROVÁNÍ KARET
+        function namontujDlazdiceDoPrehleduAkciCoke() {
+            // Najdeme plochu naší nově znovuvytvořené záložky Přehled akcí
+            var plochaPrehledu = document.getElementById('tab-prehled-akci-coke-content');
+            if (!plochaPrehledu || document.getElementById('cc-public-filter-row-id')) return;
+
+            // Vytvoříme novou řadu dlaždic přesně s tvými upravenými pod-složkami
+            var radekDlazdic = document.createElement('div');
+            radekDlazdic.className = 'cc-public-filter-row';
+            radekDlazdic.id = 'cc-public-filter-row-id';
+
+            radekDlazdic.innerHTML = 
+                '<div class="cc-public-filter-tile active" data-cat="vse"><h4>Všechny akce</h4><span>Kompletní nabídka</span></div>' +
+                '<div class="cc-public-filter-tile" data-cat="O2 Arena - Koncert"><h4>O2 Arena</h4><span>Koncerty</span></div>' +
+                '<div class="cc-public-filter-tile" data-cat="O2 Arena - Hokej"><h4>O2 Arena</h4><span>Hokej</span></div>' +
+                '<div class="cc-public-filter-tile" data-cat="Fotbal"><h4>Fotbal</h4><span>Fotbalové zápasy</span></div>' +
+                '<div class="cc-public-filter-tile" data-cat="SKS Slavia"><h4>SKS Slavia</h4><span>Akce SKS Slavia</span></div>' +
+                '<div class="cc-public-filter-tile" data-cat="Specialni"><h4>Speciální akce</h4><span>Mimořádné akce</span></div>';
+
+            // 🔥 CHYTRÉ UMÍSTĚNÍ: Vložíme řadu dlaždic hned pod textový popisek, ale nad samotný grid s kartami akcí
+            var cilovyGrid = document.getElementById('cc-clean-cards-grid-container');
+            if (cilovyGrid) {
+                cilovyGrid.parentNode.insertBefore(radekDlazdic, cilovyGrid);
+            } else {
+                plochaPrehledu.appendChild(radekDlazdic);
+            }
+
+            // Naučíme nově přidané dlaždice bleskově filtrovat nabídku na kliknutí
+            radekDlazdic.querySelectorAll('.cc-public-filter-tile').forEach(function(tile) {
+                tile.addEventListener('click', function() {
+                    // Přepneme červené nasvícení na právě kliknutou dlaždici
+                    radekDlazdic.querySelectorAll('.cc-public-filter-tile').forEach(function(t) { t.classList.remove('active'); });
+                    this.classList.add('active');
+
+                    ccZvolenyFiltrKategoriePrehledu = this.getAttribute('data-cat');
+                    spustBleskovouFiltraciKaretPrehledu();
+                });
+            });
+        }
+
+        function spustBleskovouFiltraciKaretPrehledu() {
+            // Najdeme všechny ty bílé chronologické karty akcí, které se generují na ploše Přehledu
+            var vsechnyKartyAkci = document.querySelectorAll('.cc-public-card');
+            
+            vsechnyKartyAkci.forEach(function(karta) {
+                var textKarty = karta.innerText || "";
+                var odpovidaFiltru = false;
+
+                if (ccZvolenyFiltrKategoriePrehledu === 'vse') {
+                    odpovidaFiltru = true;
+                } else {
+                    // 🔥 STRATEGICKÁ KONTROLA: Ověříme, zda text na kartě obsahuje přesný název vybrané pod-složky
+                    if (textKarty.indexOf(ccZvolenyFiltrKategoriePrehledu) > -1) {
+                        odpovidaFiltru = true;
+                    }
+                }
+
+                // Pokud karta odpovídá zvolené dlaždici, necháme ji zobrazenou, jinak ji bleskově schováme
+                if (odpovidaFiltru) {
+                    karta.style.setProperty('display', 'block', 'important');
+                } else {
+                    karta.style.setProperty('display', 'none', 'important');
+                }
+            });
+        }
+
+        // Plynule hlídáme plochu na pozadí, aby se dlaždice okamžitě usadily a reagovaly na nově vytvořené akce
+        setInterval(namontujDlazdiceDoPrehleduAkciCoke, 400);
+        setInterval(spustBleskovouFiltraciKaretPrehledu, 500);
+    })();
+</script>
 
 </body>
 </html>
