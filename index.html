@@ -3129,5 +3129,100 @@ setInterval(function(){
 },800);
 })();
 </script>
+    <!-- 🔌 PROPOJENÍ DLAŽDIC: 1. ČÁST - VÝBĚR KATEGORIE V FORMULÁŘI -->
+<script>
+    (function() {
+        function namontujKategoriiDoRannihoFormulare() {
+            // Najdeme tvůj funkční ranní formulář pro novou akci (Záložka 4)
+            var adminForm = document.getElementById('actionForm') || document.querySelector('#tab4 form');
+            if (!adminForm || document.getElementById('cc-action-category-select')) return;
+
+            // Vytvoříme úhledné políčko pro výběr, kam akce na mobilu/PC patří
+            var groupDiv = document.createElement('div');
+            groupDiv.className = 'form-group';
+            groupDiv.style.cssText = 'margin-bottom: 15px; text-align: left; display: flex; flex-direction: column; gap: 5px;';
+            groupDiv.innerHTML = '<label style="font-weight: 700; font-size: 13px; color: #475569;">Přiřadit do dlaždice 🎯:</label>' +
+                                 '<select id="cc-action-category-select" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 600; background: #fff; height: 40px; color: #334155;" required>' +
+                                    '<option value="">-- Zvolte dlaždici pro Novou rezervaci --</option>' +
+                                    '<option value="Koncert">🎵 O2 Arena - Koncert</option>' +
+                                    '<option value="Hokej">🥅 O2 Arena - Hokej</option>' +
+                                    '<option value="Fotbal">⚽ Fotbal</option>' +
+                                    '<option value="SKS Slavia">🔴 SKS Slavia</option>' +
+                                    '<option value="Reprezentace">🇨🇿 Reprezentace</option>' +
+                                 '</select>';
+            
+            // Vložíme ho bezpečně hned jako druhé políčko pod Název akce
+            var prvniInput = adminForm.querySelector('input[type="text"]') || document.getElementById('actionName');
+            if (prvniInput && prvniInput.parentNode) {
+                prvniInput.parentNode.insertBefore(groupDiv, prvniInput.nextSibling);
+            } else {
+                adminForm.insertBefore(groupDiv, adminForm.firstChild);
+            }
+        }
+
+        // Hlídáme přítomnost formuláře plynule každou půl vteřinu
+        setInterval(namontujKategoriiDoRannihoFormulare, 500);
+        // 🔌 PROPOJENÍ DLAŽDIC: 2. ČÁST - PŘIBALENÍ KATEGORIE K UKLÁDÁNÍ A DYNAMICKÝ FILTR
+        function propojRanniUkladaniSKategorii() {
+            var adminForm = document.getElementById('actionForm') || document.querySelector('#tab4 form');
+            if (!adminForm || adminForm.getAttribute('data-cc-hooked') === 'yes') return;
+
+            // Zachytíme odeslání formuláře těsně PŘEDTÍM, než se spustí tvůj funkční ranní kód z historie
+            adminForm.addEventListener('submit', function() {
+                var vybranaKat = document.getElementById('cc-action-category-select') ? document.getElementById('cc-action-category-select').value : '';
+                var nazevAkce = (document.getElementById('actionName') || adminForm.querySelector('input[type="text"]')).value.trim();
+                
+                if (vybranaKat && nazevAkce) {
+                    // Dočasně uložíme vazbu název -> kategorie do pomocné paměti, aby se s ní mohl filtr v roletce spojit
+                    var relace = JSON.parse(localStorage.getItem('cc_action_relations')) || {};
+                    relace[nazevAkce] = vybranaKat;
+                    localStorage.setItem('cc_action_relations', JSON.stringify(relace));
+                }
+            });
+            adminForm.setAttribute('data-cc-hooked', 'yes');
+        }
+
+        // Hlídač, který odemkne roletku pod vykliknutou dlaždicí v Nové rezervaci
+        function odemkniRoletkuPodleDlazdiceCoke() {
+            var roletkaSelect = document.getElementById('actionSelect') || document.querySelector('#ticketForm select');
+            var vybranaKatPortalu = window.vybranaKategoriePortalu || window.selectedCategory || "";
+            
+            if (roletkaSelect && vybranaKatPortalu) {
+                var akceZPameti = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+                var relaceKat = JSON.parse(localStorage.getItem('cc_action_relations')) || {};
+                
+                var htmlOptions = '<option value="">-- Vyberte konkrétní zápas / koncert --</option>';
+                var nalezenaAkce = false;
+
+                akceZPameti.forEach(function(a) {
+                    // Zkontrolujeme kategorii buď přímo z akce, nebo z naší propojovací tabulky
+                    var katAkce = (a.category || a.actionCategory || relaceKat[a.name] || "").trim();
+                    
+                    if (katAkce === vybranaKatPortalu && (a.status === 'Aktivní' || !a.status)) {
+                        var infoDatum = a.date ? ' | ' + a.date : '';
+                        htmlOptions += '<option value="' + a.name + '">' + a.name + infoDatum + '</option>';
+                        nalezenaAkce = true;
+                    }
+                });
+
+                if (!nalezenaAkce) {
+                    htmlOptions = '<option value="">V této kategorii momentálně nejsou žádné volné lístky</option>';
+                }
+
+                // Zapíšeme změnu pouze v případě, že se liší (ochrana před zacyklením)
+                var unikatniKlic = htmlOptions.length + vybranaKatPortalu;
+                if (roletkaSelect.getAttribute('data-cc-current-hash') !== unikatniKlic) {
+                    roletkaSelect.innerHTML = htmlOptions;
+                    roletkaSelect.setAttribute('data-cc-current-hash', unikatniKlic);
+                }
+            }
+        }
+
+        // Spouštíme hlídače na pozadí každých 500ms bez zatížení původního kódu
+        setInterval(propojRanniUkladaniSKategorii, 500);
+        setInterval(odemkniRoletkuPodleDlazdiceCoke, 500);
+    })();
+</script>
+
 </body>
 </html>
