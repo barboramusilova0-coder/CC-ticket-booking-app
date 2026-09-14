@@ -1,12 +1,14 @@
 <!DOCTYPE html>
-
 <html lang="cs">
+
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+    <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCPSV3AauKHMPfnkACjbfvEDbb6RFJMiJA",
             authDomain: "cc-tickets-booking-app.firebaseapp.com",
@@ -19,8 +21,10 @@
 
         firebase.initializeApp(firebaseConfig);
     </script>
-<title>Rezervační portál lístků | Coca-Cola HBC</title>
-<style>
+
+    <title>Rezervační portál lístků | Coca-Cola HBC</title>
+
+    <style>
         :root {
             --cc-red: #e41e26;
             --cc-red-hover: #b81118;
@@ -94,243 +98,239 @@
             100% { transform: translateY(105vh) rotate(360deg) translateX(-30px); opacity: 0; }
         }
     </style>
-<style>
-/* V4 stabilní tooltip – vykresluje se mimo kartu přímo v body, takže nic neposouvá ani nezmizí pod overflow. */
-#cc-floating-event-tooltip{position:fixed;z-index:2147483647;max-width:360px;min-width:180px;padding:12px 14px;border:1px solid #dbe3ec;border-radius:12px;background:#fff;color:#334155;box-shadow:0 14px 35px rgba(15,23,42,.20);font-size:13px;line-height:1.55;text-align:left;pointer-events:none;opacity:0;visibility:hidden;transform:translateY(5px);transition:opacity .14s ease,transform .14s ease;}
-#cc-floating-event-tooltip.cc-show{opacity:1;visibility:visible;transform:translateY(0);}
-#cc-floating-event-tooltip strong{display:block;color:#0f172a;margin-bottom:5px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;}
-@media(max-width:600px){#cc-floating-event-tooltip{display:none!important;}}
-</style></head>
+</head>
 <body>
-<!-- Kontejner pro detailní podzimní lístky (Javor a Dub) -->
-<div class="leaves-container">
-<!-- 1. Javorový list (Sytě oranžový) -->
-<div class="leaf" style="left: 8%; width: 42px; height: 42px; animation-duration: 14s; animation-delay: 0s;">
-<svg fill="#f97316" viewbox="0 0 100 100"><path d="M50,5 L54,25 L68,18 L64,32 L82,30 L72,44 L92,52 L74,60 L80,78 L62,70 L58,90 L50,80 L42,90 L38,70 L20,78 L26,60 L8,52 L28,44 L18,30 L36,32 L32,18 L46,25 Z M50,45 L50,85" stroke="#ea580c" stroke-linecap="round" stroke-width="3"></path></svg>
+        <!-- Kontejner pro detailní podzimní lístky (Javor a Dub) -->
+    <div class="leaves-container">
+        <!-- 1. Javorový list (Sytě oranžový) -->
+        <div class="leaf" style="left: 8%; width: 42px; height: 42px; animation-duration: 14s; animation-delay: 0s;">
+            <svg viewBox="0 0 100 100" fill="#f97316"><path d="M50,5 L54,25 L68,18 L64,32 L82,30 L72,44 L92,52 L74,60 L80,78 L62,70 L58,90 L50,80 L42,90 L38,70 L20,78 L26,60 L8,52 L28,44 L18,30 L36,32 L32,18 L46,25 Z M50,45 L50,85" stroke="#ea580c" stroke-width="3" stroke-linecap="round"/></svg>
+        </div>
+        <!-- 2. Dubový list (Zlatavý) -->
+        <div class="leaf" style="left: 28%; width: 34px; height: 44px; animation-duration: 9s; animation-delay: 3s;">
+            <svg viewBox="0 0 100 100" fill="#eab308"><path d="M50,5 C40,15 35,25 40,35 C30,38 32,50 42,55 C32,60 36,75 45,78 L50,95 L55,78 C64,75 68,60 58,55 C68,50 70,38 60,35 C65,25 60,15 50,5 Z M50,5 L50,78" stroke="#ca8a04" stroke-width="3" stroke-linecap="round"/></svg>
+        </div>
+        <!-- 3. Javorový list (Temně červený) -->
+        <div class="leaf" style="left: 48%; width: 46px; height: 46px; animation-duration: 16s; animation-delay: 1s;">
+            <svg viewBox="0 0 100 100" fill="#b91c1c"><path d="M50,5 L54,25 L68,18 L64,32 L82,30 L72,44 L92,52 L74,60 L80,78 L62,70 L58,90 L50,80 L42,90 L38,70 L20,78 L26,60 L8,52 L28,44 L18,30 L36,32 L32,18 L46,25 Z M50,45 L50,85" stroke="#991b1b" stroke-width="3" stroke-linecap="round"/></svg>
+        </div>
+        <!-- 4. Dubový list (Hnědooranžový) -->
+        <div class="leaf" style="left: 68%; width: 36px; height: 46px; animation-duration: 11s; animation-delay: 5s;">
+            <svg viewBox="0 0 100 100" fill="#d97706"><path d="M50,5 C40,15 35,25 40,35 C30,38 32,50 42,55 C32,60 36,75 45,78 L50,95 L55,78 C64,75 68,60 58,55 C68,50 70,38 60,35 C65,25 60,15 50,5 Z M50,5 L50,78" stroke="#b45309" stroke-width="3" stroke-linecap="round"/></svg>
+        </div>
+        <!-- 5. Javorový list (Zlatě žlutý) -->
+        <div class="leaf" style="left: 85%; width: 38px; height: 38px; animation-duration: 8s; animation-delay: 2s;">
+            <svg viewBox="0 0 100 100" fill="#facc15"><path d="M50,5 L54,25 L68,18 L64,32 L82,30 L72,44 L92,52 L74,60 L80,78 L62,70 L58,90 L50,80 L42,90 L38,70 L20,78 L26,60 L8,52 L28,44 L18,30 L36,32 L32,18 L46,25 Z M50,45 L50,85" stroke="#eab308" stroke-width="3" stroke-linecap="round"/></svg>
+        </div>
+    </div>
+<div id="welcomeGate" class="welcome-gate">
+    <div style="font-size: 40px; margin-bottom: 10px;">🔴</div>
+    <h1 style="font-size: 28px; margin-bottom: 8px;">Tickets booking app</h1>
+    <span class="brand-badge" style="display: inline-block; margin-bottom: 24px;">Coca-Cola HBC Česko a Slovensko</span>
+    
+    <div class="guide-box">
+        <h3>📖 Návod k použití portálu:</h3>
+        <ol>
+            <li><strong>Žádost o přístup:</strong> Vyberte "Požádat o přístup" a vyplňte registraci. Následně čekejte na potvrzení žádosti administrátorem.</li>
+            <li><strong>Přihlášení:</strong> Zadejte svůj unikátní přístupový kód níže.</li>
+            <li><strong>Nová rezervace:</strong> Vyberte akci, zadejte jméno zákazníka, obrat v EUR, počet lístků a důvod žádosti.</li>
+            <li><strong>Sledování stavu:</strong> V záložce "Seznam žádostí" okamžitě vidíte průběh schvalování u své rezervace.</li>
+            <li><strong>Schvalovací proces:</strong> Žádost podléhá schválení 1. stupněm (váš manažer dle zadaného emailu) a následně 2. stupněm (RSM Praha Central).</li>
+        </ol>
+    </div>
+    <div class="gate-login-box">
+        <label style="font-size: 16px; margin-bottom: 12px; display: block; font-weight: 700;">Vstupte zadáním vašeho kódu:</label>
+        <input type="password" id="gateUserToken" placeholder="Zadejte svůj unikátní kód">
+        <button onclick="loginUserFromGate()" style="width: 100%; padding: 14px; font-size: 16px; font-weight: 700; background: var(--cc-red); border: none; border-radius: 8px; color: white; cursor: pointer;">Vstoupit do systému</button>
+        <button onclick="openAccessRequestFromGate()" style="width: 100%; padding: 10px; font-size: 14px; font-weight: 600; background: #17a2b8; border: none; border-radius: 8px; color: white; cursor: pointer; margin-top: 10px;">Požádat o přístup k roli</button>
+    </div>
 </div>
-<!-- 2. Dubový list (Zlatavý) -->
-<div class="leaf" style="left: 28%; width: 34px; height: 44px; animation-duration: 9s; animation-delay: 3s;">
-<svg fill="#eab308" viewbox="0 0 100 100"><path d="M50,5 C40,15 35,25 40,35 C30,38 32,50 42,55 C32,60 36,75 45,78 L50,95 L55,78 C64,75 68,60 58,55 C68,50 70,38 60,35 C65,25 60,15 50,5 Z M50,5 L50,78" stroke="#ca8a04" stroke-linecap="round" stroke-width="3"></path></svg>
-</div>
-<!-- 3. Javorový list (Temně červený) -->
-<div class="leaf" style="left: 48%; width: 46px; height: 46px; animation-duration: 16s; animation-delay: 1s;">
-<svg fill="#b91c1c" viewbox="0 0 100 100"><path d="M50,5 L54,25 L68,18 L64,32 L82,30 L72,44 L92,52 L74,60 L80,78 L62,70 L58,90 L50,80 L42,90 L38,70 L20,78 L26,60 L8,52 L28,44 L18,30 L36,32 L32,18 L46,25 Z M50,45 L50,85" stroke="#991b1b" stroke-linecap="round" stroke-width="3"></path></svg>
-</div>
-<!-- 4. Dubový list (Hnědooranžový) -->
-<div class="leaf" style="left: 68%; width: 36px; height: 46px; animation-duration: 11s; animation-delay: 5s;">
-<svg fill="#d97706" viewbox="0 0 100 100"><path d="M50,5 C40,15 35,25 40,35 C30,38 32,50 42,55 C32,60 36,75 45,78 L50,95 L55,78 C64,75 68,60 58,55 C68,50 70,38 60,35 C65,25 60,15 50,5 Z M50,5 L50,78" stroke="#b45309" stroke-linecap="round" stroke-width="3"></path></svg>
-</div>
-<!-- 5. Javorový list (Zlatě žlutý) -->
-<div class="leaf" style="left: 85%; width: 38px; height: 38px; animation-duration: 8s; animation-delay: 2s;">
-<svg fill="#facc15" viewbox="0 0 100 100"><path d="M50,5 L54,25 L68,18 L64,32 L82,30 L72,44 L92,52 L74,60 L80,78 L62,70 L58,90 L50,80 L42,90 L38,70 L20,78 L26,60 L8,52 L28,44 L18,30 L36,32 L32,18 L46,25 Z M50,45 L50,85" stroke="#eab308" stroke-linecap="round" stroke-width="3"></path></svg>
-</div>
-</div>
-<div class="welcome-gate" id="welcomeGate">
-<div style="font-size: 40px; margin-bottom: 10px;">🔴</div>
-<h1 style="font-size: 28px; margin-bottom: 8px;">Tickets booking app</h1>
-<span class="brand-badge" style="display: inline-block; margin-bottom: 24px;">Coca-Cola HBC Česko a Slovensko</span>
-<div class="guide-box">
-<h3>📖 Návod k použití portálu:</h3>
-<ol>
-<li><strong>Žádost o přístup:</strong> Vyberte "Požádat o přístup" a vyplňte registraci. Následně čekejte na potvrzení žádosti administrátorem.</li>
-<li><strong>Přihlášení:</strong> Zadejte svůj unikátní přístupový kód níže.</li>
-<li><strong>Nová rezervace:</strong> Vyberte akci, zadejte jméno zákazníka, obrat v EUR, počet lístků a důvod žádosti.</li>
-<li><strong>Sledování stavu:</strong> V záložce "Seznam žádostí" okamžitě vidíte průběh schvalování u své rezervace.</li>
-<li><strong>Schvalovací proces:</strong> Žádost podléhá schválení 1. stupněm (váš manažer dle zadaného emailu) a následně 2. stupněm (RSM Praha Central).</li>
-</ol>
-</div>
-<div class="gate-login-box">
-<label style="font-size: 16px; margin-bottom: 12px; display: block; font-weight: 700;">Vstupte zadáním vašeho kódu:</label>
-<input id="gateUserToken" placeholder="Zadejte svůj unikátní kód" type="password"/>
-<button onclick="loginUserFromGate()" style="width: 100%; padding: 14px; font-size: 16px; font-weight: 700; background: var(--cc-red); border: none; border-radius: 8px; color: white; cursor: pointer;">Vstoupit do systému</button>
-<button onclick="openAccessRequestFromGate()" style="width: 100%; padding: 10px; font-size: 14px; font-weight: 600; background: #17a2b8; border: none; border-radius: 8px; color: white; cursor: pointer; margin-top: 10px;">Požádat o přístup k roli</button>
-</div>
-</div>
-<div class="container" id="mainSystem" style="display: none;">
-<div class="login-bar">
-<div>
-<span>Přihlášen jako: <strong id="loggedName">--</strong> (<span id="loggedRole">--</span>)</span>
-<button class="logout" onclick="logoutUser()" style="margin-left: 15px;">Odhlásit se</button>
-</div>
-<div class="cc-refresh-btn" onclick="location.reload(true)" title="Obnovit stránku a vymazat paměť">
-<span>⟳</span>
-</div>
-</div>
-<div class="brand-title">
-<h1>Systém rezervace lístků</h1>
-<span class="brand-badge">Coca-Cola HBC Česko a Slovensko</span>
-</div>
-<div class="tabs">
-<button class="tab-btn active" id="btn-nova" onclick="openTab(1)">Nová rezervace</button>
-<button class="tab-btn" id="btn-seznam" onclick="openTab(2)">Seznam žádostí</button>
-<button class="tab-btn" id="btn-zadost-role" onclick="openTab(3)">Požádat o přístup</button>
-<button class="tab-btn" id="btn-admin" onclick="openTab(4)" style="display: none;">⚙️ Schvalování přístupů</button>
-</div>
-<div class="tab-content active" id="tab1">
-<div style="background: #f8fafc; border: 1px solid var(--border); padding: 20px; border-radius: 8px; margin-bottom: 24px; font-size: 14px;">
+<div id="mainSystem" class="container" style="display: none;">
+    <div class="login-bar">
+        <div>
+            <span>Přihlášen jako: <strong id="loggedName">--</strong> (<span id="loggedRole">--</span>)</span>
+            <button class="logout" onclick="logoutUser()" style="margin-left: 15px;">Odhlásit se</button>
+        </div>
+        <div class="cc-refresh-btn" onclick="location.reload(true)" title="Obnovit stránku a vymazat paměť">
+            <span>⟳</span>
+        </div>
+    </div>
+    <div class="brand-title">
+        <h1>Systém rezervace lístků</h1>
+        <span class="brand-badge">Coca-Cola HBC Česko a Slovensko</span>
+    </div>
+    <div class="tabs">
+        <button id="btn-nova" class="tab-btn active" onclick="openTab(1)">Nová rezervace</button>
+        <button id="btn-seznam" class="tab-btn" onclick="openTab(2)">Seznam žádostí</button>
+        <button id="btn-zadost-role" class="tab-btn" onclick="openTab(3)">Požádat o přístup</button>
+        <button id="btn-admin" class="tab-btn" onclick="openTab(4)" style="display: none;">⚙️ Schvalování přístupů</button>
+    </div>
+    <div id="tab1" class="tab-content active">
+        <div style="background: #f8fafc; border: 1px solid var(--border); padding: 20px; border-radius: 8px; margin-bottom: 24px; font-size: 14px;">
             ℹ️ <strong>Nová rezervace:</strong> Vyberte akci, vyplňte jméno zákzaníka,obrat v EUR a odešlete. Po odeslání se můžete překliknout do záložky <strong>"Seznam žádostí"</strong>, kde uvidíte aktuální stav schvalování vaší rezervace.
         </div>
-<h2>Žádat o lístky na akci</h2>
-<form id="ticketForm" onsubmit="handleFormSubmit(event)">
-<div class="form-group">
-<label for="actionSelect">Vyberte akci(povinné):</label>
-<select id="actionSelect" required=""></select>
-</div>
-<div class="form-group">
-<label for="employeeName">Žadatel(povinné):</label>
-<input id="employeeName" placeholder="Jméno zaměstnance" required="" type="text"/>
-</div>
-<div class="form-group">
-<label for="managerEmail">E-mail nadřízeného (1. schvalovatel)(povinné):</label>
-<input id="managerEmail" placeholder="novotny@@cchellenic.com" required="" type="email"/>
-</div>
-<div class="form-group">
-<label for="customerName">Jméno zákazníka(povinné):</label>
-<input id="customerName" placeholder="Jméno zákazníka" required="" type="text"/>
-</div>
-<div class="form-group">
-<label for="ticketCount">Počet lístků(povinné):</label>
-<input id="ticketCount" max="10" min="1" placeholder="1" required="" type="number"/>
-</div>
-<div class="form-group">
-<label for="reason">Důvod žádosti o lístky (nezapomeňte uvést všechny detaily a obrat v EUR) (povinné):</label>
-<textarea id="reason" placeholder="Např. Obchodní schůzka s klíčovým klientem..." required="" rows="3"></textarea>
-</div>
-<!-- ⚖️ COMPLIANCE POJISTKA COCA-COLA HBC -->
-<div class="form-group" style="display: flex; align-items: flex-start; gap: 10px; margin-top: 25px; margin-bottom: 25px; text-align: left; background: #f8fafc; padding: 15px; border: 1px solid var(--border); border-radius: 8px;">
-<input id="complianceCheck" onchange="toggleSubmitButtonByCompliance()" style="width: auto; margin-top: 4px; cursor: pointer;" type="checkbox"/>
-<label for="complianceCheck" style="font-weight: 600; font-size: 13px; color: #475569; cursor: pointer; user-select: none; line-height: 1.4;">
+        
+        <h2>Žádat o lístky na akci</h2>
+        <form id="ticketForm" onsubmit="handleFormSubmit(event)">
+            <div class="form-group">
+                <label for="actionSelect">Vyberte akci(povinné):</label>
+                <select id="actionSelect" required></select>
+            </div>
+            <div class="form-group">
+                <label for="employeeName">Žadatel(povinné):</label>
+                <input type="text" id="employeeName" required placeholder="Jméno zaměstnance">
+            </div>
+            <div class="form-group">
+                <label for="managerEmail">E-mail nadřízeného (1. schvalovatel)(povinné):</label>
+                <input type="email" id="managerEmail" required placeholder="novotny@@cchellenic.com">
+            </div>
+            <div class="form-group">
+                <label for="customerName">Jméno zákazníka(povinné):</label>
+                <input type="text" id="customerName" required placeholder="Jméno zákazníka">
+            </div>
+            <div class="form-group">
+                <label for="ticketCount">Počet lístků(povinné):</label>
+                <input type="number" id="ticketCount" min="1" max="10" required placeholder="1">
+            </div>
+            <div class="form-group">
+                <label for="reason">Důvod žádosti o lístky (nezapomeňte uvést všechny detaily a obrat v EUR) (povinné):</label>
+                <textarea id="reason" rows="3" required placeholder="Např. Obchodní schůzka s klíčovým klientem..."></textarea>
+            </div>
+                        <!-- ⚖️ COMPLIANCE POJISTKA COCA-COLA HBC -->
+            <div class="form-group" style="display: flex; align-items: flex-start; gap: 10px; margin-top: 25px; margin-bottom: 25px; text-align: left; background: #f8fafc; padding: 15px; border: 1px solid var(--border); border-radius: 8px;">
+                <input type="checkbox" id="complianceCheck" onchange="toggleSubmitButtonByCompliance()" style="width: auto; margin-top: 4px; cursor: pointer;">
+                <label for="complianceCheck" style="font-weight: 600; font-size: 13px; color: #475569; cursor: pointer; user-select: none; line-height: 1.4;">
                     Potvrzuji, že jsem se seznámil/a s Kodexem chování a Pravidly chování pro zákazníky a jsem si vědom/a povinnosti je dodržovat.
                 </label>
-</div>
-<button class="btn-submit" disabled="" id="mainFormSubmitBtn" type="submit">Odeslat žádost</button>
-</form>
-</div>
-<div class="tab-content" id="tab2">
-<h2>Přehled and schvalování žádostí o lístky</h2>
-<div id="excelBtnContainer">
-<button onclick="exportToExcel()" style="background-color: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 15px;">📥 Stáhnout do Excelu</button>
-</div>
-<div style="overflow-x: auto;">
-<table style="width: 100%;">
-<thead>
-<tr>
-<th>Akce</th>
-<th>Žadatel</th>
-<th>Jméno zákazníka, obrat v EUR a důvod žádosti:</th>
-<th>1. schvalovatel (ASM/RSM)</th>
-<th>2. schvalovatel (RSM Praha Central)</th>
-<th>Stav schválení (1. schvalovatel)</th>
-<th>Stav schválení (2. schvalovatel)</th>
-<th>Stav rezervace</th>
-<th>Zaslání stavu rezervace</th>
-</tr>
-</thead>
-<tbody id="requestsTableBody"></tbody>
-</table>
-</div>
-</div>
-<div class="tab-content" id="tab3">
-<h2>Žádost o vytvoření účtu schvalovatele</h2>
-<p>Jste žadatel nebo schvalovatel? Vyplňte formulář. Žádost podléhá schválení administrora.</p>
-<div class="box-section">
-<form onsubmit="handleRoleRequestSubmit(event)">
-<div class="form-group">
-<label for="reqName">Vaše celé jméno:</label>
-<input id="reqName" placeholder="např. Mgr. Jan Novák" required="" type="text"/>
-</div>
-<div class="form-group">
-<label for="reqEmail">Váš pracovní e-mail:</label>
-<input id="reqEmail" placeholder="novak@firma.cz" required="" type="email"/>
-</div>
-<div class="form-group">
-<label for="reqRole">Požadovaná role:</label>
-<select id="reqRole" required="">
-<option value="applicant">0 - žadatel</option>
-<option value="manager">1. stupeň ASM / RSM</option>
-<option value="rsm_praha">2. stupeň RSM Praha Central</option>
-<option value="admin">3. stupeň Admin</option>
-</select>
-</div>
-<button class="btn-submit" style="background: #17a2b8;" type="submit">Odeslat žádost ke schválení</button>
-</form>
-</div>
-</div>
-<div class="tab-content" id="tab4">
-<h2>⚙️ Schvalování a správa přístupových práv</h2>
-<div class="box-section">
-<h3></h3>
-<form onsubmit="handleCreateActionSubmit(event)">
-<div class="form-group">
-<label>Název akce:</label>
-<input id="actNewName" placeholder="např. Teambuilding 2026" required="" type="text"/>
-</div>
-<div style="display: flex; gap: 10px;">
-<div class="form-group" style="flex: 1;">
-<label>Datum:</label>
-<input id="actNewDate" required="" type="date"/>
-</div>
-<div class="form-group" style="flex: 1;">
-<label></label>
-<input id="actNewTime" required="" type="time"/>
-</div>
-</div>
-<div class="form-group">
-<label>Místo konání:</label>
-<input id="actNewPlace" placeholder="např. Skybox" required="" type="text"/>
-</div>
-<div class="form-group">
-<label>Kapacita lístků (celkem):</label>
-<input id="actNewCapacity" min="1" placeholder="př. 50" required="" type="number"/>
-</div>
-<button class="btn-submit" style="background: #28a745; width: auto; padding: 10px 25px;" type="submit">Uložit novou akci</button>
-</form>
-</div>
-<h3>Aktuální seznam akcí a obsazenost</h3>
-<div style="overflow-x: auto;">
-<table>
-<thead>
-<tr>
-<th>Akce / Kdy a Kde</th>
-<th>Kapacita / Schváleno</th>
-<th>Stav akce</th>
-<th>Schválené žádosti</th>
-<th>Akce</th>
-</tr>
-</thead>
-<tbody id="adminActionsTableBody"></tbody>
-</table>
-</div>
-<h3>2. Čekající žádosti o přidělení role</h3>
-<div style="overflow-x: auto;">
-<table>
-<thead>
-<tr>
-<th>Jméno</th>
-<th>E-mail</th>
-<th>Požadovaná role</th>
-<th>Akce správce</th>
-</tr>
-</thead>
-<tbody id="roleRequestsTableBody"></tbody>
-</table>
-</div>
-<h3>3. Aktivní schvalovatelé (Vydané kódy)</h3>
-<div style="overflow-x: auto;">
-<table>
-<thead>
-<tr>
-<th>Jméno</th>
-<th>E-mail</th>
-<th>Role</th>
-<th>Přihlašovací kód</th>
-<th>Akce</th>
-</tr>
-</thead>
-<tbody id="activeUsersTableBody"></tbody>
-</table>
-</div>
-</div>
+            </div>
+              <button type="submit" class="btn-submit" id="mainFormSubmitBtn" disabled>Odeslat žádost</button>
+        </form>
+    </div>
+    <div id="tab2" class="tab-content">
+        <h2>Přehled and schvalování žádostí o lístky</h2>
+        <div id="excelBtnContainer">
+            <button onclick="exportToExcel()" style="background-color: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 15px;">📥 Stáhnout do Excelu</button>
+        </div>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>Akce</th>
+                        <th>Žadatel</th>
+                        <th>Jméno zákazníka, obrat v EUR a důvod žádosti:</th>
+                        <th>1. schvalovatel (ASM/RSM)</th>
+                        <th>2. schvalovatel (RSM Praha Central)</th>
+                        <th>Stav schválení (1. schvalovatel)</th>
+                        <th>Stav schválení (2. schvalovatel)</th>
+                        <th>Stav rezervace</th>
+                        <th>Zaslání stavu rezervace</th>
+                    </tr>
+                </thead>
+                <tbody id="requestsTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+    <div id="tab3" class="tab-content">
+        <h2>Žádost o vytvoření účtu schvalovatele</h2>
+        <p>Jste žadatel nebo schvalovatel? Vyplňte formulář. Žádost podléhá schválení administrora.</p>
+        <div class="box-section">
+            <form onsubmit="handleRoleRequestSubmit(event)">
+                <div class="form-group">
+                    <label for="reqName">Vaše celé jméno:</label>
+                    <input type="text" id="reqName" required placeholder="např. Mgr. Jan Novák">
+                </div>
+                <div class="form-group">
+                    <label for="reqEmail">Váš pracovní e-mail:</label>
+                    <input type="email" id="reqEmail" required placeholder="novak@firma.cz">
+                </div>
+                <div class="form-group">
+                    <label for="reqRole">Požadovaná role:</label>
+                    <select id="reqRole" required>
+                        <option value="applicant">0 - žadatel</option>
+                        <option value="manager">1. stupeň ASM / RSM</option>
+                        <option value="rsm_praha">2. stupeň RSM Praha Central</option>
+                        <option value="admin">3. stupeň Admin</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-submit" style="background: #17a2b8;">Odeslat žádost ke schválení</button>
+            </form>
+        </div>
+    </div>
+    <div id="tab4" class="tab-content">
+        <h2>⚙️ Schvalování a správa přístupových práv</h2>
+        <div class="box-section">
+            <h3></h3>
+            <form onsubmit="handleCreateActionSubmit(event)">
+                <div class="form-group">
+                    <label>Název akce:</label>
+                    <input type="text" id="actNewName" required placeholder="např. Teambuilding 2026">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Datum:</label>
+                        <input type="date" id="actNewDate" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label></label>
+                        <input type="time" id="actNewTime" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Místo konání:</label>
+                    <input type="text" id="actNewPlace" required placeholder="např. Skybox">
+                </div>
+                <div class="form-group">
+                    <label>Kapacita lístků (celkem):</label>
+                    <input type="number" id="actNewCapacity" min="1" required placeholder="př. 50">
+                </div>
+                <button type="submit" class="btn-submit" style="background: #28a745; width: auto; padding: 10px 25px;">Uložit novou akci</button>
+            </form>
+        </div>
+        <h3>Aktuální seznam akcí a obsazenost</h3>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Akce / Kdy a Kde</th>
+                        <th>Kapacita / Schváleno</th>
+                        <th>Stav akce</th>
+                        <th>Schválené žádosti</th>
+                        <th>Akce</th>
+                    </tr>
+                </thead>
+                <tbody id="adminActionsTableBody"></tbody>
+            </table>
+        </div>
+        <h3>2. Čekající žádosti o přidělení role</h3>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Jméno</th>
+                        <th>E-mail</th>
+                        <th>Požadovaná role</th>
+                        <th>Akce správce</th>
+                    </tr>
+                </thead>
+                <tbody id="roleRequestsTableBody"></tbody>
+            </table>
+        </div>
+        <h3>3. Aktivní schvalovatelé (Vydané kódy)</h3>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Jméno</th>
+                        <th>E-mail</th>
+                        <th>Role</th>
+                        <th>Přihlašovací kód</th>
+                        <th>Akce</th>
+                    </tr>
+                </thead>
+                <tbody id="activeUsersTableBody"></tbody>
+            </table>
+        </div>
+    </div>
 </div>
 <script>
     const masterAdminToken = "Magnolie27"; 
@@ -697,105 +697,8 @@ window.deleteCompanyAction = function(id) {
     if (typeof updateActionSelectOptions === 'function') updateActionSelectOptions();
 };
 </script>
-
-<script id="cc-v4-stability">
-(function(){
-'use strict';
-var KNOWN=['O2 Arena','Fotbal','SKS Slavia','Reprezentace'];
-function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
-function actions(){
-  try{
-    var a=JSON.parse(localStorage.getItem('companyActions')||'[]');
-    return Array.isArray(a)?a:[];
-  }catch(e){return Array.isArray(window.companyActions)?window.companyActions:[];}
-}
-function active(){return actions().filter(function(a){return a && (a.status==='Aktivní'||!a.status);});}
-function signature(){try{return JSON.stringify(actions());}catch(e){return ''}}
-function syncReservationUI(){
-  var list=active(), sel=document.getElementById('actionSelect');
-  if(sel){
-    var current=sel.value, html='<option value="">-- Vyberte akci --</option>';
-    list.forEach(function(a){html+='<option value="'+esc(a.name)+'">'+esc(a.name)+'</option>';});
-    if(sel.innerHTML!==html) sel.innerHTML=html;
-    if(list.some(function(a){return a.name===current;})) sel.value=current;
-  }
-  var filter=document.getElementById('cc-action-filter');
-  if(filter){
-    var currentF=filter.value, seen={}, htmlF='<option value="">--- Všechny akce ---</option>';
-    list.forEach(function(a){if(!seen[a.name]){seen[a.name]=true;htmlF+='<option value="'+esc(a.name)+'">'+esc(a.name)+'</option>';}});
-    if(filter.innerHTML!==htmlF) filter.innerHTML=htmlF;
-    if(seen[currentF]) filter.value=currentF;
-  }
-  // Category tiles/action panels are generated by the existing category module.
-  try{if(typeof window.ccShowCategories==='function' && document.getElementById('cc-category-grid')) window.ccShowCategories();}catch(e){}
-}
-function makeTooltip(){
-  var t=document.getElementById('cc-floating-event-tooltip');
-  if(!t){t=document.createElement('div');t.id='cc-floating-event-tooltip';document.body.appendChild(t);}
-  return t;
-}
-function positionTooltip(card,t){
-  var r=card.getBoundingClientRect(), margin=10, width=Math.min(360,window.innerWidth-20);
-  t.style.maxWidth=width+'px';
-  t.style.left='0px';t.style.top='0px';
-  var h=t.offsetHeight;
-  var left=Math.max(10,Math.min(r.left,window.innerWidth-width-10));
-  var top=r.bottom+10;
-  if(top+h>window.innerHeight-10) top=Math.max(10,r.top-h-10);
-  t.style.left=left+'px';t.style.top=top+'px';
-}
-function installTooltips(){
-  var grid=document.getElementById('cc-planned-grid'); if(!grid)return;
-  makeTooltip();
-  grid.querySelectorAll('.cc-event-card').forEach(function(card){
-    if(card.getAttribute('data-v4-tip')==='1')return;
-    card.setAttribute('data-v4-tip','1');
-    var desc='';
-    var cards=active();
-    var title=card.querySelector('h3');
-    if(title){var name=title.textContent;var a=cards.find(function(x){return x.name===name;});desc=a&&a.description?a.description:'';}
-    if(!desc)return;
-    card.addEventListener('mouseenter',function(){
-      var t=makeTooltip();
-      t.innerHTML='<strong>O akci</strong><div>'+esc(desc).replace(/\n/g,'<br>')+'</div>';
-      t.classList.add('cc-show');
-      positionTooltip(card,t);
-    });
-    card.addEventListener('mouseleave',function(){var t=document.getElementById('cc-floating-event-tooltip');if(t)t.classList.remove('cc-show');});
-  });
-}
-function refresh(){
-  syncReservationUI();
-  try{if(typeof window.renderPlannedEvents==='function')window.renderPlannedEvents();}catch(e){}
-  setTimeout(installTooltips,0);
-}
-var last='';
-function maybe(){var s=signature();if(s!==last){last=s;refresh();}else installTooltips();}
-// Observe only data-relevant DOM replacements; no timer and no full-page redraw loop.
-var mo=new MutationObserver(function(ms){
-  var relevant=false;
-  ms.forEach(function(m){
-    if(m.type!=='childList')return;
-    var id=m.target&&m.target.id;
-    if(id==='actionSelect'||id==='cc-action-filter'||id==='cc-planned-grid'||id==='cc-action-panel') relevant=true;
-  });
-  if(relevant) setTimeout(maybe,20);
-});
-function boot(){
-  try{last=signature();refresh();}catch(e){console.error('CC V4 boot',e)}
-  var root=document.getElementById('mainSystem')||document.body;
-  mo.observe(root,{childList:true,subtree:true});
-}
-// React to localStorage changes in this tab and other tabs.
-var nativeSet=localStorage.setItem.bind(localStorage);
-localStorage.setItem=function(k,v){nativeSet(k,v);if(k==='companyActions')setTimeout(maybe,20);};
-window.addEventListener('storage',function(e){if(e.key==='companyActions')setTimeout(maybe,20);});
-window.addEventListener('resize',function(){var t=document.getElementById('cc-floating-event-tooltip'),c=document.querySelector('#cc-planned-grid .cc-event-card[data-v4-tip="1"]');if(t&&t.classList.contains('cc-show')&&c)positionTooltip(c,t);});
-window.addEventListener('scroll',function(){var t=document.getElementById('cc-floating-event-tooltip');if(t)t.classList.remove('cc-show');},{passive:true});
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
-})();
-</script></body>
-<script>
+</body>
+    <script>
     // 🔍 POKROČILÁ MANAŽERSKÁ VYHLEDÁVACÍ LIŠTA (Coca-Cola HBC)
     (function() {
         function nasadPokrocileFiltry() {
@@ -903,7 +806,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         }, 350);
     })();
 </script>
-<script>
+    <script>
     // ✉️ GLOBÁLNÍ ZÁCHRANNÝ SYSTÉM PRO TLAČÍTKO E-MAILU
     document.addEventListener('click', function(e) {
         if (e.target && e.target.tagName === 'BUTTON') {
@@ -959,7 +862,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         }
     }, true);
 </script>
-<script>
+    <script>
     // ⚖️ NEPRŮSTŘELNÁ KONTROLA COMPLIANCE A VŠECH POVINNÝCH POLÍČEK
     function toggleSubmitButtonByCompliance() {
         var checkbox = document.getElementById('complianceCheck');
@@ -1004,7 +907,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         }
     });
 </script>
-<script>
+    <script>
     // 🔥 NEPRŮSTŘELNÁ OPRAVA PŘEKLIKÁVÁNÍ ZÁLOŽEK A PAMĚTI STRÁNKY
     window.openTab = function(num) {
         // Zapamatujeme si záložku v prohlížeči, aby po F5 nezmizela
@@ -1044,7 +947,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         window.openTab(zapamatovanaZalozka);
     }, 200);
 </script>
-<script>
+    <script>
     // 🎨 DESIGNÉRSKÝ HLÍDAČ PRO KRÁSNÉ ZA OBLENÉ TLAČÍTKO S DÝNÍ
     (function() {
         function stylujNaseSkveleTlacitko() {
@@ -1107,7 +1010,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         setTimeout(stylujNaseSkveleTlacitko, 250);
     })();
 </script>
-<script>
+    <script>
     // 🎟️ PŘÍMÉ NAFEDROVÁNÍ AKCÍ DO FORMULÁŘE REZERVACÍ
     (function() {
         function natvrdoPropisAkceDoRoletky() {
@@ -1166,6 +1069,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         table { min-width: 900px !important; }
     }
 </style>
+
 <script>
 /* Jediná synchronizace Firebase pro PC ↔ telefon */
 (function () {
@@ -1315,8 +1219,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         }
     })();
 </script>
-<!-- 🔌 AUTOMATICKÝ ENHANCER ROLETEK S NEPRŮSTŘELNÝM FILTREM PRO ADMINA -->
+   <!-- 🔌 AUTOMATICKÝ ENHANCER ROLETEK S NEPRŮSTŘELNÝM FILTREM PRO ADMINA -->
 <style id="cc-admin-filter-style"></style>
+
 <script>
     (function() {
         function opravVsechnyRoletkyVSystemu() {
@@ -1417,7 +1322,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         document.addEventListener('click', function() { setTimeout(aplikujHardwarovyAdminFiltr, 50); });
     })();
 </script>
-<!-- 🔌 AUTOMATICKÝ DOPLŇOVAČ DATA A ČASU DO HLAVNÍ SCHVALOVACÍ TABULKY -->
+    <!-- 🔌 AUTOMATICKÝ DOPLŇOVAČ DATA A ČASU DO HLAVNÍ SCHVALOVACÍ TABULKY -->
 <script>
     (function() {
         function doplnDatumACasDoSchvalovani() {
@@ -1466,6 +1371,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         document.addEventListener('click', function() { setTimeout(doplnDatumACasDoSchvalovani, 100); });
     })();
 </script>
+
 <style id="cc-new-category-system">
 /* ===== NOVÝ SYSTÉM KATEGORIÍ A PLÁNOVANÝCH AKCÍ ===== */
 .cc-category-grid{
@@ -1579,6 +1485,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     .cc-category-card{min-height:125px}
 }
 </style>
+
 <script>
 (function(){
     'use strict';
@@ -2039,7 +1946,14 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         addActionFilterToRequestList();
         patchAdminTableCategory();
 
-        // Dynamické prvky nyní aktualizuje jednotný synchronizační systém; žádné periodické překreslování.
+        // Udržení dynamických prvků po překreslení dat/Firebase.
+        setInterval(function(){
+            addAdminCategoryFields();
+            addActionFilterToRequestList();
+            patchAdminTableCategory();
+            renderPlannedEvents();
+            applyRequestActionFilter();
+        },500);
 
         // Výchozí záložka: Plánované akce, pokud je uživatel přihlášen.
         if(typeof currentUser !== 'undefined' && currentUser && currentUser.role!=='guest'){
@@ -2080,8 +1994,126 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         setInterval(vymažMístoKonáníZFormulářeAkcí, 400);
     })();
 </script>
-<!-- 🔌 DEFINITIVNÍ OPRAVA TLAČÍTKA A NEPRŮSTŘELNÉ ODESÍLÁNÍ COMPANYACTIONS DO CLOUDU -->
-<!-- 🎨 MODERNÍ A PŘÍVĚTIVÝ DESIGN PRO POLÍČKA DATA A ČASU -->
+    <!-- 🔌 DEFINITIVNÍ OPRAVA TLAČÍTKA A NEPRŮSTŘELNÉ ODESÍLÁNÍ COMPANYACTIONS DO CLOUDU -->
+<script>
+    (function() {
+        function opravUkladaniANasypDlazdiceCoke() {
+            var adminForm = document.querySelector('#tab4 form') || document.getElementById('actionForm') || document.querySelector('#actionForm');
+            if (!adminForm || adminForm.getAttribute('data-cc-save-fixed-v2') === 'yes') return;
+
+            adminForm.addEventListener('submit', function(e) {
+                e.preventDefault(); 
+                e.stopPropagation();
+
+                var jmenoInput = adminForm.querySelector('input[type="text"]');
+                var kapacitaInput = adminForm.querySelector('input[type="number"]') || document.getElementById('actionCapacity');
+                var datumInput = adminForm.querySelector('input[type="date"]') || document.getElementById('actionDate');
+                var casInput = adminForm.querySelector('input[type="time"]') || document.getElementById('actionTime');
+
+                var jmenoVal = jmenoInput ? jmenoInput.value.trim() : '';
+                var kapacitaVal = kapacitaInput ? parseInt(kapacitaInput.value) : 50;
+                var datumVal = datumInput ? datumInput.value : '';
+                var casVal = casInput ? casInput.value : '';
+
+                if (jmenoVal) {
+                    // Načteme stávající akce a zajistíme, aby se Firebase do toho v této milisekundě nepletla
+                    var aktualniSeznamAkci = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+                    
+                    var novaCokeAkce = {
+                        id: Date.now(),
+                        name: jmenoVal,
+                        capacity: kapacitaVal,
+                        date: datumVal,
+                        time: casVal,
+                        status: 'Aktivní'
+                    };
+
+                    aktualniSeznamAkci.push(novaCokeAkce);
+                    
+                    // Zápis do lokální paměti pro okamžité vykreslení
+                    localStorage.setItem('companyActions', JSON.stringify(aktualniSeznamAkci));
+                    window.companyActions = aktualniSeznamAkci;
+
+                    // 🌐 OKAMŽITÝ NUCENÝ EXPORT DO FIREBASE CLOUDU (Natvrdo přepíšeme cloud novým seznamem)
+                    if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                        var db = firebase.firestore();
+                        
+                        // Sestavíme kompletní datový balíček, aby v cloudu nic nechybělo
+                        var dataProCloud = {
+                            companyActions: aktualniSeznamAkci,
+                            ticketRequests: JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [],
+                            customUsers: JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {},
+                            roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || window.roleRequests || []
+                        };
+
+                        db.collection("portalData").doc("cocaColaDatabase").set(dataProCloud, { merge: true })
+                        .then(function() { 
+                            console.log("Data úspěšně protlačena a uzamčena v cloudu Firebase!");
+                            
+                            // Vyčistíme formulář
+                            adminForm.reset();
+                            alert('🎉 Nová firemní akce byla úspěšně vytvořena, uložena a synchronizována s cloudem!');
+                            
+                            // Osvěžíme stránku až po úspěšném zápisu do cloudu, aby data nezmizela!
+                            setTimeout(function() { location.reload(); }, 100);
+                        })
+                        .catch(function(err) { 
+                            console.error("Chyba odesílání do cloudu:", err);
+                            // Pokud cloud selže, necháme data aspoň lokálně a restartujeme
+                            adminForm.reset();
+                            setTimeout(function() { location.reload(); }, 200);
+                        });
+                    } else {
+                        // Pokud Firebase vůbec neběží, uložíme lokálně a pokračujeme
+                        adminForm.reset();
+                        alert('🎉 Akce byla uložena lokálně.');
+                        setTimeout(function() { location.reload(); }, 150);
+                    }
+                }
+            });
+
+            adminForm.setAttribute('data-cc-save-fixed-v2', 'yes');
+        }
+
+        // 📊 SYNCHRONIZACE DLAŽDIC V NOVÉ ZÁLOŽCE PLÁNOVANÉ AKCE
+        function aktualizujDlazdiceVPlanovanychAkcich() {
+            var plochaNoveZalozky = document.getElementById('planovaneAkceGrid') || document.querySelector('.planovane-akce-container') || document.getElementById('tab5') || document.getElementById('tab-planovane');
+            if (!plochaNoveZalozky) return;
+
+            var akce = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+            var htmlDlazdic = '';
+            
+            akce.forEach(function(act) {
+                if (act.status !== 'Zrušena') {
+                    htmlDlazdic += '<div class="action-tile-coke" style="background:#ffffff; border:1px solid var(--border,#e2e8f0); border-radius:8px; padding:15px; margin:10px; display:inline-block; min-width:200px; text-align:left; box-shadow:0 2px 5px rgba(0,0,0,0.02);">' +
+                                        '<h4 style="margin:0 0 5px 0; color:#0f172a; font-size:14px; font-weight:700;">' + act.name + '</h4>' +
+                                        '<span style="font-size:11px; color:#64748b; font-weight:600;">📅 ' + (act.date || 'Termín upřesníme') + (act.time ? ' ⏰ ' + act.time : '') + '</span>' +
+                                   '</div>';
+                }
+            });
+
+            var cilovyKontejner = plochaNoveZalozky.querySelector('.grid') || plochaNoveZalozky;
+            if (cilovyKontejner && cilovyKontejner.innerHTML !== htmlDlazdic && htmlDlazdic !== '') {
+                var nadpis = cilovyKontejner.querySelector('h2') || cilovyKontejner.querySelector('h3');
+                if (nadpis) {
+                    var seznamDiv = document.getElementById('cc-injected-tiles-list');
+                    if (!seznamDiv) {
+                        seznamDiv = document.createElement('div');
+                        seznamDiv.id = 'cc-injected-tiles-list';
+                        cilovyKontejner.appendChild(seznamDiv);
+                    }
+                    seznamDiv.innerHTML = htmlDlazdic;
+                } else {
+                    cilovyKontejner.innerHTML = htmlDlazdic;
+                }
+            }
+        }
+
+        setInterval(opravUkladaniANasypDlazdiceCoke, 400);
+        setInterval(aktualizujDlazdiceVPlanovanychAkcich, 500);
+    })();
+</script>
+    <!-- 🎨 MODERNÍ A PŘÍVĚTIVÝ DESIGN PRO POLÍČKA DATA A ČASU -->
 <style>
     /* Natvrdo přebarvíme a nastylujeme políčka data a času v administraci */
     #tab4 input[type="date"],
@@ -2122,6 +2154,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         filter: invert(15%) sepia(15%) saturate(1000%) hue-rotate(340deg) brightness(95%) contrast(90%); /* Sladění barvy ikon */
     }
 </style>
+
 <script>
     (function() {
         function vylepsiZadavaniDataACasu() {
@@ -2185,6 +2218,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         box-shadow: 0 0 0 2px rgba(228, 30, 38, 0.08) !important;
     }
 </style>
+
 <script>
     (function() {
         function transformujZadavaniNaPCObrazovce() {
@@ -2254,7 +2288,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         setInterval(transformujZadavaniNaPCObrazovce, 450);
     })();
 </script>
-<!-- 🔑 UNIVERZÁLNÍ A NEPRŮSTŘELNÉ TLAČÍTKO PRO ZMĚNU HESLA (VIDITELNÉ VŽDY) -->
+   <!-- 🔑 UNIVERZÁLNÍ A NEPRŮSTŘELNÉ TLAČÍTKO PRO ZMĚNU HESLA (VIDITELNÉ VŽDY) -->
 <script>
     (function() {
         function namontujTlacitkoProZmenuHeslaVzdy() {
@@ -2369,7 +2403,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         setInterval(namontujTlacitkoProZmenuHeslaVzdy, 1000);
     })();
 </script>
-<!-- 📧 AUTOMATICKÝ GENERÁTOR OUTLOOK E-MAILŮ PRO REGISTRAČNÍ KÓDY -->
+    <!-- 📧 AUTOMATICKÝ GENERÁTOR OUTLOOK E-MAILŮ PRO REGISTRAČNÍ KÓDY -->
 <script>
     (function() {
         function namontujEmailovaTlacitkaDoTabulkyKodu() {
@@ -2442,6 +2476,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     .cc-coke-input, .cc-coke-select { width: 100% !important; height: 38px !important; padding: 6px 12px !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; font-size: 13px !important; font-weight: 600 !important; color: #334155 !important; background-color: #ffffff !important; box-sizing: border-box !important; }
     .cc-coke-input:focus, .cc-coke-select:focus { border-color: var(--cc-red, #e41e26) !important; outline: none !important; box-shadow: 0 0 0 2px rgba(228, 30, 38, 0.08) !important; }
 </style>
+
 <script>
     (function() {
         // Pomocná funkce pro získání seznamu důvodů (buď z databáze, nebo výchozí startovní sada)
@@ -2575,7 +2610,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         setInterval(transformujRezervacniFormularNaDuvodyCoke, 450);
     })();
 </script>
-<!-- 🗂️ HARMONIKOVÉ ZÁLOŽKY PRO ADMINA: 1. ČÁST - GRAFICKÝ DESIGN BOXŮ -->
+    <!-- 🗂️ HARMONIKOVÉ ZÁLOŽKY PRO ADMINA: 1. ČÁST - GRAFICKÝ DESIGN BOXŮ -->
 <style>
     /* Stylování moderních rozbalovacích nadpisů v Administraci */
     .cc-accordion-item {
@@ -2635,6 +2670,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         transform: rotate(90deg) !important;
     }
 </style>
+
 <script>
     (function() {
         // Pomocná funkce pro bezpečné zabalení stávajícího prvku do harmoniky
@@ -2752,7 +2788,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         setInterval(vymazViseciNadpisObsazenosti, 400);
     })();
 </script>
-<!-- 🧽 GENERÁLNÍ ÚKLID ADMINISTRACE: PŘESUN FILTRU A SROVNÁNÍ BOXŮ DO ROVINY -->
+    <!-- 🧽 GENERÁLNÍ ÚKLID ADMINISTRACE: PŘESUN FILTRU A SROVNÁNÍ BOXŮ DO ROVINY -->
 <script>
     (function() {
         function srovnejZalozkyAdminaDoJedneRoviny() {
@@ -2812,6 +2848,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         setInterval(srovnejZalozkyAdminaDoJedneRoviny, 400);
     })();
 </script>
+
 <!-- =========================================================
      CC FINAL UX LAYER: obrázky, tooltipy, filtrace akcí a sezónní vzhled
      ========================================================= -->
@@ -2859,6 +2896,7 @@ body.cc-season-winter .cc-refresh-btn::before{content:'🎄'!important;opacity:.
 body.cc-season-spring .cc-refresh-btn::before{content:'🥚'!important;opacity:.85!important;}
 body.cc-season-summer .cc-refresh-btn::before{content:'☀️'!important;opacity:.8!important;}
 </style>
+
 <script id="cc-final-ux-script">
 (function(){
 'use strict';
@@ -3080,342 +3118,16 @@ function buildSeasonSettings(){
     updateSeasonTiles(localStorage.getItem('ccSeasonMode')||'autumn');
 }
 
-/* ---------- Stabilní inicializace bez blikání ---------- */
-var ccActionSyncObserver = null;
-var ccLastActionsSignature = '';
-
-function ccActionsSignature(){
-    try { return JSON.stringify(ccActions()); } catch(e) { return ''; }
-}
-
-function ccRefreshAllActionUI(){
-    try { refreshReservationActionData(); } catch(e) {}
-    try { if(typeof window.renderPlannedEvents === 'function') window.renderPlannedEvents(); } catch(e) {}
-    try { ensurePlannedHover(); } catch(e) {}
-    try { removeOtherLabels(); } catch(e) {}
-}
-
-function ccInstallActionObservers(){
-    if(ccActionSyncObserver) return;
-    ccActionSyncObserver = new MutationObserver(function(mutations){
-        var needsActionSync = false;
-        mutations.forEach(function(m){
-            if(m.type !== 'childList') return;
-            var target = m.target;
-            if(target && (target.id === 'actionSelect' || target.id === 'cc-action-filter')) needsActionSync = true;
-            if(target && target.id === 'mainSystem') needsActionSync = true;
-        });
-        if(needsActionSync){
-            clearTimeout(window.__ccActionSyncTimer);
-            window.__ccActionSyncTimer = setTimeout(function(){
-                var sig = ccActionsSignature();
-                if(sig !== ccLastActionsSignature){
-                    ccLastActionsSignature = sig;
-                    ccRefreshAllActionUI();
-                } else {
-                    refreshReservationActionData();
-                }
-            }, 30);
-        }
-    });
-    ccActionSyncObserver.observe(document.getElementById('mainSystem') || document.body, {childList:true,subtree:true});
-}
-
+/* ---------- Inicializace a opakovaná ochrana proti překreslení původním kódem ---------- */
 function ccInit(){
-    try {
-        installActionImageFields();
-        installCreateOverride();
-        buildSeasonSettings();
-        ccRefreshAllActionUI();
-        ccLastActionsSignature = ccActionsSignature();
-        ccInstallActionObservers();
-    } catch(e) { console.error('CC UX init:',e); }
+    try{installActionImageFields();installCreateOverride();buildSeasonSettings();refreshReservationActionData();if(typeof window.renderPlannedEvents==='function')window.renderPlannedEvents();ensurePlannedHover();removeOtherLabels();}catch(e){console.error('CC UX init:',e);}
 }
-
-/* Firebase a původní aplikace zapisují akce přes localStorage.
-   Po skutečné změně dat UI jednou překreslíme – žádné nekonečné setInterval překreslování. */
-(function(){
-    var originalSetItemFinal = localStorage.setItem.bind(localStorage);
-    localStorage.setItem = function(key,value){
-        originalSetItemFinal(key,value);
-        if(key === 'companyActions'){
-            clearTimeout(window.__ccActionDataTimer);
-            window.__ccActionDataTimer = setTimeout(function(){
-                var sig = ccActionsSignature();
-                if(sig !== ccLastActionsSignature){
-                    ccLastActionsSignature = sig;
-                    ccRefreshAllActionUI();
-                }
-            },40);
-        }
-    };
-})();
-
 ccLoadSeason();
-if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',ccInit); else ccInit();
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ccInit);else ccInit();
+setInterval(function(){
+    try{installActionImageFields();installCreateOverride();buildSeasonSettings();refreshReservationActionData();if(document.getElementById('cc-planned-grid')){window.renderPlannedEvents();ensurePlannedHover();removeOtherLabels();}}catch(e){}
+},800);
 })();
 </script>
-
-<script id="cc-final-create-action-fix-v5">
-(function(){
-'use strict';
-
-function ccV5Actions(){
-  try{ var a=JSON.parse(localStorage.getItem('companyActions')||'[]'); return Array.isArray(a)?a:[]; }
-  catch(e){ return Array.isArray(window.companyActions)?window.companyActions:[]; }
-}
-function ccV5Compress(file,done){
-  if(!file){done('');return;}
-  var r=new FileReader();
-  r.onload=function(){
-    var img=new Image();
-    img.onload=function(){
-      try{
-        var max=1100, scale=Math.min(1,max/Math.max(img.width,img.height));
-        var c=document.createElement('canvas');
-        c.width=Math.max(1,Math.round(img.width*scale)); c.height=Math.max(1,Math.round(img.height*scale));
-        c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-        done(c.toDataURL('image/jpeg',.72));
-      }catch(e){done(r.result||'');}
-    };
-    img.onerror=function(){done(r.result||'');};
-    img.src=r.result;
-  };
-  r.onerror=function(){done('');}; r.readAsDataURL(file);
-}
-function ensureFields(form){
-  if(!document.getElementById('actNewCategory')){
-    var cap=document.getElementById('actNewCapacity');
-    var box=document.createElement('div'); box.id='cc-v5-category-box';
-    box.innerHTML='<div class="form-group"><label>Kategorie akce:</label><select id="actNewCategory" required><option value="">-- Vyberte kategorii --</option><option value="O2 Arena">O2 Arena</option><option value="Fotbal">Fotbal</option><option value="SKS Slavia">SKS Slavia</option><option value="Reprezentace">Reprezentace</option></select></div><div class="form-group"><label>Typ akce:</label><select id="actNewSubcategory"><option value="">-- Pro O2 Arena vyberte Koncert/Hokej --</option></select></div>';
-    if(cap&&cap.parentElement) cap.parentElement.insertAdjacentElement('afterend',box); else form.appendChild(box);
-    var cat=document.getElementById('actNewCategory'), sub=document.getElementById('actNewSubcategory');
-    cat.addEventListener('change',function(){
-      if(cat.value==='O2 Arena'){sub.required=true;sub.innerHTML='<option value="">-- Vyberte typ --</option><option value="Koncert">Koncert</option><option value="Hokej">Hokej</option>';}
-      else{sub.required=false;sub.innerHTML='<option value="">-- Není potřeba --</option>';sub.value='';}
-    });
-  }
-  if(!document.getElementById('cc-action-image')){
-    var cap2=document.getElementById('actNewCapacity'), box2=document.createElement('div'); box2.id='cc-v5-media-box';
-    box2.innerHTML='<div class="form-group"><label>🖼️ Obrázek akce do dlaždice:</label><input type="file" id="cc-action-image" accept="image/*"><img id="cc-action-image-preview" style="display:none;max-width:100%;max-height:180px;margin-top:8px;border-radius:8px;object-fit:cover"></div><div class="form-group"><label>📝 Informace o akci:</label><textarea id="cc-action-description" rows="4" placeholder="Informace, které se zobrazí při najetí na dlaždici…" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #cbd5e1;border-radius:8px;resize:vertical;font-family:inherit"></textarea></div>';
-    if(cap2&&cap2.parentElement) cap2.parentElement.insertAdjacentElement('afterend',box2); else form.appendChild(box2);
-    document.getElementById('cc-action-image').addEventListener('change',function(){
-      var f=this.files&&this.files[0], pr=document.getElementById('cc-action-image-preview');
-      if(!f){pr.style.display='none';return;} var rr=new FileReader(); rr.onload=function(){pr.src=rr.result;pr.style.display='block';}; rr.readAsDataURL(f);
-    });
-  }
-}
-function refreshV5(){
-  try{ if(typeof window.renderPlannedEvents==='function') window.renderPlannedEvents(); }catch(e){}
-  try{ if(typeof updateActionSelectOptions==='function') updateActionSelectOptions(); }catch(e){}
-  try{ if(typeof refreshReservationActionData==='function') refreshReservationActionData(); }catch(e){}
-  try{ if(typeof renderAdminSection==='function') renderAdminSection(); }catch(e){}
-}
-function install(){
-  var form=document.querySelector('#tab4 form'); if(!form) return;
-  ensureFields(form);
-  // Remove every previously attached submit handler by replacing the form node.
-  var clean=form.cloneNode(true); form.parentNode.replaceChild(clean,form); form=clean;
-  form.removeAttribute('onsubmit'); form.id='createActionForm';
-  ensureFields(form);
-  if(form.getAttribute('data-cc-v5-bound')==='1') return;
-  form.setAttribute('data-cc-v5-bound','1');
-  form.addEventListener('submit',function(e){
-    e.preventDefault(); e.stopPropagation(); if(e.stopImmediatePropagation)e.stopImmediatePropagation();
-    if(form.getAttribute('data-cc-v5-saving')==='1') return;
-    var name=(document.getElementById('actNewName')||{}).value||'';
-    var date=(document.getElementById('actNewDate')||{}).value||'';
-    var time=(document.getElementById('actNewTime')||{}).value||'';
-    var place=(document.getElementById('actNewPlace')||{}).value||'';
-    var cap=parseInt((document.getElementById('actNewCapacity')||{}).value,10)||0;
-    var cat=(document.getElementById('actNewCategory')||{}).value||'';
-    var sub=(document.getElementById('actNewSubcategory')||{}).value||'';
-    var desc=((document.getElementById('cc-action-description')||{}).value||'').trim();
-    var file=document.getElementById('cc-action-image')&&document.getElementById('cc-action-image').files[0];
-    name=name.trim(); place=place.trim();
-    if(!name||!date||!time||!place||!cap){alert('Vyplňte prosím všechna pole nové akce.');return;}
-    if(!cat){alert('Vyberte kategorii akce.');return;}
-    if(cat==='O2 Arena'&&!sub){alert('U akce O2 Arena vyberte Koncert nebo Hokej.');return;}
-    form.setAttribute('data-cc-v5-saving','1');
-    var btn=form.querySelector('button[type="submit"]'); if(btn){btn.disabled=true;btn.textContent='Ukládám…';}
-    ccV5Compress(file,function(image){
-      var list=ccV5Actions();
-      var action={id:Date.now(),name:name,date:date,time:time,place:place,capacity:cap,category:cat,subcategory:sub,status:'Aktivní',image:image||'',description:desc};
-      list.push(action);
-      try{localStorage.setItem('companyActions',JSON.stringify(list));}catch(err){alert('Akci se nepodařilo uložit do prohlížeče: '+err.message);if(btn){btn.disabled=false;btn.textContent='Uložit novou akci';}form.removeAttribute('data-cc-v5-saving');return;}
-      window.companyActions=list;
-      var cloudPromise=Promise.resolve();
-      try{
-        if(typeof firebase!=='undefined'&&firebase.apps&&firebase.apps.length){
-          cloudPromise=firebase.firestore().collection('portalData').doc('cocaColaDatabase').set({companyActions:list},{merge:true});
-        }
-      }catch(err){console.error('Firebase save action:',err);}
-      cloudPromise.then(function(){
-        form.reset();
-        var subEl=document.getElementById('actNewSubcategory');if(subEl)subEl.innerHTML='<option value="">-- Pro O2 Arena vyberte Koncert/Hokej --</option>';
-        var pr=document.getElementById('cc-action-image-preview');if(pr){pr.src='';pr.style.display='none';}
-        refreshV5();
-        alert('Akce byla úspěšně uložena.');
-      }).catch(function(err){
-        console.error('Cloud save action:',err);
-        refreshV5();
-        alert('Akce se uložila v prohlížeči, ale nepodařilo se ji odeslat do Firebase. Zkontrolujte připojení.');
-      }).finally(function(){
-        form.removeAttribute('data-cc-v5-saving'); if(btn){btn.disabled=false;btn.textContent='Uložit novou akci';}
-      });
-    });
-  },true);
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(install,50);});else setTimeout(install,50);
-})();
-</script>
-     <!-- 🔴 DEFINITIVNÍ SPOJENÍ REZERVAČNÍHO ENGINU S TVOU HISTORIÍ A FIREBASE -->
-<script>
-    (function() {
-        // 🔥 KLÍČOVÝ KROK: Přepíšeme tvou původní vnitřní funkci handleCreateActionSubmit z historie!
-        window.handleCreateActionSubmit = function(e) {
-            if (e) { e.preventDefault(); e.stopPropagation(); }
-
-            var adminForm = document.getElementById('actionForm') || document.querySelector('#tab4 form');
-            if (!adminForm) return;
-
-            // Bezpečně posbíráme data ze všech políček (z harmoniky i mimo ni)
-            var jmenoInp = document.getElementById('actionName') || adminForm.querySelector('input[type="text"]');
-            var capInp = document.getElementById('actionCapacity') || adminForm.querySelector('input[type="number"]');
-            var dateInp = document.getElementById('cc-visual-date') || document.getElementById('actionDate') || adminForm.querySelector('input[type="date"]');
-            var timeInp = document.getElementById('cc-visual-time') || document.getElementById('actionTime');
-            var catInp = document.getElementById('cc-action-category-select');
-
-            var jmenoVal = jmenoInp ? jmenoInp.value.trim() : '';
-            var capVal = capInp ? parseInt(capInp.value) : 50;
-            var dateVal = dateInp ? dateInp.value : '';
-            var timeVal = timeInp ? timeInp.value : '';
-            var catVal = catInp ? catInp.value : '';
-
-            if (!jmenoVal) { alert('❌ Prosím, vyplňte název akce.'); return; }
-            if (!catVal) { alert('❌ Prosím, vyberte, do které grafické dlaždice má akce patřit!'); return; }
-
-            // Načteme bezpečně aktuální stav z paměti
-            var aktualniAkce = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
-            
-            // Vytvoříme akci se všemi potřebnými štítky pro rezervační dlaždice
-            var novaAkce = {
-                id: Date.now(),
-                name: jmenoVal,
-                capacity: capVal,
-                date: dateVal,
-                time: timeVal,
-                category: catVal,         // Propojení s tvými rezervačními dlaždicemi
-                actionCategory: catVal,   // Propojení s administrativními filtry
-                status: 'Aktivní'
-            };
-
-            // Přidáme do pole
-            aktualniAkce.push(novaAkce);
-            
-            // Okamžitě uzamkneme v lokální paměti počítače
-            localStorage.setItem('companyActions', JSON.stringify(aktualniAkce));
-            window.companyActions = aktualniAkce;
-
-            // 🌐 PROTLAČENÍ DO CLOUDU FIREBASE (Natvrdo přepíšeme online stav, ať data nezmizí)
-            if (typeof firebase !== 'undefined' && firebase.apps.length) {
-                var db = firebase.firestore();
-                var dataBalicek = {
-                    companyActions: aktualniAkce,
-                    ticketRequests: JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [],
-                    customUsers: JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {},
-                    roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || window.roleRequests || []
-                };
-
-                db.collection("portalData").doc("cocaColaDatabase").set(dataBalicek, { merge: true })
-                .then(function() {
-                    console.log("Firebase úspěšně aktualizována!");
-                    adminForm.reset();
-                    alert('🎉 Nová firemní akce byla úspěšně vytvořena a uložena do internetové databáze cloudu!');
-                    setTimeout(function() { location.reload(); }, 100);
-                })
-                .catch(function(err) {
-                    console.error("Chyba cloudu:", err);
-                    adminForm.reset();
-                    setTimeout(function() { location.reload(); }, 150);
-                });
-            } else {
-                adminForm.reset();
-                alert('🎉 Akce uložena lokálně.');
-                setTimeout(function() { location.reload(); }, 150);
-            }
-        };
-
-        // 🔄 AUTOMATICKÝ PROPIS DO PLÁNOVANÝCH AKCÍ A DO ROLETEK NOVÉ REZERVACE
-        function synchronizujZalozkyANoveRezervaceCoke() {
-            var akce = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
-            
-            // A) Generování dlaždic v záložce "Plánované akce"
-            var plochaPlanovanych = document.getElementById('planovaneAkceGrid') || document.querySelector('.planovane-akce-container') || document.getElementById('tab5') || document.getElementById('tab-planovane');
-            if (plochaPlanovanych) {
-                var htmlDlazdic = '';
-                akce.forEach(function(act) {
-                    if (act.status !== 'Zrušena') {
-                        htmlDlazdic += '<div class="action-tile-coke" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:15px; margin:10px; display:inline-block; min-width:220px; text-align:left; box-shadow:0 2px 5px rgba(0,0,0,0.02); vertical-align:top;">' +
-                                            '<h4 style="margin:0 0 5px 0; color:#0f172a; font-size:14px; font-weight:700;">' + act.name + '</h4>' +
-                                            '<div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:5px;">📅 ' + (act.date || 'Termín upřesníme') + (act.time ? ' ⏰ ' + act.time : '') + '</div>' +
-                                            '<div style="font-size:11px; color:#94a3b8; font-weight:500; font-style:italic;">' + (act.category || 'Nespecifikováno') + '</div>' +
-                                       '</div>';
-                    }
-                });
-
-                var cilovyKontejner = plochaPlanovanych.querySelector('.grid') || plochaPlanovanych;
-                if (cilovyKontejner && htmlDlazdic !== '') {
-                    var seznamDiv = document.getElementById('cc-injected-planovane-list');
-                    if (!seznamDiv) {
-                        seznamDiv = document.createElement('div');
-                        seznamDiv.id = 'cc-injected-planovane-list';
-                        seznamDiv.style.display = 'flex';
-                        seznamDiv.style.flexWrap = 'wrap';
-                        cilovyKontejner.appendChild(seznamDiv);
-                    }
-                    if (seznamDiv.innerHTML !== htmlDlazdic) seznamDiv.innerHTML = htmlDlazdic;
-                }
-            }
-
-            // B) Odemčení a naplnění roletky v záložce "Nová rezervace"
-            var roletkaSelect = document.getElementById('actionSelect') || document.querySelector('#ticketForm select');
-            var vybranaKat = window.vybranaKategoriePortalu || window.selectedCategory || "";
-            
-            if (roletkaSelect && vybranaKat) {
-                var htmlOptions = '<option value="">-- Vyberte konkrétní zápas / koncert --</option>';
-                var nalezenaAkce = false;
-
-                akce.forEach(function(a) {
-                    var katAkce = (a.category || a.actionCategory || "").trim();
-                    if (katAkce === vybranaKat && (a.status === 'Aktivní' || !a.status)) {
-                        htmlOptions += '<option value="' + a.name + '">' + a.name + (a.date ? ' | ' + a.date : '') + '</option>';
-                        nalezenaAkce = true;
-                    }
-                });
-
-                if (!nalezenaAlesponJednaAkce) htmlOptions = '<option value="">V této kategorii momentálně nejsou žádné volné lístky</option>';
-
-                var unikatniHash = htmlOptions.length + vybranaKat;
-                if (roletkaSelect.getAttribute('data-cc-hash') !== unikatniHash) {
-                    roletkaSelect.innerHTML = htmlOptions;
-                    roletkaSelect.setAttribute('data-cc-hash', unikatniHash);
-                }
-            }
-        }
-
-        // Hlídáme formulář i synchronizaci dat plynule na pozadí
-        setInterval(synchronizujZalozkyANoveRezervaceCoke, 500);
-
-        // Pojistka: Propojíme naše nové odesílací pravidlo přímo s formulářem na obrazovce
-        function napojFormularNaNasemNovemEnginu() {
-            var adminForm = document.getElementById('actionForm') || document.querySelector('#tab4 form');
-            if (adminForm && adminForm.getAttribute('data-cc-listener-hooked') !== 'yes') {
-                adminForm.onsubmit = window.handleCreateActionSubmit; // Přepíšeme událost onsubmit natvrdo!
-                adminForm.setAttribute('data-cc-listener-hooked', 'yes');
-            }
-        }
-        setInterval(napojFormularNaNasemNovemEnginu, 400);
-    })();
-</script>
+</body>
 </html>
