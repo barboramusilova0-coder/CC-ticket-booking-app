@@ -743,7 +743,7 @@ window.deleteCompanyAction = function(id) {
                 filterWrapper.id = 'cc-filter-bar-wrapper';
                 filterWrapper.style.cssText = 'margin-top: 15px; margin-bottom: 25px; padding: 15px; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; display: flex; gap: 15px; flex-wrap: wrap; align-items: center; text-align: left;';
                 
-                filterWrapper.innerHTML = 
+                                filterWrapper.innerHTML = 
                     '<div style="display:flex; flex-direction:column; gap:4px;">' +
                         '<label style="font-weight:700; font-size:12px; color:#475569;">Stav schválení:</label>' +
                         '<select id="cc-stav-filter" style="width:200px; padding:8px 12px; border-radius:6px; border:1px solid #cbd5e1; font-weight:600; cursor:pointer; background:#fff;">' +
@@ -757,16 +757,40 @@ window.deleteCompanyAction = function(id) {
                         '<input type="text" id="cc-search-applicant" placeholder="Hledat žadatele..." style="width:180px; padding:8px 12px; border-radius:6px; border:1px solid #cbd5e1; background:#fff;">' +
                     '</div>' +
                     '<div style="display:flex; flex-direction:column; gap:4px;">' +
-                    <!-- 🔍 NAŠE NOVÉ TŘETÍ POLÍČKO PŘÍMO V ZÁKLADNÍM KÓDU -->
-<div class="filter-group">
-    <label>Název akce:</label>
-    <input type="text" id="cc-search-action-input-id" placeholder="Hledat akci..." oninput="provedZiveFiltrovaniTabulkyZadosti()">
-</div>
-
                         '<label style="font-weight:700; font-size:12px; color:#475569;">Jméno zákazníka:</label>' +
                         '<input type="text" id="cc-search-customer" placeholder="Hledat zákazníka..." style="width:180px; padding:8px 12px; border-radius:6px; border:1px solid #cbd5e1; background:#fff;">' +
+                    '</div>' +
+                    /* 🔍 NAŠE NOVÉ TŘETÍ POLÍČKO VLOŽENÉ PŘÍMO DO GENERÁTORU */
+                    '<div style="display:flex; flex-direction:column; gap:4px;">' +
+                        '<label style="font-weight:700; font-size:12px; color:#475569;">Název akce:</label>' +
+                        '<input type="text" id="cc-search-action-input-id" placeholder="Hledat akci..." style="width:180px; padding:8px 12px; border-radius:6px; border:1px solid #cbd5e1; background:#fff;">' +
                     '</div>';
-                
+
+                                // Aktivujeme živé vyhledávání pro naše nové políčko akce
+                setTimeout(function() {
+                    var inputAkce = document.getElementById('cc-search-action-input-id');
+                    if (inputAkce) {
+                        inputAkce.addEventListener('input', function() {
+                            var textHledani = this.value.toLowerCase().trim();
+                            // Najdeme všechny řádky s žádostmi v tabulce schvalování
+                            var vsechnyRadkyTabulky = document.querySelectorAll('#roleRequestsTableBody tr, #ticketRequestsTableBody tr, table tbody tr');
+                            
+                            vsechnyRadkyTabulky.forEach(function(row) {
+                                if (row.cells.length < 2) return;
+                                // Název akce (zápasu/koncertu) je v tvé ranní tabulce hned v 1. sloupečku (index 0)
+                                var bunkaNazvuAkce = row.cells[0];
+                                var textAkceVTabulce = bunkaNazvuAkce ? bunkaNazvuAkce.innerText.toLowerCase() : '';
+                                
+                                if (textHledani !== "" && textAkceVTabulce.indexOf(textHledani) === -1) {
+                                    row.style.setProperty('display', 'none', 'important');
+                                } else {
+                                    row.style.setProperty('display', 'table-row', 'important');
+                                }
+                            });
+                        });
+                    }
+                }, 300);
+
                 excelContainer.appendChild(filterWrapper);
 
                 // Propojíme všechny filtry, aby reagovaly okamžitě při psaní nebo výběru
