@@ -3256,7 +3256,7 @@ setInterval(function(){
 <script>
     (function() {
         var ccLokalniVybranaAkceZPrehledu = "";
-              // 🎟️ PREMIUM VYSKAKOVACÍ OKNO REZERVACÍ: 2. ČÁST - KOREKCE CHYB A OTEVÍRÁNÍ OKNA
+        // 🎟️ PREMIUM VYSKAKOVACÍ OKNO REZERVACÍ: 2. ČÁST - NEPRŮSTŘELNÉ OTEVÍRÁNÍ OKNA
         function ziskejDuvodyProZaverecnyModal() {
             var ulozene = localStorage.getItem('cc_dynamic_reasons');
             if (ulozene) return ulozene.split(',');
@@ -3355,18 +3355,17 @@ setInterval(function(){
             if (modal) modal.style.display = 'none';
         }
 
+        // 🔥 POJISTKA: Chytáme jakékoliv kliknutí na třídu .cc-fake-booking-trigger, kterou mají naše nová červená tlačítka!
         function oživTlačítkaOknaNaPozadí() {
-            var vsechnaTlacitka = document.querySelectorAll('.cc-public-card button, .cc-fake-booking-trigger, button, a');
-            vsechnaTlacitka.forEach(function(btn) {
-                if (btn.id === 'cc-modal-final-btn-close' || btn.id === 'cc-modal-final-btn-submit') return;
-                
-                var textB = btn.innerText ? btn.innerText.trim() : '';
-                if ((textB.indexOf('Rezervovat lístky') > -1 || textB.indexOf('Rezervovat') > -1) && !btn.getAttribute('data-cc-modal-final-active')) {
+            var novaTlacitkaRezervace = document.querySelectorAll('.cc-fake-booking-trigger');
+            novaTlacitkaRezervace.forEach(function(btn) {
+                if (!btn.getAttribute('data-cc-modal-final-active')) {
                     btn.addEventListener('click', function(e) {
                         e.preventDefault(); e.stopPropagation();
 
-                        var karta = btn.closest('.cc-public-card') || btn.parentNode;
-                        var nadpis = karta ? (karta.querySelector('.cc-card-title') || karta.querySelector('h3') || karta.querySelector('h4') || karta.firstChild) : null;
+                        // Najdeme název akce z té správné vygenerované karty
+                        var karta = btn.closest('.cc-public-card');
+                        var nadpis = karta ? karta.querySelector('.cc-card-title') : null;
                         
                         ccLokalniVybranaAkceZPrehledu = nadpis ? nadpis.innerText.trim() : "test";
 
@@ -3389,7 +3388,7 @@ setInterval(function(){
             });
         }
 
-        setInterval(oživTlačítkaOknaNaPozadí, 450);
+        setInterval(oživTlačítkaOknaNaPozadí, 300);
     })();
 </script>
 
