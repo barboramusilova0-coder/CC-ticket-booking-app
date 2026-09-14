@@ -3987,6 +3987,176 @@ setInterval(function(){
         setInterval(namontujFiltrAkciDoSchvalovaniCoke, 500);
     })();
 </script>
+<!-- 🟢🔴 MECHANISMUS SCHVALOVÁNÍ A MAZÁNÍ ŽÁDOSTÍ (NÁVRAT DO FUNKČNÍ REALITY) -->
+<style>
+    /* Styly pro akční tlačítka přímo uvnitř tabulky schvalování */
+    .cc-admin-action-btn {
+        padding: 5px 10px !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        border-radius: 4px !important;
+        cursor: pointer !important;
+        border: none !important;
+        text-transform: uppercase !important;
+        transition: opacity 0.2s !important;
+        margin-right: 5px !important;
+        display: inline-block !important;
+    }
+    .cc-admin-action-btn:hover { opacity: 0.85 !important; }
+    .cc-btn-approve-coke { background: #22c55e !important; color: white !important; }
+    .cc-btn-reject-coke { background: #ef4444 !important; color: white !important; }
+    
+    .cc-btn-delete-trash {
+        background: transparent !important;
+        color: #94a3b8 !important;
+        font-size: 14px !important;
+        cursor: pointer !important;
+        border: none !important;
+        padding: 4px !important;
+        transition: color 0.2s !important;
+        display: inline-block !important;
+        vertical-align: middle !important;
+    }
+    .cc-btn-delete-trash:hover { color: #dc2626 !important; }
+</style>
+
+<script>
+    (function() {
+        function oziSchvalovaniAMazaniVTabulkachCoke() {
+            // Najdeme tělo tabulky schvalování (podle ranních ID z historie)
+            var tBody = document.getElementById('ticketRequestsTableBody') || document.getElementById('roleRequestsTableBody') || document.querySelector('#tab4 table tbody') || document.querySelector('#tab3 table tbody');
+            if (!tBody) return;
+
+            var radky = tBody.querySelectorAll('tr');
+            radky.forEach(function(radek) {
+                // Přeskočíme prázdné nebo systémové informační řádky
+                if (radek.cells.length < 4 || radek.getAttribute('data-cc-actions-hooked') === 'yes') return;
+
+                // 1. OŽIVENÍ TLAČÍTEK PRO SCHVÁLENÍ / ZAMÍTNUTÍ
+                // Hledáme buňku se stavem – v ranní tabulce je to většinou předposlední nebo poslední sloupec
+                var bunkaStavu = radek.cells[radek.cells.length - 1];
+                var textStavu = bunkaStavu ? bunkaStavu.innerText.trim() : '';
+
+                // Pokud žádost teprve čeká na vyjádření, vytvoříme z textu klikací tlačítka!
+                if (textStavu.indexOf('Čeká') > -1 || textStavu === '' || textStavu.indexOf('undefined') > -1) {
+                    var idZadosti = radek.getAttribute('data-id') || radek.id || (radek.cells[0] ? radek.cells[0].innerText : '');
+                    
+                    // Pokusíme se najít ID z vnitřních ranních dat řádku
+                    if (!idZadosti && radek.outerHTML.innerHTML) {
+                        var match = radek.outerHTML.match(/id="([^"]+)"/) || radek.outerHTML.match(/data-id="([^"]+)"/);
+                        if (match) idZadosti = match[1];
+                    }
+
+                    bunkaStavu.innerHTML = 
+                        '<button class="cc-admin-action-btn cc-btn-approve-coke" data-action="schvalit">🟢 Schválit</button>' +
+                        '<button class="cc-admin-action-btn cc-btn-reject-coke" data-action="zamitnout">🔴 Zamítnout</button>';
+
+                    // Napojíme akce schválení/zamítnutí
+                    bunkaStavu.querySelectorAll('.cc-admin-action-btn').forEach(function(btn) {
+                        btn.addEventListener('click', function(e) {
+                            e.preventDefault(); e.stopPropagation();
+                            var typAkce = this.getAttribute('data-action');
+                            provedZmenuStavuZadostiOnline(radek, idZadosti, typAkce === 'schvalit' ? 'Schváleno' : 'Zamítnuto');
+                        });
+                    });
+                }
+
+                // 2. PRIDÁNÍ TLAČÍTKA SMAZAT (ODPADKOVÝ KOŠ 🗑️) NA KONEC ŘÁDKU
+                // Vytvoříme novou buňku na samotném konci řádku pro čisté smazání z databáze
+                var bunkaMazani = radek.insertCell(-1);
+                bunkaMazani.style.cssText = 'text-align: center; width: 40px; vertical-align: middle; border-left: 1px dashed #e2e8f0;';
+                bunkaMazani.innerHTML = '<button class="cc-btn-delete-trash" title="Definitivně smazat rezervaci z databáze">🗑️</button>';
+
+                bunkaMazani.querySelector('.cc-btn-delete-trash').addEventListener('click', function(e) {
+                    e.preventDefault(); e.stopPropagation();
+                    var idZadosti = radek.getAttribute('data-id') || radek.id;
+                    if (confirm('⚠️ Pozor: Opravdu chcete tuto žádost kompletně a trvale vymazat z databáze Firebase?')) {
+                        provedZmeuSmazaniZadostiOnline(radek, idZadosti);
+                    }
+                });
+
+                radek.setAttribute('data-cc-actions-hooked', 'yes');
+            });
+        }
+
+        // 🌐 INTERNETOVÝ ZÁPIS DO FIREBASE: ZMĚNA STAVU (SCHVÁLENO / ZAMÍTNUTO)
+        function provedZmenuStavuZadostiOnline(radek, idZadosti, novyStev) {
+            var requests = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
+            var index = -1;
+
+            // Najdeme žádost v poli podle ID, jména žadatele nebo textu v řádku
+            var textZadatele = radek.cells[1] ? radek.cells[1].innerText.trim() : '';
+            var textAkce = radek.cells[0] ? radek.cells[0].innerText.trim() : '';
+
+            for (var i = 0; i < requests.length; i++) {
+                if (String(requests[i].id) === String(idZadosti) || (requests[i].actionName === textAkce && (requests[i].userEmail === textZadatele || requests[i].applicant === textZadatele))) {
+                    index = i; break;
+                }
+            }
+
+            if (index > -1) {
+                requests[index].status = novyStev;
+                requests[index].status1 = novyStev;
+                requests[index].reservationStatus = novyStev;
+            } else {
+                // Pojistný plán: Pokud ranní systém ID nevygeneroval, vytvoříme úpravu přímo
+                requests.push({
+                    actionName: textAkce,
+                    userEmail: textZadatele,
+                    status: novyStev,
+                    reason: radek.cells[2] ? radek.cells[2].innerText : ''
+                });
+            }
+
+            localStorage.setItem('ticketRequests', JSON.stringify(requests));
+            window.requests = requests;
+
+            // Vystřelíme upravená data na internet do live cloudu Firebase
+            if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                var db = firebase.firestore();
+                db.collection("portalData").doc("cocaColaDatabase").set({
+                    ticketRequests: requests
+                }, { merge: true }).then(function() {
+                    alert('🎉 Žádost byla úspěšně změněna na stav: ' + novyStev);
+                    location.reload();
+                });
+            } else {
+                location.reload();
+            }
+        }
+
+        // 🌐 INTERNETOVÝ ZÁPIS DO FIREBASE: TRVALÉ SMAZÁNÍ ŽÁDOSTI
+        function provedZmeuSmazaniZadostiOnline(radek, idZadosti) {
+            var requests = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
+            var textZadatele = radek.cells[1] ? radek.cells[1].innerText.trim() : '';
+            var textAkce = radek.cells[0] ? radek.cells[0].innerText.trim() : '';
+
+            // Odfiltrujeme (vymažeme) tuto žádost z pole
+            var prefiltrovaneZadosti = requests.filter(function(req) {
+                var shodujeSe = String(req.id) === String(idZadosti) || (req.actionName === textAkce && (req.userEmail === textZadatele || req.applicant === textZadatele));
+                return !shodujeSe;
+            });
+
+            localStorage.setItem('ticketRequests', JSON.stringify(prefiltrovaneZadosti));
+            window.requests = prefiltrovaneZadosti;
+
+            if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                var db = firebase.firestore();
+                db.collection("portalData").doc("cocaColaDatabase").set({
+                    ticketRequests: prefiltrovaneZadosti
+                }, { merge: true }).then(function() {
+                    radek.remove();
+                    alert('🗑️ Žádost byla trvale odstraněna z internetové databáze.');
+                });
+            } else {
+                radek.remove();
+            }
+        }
+
+        // Provádíme kontrolu tabulky plynule každých 500ms na pozadí
+        setInterval(oziSchvalovaniAMazaniVTabulkachCoke, 500);
+    })();
+</script>
 
 </body>
 </html>
