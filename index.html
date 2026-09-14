@@ -3079,7 +3079,7 @@ function ccParticle(char,kind){
 }
 function ccBall(){
     var box=document.getElementById('cc-season-effects');if(!box)return;
-    var el=document.createElement('span');el.className='cc-summer-ball';el.textContent=['🌞','⚽','🏐'][Math.floor(Math.random()*3)];el.style.left=(5+Math.random()*90)+'%';el.style.fontSize=(32+Math.random()*24)+'px';box.appendChild(el);setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},5000);
+    var el=document.createElement('span');el.className='cc-summer-ball';el.textContent=['🏖️','⚽','🏐'][Math.floor(Math.random()*3)];el.style.left=(5+Math.random()*90)+'%';el.style.fontSize=(32+Math.random()*24)+'px';box.appendChild(el);setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},5000);
 }
 function ccApplySeason(mode,save){
     if(!CC_SEASONS[mode])mode='autumn';
@@ -3092,7 +3092,7 @@ function ccApplySeason(mode,save){
         var snow=['❄','❅','❆','✦','·'];for(var i=0;i<12;i++)(function(i){setTimeout(function(){ccParticle(snow[Math.floor(Math.random()*snow.length)],'snow');},i*500);})();
         ccSeasonTimers.push(setInterval(function(){ccParticle(snow[Math.floor(Math.random()*snow.length)],'snow');},850));
     }else if(mode==='spring'){
-        var flowers=['🌸','🐥','🐣','🌸'];for(var j=0;j<7;j++)(function(j){setTimeout(function(){ccParticle(flowers[Math.floor(Math.random()*flowers.length)],'flower');},j*650);})();
+        var flowers=['🌸','🌷','🌼','🌺'];for(var j=0;j<7;j++)(function(j){setTimeout(function(){ccParticle(flowers[Math.floor(Math.random()*flowers.length)],'flower');},j*650);})();
         ccSeasonTimers.push(setInterval(function(){ccParticle(flowers[Math.floor(Math.random()*flowers.length)],'flower');},1100));
     }else if(mode==='summer'){
         for(var k=0;k<3;k++)setTimeout(ccBall,k*900);
@@ -3118,15 +3118,79 @@ function buildSeasonSettings(){
     updateSeasonTiles(localStorage.getItem('ccSeasonMode')||'autumn');
 }
 
-/* ---------- Inicializace a opakovaná ochrana proti překreslení původním kódem ---------- */
-function ccInit(){
-    try{installActionImageFields();installCreateOverride();buildSeasonSettings();refreshReservationActionData();if(typeof window.renderPlannedEvents==='function')window.renderPlannedEvents();ensurePlannedHover();removeOtherLabels();}catch(e){console.error('CC UX init:',e);}
+/* ---------- Stabilní inicializace bez blikání ---------- */
+var ccActionSyncObserver = null;
+var ccLastActionsSignature = '';
+
+function ccActionsSignature(){
+    try { return JSON.stringify(ccActions()); } catch(e) { return ''; }
 }
+
+function ccRefreshAllActionUI(){
+    try { refreshReservationActionData(); } catch(e) {}
+    try { if(typeof window.renderPlannedEvents === 'function') window.renderPlannedEvents(); } catch(e) {}
+    try { ensurePlannedHover(); } catch(e) {}
+    try { removeOtherLabels(); } catch(e) {}
+}
+
+function ccInstallActionObservers(){
+    if(ccActionSyncObserver) return;
+    ccActionSyncObserver = new MutationObserver(function(mutations){
+        var needsActionSync = false;
+        mutations.forEach(function(m){
+            if(m.type !== 'childList') return;
+            var target = m.target;
+            if(target && (target.id === 'actionSelect' || target.id === 'cc-action-filter')) needsActionSync = true;
+            if(target && target.id === 'mainSystem') needsActionSync = true;
+        });
+        if(needsActionSync){
+            clearTimeout(window.__ccActionSyncTimer);
+            window.__ccActionSyncTimer = setTimeout(function(){
+                var sig = ccActionsSignature();
+                if(sig !== ccLastActionsSignature){
+                    ccLastActionsSignature = sig;
+                    ccRefreshAllActionUI();
+                } else {
+                    refreshReservationActionData();
+                }
+            }, 30);
+        }
+    });
+    ccActionSyncObserver.observe(document.getElementById('mainSystem') || document.body, {childList:true,subtree:true});
+}
+
+function ccInit(){
+    try {
+        installActionImageFields();
+        installCreateOverride();
+        buildSeasonSettings();
+        ccRefreshAllActionUI();
+        ccLastActionsSignature = ccActionsSignature();
+        ccInstallActionObservers();
+    } catch(e) { console.error('CC UX init:',e); }
+}
+
+/* Firebase a původní aplikace zapisují akce přes localStorage.
+   Po skutečné změně dat UI jednou překreslíme – žádné nekonečné setInterval překreslování. */
+(function(){
+    var originalSetItemFinal = localStorage.setItem.bind(localStorage);
+    localStorage.setItem = function(key,value){
+        originalSetItemFinal(key,value);
+        if(key === 'companyActions'){
+            clearTimeout(window.__ccActionDataTimer);
+            window.__ccActionDataTimer = setTimeout(function(){
+                var sig = ccActionsSignature();
+                if(sig !== ccLastActionsSignature){
+                    ccLastActionsSignature = sig;
+                    ccRefreshAllActionUI();
+                }
+            },40);
+        }
+    };
+})();
+
 ccLoadSeason();
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ccInit);else ccInit();
-setInterval(function(){
-    try{installActionImageFields();installCreateOverride();buildSeasonSettings();refreshReservationActionData();if(document.getElementById('cc-planned-grid')){window.renderPlannedEvents();ensurePlannedHover();removeOtherLabels();}}catch(e){}
-},800);
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',ccInit); else ccInit();
 })();
 </script>
 </body>
