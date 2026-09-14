@@ -3155,4 +3155,118 @@ ccLoadSeason();
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',ccInit); else ccInit();
 })();
 </script>
+
+<script id="cc-final-create-action-fix-v5">
+(function(){
+'use strict';
+
+function ccV5Actions(){
+  try{ var a=JSON.parse(localStorage.getItem('companyActions')||'[]'); return Array.isArray(a)?a:[]; }
+  catch(e){ return Array.isArray(window.companyActions)?window.companyActions:[]; }
+}
+function ccV5Compress(file,done){
+  if(!file){done('');return;}
+  var r=new FileReader();
+  r.onload=function(){
+    var img=new Image();
+    img.onload=function(){
+      try{
+        var max=1100, scale=Math.min(1,max/Math.max(img.width,img.height));
+        var c=document.createElement('canvas');
+        c.width=Math.max(1,Math.round(img.width*scale)); c.height=Math.max(1,Math.round(img.height*scale));
+        c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+        done(c.toDataURL('image/jpeg',.72));
+      }catch(e){done(r.result||'');}
+    };
+    img.onerror=function(){done(r.result||'');};
+    img.src=r.result;
+  };
+  r.onerror=function(){done('');}; r.readAsDataURL(file);
+}
+function ensureFields(form){
+  if(!document.getElementById('actNewCategory')){
+    var cap=document.getElementById('actNewCapacity');
+    var box=document.createElement('div'); box.id='cc-v5-category-box';
+    box.innerHTML='<div class="form-group"><label>Kategorie akce:</label><select id="actNewCategory" required><option value="">-- Vyberte kategorii --</option><option value="O2 Arena">O2 Arena</option><option value="Fotbal">Fotbal</option><option value="SKS Slavia">SKS Slavia</option><option value="Reprezentace">Reprezentace</option></select></div><div class="form-group"><label>Typ akce:</label><select id="actNewSubcategory"><option value="">-- Pro O2 Arena vyberte Koncert/Hokej --</option></select></div>';
+    if(cap&&cap.parentElement) cap.parentElement.insertAdjacentElement('afterend',box); else form.appendChild(box);
+    var cat=document.getElementById('actNewCategory'), sub=document.getElementById('actNewSubcategory');
+    cat.addEventListener('change',function(){
+      if(cat.value==='O2 Arena'){sub.required=true;sub.innerHTML='<option value="">-- Vyberte typ --</option><option value="Koncert">Koncert</option><option value="Hokej">Hokej</option>';}
+      else{sub.required=false;sub.innerHTML='<option value="">-- Není potřeba --</option>';sub.value='';}
+    });
+  }
+  if(!document.getElementById('cc-action-image')){
+    var cap2=document.getElementById('actNewCapacity'), box2=document.createElement('div'); box2.id='cc-v5-media-box';
+    box2.innerHTML='<div class="form-group"><label>🖼️ Obrázek akce do dlaždice:</label><input type="file" id="cc-action-image" accept="image/*"><img id="cc-action-image-preview" style="display:none;max-width:100%;max-height:180px;margin-top:8px;border-radius:8px;object-fit:cover"></div><div class="form-group"><label>📝 Informace o akci:</label><textarea id="cc-action-description" rows="4" placeholder="Informace, které se zobrazí při najetí na dlaždici…" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #cbd5e1;border-radius:8px;resize:vertical;font-family:inherit"></textarea></div>';
+    if(cap2&&cap2.parentElement) cap2.parentElement.insertAdjacentElement('afterend',box2); else form.appendChild(box2);
+    document.getElementById('cc-action-image').addEventListener('change',function(){
+      var f=this.files&&this.files[0], pr=document.getElementById('cc-action-image-preview');
+      if(!f){pr.style.display='none';return;} var rr=new FileReader(); rr.onload=function(){pr.src=rr.result;pr.style.display='block';}; rr.readAsDataURL(f);
+    });
+  }
+}
+function refreshV5(){
+  try{ if(typeof window.renderPlannedEvents==='function') window.renderPlannedEvents(); }catch(e){}
+  try{ if(typeof updateActionSelectOptions==='function') updateActionSelectOptions(); }catch(e){}
+  try{ if(typeof refreshReservationActionData==='function') refreshReservationActionData(); }catch(e){}
+  try{ if(typeof renderAdminSection==='function') renderAdminSection(); }catch(e){}
+}
+function install(){
+  var form=document.querySelector('#tab4 form'); if(!form) return;
+  ensureFields(form);
+  // Remove every previously attached submit handler by replacing the form node.
+  var clean=form.cloneNode(true); form.parentNode.replaceChild(clean,form); form=clean;
+  form.removeAttribute('onsubmit'); form.id='createActionForm';
+  ensureFields(form);
+  if(form.getAttribute('data-cc-v5-bound')==='1') return;
+  form.setAttribute('data-cc-v5-bound','1');
+  form.addEventListener('submit',function(e){
+    e.preventDefault(); e.stopPropagation(); if(e.stopImmediatePropagation)e.stopImmediatePropagation();
+    if(form.getAttribute('data-cc-v5-saving')==='1') return;
+    var name=(document.getElementById('actNewName')||{}).value||'';
+    var date=(document.getElementById('actNewDate')||{}).value||'';
+    var time=(document.getElementById('actNewTime')||{}).value||'';
+    var place=(document.getElementById('actNewPlace')||{}).value||'';
+    var cap=parseInt((document.getElementById('actNewCapacity')||{}).value,10)||0;
+    var cat=(document.getElementById('actNewCategory')||{}).value||'';
+    var sub=(document.getElementById('actNewSubcategory')||{}).value||'';
+    var desc=((document.getElementById('cc-action-description')||{}).value||'').trim();
+    var file=document.getElementById('cc-action-image')&&document.getElementById('cc-action-image').files[0];
+    name=name.trim(); place=place.trim();
+    if(!name||!date||!time||!place||!cap){alert('Vyplňte prosím všechna pole nové akce.');return;}
+    if(!cat){alert('Vyberte kategorii akce.');return;}
+    if(cat==='O2 Arena'&&!sub){alert('U akce O2 Arena vyberte Koncert nebo Hokej.');return;}
+    form.setAttribute('data-cc-v5-saving','1');
+    var btn=form.querySelector('button[type="submit"]'); if(btn){btn.disabled=true;btn.textContent='Ukládám…';}
+    ccV5Compress(file,function(image){
+      var list=ccV5Actions();
+      var action={id:Date.now(),name:name,date:date,time:time,place:place,capacity:cap,category:cat,subcategory:sub,status:'Aktivní',image:image||'',description:desc};
+      list.push(action);
+      try{localStorage.setItem('companyActions',JSON.stringify(list));}catch(err){alert('Akci se nepodařilo uložit do prohlížeče: '+err.message);if(btn){btn.disabled=false;btn.textContent='Uložit novou akci';}form.removeAttribute('data-cc-v5-saving');return;}
+      window.companyActions=list;
+      var cloudPromise=Promise.resolve();
+      try{
+        if(typeof firebase!=='undefined'&&firebase.apps&&firebase.apps.length){
+          cloudPromise=firebase.firestore().collection('portalData').doc('cocaColaDatabase').set({companyActions:list},{merge:true});
+        }
+      }catch(err){console.error('Firebase save action:',err);}
+      cloudPromise.then(function(){
+        form.reset();
+        var subEl=document.getElementById('actNewSubcategory');if(subEl)subEl.innerHTML='<option value="">-- Pro O2 Arena vyberte Koncert/Hokej --</option>';
+        var pr=document.getElementById('cc-action-image-preview');if(pr){pr.src='';pr.style.display='none';}
+        refreshV5();
+        alert('Akce byla úspěšně uložena.');
+      }).catch(function(err){
+        console.error('Cloud save action:',err);
+        refreshV5();
+        alert('Akce se uložila v prohlížeči, ale nepodařilo se ji odeslat do Firebase. Zkontrolujte připojení.');
+      }).finally(function(){
+        form.removeAttribute('data-cc-v5-saving'); if(btn){btn.disabled=false;btn.textContent='Uložit novou akci';}
+      });
+    });
+  },true);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(install,50);});else setTimeout(install,50);
+})();
+</script>
 </html>
