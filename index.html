@@ -3511,6 +3511,95 @@ setInterval(function(){
     })();
 </script>
 
+<!-- 🔌 PROPOJENÍ ŽÁDOSTÍ: DEFINITIVNÍ PROPIS Z OKNA DO REZERVACÍ NA SCHVÁLENÍ -->
+<script>
+    (function() {
+        function napojNeprustrelnyOdesilacZadostiCoke() {
+            var btnOdeslatZModalWindow = document.getElementById('cc-modal-final-btn-submit');
+            if (!btnOdeslatZModalWindow || btnOdeslatZModalWindow.getAttribute('data-cc-approval-sync') === 'yes') return;
+
+            // Úplně odřízneme staré zablokované chování z historie a nasadíme náš přímý cloudový zápis
+            btnOdeslatZModalWindow.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Načteme zadaná data z vyskakovacího okna
+                var countInp = document.getElementById('cc-modal-final-inp-tickets');
+                var reasonInp = document.getElementById('cc-modal-final-sel-reason');
+                var eurInp = document.getElementById('cc-modal-final-inp-eur');
+                
+                var tckCountVal = countInp ? parseInt(countInp.value) : 1;
+                var reasonVal = reasonInp ? reasonInp.value : '';
+                var eurVal = eurInp ? eurInp.value.trim() : '';
+                var emailSefa = localStorage.getItem('cc_manager_email') || '';
+
+                if (!reasonVal) { alert('❌ Vyberte prosím důvod žádosti.'); return; }
+                if (!eurVal) { alert('❌ Zadejte prosím finanční obrat v EUR.'); return; }
+
+                // Načteme celou live databázi žádostí z paměti počítače
+                var aktualniZadosti = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
+                
+                // Vytvoříme zbrusu novou, čistou žádost přesně ve struktuře, kterou tvé schvalování vyžaduje
+                var novaZadostProSchvaleni = {
+                    id: Date.now(),
+                    actionName: window.ccLokalniVybranaAkceZPrehledu || "test", // Název akce, ze které žadatel klikl
+                    userEmail: localStorage.getItem('userEmail') || (window.currentUser ? window.currentUser.email : "zamestnanec@cchellenic.com"),
+                    tickets: tckCountVal,
+                    reason: reasonVal + " (Obrat: " + eurVal + " EUR)", // Spojení důvodu a EUR pro šéfa do tabulky
+                    managerEmail: emailSefa, // Nově propojený 1. schvalovatel z horní lišty
+                    status: 'Čeká na schválení', // Výchozí ranní stav žádosti pro tabulku
+                    createdAt: new Date().toISOString()
+                };
+
+                // Přidáme novou žádost do seznamu
+                aktualniZadosti.push(novaZadostProSchvaleni);
+                localStorage.setItem('ticketRequests', JSON.stringify(aktualniZadosti));
+                window.requests = aktualniZadosti;
+
+                // 🌐 OKAMŽITÝ LIVE EXPORT PŘÍMO DO INTERNETOVÉHO CLOUDU FIREBASE
+                if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                    var db = firebase.firestore();
+                    
+                    var dataProCloudFirebase = {
+                        ticketRequests: aktualniZadosti, // Tímto natvrdo zapíšeme žádost do "Rezervací na schválení"
+                        companyActions: JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [],
+                        customUsers: JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {},
+                        roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || window.roleRequests || []
+                    };
+
+                    db.collection("portalData").doc("cocaColaDatabase").set(dataProCloudFirebase, { merge: true })
+                    .then(function() {
+                        // Vyčistíme políčka okna a plynule ho zavřeme
+                        if (countInp) countInp.value = "1";
+                        if (reasonInp) reasonInp.value = "";
+                        if (eurInp) eurInp.value = "";
+                        
+                        var overlay = document.getElementById('cc-modal-backdrop-final-id');
+                        var modal = document.getElementById('cc-modal-window-final-id');
+                        if (overlay) overlay.style.display = 'none';
+                        if (modal) modal.style.display = 'none';
+
+                        alert('🎉 Žádost o lístky na akci "' + novaZadostProSchvaleni.actionName + '" byla úspěšně odeslána šéfovi a zapsána do Rezervací na schválení!');
+                        setTimeout(function() { location.reload(); }, 100);
+                    })
+                    .catch(function(err) {
+                        console.error("Chyba cloudu Firebase při zápisu žádosti:", err);
+                        alert('🎉 Žádost uložena lokálně.');
+                        location.reload();
+                    });
+                } else {
+                    alert('🎉 Žádost uložena lokálně.');
+                    location.reload();
+                }
+            });
+
+            btnOdeslatZModalWindow.setAttribute('data-cc-approval-sync', 'yes');
+        }
+
+        // Hlídáme tlačítko ve vyskakovacím okně plynule každou půl vteřinu na pozadí
+        setInterval(napojNeprustrelnyOdesilacZadostiCoke, 500);
+    })();
+</script>
 
 </body>
 </html>
