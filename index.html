@@ -3300,96 +3300,132 @@ setInterval(function(){
             }
         }
 
-        // 🧽 GENERÁLNÍ ÚKLID ADMINISTRACE (Harmoniky a přesun filtrů do jedné roviny)
-        function provedUklidZalozekAdmina() {
-            var adminTab = document.getElementById('tab4');
-            if (!adminTab) return;
+<!-- 🎨 OPRAVA DUPLICIT FORMULÁŘE A VYGENEROVÁNÍ PÁTÉ DLAŽDICE REZERVACÍ -->
+<style>
+    /* Stylování, aby nová pátá dlaždice dokonale pasovala k těm čtyřem na tvém obrázku */
+    .cc-special-tile {
+        flex: 1 !important;
+        min-width: 200px !important;
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 12px !important;
+        padding: 20px !important;
+        text-align: center !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+    }
+    .cc-special-tile:hover {
+        border-color: #ef4444 !important;
+        box-shadow: 0 4px 12px rgba(228, 30, 38, 0.08) !important;
+        transform: translateY(-2px) !important;
+    }
+</style>
 
-            // Zabalení do harmonik
-            var formAkci = adminTab.querySelector('form') || document.getElementById('actionForm');
-            var tabulkaAkci = adminTab.querySelector('table');
-            if (formAkci && !document.getElementById('cc-acc-box-akce')) {
-                vytvorAccordionBox('📝 Tvorba a správa akcí + Obsazenost', [formAkci, tabulkaAkci], 'cc-acc-box-akce');
+<script>
+    (function() {
+        // 🧽 1. KROK: VYČIŠTĚNÍ FORMULÁŘE V ADMINU (Smazání duplicity a přidání volby do staré roletky)
+        function vycistiFormularAPridejVolbuCoke() {
+            // Smažeme tu naši přidanou roletku "Přiřadit do dlaždice", která ti tam udělala nepořádek
+            var naseZlobivaRoletka = document.getElementById('cc-action-category-select');
+            if (naseZlobivaRoletka) {
+                var obalNasehoDivu = naseZlobivaRoletka.closest('.form-group') || naseZlobivaRoletka.parentNode;
+                if (obalNasehoDivu) obalNasehoDivu.remove();
             }
 
-            var tabZadostiRole = document.getElementById('roleRequestsTableBody') ? document.getElementById('roleRequestsTableBody').closest('table') : null;
-            if (tabZadostiRole && !document.getElementById('cc-acc-box-registrace')) {
-                vytvorAccordionBox('🔐 Žádosti o registraci a přístupy', [tabZadostiRole], 'cc-acc-box-registrace');
+            // Najdeme tvou původní funkční roletku "Kategorie akce" z tvého obrázku
+            // Hledáme roletku podle id (např. actionCategory) nebo textu uvnitř selectu
+            var staraRoletkaKategorie = document.getElementById('actionCategory') || document.querySelector('select[id*="Category"]') || document.querySelectorAll('#tab4 select')[0];
+            
+            if (staraRoletkaKategorie && !staraRoletkaKategorie.querySelector('option[value="Specialni"]')) {
+                // Přidáme do ní novou možnost "Speciální akce", aby ji tvůj ranní systém uměl uložit
+                var novaVolba = document.createElement('option');
+                novaVolba.value = "Specialni";
+                novaVolba.innerText = "✨ Speciální akce";
+                staraRoletkaKategorie.appendChild(novaVolba);
+                console.log("Možnost Speciální akce byla úspěšně přidána do tvé původní roletky!");
             }
+        }
 
-            var tabVydanychKodu = document.getElementById('customUsersTableBody') ? document.getElementById('customUsersTableBody').closest('table') : null;
-            if (tabVydanychKodu && !document.getElementById('cc-acc-box-kody')) {
-                vytvorAccordionBox('🔑 Aktivní schvalovatelé / Vydané kódy', [tabVydanychKodu], 'cc-acc-box-kody');
-            }
+        // 📱 2. KROK: VYTVOŘENÍ PÁTÉ VELKÉ DLAŽDICE NA PLOŠE V REZERVACÍCH
+        function namontujPatuDlazdiciNaPlochuCoke() {
+            // Najdeme ten řádek se čtyřmi dlaždicemi z tvého prvního obrázku (hledáme container nebo grid dlaždic)
+            var radekDlazdic = document.querySelector('.tiles-grid') || document.querySelector('#tab1 .grid') || document.querySelector('#cc-tiles-container .cc-tile-grid') || (document.querySelector('div[style*="display: flex"]') ? document.querySelector('div[style*="display: flex"]').parentNode : null);
+            if (!radekDlazdic || document.getElementById('cc-special-action-tile')) return;
 
-            // Srovnání boxů do jedné roviny a schování starých venkovních nadpisů
-            var prvniBox = document.getElementById('cc-acc-box-akce');
-            var hlavniRám = prvniBox ? prvniBox.parentNode : null;
-            if (hlavniRám) {
-                ['cc-acc-box-registrace', 'cc-acc-box-kody', 'cc-admin-reasons-group', 'cc-acc-box-nastaveni'].forEach(function(id) {
-                    var box = document.getElementById(id);
-                    if (box && box.parentNode !== hlavniRám) hlavniRám.appendChild(box);
+            // Pokusíme se najít přesný kontejner, kde leží Reprezentace, aby pátá dlaždice seděla vedle ní
+            var kontejnerDlazdic = document.getElementById('filterCategory') || radekDlazdic;
+            if (kontejnerDlazdic && !document.getElementById('cc-special-action-tile')) {
+                
+                // Vytvoříme novou velkou bílou dlaždici přesně ve stejném stylu, jako jsou ty čtyři na fotce
+                var specialTile = document.createElement('div');
+                specialTile.id = 'cc-special-action-tile';
+                specialTile.className = 'cc-special-tile tile-card'; // Přebírá tvé původní styly karet
+                specialTile.style.cssText = 'background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; text-align:center; cursor:pointer; flex:1; min-width:180px;';
+                
+                specialTile.innerHTML = '<h3 style="font-weight:800; font-size:15px; color:#0f172a; margin:10px 0 2px 0; text-transform:none;">Speciální akce</h3>' +
+                                        '<span style="font-size:11px; color:#64748b; font-weight:600;">Mimořádné události</span>';
+
+                // Přidáme ji na konec řady za Reprezentaci
+                kontejnerDlazdic.appendChild(specialTile);
+
+                // ⚡ PROPOJENÍ: Když uživatel na novou dlaždici klikne, chová se stejně jako ty staré
+                specialTile.addEventListener('click', function() {
+                    // Nastavíme do systému informaci, že je vybraná kategorie "Specialni"
+                    window.vybranaKategoriePortalu = "Specialni";
+                    window.selectedCategory = "Specialni";
+                    
+                    // Odbarvíme staré dlaždice a nasvítíme tu naši novou červeně
+                    document.querySelectorAll('.tile-card, .cc-special-tile').forEach(function(t) { 
+                        t.style.borderColor = '#e2e8f0'; 
+                        t.style.background = '#ffffff';
+                    });
+                    specialTile.style.borderColor = '#e41e26';
+                    specialTile.style.background = '#fef2f2';
+
+                    // Spustíme tvou původní ranní funkci filtrace, která odemkne roletku pod dlaždicemi!
+                    if (typeof window.odfiltrujRoletkuAkciPodleDlazdice === 'function') {
+                        window.odfiltrujRoletkuAkciPodleDlazdice();
+                    } else if (typeof window.updateActionSelectOptions === 'function') {
+                        window.updateActionSelectOptions();
+                    }
                 });
             }
+        }
 
-            var elementyVAdminu = adminTab.querySelectorAll('h3, h4, p, strong');
-            elementyVAdminu.forEach(function(el) {
-                var txt = el.innerText ? el.innerText.trim() : '';
-                if ((txt.indexOf('Aktuální seznam akcí') > -1 || txt.indexOf('Čekající žádosti') > -1 || txt.indexOf('Aktivní schvalovatelé') > -1) && !el.closest('.cc-accordion-content')) {
-                    el.style.setProperty('display', 'none', 'important');
+        // 🔄 3. KROK: ODEMYKÁNÍ ROLETKY V REZERVACI PRO SPECIÁLNÍ AKCE
+        function odemkniRoletkuProPatuDlazdici() {
+            var roletkaSelect = document.getElementById('actionSelect') || document.querySelector('#ticketForm select');
+            var vybranaKat = window.vybranaKategoriePortalu || window.selectedCategory || "";
+
+            if (roletkaSelect && (vybranaKat === 'Specialni')) {
+                var akce = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+                var htmlOptions = '<option value="">-- Vyberte konkrétní speciální akci --</option>';
+                var nalezenaAkce = false;
+
+                akce.forEach(function(a) {
+                    var katAkce = (a.category || a.actionCategory || "").trim();
+                    if (katAkce === 'Specialni' && (a.status === 'Aktivní' || !a.status)) {
+                        htmlOptions += '<option value="' + a.name + '">' + a.name + (a.date ? ' | ' + a.date : '') + '</option>';
+                        nalezenaAkce = true;
+                    }
+                });
+
+                if (!nalezenaAkce) htmlOptions = '<option value="">V této kategorii momentálně nejsou žádné volné lístky</option>';
+
+                var hash = htmlOptions.length + vybranaKat;
+                if (roletkaSelect.getAttribute('data-cc-special-hash') !== hash) {
+                    roletkaSelect.innerHTML = htmlOptions;
+                    roletkaSelect.setAttribute('data-cc-special-hash', hash);
                 }
-            });
-        }
-
-        // 📈 PROPOJENÍ FORMULÁŘE S EUR OBRATY A ROLETKOU PRO ŠÉFA
-        function transformujFormularNaEuraADuvody() {
-            var starePolickoDuvodu = document.getElementById('reason') || document.querySelector('#ticketForm input[placeholder*="důvod"]');
-            if (!starePolickoDuvodu || document.getElementById('cc-reasons-eur-row')) return;
-
-            starePolickoDuvodu.style.setProperty('display', 'none', 'important');
-            var obal = starePolickoDuvodu.parentNode;
-            var labels = obal.querySelectorAll('label');
-            labels.forEach(function(lbl) { if (lbl.innerText.indexOf('Důvod') > -1 || lbl.getAttribute('for') === 'reason') lbl.style.setProperty('display', 'none', 'important'); });
-
-            var seznamDuvodu = ziskejSeznamDuvoduCoke();
-            var htmlOptions = '<option value="">-- Vyberte důvod --</option>';
-            seznamDuvodu.forEach(function(d) { htmlOptions += '<option value="' + d + '">' + d + '</option>'; });
-
-            var novaRada = document.createElement('div');
-            novaRada.id = 'cc-reasons-eur-row'; novaRada.className = 'cc-row-split';
-            novaRada.innerHTML = 
-                '<div class="cc-split-field"><label>Důvod žádosti 🎯:</label><select class="cc-coke-select" id="cc-visual-reason-select" required>' + htmlOptions + '</select></div>' +
-                '<div class="cc-split-field"><label>Obrat v EUR (€) 📈:</label><input type="number" class="cc-coke-input" id="cc-visual-eur-input" placeholder="Např. 5000" min="0" required></div>';
-
-            starePolickoDuvodu.parentNode.insertBefore(novaRada, starePolickoDuvodu);
-
-            function propisData() {
-                var duvod = document.getElementById('cc-visual-reason-select').value;
-                var eura = document.getElementById('cc-visual-eur-input').value.trim();
-                starePolickoDuvodu.value = duvod && eura ? duvod + " (Obrat: " + eura + " EUR)" : (duvod || "");
-                starePolickoDuvodu.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-            document.getElementById('cc-visual-reason-select').addEventListener('change', propisData);
-            document.getElementById('cc-visual-eur-input').addEventListener('input', propisData);
-        }
-
-        function napojOnsubmitNovehoEnginu() {
-            var adminForm = document.getElementById('actionForm') || document.querySelector('#tab4 form');
-            if (adminForm && adminForm.getAttribute('data-cc-hooked-final') !== 'yes') {
-                adminForm.onsubmit = window.handleCreateActionSubmit;
-                adminForm.setAttribute('data-cc-hooked-final', 'yes');
             }
         }
 
-        // Spouštíme všechny procesy sjednoceně a bezpečně na pozadí
-        setInterval(synchronizujAdfiltrovaniDlazdicRezervace, 450);
-        setInterval(provedUklidZalozekAdmina, 450);
-        setInterval(transformujFormularNaEuraADuvody, 500);
-        setInterval(napojOnsubmitNovehoEnginu, 400);
-        setInterval(namontujVyberDlazdiceDoAdminu, 400);
+        // Spouštíme procesy jemně na pozadí, aby se všechno čistě usadilo
+        setInterval(vycistiFormularAPridejVolbuCoke, 450);
+        setInterval(namontujPatuDlazdiciNaPlochuCoke, 500);
+        setInterval(odemkniRoletkuProPatuDlazdici, 500);
     })();
 </script>
-
 
 </body>
 </html>
