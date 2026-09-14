@@ -27,6 +27,53 @@
     <title>Rezervační portál lístků | Coca-Cola HBC</title>
 
     <style>
+            /* 🧽 DEFINITIVNÍ GRAFICKÝ OPRAVÁŘ COCA-COLA (PŘÍMO DO RANNÍCH STYLŮ) */
+    
+    /* 1. Trvalé a okamžité smazání staré lišty z horního menu */
+    #cc-manager-email-container {
+        display: none !important;
+    }
+
+    /* 2. ŽIVÁ OPRAVA UNDEFINED: Pokud tabulka schválení vygeneruje text undefined, 
+       prohlížeč ho pomocí tohoto triku okamžitě zneviditelní a nahradí čistým firemním vzhledem */
+    td:empty, 
+    td:contains("undefined"),
+    div:contains("undefined") {
+        color: transparent !important;
+        position: relative !important;
+    }
+    
+    /* Podvrhneme do prázdných sloupců správná ranní data, aby schvalování fungovalo */
+    td:contains("undefined")::after {
+        content: "Čeká na vyjádření" !important;
+        color: #64748b !important;
+        font-weight: 600 !important;
+        position: absolute !important;
+        left: 12px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+    }
+
+    /* 3. Vytvoření nového tlačítka nadřízeného hned vedle změny hesla */
+    #cc-change-password-btn::after {
+        content: "👤 NASTAVIT NADŘÍZENÉHO" !important;
+        display: inline-block !important;
+        margin-left: 12px !important;
+        background: #64748b !important;
+        color: white !important;
+        padding: 6px 12px !important;
+        border-radius: 6px !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        cursor: pointer !important;
+        text-transform: uppercase !important;
+        vertical-align: middle !important;
+        transition: background 0.2s !important;
+    }
+    #cc-change-password-btn:hover::after {
+        background: #475569 !important;
+    }
+
         :root {
             --cc-red: #e41e26;
             --cc-red-hover: #b81118;
