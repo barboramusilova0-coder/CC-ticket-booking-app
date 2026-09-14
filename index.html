@@ -2808,5 +2808,100 @@ setInterval(function(){
         display: none !important;
     }
 </style>
+    <!-- 📅 2. KROK: REGENERACE ČISTÉHO PŘEHLEDU AKCÍ HNED NA ZAČÁTEK PORTÁLU -->
+<script>
+    (function() {
+        function namontujCistyPrehledAkciNaZacatekCoke() {
+            var tabsMenu = document.querySelector('.tabs');
+            var container = document.querySelector('.container');
+            // Pokud chybí menu, nebo už Přehled akcí na obrazovce stojí, podruhé ho nevytváříme
+            if (!tabsMenu || !container || document.getElementById('btn-prehled-akci-coke')) return;
+
+            // 1. Vytvoříme elegantní první tlačítko v menu záložek
+            var btnPrehled = document.createElement('button');
+            btnPrehled.id = 'btn-prehled-akci-coke';
+            btnPrehled.className = 'tab-btn';
+            btnPrehled.innerText = '📅 Přehled akcí';
+            tabsMenu.insertBefore(btnPrehled, tabsMenu.firstChild);
+
+            // 2. Vytvoříme prázdnou plochu (obsah) pro tuto novou záložku
+            var tabPrehledContent = document.createElement('div');
+            tabPrehledContent.id = 'tab-prehled-akci-coke-content';
+            tabPrehledContent.className = 'tab-content';
+            tabPrehledContent.innerHTML = 
+                '<h2 style="text-align:left; font-size:18px; margin-bottom:5px; color:#0f172a; font-weight:800; text-transform:uppercase; letter-spacing:0.02em;">Aktuální nabídka akcí</h2>' +
+                '<p style="text-align:left; font-size:13px; color:#64748b; margin-bottom:20px;">Vítejte v rezervačním portálu Coca-Cola HBC. Zde naleznete kompletní přehled firemních lístků seřazený chronologicky.</p>' +
+                '<div id="cc-clean-cards-grid-container" style="display:flex; flex-wrap:wrap; gap:15px; text-align:left;"></div>';
+            
+            container.appendChild(tabPrehledContent);
+
+            // 3. Naučíme tlačítko plynule přepínat a schovávat ostatní záložky
+            btnPrehled.addEventListener('click', function() {
+                vykresliChronologickeKartyZapasu();
+                localStorage.setItem('activeCcTab', 'prehled');
+                
+                document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+                btnPrehled.classList.add('active');
+                
+                document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
+                tabPrehledContent.classList.add('active');
+                
+                // Schováme případné staré zbylé vnitřní záložky z historie (Tab 1 až 4)
+                if (typeof window.openTab === 'function') {
+                    for (var i = 1; i <= 4; i++) { var t = document.getElementById('tab' + i); if (t) t.classList.remove('active'); }
+                }
+            });
+            
+            // Pojistka: Pokud uživatel přijde na web poprvé, automaticky mu Přehled akcí hned otevřeme
+            var minuleUlozeno = localStorage.getItem('activeCcTab');
+            if (!minuleUlozeno || minuleUlozeno === '1' || minuleUlozeno === 'prehled') {
+                setTimeout(function() { btnPrehled.click(); }, 150);
+            }
+        }
+
+        // Pomocná funkce, která vezme akce uložené ve Firebase a vykreslí z nich ty krásné čisté karty
+        function vykresliChronologickeKartyZapasu() {
+            var grid = document.getElementById('cc-clean-cards-grid-container');
+            if (!grid) return;
+
+            // Bezpečně načteme akce, které ti tvoje ranní funkční administrace ukládá do cloudu a paměti
+            var akceRaw = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+            
+            if (akceRaw.length === 0) {
+                grid.innerHTML = '<div style="color:#94a3b8; font-size:13px; padding:20px; text-align:left; width:100%;">Momentálně nejsou vytvořeny žádné akce. Vytvořte je v Administraci.</div>';
+                return;
+            }
+
+            // Seřadíme akce chronologicky od nejbližších po nejvzdálenější podle kalendáře
+            var serazeneAkce = [...akceRaw].sort(function(a, b) {
+                return (a.date || '').localeCompare(b.date || '');
+            });
+
+            var htmlKaret = '';
+            serazeneAkce.forEach(function(act) {
+                if (act.status === 'Zrušena') return;
+
+                // Vygenerujeme čistou bílou kartu akce přesně v tom podzimním minimalistické stylu
+                htmlKaret += 
+                    '<div class="cc-public-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; min-width:260px; flex:1; box-shadow:0 4px 6px -1px rgba(0,0,0,0.02); position:relative; box-sizing:border-box;">' +
+                        '<div class="cc-card-title" style="font-weight:800; font-size:16px; color:#0f172a; margin-bottom:4px;">' + act.name + '</div>' +
+                        '<div style="font-size:12px; color:#64748b; font-weight:600; margin-bottom:12px;">📅 ' + (act.date || 'Termín upřesníme') + (act.time ? ' ⏰ ' + act.time : '') + '</div>' +
+                        '<div style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:15px;">🎯 Kategorie: ' + (act.actionCategory || act.category || 'Nespecifikováno') + '</div>' +
+                        // 🎟️ Tlačítko, kterému v příštím kroku vdechneme život a otevře vyskakovací okno!
+                        '<button class="cc-fake-booking-trigger" style="width:100%; background:#e41e26; color:white; border:none; padding:10px; border-radius:6px; font-weight:700; font-size:12px; text-transform:uppercase; cursor:pointer;">Rezervovat lístky</button>' +
+                    '</div>';
+            });
+
+            if (grid.innerHTML !== htmlKaret) {
+                grid.innerHTML = htmlKaret;
+            }
+        }
+
+        // Plynule hlídáme a udržujeme Přehled akcí aktivní každých 400ms při klikání na webu
+        setInterval(namontujCistyPrehledAkciNaZacatekCoke, 400);
+        setInterval(vykresliChronologickeKartyZapasu, 500);
+    })();
+</script>
+
 </body>
 </html>
