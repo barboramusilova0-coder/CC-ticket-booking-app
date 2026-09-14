@@ -3070,6 +3070,141 @@ setInterval(function(){
         font-weight: 600 !important;
     }
 </style>
+<!-- 🗛 ZÁCHRANNÝ ENGINE PRO OKAMŽITÉ ZOBRAZENÍ DLAŽDIC V PŘEHLEDU -->
+<style>
+    /* Unikátní vzhled řady přepínačů, který ranní kód neumí zablokovat */
+    .coke-filter-row-final {
+        display: flex !important;
+        gap: 12px !important;
+        margin-top: 15px !important;
+        margin-bottom: 25px !important;
+        width: 100% !important;
+        overflow-x: auto !important;
+        padding: 8px 4px !important;
+        text-align: left !important;
+        box-sizing: border-box !important;
+    }
+
+    .coke-filter-tile-final {
+        flex: 1 !important;
+        min-width: 150px !important;
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 10px !important;
+        padding: 14px 16px !important;
+        text-align: center !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
+        user-select: none !important;
+    }
+    .coke-filter-tile-final:hover {
+        border-color: #94a3b8 !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+    }
+
+    /* Červené nasvícení aktivní vybrané dlaždice */
+    .coke-filter-tile-final.cc-active-selected {
+        border-color: #e41e26 !important;
+        background: #fef2f2 !important;
+        box-shadow: 0 4px 12px rgba(228, 30, 38, 0.1) !important;
+    }
+
+    .coke-filter-tile-final h4 {
+        font-weight: 800 !important;
+        font-size: 13px !important;
+        color: #0f172a !important;
+        margin: 0 0 2px 0 !important;
+        text-transform: none !important;
+        line-height: 1.2 !important;
+    }
+    .coke-filter-tile-final span {
+        font-size: 11px !important;
+        color: #64748b !important;
+        font-weight: 600 !important;
+    }
+</style>
+
+<script>
+    (function() {
+        window.ccGlobalniZvolenyFiltrOstre = "vse";
+
+        function vynutVykresleniAOdblokovaniDlazdic() {
+            // Najdeme plochu naší záložky Přehled akcí
+            var plochaPrehledu = document.getElementById('tab-prehled-akci-coke-content');
+            if (!plochaPrehledu || document.getElementById('cc-coke-filter-row-final-id')) return;
+
+            // 🧽 POJISTKA: Pokud na stránce visí staré blokující styly z Kroku 1, natvrdo je vypneme, aby neodstřihly nové dlaždice
+            var blokujiciElementy = document.querySelectorAll('style');
+            blokujiciElementy.forEach(function(st) {
+                if (st.innerHTML.indexOf('.tiles-grid') > -1 && st.innerHTML.indexOf('display: none') > -1) {
+                    // Upravíme starý styl, aby neblokoval naše nové unikátní třídy
+                    st.innerHTML = st.innerHTML.replace('display: none !important', '');
+                }
+            });
+
+            var radek = document.createElement('div');
+            radek.className = 'coke-filter-row-final';
+            radek.id = 'cc-coke-filter-row-final-id';
+
+            radek.innerHTML = 
+                '<div class="coke-filter-tile-final cc-active-selected" data-cat="vse"><h4>Všechny akce</h4><span>Kompletní nabídka</span></div>' +
+                '<div class="coke-filter-tile-final" data-cat="koncert"><h4>O2 Arena</h4><span>Koncerty</span></div>' +
+                '<div class="coke-filter-tile-final" data-cat="hokej"><h4>O2 Arena</h4><span>Hokej</span></div>' +
+                '<div class="coke-filter-tile-final" data-cat="fotbal"><h4>Fotbal</h4><span>Fotbalové zápasy</span></div>' +
+                '<div class="coke-filter-tile-final" data-cat="slavia"><h4>SKS Slavia</h4><span>Akce SKS Slavia</span></div>' +
+                '<div class="coke-filter-tile-final" data-cat="specialni"><h4>Speciální akce</h4><span>Mimořádné akce</span></div>';
+
+            // Vložíme řadu přímo nad ten čistý kontejner s kartami akcí
+            var cilovyGrid = document.getElementById('cc-clean-cards-grid-container');
+            if (cilovyGrid) {
+                cilovyGrid.parentNode.insertBefore(radek, cilovyGrid);
+            } else {
+                plochaPrehledu.appendChild(radek);
+            }
+
+            // Naučíme dlaždice filtrovat na jedno kliknutí
+            radek.querySelectorAll('.coke-filter-tile-final').forEach(function(tile) {
+                tile.addEventListener('click', function() {
+                    radek.querySelectorAll('.coke-filter-tile-final').forEach(function(t) { t.classList.remove('cc-active-selected'); });
+                    this.classList.add('cc-active-selected');
+
+                    window.ccGlobalniZvolenyFiltrOstre = this.getAttribute('data-cat');
+                    provedBleskoveFiltrovaniKaretCoke();
+                });
+            });
+        }
+
+        function provedBleskoveFiltrovaniKaretCoke() {
+            var karty = document.querySelectorAll('.cc-public-card');
+            
+            karty.forEach(function(k) {
+                var textKartyMaly = (k.innerText || "").toLowerCase();
+                var splnujeFiltr = false;
+
+                if (window.ccGlobalniZvolenyFiltrOstre === 'vse') {
+                    splnujeFiltr = true;
+                } else {
+                    // Porovnáváme čistě v malých písmenech (vyřeší "KATEGORIE: FOTBAL")
+                    if (textKartyMaly.indexOf(window.ccGlobalniZvolenyFiltrOstre) > -1) {
+                        splnujeFiltr = true;
+                    }
+                }
+
+                if (splnujeFiltr) {
+                    k.style.setProperty('display', 'inline-block', 'important');
+                } else {
+                    k.style.setProperty('display', 'none', 'important');
+                }
+            });
+        }
+
+        // Kontrolujeme a držíme dlaždice odemčené každých 400ms na pozadí
+        setInterval(vynutVykresleniAOdblokovaniDlazdic, 400);
+        setInterval(provedBleskoveFiltrovaniKaretCoke, 450);
+    })();
+</script>
 
 </body>
 </html>
