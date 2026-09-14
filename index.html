@@ -3426,6 +3426,87 @@ setInterval(function(){
         setInterval(odemkniRoletkuProPatuDlazdici, 500);
     })();
 </script>
+<!-- 🔌 CHYTRÝ PROPOJOVACÍ MOST PRO FILTRACI DLAŽDIC A PŘEJMENOVÁNÍ REPREZENTACE -->
+<script>
+    (function() {
+        // 🇨🇿 1. KROK: PŘEJMENOVÁNÍ ČTVRTÉ DLAŽDICE NA SPECIÁLNÍ AKCE
+        function upravDlazdiceADataVAdminu() {
+            var elementyDlazdic = document.querySelectorAll('h3, h4, div, span, small');
+            elementyDlazdic.forEach(function(el) {
+                var txt = el.innerText ? el.innerText.trim() : '';
+                if (txt === 'Reprezentace') {
+                    el.innerText = 'Speciální akce';
+                }
+                if (txt === 'Akce reprezentace') {
+                    el.innerText = 'Mimořádné firemní akce';
+                }
+            });
 
+            // Přidáme možnost pro Speciální akce do tvé ranní roletky v Administraci
+            var ranniSelectKategorie = document.getElementById('actionCategory') || document.querySelector('select[id*="Category"]') || document.querySelector('#tab4 select');
+            if (ranniSelectKategorie && !ranniSelectKategorie.querySelector('option[value="Specialni"]')) {
+                var opt = document.createElement('option');
+                opt.value = "Specialni";
+                opt.innerText = "✨ Speciální akce";
+                ranniSelectKategorie.appendChild(opt);
+            }
+        }
+
+        // 🎯 2. KROK: CHYTRÉ PROPOJENÍ FILTRU DLAŽDIC S TVOU DATABÁZÍ
+        function sparujKliknutiNaDlazdiciSRoletkou() {
+            var roletkaSelect = document.getElementById('actionSelect') || document.querySelector('#ticketForm select');
+            
+            // Přečteme si, na kterou dlaždici uživatel na hlavní stránce zrovna klikl
+            // (Podle toho, co tvůj systém uložil jako aktivní filtr)
+            var vybranaKatDlazdice = window.vybranaKategoriePortalu || window.selectedCategory || "";
+            
+            // Sjednocení názvů pro případ, že klikací systém používá mírně odlišný text než databáze
+            var cistyStitekKategorie = vybranaKatDlazdice;
+            if (vybranaKatDlazdice.toLowerCase().indexOf('koncert') > -1 || vybranaKatDlazdice.toLowerCase().indexOf('o2') > -1) cistyStitekKategorie = "O2 Arena";
+            if (vybranaKatDlazdice.toLowerCase().indexOf('fotbal') > -1) cistyStitekKategorie = "Fotbal";
+            if (vybranaKatDlazdice.toLowerCase().indexOf('slavia') > -1 || vybranaKatDlazdice.toLowerCase().indexOf('sks') > -1) cistyStitekKategorie = "SKS Slavia";
+            if (vybranaKatDlazdice.toLowerCase().indexOf('repre') > -1 || vybranaKatDlazdice.toLowerCase().indexOf('speciál') > -1 || vybranaKatDlazdice === 'Specialni') cistyStitekKategorie = "Specialni";
+
+            if (roletkaSelect && vybranaKatDlazdice) {
+                // Načteme akce, které tvá ranní administrace bezpečně ukládá
+                var akceZPameti = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+                
+                var htmlOptions = '<option value="">-- Vyberte konkrétní akci --</option>';
+                var nalezenaAlesponJednaAkce = false;
+
+                akceZPameti.forEach(function(a) {
+                    if (a.status === 'Zrušena') return;
+
+                    // 🔥 SPOJOVACÍ POJISTKA: Přečteme kategorii z tvého ranního políčka actionCategory!
+                    var realnaKatAkce = (a.actionCategory || a.category || "").trim();
+
+                    // Pokud se kategorie akce potká s vykliknutou dlaždicí
+                    if (realnaKatAkce === cistyStitekKategorie || (cistyStitekKategorie === 'Specialni' && realnaKatAkce === 'Specialni')) {
+                        var infoD = a.date ? ' | ' + a.date : '';
+                        var infoC = a.time ? ' (' + a.time + ')' : '';
+                        htmlOptions += '<option value="' + a.name + '">' + a.name + infoD + infoC + '</option>';
+                        nalezenaAlesponJednaAkce = true;
+                    }
+                });
+
+                if (!nalezenaAlesponJednaAkce) {
+                    htmlOptions = '<option value="">V této kategorii momentálně nejsou žádné volné lístky</option>';
+                }
+
+                // Bezpečně zapíšeme do roletky (hash pojistka brání blikání a cyklení stránky)
+                var unikatniHash = htmlOptions.length + vybranaKatDlazdice;
+                if (roletkaSelect.getAttribute('data-cc-bridge-hash') !== unikatniHash) {
+                    roletkaSelect.innerHTML = htmlOptions;
+                    roletkaSelect.setAttribute('data-cc-bridge-hash', unikatniHash);
+                    console.log("Filtrace pro dlaždici '" + cistyStitekKategorie + "' byla úspěšně propojena!");
+                }
+            }
+        }
+
+        // Spouštíme propojovací procesy hladce na pozadí každých 450ms
+        setInterval(upravDlazdiceADataVAdminu, 450);
+        setInterval(sparujKliknutiNaDlazdiciSRoletkou, 450);
+    })();
+</script>
 </body>
 </html>
