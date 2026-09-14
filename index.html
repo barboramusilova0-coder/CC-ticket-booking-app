@@ -3256,7 +3256,7 @@ setInterval(function(){
 <script>
     (function() {
         var ccLokalniVybranaAkceZPrehledu = "";
-        // 🎟️ PREMIUM VYSKAKOVACÍ OKNO REZERVACÍ: 2. ČÁST - PROGRAMOVÁ LOGIKA A ODESÍLÁNÍ DO CLOUDU
+              // 🎟️ PREMIUM VYSKAKOVACÍ OKNO REZERVACÍ: 2. ČÁST - KOREKCE CHYB A OTEVÍRÁNÍ OKNA
         function ziskejDuvodyProZaverecnyModal() {
             var ulozene = localStorage.getItem('cc_dynamic_reasons');
             if (ulozene) return ulozene.split(',');
@@ -3282,7 +3282,7 @@ setInterval(function(){
                 '<h3 style="margin:0 0 15px 0; color:#0f172a; font-size:15px; font-weight:800; text-transform:uppercase; text-align:left; border-bottom:2px solid #f1f5f9; padding-bottom:8px;">Rezervace firemních lístků</h3>' +
                 '<div class="cc-modal-field-row">' +
                     '<label>Vybraná akce 🎪:</label>' +
-                    '<input type="text" id="cc-modal-final-inp-action" readonly style="background:#f1f5f9!important; color:#64748b!important; cursor:not-allowed!important; width:100%!important; height:38px!important; padding:8px 12px!important; border:1px solid #cbd5e1!important; border-radius:6px!important; font-size:13px!important; font-weight:600!important; box-sizing:border-box!important;">' +
+                    '<input type="text" id="cc-modal-final-inp-action" readonly style="width:100%!important; height:38px!important; padding:8px 12px!important; border:1px solid #cbd5e1!important; border-radius:6px!important; font-size:13px!important; font-weight:600!important; box-sizing:border-box!important; background:#f1f5f9!important; color:#64748b!important; cursor:not-allowed!important;">' +
                 '</div>' +
                 '<div class="cc-modal-field-row">' +
                     '<label>Počet lístků (ks) 🎟️:</label>' +
@@ -3291,7 +3291,6 @@ setInterval(function(){
                 '<div class="cc-modal-field-row">' +
                     '<label>Důvod žádosti 🎯:</label>' +
                     '<select id="cc-modal-final-sel-reason" style="width:100%!important; height:38px!important; padding:8px 12px!important; border:1px solid #cbd5e1!important; border-radius:6px!important; font-size:13px!important; font-weight:600!important; box-sizing:border-box!important; background:#fff!important;" required>' + optionsHtml + '</select>' +
-                 textZpravy = "Dobrý den,\n\nVáš kód je " + vygenerovanyKod; // Zachování kompatibility
                 '</div>' +
                 '<div class="cc-modal-field-row">' +
                     '<label>Obrat v EUR (€) 📈:</label>' +
@@ -3308,7 +3307,6 @@ setInterval(function(){
             document.getElementById('cc-modal-final-btn-close').addEventListener('click', zavriFinalniMdl);
             overlay.addEventListener('click', zavriFinalniMdl);
 
-            // ⚡ ODESLÁNÍ ŽÁDOSTI: Napojení dat z okna do ranního odesílacího formuláře na pozadí
             document.getElementById('cc-modal-final-btn-submit').addEventListener('click', function(e) {
                 e.preventDefault();
 
@@ -3327,7 +3325,7 @@ setInterval(function(){
 
                     if (ranniSelect) {
                         ranniSelect.innerHTML = '<option value="' + ccLokalniVybranaAkceZPrehledu + '">' + ccLokalniVybranaAkceZPrehledu + '</option>';
-                        ranniSelect.value = ccAktivniNazevZPrehledu = ccLokalniVybranaAkceZPrehledu;
+                        ranniSelect.value = ccLokalniVybranaAkceZPrehledu;
                     }
                     if (ranniTickets) ranniTickets.value = lístkyCount;
                     if (ranniReason) ranniReason.value = důvodZvolený + " (Obrat: " + euraObrat + " EUR)";
@@ -3357,7 +3355,6 @@ setInterval(function(){
             if (modal) modal.style.display = 'none';
         }
 
-        // Hlídač, který neustále udržuje staré horní záložky schované a dává život červeným tlačítkům na kartách
         function oživTlačítkaOknaNaPozadí() {
             var vsechnaTlacitka = document.querySelectorAll('.cc-public-card button, .cc-fake-booking-trigger, button, a');
             vsechnaTlacitka.forEach(function(btn) {
@@ -3383,7 +3380,6 @@ setInterval(function(){
                 }
             });
 
-            // Tiše schováme horní nepotřebné záložky z menu, ať uživatele nematou
             var menuHorni = document.querySelectorAll('.tabs button, .tabs a, .tab-btn');
             menuHorni.forEach(function(btn) {
                 var txt = btn.innerText ? btn.innerText.trim() : '';
@@ -3393,10 +3389,10 @@ setInterval(function(){
             });
         }
 
-        // Spouštíme plynulé procesy na pozadí
         setInterval(oživTlačítkaOknaNaPozadí, 450);
     })();
 </script>
+
 
 </body>
 </html>
