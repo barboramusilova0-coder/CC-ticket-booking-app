@@ -3600,6 +3600,169 @@ setInterval(function(){
         setInterval(napojNeprustrelnyOdesilacZadostiCoke, 500);
     })();
 </script>
+<!-- 👤 FINÁLNÍ REZERVAČNÍ ENGINE: OPRAVA UNDEFINED A PŘESUN SCHVALOVATELE DO TLAČÍTKA -->
+<script>
+    (function() {
+        // 🧽 1. KROK: ODSTRANĚNÍ STARÉHO TEXTOVÉHO POLE Z LIŠTY
+        function vymazStaryRadekSefa() {
+            var staryKontejner = document.getElementById('cc-manager-email-container');
+            if (staryKontejner) staryKontejner.remove();
+        }
+
+        // 👤 2. KROK: MONTOVÁNÍ NOVÉHO TLAČÍTKA "NASTAVIT NADŘÍZENÉHO" VEDLE ZMĚNY HESLA
+        function namontujTlacitkoSefaVedleHesla() {
+            var jePrihlasen = localStorage.getItem('userCode') || (window.currentUser && window.currentUser.role !== 'guest');
+            if (!jePrihlasen || document.getElementById('cc-btn-set-manager')) return;
+
+            // Najdeme horní lištu vedle tlačítka pro změnu hesla
+            var horniLista = document.getElementById('userStatus') || document.querySelector('.tabs') || document.querySelector('header');
+            if (!horniLista) return;
+
+            var btnSef = document.createElement('button');
+            btnSef.id = 'cc-btn-set-manager';
+            btnSef.innerText = '👤 Nastavit nadřízeného';
+            
+            // Stylování: Sladíme ho do stejného elegantního šedého korporátního stylu, jako má změna hesla
+            btnSef.style.cssText = 'background: #64748b; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 10px; transition: background 0.2s; text-transform: uppercase; display: inline-block; height: 38px; align-self: center; vertical-align: middle;';
+            
+            btnSef.addEventListener('mouseenter', function() { this.style.background = '#475569'; });
+            btnSef.addEventListener('mouseleave', function() { this.style.background = '#64748b'; });
+
+            // ⚡ AKCE PO KLIKNUTÍ: Vyskočí elegantní prompt okénko pro zadání e-mailu
+            btnSef.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var staryEmail = localStorage.getItem('cc_manager_email') || '';
+                var novyEmail = prompt('Zadejte firemní e-mail vašeho nadřízeného (1. schvalovatele):', staryEmail);
+                
+                if (novyEmail === null) return; // Storno
+                novyEmail = novyEmail.trim();
+
+                if (novyEmail !== "" && (novyEmail.indexOf('@') === -1 || novyEmail.indexOf('.') === -1)) {
+                    alert('❌ Chyba: Zadejte platný e-mail ve tvaru: jmeno.prijmeni@cchellenic.com');
+                    return;
+                }
+
+                localStorage.setItem('cc_manager_email', novyEmail);
+
+                // Live synchronizace profilu do Firebase databáze
+                if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                    var db = firebase.firestore();
+                    var kodUzivatele = localStorage.getItem('userCode') || '';
+                    var customUsers = JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {};
+                    
+                    if (kodUzivatele && customUsers[kodUzivatele]) {
+                        customUsers[kodUzivatele].managerEmail = novyEmail;
+                        localStorage.setItem('customUsers', JSON.stringify(customUsers));
+                        db.collection("portalData").doc("cocaColaDatabase").set({ customUsers: customUsers }, { merge: true });
+                    }
+                }
+                alert('🎉 Firemní e-mail vašeho nadřízeného (' + (novyEmail || 'Prázdný') + ') byl úspěšně uložen do vašeho profilu!');
+            });
+
+            // Připojíme tlačítko vedle změny hesla v horní liště
+            var tlacitkoHesla = document.getElementById('cc-change-password-btn');
+            if (tlacitkoHesla && tlacitkoHesla.parentNode) {
+                tlacitkoHesla.parentNode.insertBefore(btnSef, tlacitkoHesla.nextSibling);
+            } else {
+                horniLista.appendChild(btnSef);
+            }
+        }
+
+        // 🎟️ 3. KROK: NEPRŮSTŘELNÁ OPRAVA TEXTŮ "UNDEFINED" V TABULCE SCHVÁLENÍ
+        function opravOdesilaniZadostiBezUndefined() {
+            var btnSubmitOkna = document.getElementById('cc-modal-final-btn-submit');
+            if (!btnSubmitOkna || btnSubmitOkna.getAttribute('data-cc-force-sync-v3') === 'yes') return;
+
+            btnSubmitOkna.addEventListener('click', function(e) {
+                e.preventDefault(); e.stopPropagation();
+
+                var countInp = document.getElementById('cc-modal-final-inp-tickets');
+                var reasonInp = document.getElementById('cc-modal-final-sel-reason');
+                var eurInp = document.getElementById('cc-modal-final-inp-eur');
+                
+                var tckCountVal = countInp ? parseInt(countInp.value) : 1;
+                var reasonVal = reasonInp ? reasonInp.value : '';
+                var eurVal = eurInp ? eurInp.value.trim() : '';
+                var emailSefa = localStorage.getItem('cc_manager_email') || '';
+
+                if (!reasonVal) { alert('❌ Vyberte prosím důvod žádosti.'); return; }
+                if (!eurVal) { alert('❌ Zadejte prosím finanční obrat v EUR.'); return; }
+
+                var emailUzivatele = localStorage.getItem('userEmail') || (window.currentUser ? window.currentUser.email : "");
+                // Zkusíme vytáhnout jméno uživatele z paměti, aby v tabulce nesvítilo undefined
+                var jmenoUzivatele = localStorage.getItem('userName') || (window.currentUser ? window.currentUser.name : "") || emailUzivatele.split('@')[0].replace('.', ' ');
+
+                var aktualniZadosti = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
+                
+                // 🔥 KOREKCE NÁZVŮ: Přepíšeme klíče přesně tak, jak je ranní tabulka na tvém obrázku vyžaduje!
+                var opravenaZadost = {
+                    id: Date.now(),
+                    // Pro kolonku AKCE
+                    actionName: window.ccLokalniVybranaAkceZPrehledu || "test",
+                    name: window.ccLokalniVybranaAkceZPrehledu || "test",
+                    
+                    // Pro kolonku ŽADATEL
+                    userEmail: emailUzivatele,
+                    applicant: jmenoUzivatele,
+                    user: jmenoUzivatele,
+                    
+                    // Pro kolonku JMÉNO ZÁKAZNÍKA, OBRAT V EUR A DŮVOD ŽÁDOSTI
+                    customerName: jmenoUzivatele,
+                    tickets: tckCountVal,
+                    reason: reasonVal + " (Obrat: " + eurVal + " EUR)",
+                    
+                    // Pro kolonku 1. SCHVALOVATEL
+                    managerEmail: emailSefa,
+                    approver1: emailSefa,
+                    approver: emailSefa,
+                    
+                    // Pro kolonku 2. SCHVALOVATEL
+                    approver2: "rsm.praha@cchellenic.com",
+                    
+                    // Pro stavové kolonky z ranního obrázku
+                    status: 'Čeká na schválení',
+                    status1: 'Čeká na schválení',
+                    status2: 'Čeká na vyjádření',
+                    reservationStatus: 'Čeká na schválení',
+                    createdAt: new Date().toISOString()
+                };
+
+                aktualniZadosti.push(opravenaZadost);
+                localStorage.setItem('ticketRequests', JSON.stringify(aktualniZadosti));
+                window.requests = aktualniZadosti;
+
+                if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                    var db = firebase.firestore();
+                    db.collection("portalData").doc("cocaColaDatabase").set({
+                        ticketRequests: aktualniZadosti,
+                        companyActions: JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [],
+                        customUsers: JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {},
+                        roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || window.roleRequests || []
+                    }, { merge: true })
+                    .then(function() {
+                        var overlay = document.getElementById('cc-modal-backdrop-final-id');
+                        var modal = document.getElementById('cc-modal-window-final-id');
+                        if (overlay) overlay.style.display = 'none';
+                        if (modal) modal.style.display = 'none';
+
+                        alert('🎉 Žádost byla úspěšně odeslána šéfovi a zapsána do Rezervací na schválení bez textů undefined!');
+                        setTimeout(function() { location.reload(); }, 100);
+                    });
+                } else {
+                    location.reload();
+                }
+            });
+
+            btnSubmitOkna.setAttribute('data-cc-force-sync-v3', 'yes');
+        }
+
+        // Spouštíme čištění a montování tlačítek průběžně na pozadí
+        setInterval(vymazStaryRadekSefa, 400);
+        setInterval(namontujTlacitkoSefaVedleHesla, 450);
+        setInterval(opravOdesilaniZadostiBezUndefined, 450);
+    })();
+</script>
+
 
 </body>
 </html>
