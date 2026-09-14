@@ -3739,9 +3739,9 @@ setInterval(function(){
         setInterval(ccNamontujTlacitkoSefaZive, 350);
     })();
 </script>
-<!-- ⚙️ LUXUSNÍ ROZBALOVACÍ MENU NASTAVENÍ V LIŠTĚ (ZÁPIS NA KONEC) -->
+<!-- ⚙️ ROZBALOVACÍ MENU NASTAVENÍ V LIŠTĚ (OPRAVENÁ BEZCHYBNÁ VERZE) -->
 <style>
-    /* Absolutní schování starého rozházeného tlačítka hesla a nadřízeného na ploše */
+    /* Schování starých rozházených tlačítek na ploše */
     #cc-change-password-btn, 
     #cc-skutecne-btn-manager-final,
     #cc-skutecne-btn-manager {
@@ -3754,10 +3754,9 @@ setInterval(function(){
         display: inline-block !important;
         margin-left: 12px !important;
         vertical-align: middle !important;
-        align-self: center !important;
     }
 
-    /* Vzhled hlavního ozubeného tlačítka Nastavení */
+    /* Vzhled hlavního ozubeného tlačítka */
     .cc-settings-trigger-btn {
         background: #64748b !important;
         color: white !important;
@@ -3776,11 +3775,9 @@ setInterval(function(){
         box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
         font-family: inherit !important;
     }
-    .cc-settings-trigger-btn:hover {
-        background: #475569 !important;
-    }
+    .cc-settings-trigger-btn:hover { background: #475569 !important; }
 
-    /* Samotná schovaná rolovací nabídka, která se otevře pod tlačítkem */
+    /* Rolovací nabídka pod tlačítkem */
     .cc-dropdown-menu-box {
         display: none;
         position: absolute !important;
@@ -3789,19 +3786,15 @@ setInterval(function(){
         background: #ffffff !important;
         border: 1px solid #cbd5e1 !important;
         border-radius: 8px !important;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05) !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
         min-width: 190px !important;
         z-index: 9999999 !important;
         overflow: hidden !important;
         padding: 4px 0 !important;
     }
+    .cc-dropdown-menu-box.cc-open-active { display: block !important; }
 
-    /* Aktivní stav, kdy JavaScript nabídku zobrazí */
-    .cc-dropdown-menu-box.cc-open-active {
-        display: block !important;
-    }
-
-    /* Jednotlivé řádky (volby) uvnitř rolovací nabídky */
+    /* Řádky uvnitř nabídky */
     .cc-dropdown-item-link {
         display: flex !important;
         align-items: center !important;
@@ -3815,42 +3808,22 @@ setInterval(function(){
         font-weight: 600 !important;
         text-align: left !important;
         cursor: pointer !important;
-        text-transform: none !important;
-        transition: background 0.15s ease, color 0.15s ease !important;
-        box-shadow: none !important;
-        height: auto !important;
+        transition: background 0.15s ease !important;
     }
-    .cc-dropdown-item-link:hover {
-        background: #f1f5f9 !important;
-        color: #0f172a !important;
-    }
-    
-    /* Jemný oddělovač mezi řádky v menu */
-    .cc-dropdown-divider {
-        height: 1px !important;
-        background: #e2e8f0 !important;
-        margin: 4px 0 !important;
-    }
+    .cc-dropdown-item-link:hover { background: #f1f5f9 !important; color: #0f172a !important; }
+    .cc-dropdown-divider { height: 1px !important; background: #e2e8f0 !important; margin: 4px 0 !important; }
 </style>
 
 <script>
     (function() {
-        function namontujOzubeneMenuDoListyCoke() {
-            var jePrihlasenUživatel = localStorage.getItem('userCode') || (window.currentUser && window.currentUser.role !== 'guest');
-            if (!jePrihlasenUživatel) return;
-
-            // Najdeme horní lištu s uživatelským statusem nebo menu záložek
-            var horniListaTabs = document.getElementById('userStatus') || document.querySelector('.tabs') || document.querySelector('header');
-            if (!horniListaMenuTabs && !horniListaTabs) return;
-
-            // Pokud už ozubené tlačítko v liště drží, podruhé ho nevytváříme
+        function namontujOzubeneMenuDoListyCokeBezChyb() {
+            // Pokud už ozubené tlačítko v liště drží, znova ho nevytváříme
             if (document.getElementById('cc-dropdown-settings-container-id')) return;
 
             // Najdeme původní ranní tlačítko změny hesla z historie
             var ranniBtnHesla = document.getElementById('cc-change-password-btn') || document.querySelector('button[onclick*="password"]');
             if (!ranniBtnHesla || !ranniBtnHesla.parentNode) return;
 
-            // Vytvoříme hlavní schránku pro naše nové menu Nastavení
             var dropdownContainer = document.createElement('div');
             dropdownContainer.id = 'cc-dropdown-settings-container-id';
             dropdownContainer.className = 'cc-dropdown-settings';
@@ -3863,49 +3836,33 @@ setInterval(function(){
                     '<button id="cc-item-manager-id" class="cc-dropdown-item-link">👤 Nastavit nadřízeného</button>' +
                 '</div>';
 
-            // Bezpečně vložíme celé ozubené Nastavení přesně tam, kde stála původní Změna hesla
             ranniBtnHesla.parentNode.insertBefore(dropdownContainer, ranniBtnHesla.nextSibling);
 
             var triggerBtn = document.getElementById('cc-trigger-btn-id');
             var menuBox = document.getElementById('cc-menu-box-id');
 
-            // ⚡ OTEVÍRÁNÍ A ZAVÍRÁNÍ MENU NA KLIKNUTÍ
             triggerBtn.addEventListener('click', function(e) {
                 e.preventDefault(); e.stopPropagation();
                 menuBox.classList.toggle('cc-open-active');
             });
 
-            // 1. VOLBA: ZMĚNIT HESLO (Kliknutí přesměrujeme na tvou funkční ranní akci z historie)
             document.getElementById('cc-item-pass-id').addEventListener('click', function(e) {
                 e.preventDefault(); e.stopPropagation();
                 menuBox.classList.remove('cc-open-active');
-                
-                if (ranniBtnHesla) {
-                    // Odpálíme tvůj původní ranní mechanismus pro změnu hesla
-                    ranniBtnHesla.click();
-                    var ranniAttrOnClick = ranniBtnHesla.getAttribute('onclick');
-                    if (ranniAttrOnClick) {
-                        eval(ranniAttrOnClick); // Spustí vnitřní inline funkci z historie
-                    } else if (typeof window.handleChangePassword === 'function') {
-                        window.handleChangePassword();
-                    }
-                }
+                if (ranniBtnHesla) ranniBtnHesla.click();
             });
 
-            // 2. VOLBA: NASTAVIT NADŘÍZENÉHO (Spustí naše vyzkoušené a bezpečné ukládání)
             document.getElementById('cc-item-manager-id').addEventListener('click', function(e) {
                 e.preventDefault(); e.stopPropagation();
                 menuBox.classList.remove('cc-open-active');
 
                 var staryEmail = localStorage.getItem('cc_manager_email') || '';
                 var novyEmail = prompt('Zadejte firemní e-mail vašeho nadřízeného (1. schvalovatele):', staryEmail);
-                
                 if (novyEmail === null) return;
                 novyEmail = novyEmail.trim();
 
                 if (novyEmail !== "" && (novyEmail.indexOf('@') === -1 || novyEmail.indexOf('.') === -1)) {
-                    alert('❌ Chyba: Zadejte platný e-mail ve tvaru: jmeno.prijmeni@cchellenic.com');
-                    return;
+                    alert('❌ Chyba: Zadejte platný e-mail.'); return;
                 }
 
                 localStorage.setItem('cc_manager_email', novyEmail);
@@ -3914,27 +3871,25 @@ setInterval(function(){
                     var db = firebase.firestore();
                     var kodUzivatele = localStorage.getItem('userCode') || '';
                     var customUsers = JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {};
-                    
                     if (kodUzivatele && customUsers[kodUzivatele]) {
                         customUsers[kodUzivatele].managerEmail = novyEmail;
                         localStorage.setItem('customUsers', JSON.stringify(customUsers));
                         db.collection("portalData").doc("cocaColaDatabase").set({ customUsers: customUsers }, { merge: true });
                     }
                 }
-                alert('🎉 Firemní e-mail vašeho nadřízeného byl úspěšně uložen do vašeho profilu!');
+                alert('🎉 Firemní e-mail vašeho nadřízeného byl úspěšně uložen!');
                 location.reload();
             });
 
-            // Zavřít menu, pokud uživatel klikne kamkoliv mimo něj na plochu webu
             document.addEventListener('click', function() {
-                menuBox.classList.remove('cc-open-active');
+                if (menuBox) menuBox.classList.remove('cc-open-active');
             });
         }
 
-        // Držíme ozubené menu plynule nasazené na pozadí každých 450ms
-        setInterval(namontujOzubeneMenuDoListyCoke, 450);
+        setInterval(namontujOzubeneMenuDoListyCokeBezChyb, 500);
     })();
 </script>
+
 
 </body>
 </html>
