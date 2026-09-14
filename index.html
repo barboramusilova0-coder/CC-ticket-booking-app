@@ -3391,6 +3391,125 @@ setInterval(function(){
         setInterval(oživTlačítkaOknaNaPozadí, 300);
     })();
 </script>
+<!-- 👤 PROPOJENÍ SCHVALOVATELE: 1. ČÁST - PANEL PRO E-MAIL NADŘÍZENÉHO V LIŠTĚ -->
+<script>
+    (function() {
+        function namontujEmailSefaDoHorniListyCoke() {
+            // Panel pro šéfa ukážeme pouze přihlášeným uživatelům (anonymní hosté ho neuvidí)
+            var jePrihlasen = localStorage.getItem('userCode') || (window.currentUser && window.currentUser.role !== 'guest');
+            if (!jePrihlasen) return;
+
+            // Najdeme horní lištu s menu záložek (tabs), kde sedí svíčka i změna hesla
+            var horniMenuList = document.querySelector('.tabs') || document.getElementById('userStatus') || document.querySelector('.container');
+            if (!horniMenuList || document.getElementById('cc-manager-email-container')) return;
+
+            var containerSef = document.createElement('div');
+            containerSef.id = 'cc-manager-email-container';
+            containerSef.style.cssText = 'display: inline-flex; align-items: center; gap: 6px; margin-left: auto; margin-right: 15px; background: #f1f5f9; padding: 4px 10px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box; height: 38px; align-self: center;';
+
+            // Načteme e-mail šéfa, pokud už si ho uživatel v minulosti uložil
+            var ulozenyEmailSefa = localStorage.getItem('cc_manager_email') || '';
+
+            containerSef.innerHTML = 
+                '<label style="font-weight:700; font-size:11px; color:#475569; text-transform:uppercase; white-space:nowrap; margin:0;">Můj nadřízený 👤:</label>' +
+                '<input type="email" id="cc-manager-email-input" value="' + ulozenyEmailSefa + '" placeholder="jmeno.prijmeni@cchellenic.com" style="border:1px solid #cbd5e1; border-radius:4px; padding:3px 8px; font-size:11px; font-weight:600; width:170px; height:24px; box-sizing:border-box; color:#334155;">' +
+                '<button id="cc-manager-email-save-btn" style="background:#64748b; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer; height:24px; text-transform:uppercase; transition:background 0.2s;">💾</button>';
+
+            // Připíchneme panel na konec horního menu záložek (vedle tlačítka Změnit heslo)
+            if (horniMenuList.classList.contains('tabs')) {
+                horniMenuList.appendChild(containerSef);
+            } else {
+                var hlavniMenuTabs = document.querySelector('.tabs');
+                if (hlavniMenuTabs) hlavniMenuTabs.appendChild(containerSef);
+            }
+
+            // 💾 AKCE PO KLIKNUTÍ NA DISKETU: Uložení do paměti a Firebase cloudu
+            document.getElementById('cc-manager-email-save-btn').addEventListener('click', function(e) {
+                e.stopPropagation();
+                var emailVal = document.getElementById('cc-manager-email-input').value.trim();
+
+                // Bezpečnostní kontrola, zda text vypadá jako opravdový firemní e-mail
+                if (emailVal !== "" && (emailVal.indexOf('@') === -1 || emailVal.indexOf('.') === -1)) {
+                    alert('❌ Chyba: Zadejte prosím platný e-mail ve tvaru: jmeno.prijmeni@cchellenic.com');
+                    return;
+                }
+
+                localStorage.setItem('cc_manager_email', emailVal);
+
+                // 🌐 LIVE SYNC DO CLOUDU: Přibalíme informaci o nadřízeném k profilu uživatele ve Firebase
+                if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                    var db = firebase.firestore();
+                    var uzivatelskyKod = localStorage.getItem('userCode') || '';
+                    
+                    if (uzivatelskyKod) {
+                        var customUsers = JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {};
+                        if (customUsers[uzivatelskyKod]) {
+                            customUsers[uzivatelskyKod].managerEmail = emailVal; // Přidáme políčko manažera do profilu
+                            localStorage.setItem('customUsers', JSON.stringify(customUsers));
+                            
+                            db.collection("portalData").doc("cocaColaDatabase").set({
+                                customUsers: customUsers
+                            }, { merge: true }).then(function() {
+                                alert('🎉 E-mail vašeho nadřízeného (' + (emailVal || 'Prázdný') + ') byl úspěšně uložen do celého systému!');
+                            });
+                            return;
+                        }
+                    }
+                }
+                alert('🎉 E-mail nadřízeného byl úspěšně uložen!');
+            });
+        }
+
+        // Hlídáme horní lištu plynule každých 500ms na pozadí
+        setInterval(namontujEmailSefaDoHorniListyCoke, 500);
+        // 👤 PROPOJENÍ SCHVALOVATELE: 2. ČÁST - AUTOMATICKÝ PROPIS ŠÉFA DO REZERVACE
+        function sparujEmailSefaZListySRezervacnimOknem() {
+            var odeslatBtnOkna = document.getElementById('cc-modal-final-btn-submit');
+            if (!odeslatBtnOkna || odeslatBtnOkna.getAttribute('data-cc-manager-hook') === 'yes') return;
+
+            // Zachytíme moment kliknutí na odeslání rezervace ve vyskakovacím okně
+            odeslatBtnOkna.addEventListener('click', function() {
+                var emailSefaZListy = localStorage.getItem('cc_manager_email') || '';
+                
+                // Pokud uživatel zapomněl e-mail šéfa vyplnit, pro jistotu ho na to upozorníme
+                if (!emailSefaZListy) {
+                    var bleskovyDotaz = prompt('⚠️ Nemáte v horní liště uložený e-mail svého nadřízeného!\nZadejte e-mail 1. schvalovatele (šéfa) pro schválení lístků:');
+                    if (bleskovyDotaz && bleskovyDotaz.indexOf('@') > -1) {
+                        emailSefaZListy = bleskovyDotaz.trim();
+                        localStorage.setItem('cc_manager_email', emailSefaZListy);
+                        var inputVListe = document.getElementById('cc-manager-email-input');
+                        if (inputVListe) inputVListe.value = emailSefaZListy;
+                    }
+                }
+
+                // 🏗️ PROPOJENÍ S TVOU HISTORIÍ: Podvrhneme e-mail šéfa do skrytých políček tvého původního ranního formuláře
+                var ranniFormular = document.getElementById('ticketForm') || document.querySelector('form');
+                if (ranniFormular) {
+                    // Hledáme v tvém ranním kódu políčko pro 1. schvalovatele / nadřízeného (např. id manager, supervisor, nebo schvalovatel)
+                    var ranniInputSefa = ranniFormular.querySelector('#managerEmail') || ranniFormular.querySelector('#manager') || ranniFormular.querySelector('input[name*="manager"]') || ranniFormular.querySelector('input[placeholder*="nadřízen"]');
+                    
+                    if (ranniInputSefa) {
+                        ranniInputSefa.value = emailSefaZListy;
+                        ranniInputSefa.dispatchEvent(new Event('input', { bubbles: true }));
+                    } else {
+                        // Pojistný plán: Pokud tvůj původní systém nemá pro mail šéfa samostatnou kolonku, 
+                        // elegantně ho přibalíme na konec textu do pole "reason" (Důvod žádosti), kde ho v tabulkách stoprocentně uvidíš!
+                        var ranniInputReason = ranniFormular.querySelector('#reason') || ranniFormular.querySelector('input[placeholder*="důvod"]');
+                        if (ranniInputReason && emailSefaZListy && ranniInputReason.value.indexOf('Schvalovatel:') === -1) {
+                            ranniInputReason.value = ranniInputReason.value + " | Schvalovatel: " + emailSefaZListy;
+                            ranniInputReason.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                    }
+                }
+            });
+
+            odeslatBtnOkna.setAttribute('data-cc-manager-hook', 'yes');
+        }
+
+        // Udržujeme propojení schvalovatele plynule aktivní na pozadí každých 450ms
+        setInterval(sparujEmailSefaZListySRezervacnimOknem, 450);
+    })();
+</script>
 
 
 </body>
