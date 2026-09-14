@@ -3070,8 +3070,9 @@ setInterval(function(){
         font-weight: 600 !important;
     }
 </style>
-<!-- 🗛 ZÁCHRANNÝ ENGINE S POJISTKOU PROTI BLIKÁNÍ PRÁZDNÝCH DLAŽDIC -->
+<!-- 🗛 DEFINITIVNÍ STOP BLIKÁNÍ: ČISTÝ FILTRAČNÍ SYSTÉM BEZ TEXTOVÝCH NÁPISŮ -->
 <style>
+    /* Stylování řady dlaždic v Přehledu akcí */
     .coke-filter-row-final {
         display: flex !important;
         gap: 12px !important;
@@ -3100,7 +3101,6 @@ setInterval(function(){
     .coke-filter-tile-final:hover {
         border-color: #94a3b8 !important;
         transform: translateY(-1px) !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
     }
 
     .coke-filter-tile-final.cc-active-selected {
@@ -3125,15 +3125,17 @@ setInterval(function(){
 
 <script>
     (function() {
+        // Použijeme jednoduchou paměť pro vybraný filtr
         window.ccGlobalniZvolenyFiltrOstre = "vse";
 
         function vynutVykresleniAOdblokovaniDlazdic() {
             var plochaPrehledu = document.getElementById('tab-prehled-akci-coke-content');
             if (!plochaPrehledu || document.getElementById('cc-coke-filter-row-final-id')) return;
 
-            var blokujiciElementy = document.querySelectorAll('style');
-            blokujiciElementy.forEach(function(st) {
-                if (st.innerHTML.indexOf('.tiles-grid') > -1 && st.innerHTML.indexOf('display: none') > -1) {
+            // Vyčistíme případné ranní blokace stylů
+            var blokujiciStyly = document.querySelectorAll('style');
+            blokujiciStyly.forEach(function(st) {
+                if (st.innerHTML.indexOf('.tiles-grid') > -1) {
                     st.innerHTML = st.innerHTML.replace('display: none !important', '');
                 }
             });
@@ -3160,20 +3162,19 @@ setInterval(function(){
             radek.querySelectorAll('.coke-filter-tile-final').forEach(function(tile) {
                 tile.addEventListener('click', function() {
                     radek.querySelectorAll('.coke-filter-tile-final').forEach(function(t) { t.classList.remove('cc-active-selected'); });
+                    this.classList.add('active'); // Kompatibilita s ranními styly
                     this.classList.add('cc-active-selected');
 
                     window.ccGlobalniZvolenyFiltrOstre = this.getAttribute('data-cat');
-                    provedBleskoveFiltrovaniKaretCoke();
+                    provedTichouFiltraciKaret();
                 });
             });
         }
 
-        function provedBleskoveFiltrovaniKaretCoke() {
-            var gridContainer = document.getElementById('cc-clean-cards-grid-container');
+        // 🛡️ TICHÁ FILTRACE: Pouze zneviditelníme karty, nevkládáme žádné nové nápisy, takže se Firebase nemá s čím prát!
+        function provedTichouFiltraciKaret() {
             var karty = document.querySelectorAll('.cc-public-card');
             
-            var pocetViditelnychKaret = 0;
-
             karty.forEach(function(k) {
                 var textKartyMaly = (k.innerText || "").toLowerCase();
                 var splnujeFiltr = false;
@@ -3188,29 +3189,15 @@ setInterval(function(){
 
                 if (splnujeFiltr) {
                     k.style.setProperty('display', 'inline-block', 'important');
-                    pocetViditelnychKaret++;
                 } else {
                     k.style.setProperty('display', 'none', 'important');
                 }
             });
-
-            // 🔥 POJISTKA PROTI BLIKÁNÍ: Pokud v dané dlaždici není žádná akce, vytvoříme pevný textový bod
-            var existujiciHlaska = document.getElementById('cc-empty-filter-message');
-            if (pocetViditelnychKaret === 0 && window.ccGlobalniZvolenyFiltrOstre !== 'vse') {
-                if (!existujiciHlaska && gridContainer) {
-                    var msg = document.createElement('div');
-                    msg.id = 'cc-empty-filter-message';
-                    msg.style.cssText = 'color:#64748b; font-size:13px; font-weight:600; padding:30px 10px; text-align:left; width:100%; font-style:italic;';
-                    msg.innerText = '✨ V této kategorii momentálně nejsou k dispozici žádné firemní lístky.';
-                    gridContainer.parentNode.insertBefore(msg, gridContainer.nextSibling);
-                }
-            } else {
-                if (existujiciHlaska) existujiciHlaska.remove();
-            }
         }
 
-        setInterval(vynutVykresleniAOdblokovaniDlazdic, 400);
-        setInterval(provedBleskoveFiltrovaniKaretCoke, 450);
+        // Spouštíme procesy na pozadí v delších, klidnějších intervalech
+        setInterval(vynutVykresleniAOdblokovaniDlazdic, 500);
+        setInterval(provedTichouFiltraciKaret, 500);
     })();
 </script>
 
