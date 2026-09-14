@@ -3759,8 +3759,8 @@ setInterval(function(){
             btnSef.id = 'cc-skutecne-btn-manager-final';
             btnSef.innerText = '👤 Nastavit nadřízeného';
             
-            // Luxusní styl, který zkopíruje vzhled změny hesla a čistě se zařadí vedle něj
-            btnSef.style.cssText = 'background: #64748b !important; color: white !important; border: none !important; padding: 6px 14px !important; border-radius: 6px !important; font-size: 11px !important; font-weight: 700 !important; cursor: pointer !important; margin-left: 10px !important; transition: background 0.2s !important; text-transform: uppercase !important; display: inline-block !important; height: 32px !important; vertical-align: middle !important; line-height: 1 !important; font-family: inherit !important;';
+                        // Luxusní sjednocený styl – přesná barva, stín, písmo i výška jako má Změna hesla
+            btnSef.style.cssText = 'background: #64748b !important; color: white !important; border: none !important; padding: 10px 18px !important; border-radius: 6px !important; font-size: 13px !important; font-weight: 700 !important; cursor: pointer !important; margin-left: 12px !important; transition: all 0.2s ease !important; text-transform: uppercase !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; height: 38px !important; font-family: inherit !important; box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important; letter-spacing: 0.02em !important;';
             
             // Barevné efekty při najetí myší
             btnSef.addEventListener('mouseenter', function() { this.style.background = '#475569 !important'; });
