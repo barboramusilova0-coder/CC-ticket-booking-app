@@ -2902,6 +2902,36 @@ setInterval(function(){
         setInterval(vykresliChronologickeKartyZapasu, 500);
     })();
 </script>
+<!-- 🔌 PROPOJENÍ ADMINISTRACE: PŘESNÉ KATEGORIE PRO UKLÁDÁNÍ AKCÍ -->
+<script>
+    (function() {
+        function namontujPresnouRoletkuDoAdminu() {
+            var adminForm = document.getElementById('actionForm') || document.querySelector('#tab4 form');
+            if (!adminForm || document.getElementById('actionCategory')) return;
 
+            var groupDiv = document.createElement('div');
+            groupDiv.className = 'form-group';
+            groupDiv.style.cssText = 'margin-bottom: 15px; text-align: left; display: flex; flex-direction: column; gap: 5px;';
+            groupDiv.innerHTML = '<label style="font-weight: 700; font-size: 13px; color: #475569;">Kategorie akce 🎯:</label>' +
+                                 '<select id="actionCategory" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 600; background: #fff; height: 40px; color: #334155;" required>' +
+                                    '<option value="">-- Zvolte pod-složku pro uložení --</option>' +
+                                    '<option value="O2 Arena - Koncert">🎵 O2 Arena - Koncert</option>' +
+                                    '<option value="O2 Arena - Hokej">🥅 O2 Arena - Hokej</option>' +
+                                    '<option value="Fotbal">⚽ Fotbal</option>' +
+                                    '<option value="SKS Slavia">🔴 SKS Slavia</option>' +
+                                    '<option value="Specialni">✨ Speciální akce</option>' +
+                                 '</select>';
+            
+            var prvniInput = document.getElementById('actionName') || adminForm.querySelector('input[type="text"]');
+            if (prvniInput && prvniInput.parentNode) {
+                prvniInput.parentNode.insertBefore(groupDiv, prvniInput.nextSibling);
+            } else {
+                adminForm.insertBefore(groupDiv, adminForm.firstChild);
+            }
+        }
+
+        setInterval(namontujPresnouRoletkuDoAdminu, 500);
+    })();
+</script>
 </body>
 </html>
