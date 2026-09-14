@@ -3074,26 +3074,26 @@ setInterval(function(){
 <script>
     (function() {
         var ccZvolenyFiltrKategoriePrehledu = "vse";
-        // 🎛️ FILTRAČNÍ DLAŽDICE V PŘEHLEDU: 2. ČÁST - MONTOVÁNÍ A FUNKCE FILTROVÁNÍ KARET
+        <!-- 🗂️ FILTRAČNÍ DLAŽDICE V PŘEHLEDU: 2. ČÁST - OPRAVENÁ LOGIKA VELKÝCH/MALÝCH PÍSMEN -->
+<script>
+    (function() {
+        // Hlídač, který v Přehledu akcí vytvoří řadu velkých bílých dlaždic
         function namontujDlazdiceDoPrehleduAkciCoke() {
-            // Najdeme plochu naší nově znovuvytvořené záložky Přehled akcí
             var plochaPrehledu = document.getElementById('tab-prehled-akci-coke-content');
             if (!plochaPrehledu || document.getElementById('cc-public-filter-row-id')) return;
 
-            // Vytvoříme novou řadu dlaždic přesně s tvými upravenými pod-složkami
             var radekDlazdic = document.createElement('div');
             radekDlazdic.className = 'cc-public-filter-row';
             radekDlazdic.id = 'cc-public-filter-row-id';
 
             radekDlazdic.innerHTML = 
                 '<div class="cc-public-filter-tile active" data-cat="vse"><h4>Všechny akce</h4><span>Kompletní nabídka</span></div>' +
-                '<div class="cc-public-filter-tile" data-cat="O2 Arena - Koncert"><h4>O2 Arena</h4><span>Koncerty</span></div>' +
-                '<div class="cc-public-filter-tile" data-cat="O2 Arena - Hokej"><h4>O2 Arena</h4><span>Hokej</span></div>' +
-                '<div class="cc-public-filter-tile" data-cat="Fotbal"><h4>Fotbal</h4><span>Fotbalové zápasy</span></div>' +
-                '<div class="cc-public-filter-tile" data-cat="SKS Slavia"><h4>SKS Slavia</h4><span>Akce SKS Slavia</span></div>' +
-                '<div class="cc-public-filter-tile" data-cat="Specialni"><h4>Speciální akce</h4><span>Mimořádné akce</span></div>';
+                '<div class="cc-public-filter-tile" data-cat="koncert"><h4>O2 Arena</h4><span>Koncerty</span></div>' +
+                '<div class="cc-public-filter-tile" data-cat="hokej"><h4>O2 Arena</h4><span>Hokej</span></div>' +
+                '<div class="cc-public-filter-tile" data-cat="fotbal"><h4>Fotbal</h4><span>Fotbalové zápasy</span></div>' +
+                '<div class="cc-public-filter-tile" data-cat="slavia"><h4>SKS Slavia</h4><span>Akce SKS Slavia</span></div>' +
+                '<div class="cc-public-filter-tile" data-cat="specialni"><h4>Speciální akce</h4><span>Mimořádné akce</span></div>';
 
-            // 🔥 CHYTRÉ UMÍSTĚNÍ: Vložíme řadu dlaždic hned pod textový popisek, ale nad samotný grid s kartami akcí
             var cilovyGrid = document.getElementById('cc-clean-cards-grid-container');
             if (cilovyGrid) {
                 cilovyGrid.parentNode.insertBefore(radekDlazdic, cilovyGrid);
@@ -3101,10 +3101,8 @@ setInterval(function(){
                 plochaPrehledu.appendChild(radekDlazdic);
             }
 
-            // Naučíme nově přidané dlaždice bleskově filtrovat nabídku na kliknutí
             radekDlazdic.querySelectorAll('.cc-public-filter-tile').forEach(function(tile) {
                 tile.addEventListener('click', function() {
-                    // Přepneme červené nasvícení na právě kliknutou dlaždici
                     radekDlazdic.querySelectorAll('.cc-public-filter-tile').forEach(function(t) { t.classList.remove('active'); });
                     this.classList.add('active');
 
@@ -3115,23 +3113,22 @@ setInterval(function(){
         }
 
         function spustBleskovouFiltraciKaretPrehledu() {
-            // Najdeme všechny ty bílé chronologické karty akcí, které se generují na ploše Přehledu
             var vsechnyKartyAkci = document.querySelectorAll('.cc-public-card');
             
             vsechnyKartyAkci.forEach(function(karta) {
-                var textKarty = karta.innerText || "";
+                // 🔥 KLÍČOVÁ ZMĚNA: Přepneme všechen text na kartě na malá písmena, takže FOTBAL i fotbal splynou v jedno!
+                var textKartyMaly = (karta.innerText || "").toLowerCase();
                 var odpovidaFiltru = false;
 
                 if (ccZvolenyFiltrKategoriePrehledu === 'vse') {
                     odpovidaFiltru = true;
                 } else {
-                    // 🔥 STRATEGICKÁ KONTROLA: Ověříme, zda text na kartě obsahuje přesný název vybrané pod-složky
-                    if (textKarty.indexOf(ccZvolenyFiltrKategoriePrehledu) > -1) {
+                    // Porovnáváme čistě v malých písmenech
+                    if (textKartyMaly.indexOf(ccZvolenyFiltrKategoriePrehledu) > -1) {
                         odpovidaFiltru = true;
                     }
                 }
 
-                // Pokud karta odpovídá zvolené dlaždici, necháme ji zobrazenou, jinak ji bleskově schováme
                 if (odpovidaFiltru) {
                     karta.style.setProperty('display', 'block', 'important');
                 } else {
@@ -3140,11 +3137,11 @@ setInterval(function(){
             });
         }
 
-        // Plynule hlídáme plochu na pozadí, aby se dlaždice okamžitě usadily a reagovaly na nově vytvořené akce
         setInterval(namontujDlazdiceDoPrehleduAkciCoke, 400);
         setInterval(spustBleskovouFiltraciKaretPrehledu, 500);
     })();
 </script>
+
 
 </body>
 </html>
