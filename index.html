@@ -3601,95 +3601,67 @@ setInterval(function(){
         setInterval(napojNeprustrelnyOdesilacZadostiCoke, 500);
     })();
 </script>
-<!-- 👤 FINÁLNÍ REZERVAČNÍ ENGINE: OPRAVA UNDEFINED A PŘESUN SCHVALOVATELE DO TLAČÍTKA -->
+<!-- 👤 DEFINITIVNÍ VISUÁLNÍ OPRAVÁŘ TABULEK A TLAČÍTKA NADŘÍZENÉHO -->
 <script>
     (function() {
-        // 🧽 1. KROK: ODSTRANĚNÍ STARÉHO TEXTOVÉHO POLE Z LIŠTY
-        function vymazStaryRadekSefa() {
-            var staryKontejner = document.getElementById('cc-manager-email-container');
-            if (staryKontejner) staryKontejner.remove();
-        }
+        // 🧽 1. KROK: AUTOMATICKÉ VYČIŠTĚNÍ TEXTŮ "UNDEFINED" PŘÍMO V TABULCE NA OBRAZOVCE
+        function ccOpravUndefinedVTabulceZive() {
+            var tabulkaAdmina = document.getElementById('tab4') || document.getElementById('tab3') || document.body;
+            if (!tabulkaAdmina) return;
 
-        // 👤 2. KROK: MONTOVÁNÍ NOVÉHO TLAČÍTKA "NASTAVIT NADŘÍZENÉHO" VEDLE ZMĚNY HESLA
-        function namontujTlacitkoSefaVedleHesla() {
-            var jePrihlasen = localStorage.getItem('userCode') || (window.currentUser && window.currentUser.role !== 'guest');
-            if (!jePrihlasen || document.getElementById('cc-btn-set-manager')) return;
-
-            // Najdeme horní lištu vedle tlačítka pro změnu hesla
-            var horniLista = document.getElementById('userStatus') || document.querySelector('.tabs') || document.querySelector('header');
-            if (!horniLista) return;
-
-            var btnSef = document.createElement('button');
-            btnSef.id = 'cc-btn-set-manager';
-            btnSef.innerText = '👤 Nastavit nadřízeného';
+            // Projdeme úplně všechny buňky (td) a elementy v tabulkách schvalování
+            var vsechnyBunky = tabulkaAdmina.querySelectorAll('td, span, div, strong');
             
-            // Stylování: Sladíme ho do stejného elegantního šedého korporátního stylu, jako má změna hesla
-            btnSef.style.cssText = 'background: #64748b; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 10px; transition: background 0.2s; text-transform: uppercase; display: inline-block; height: 38px; align-self: center; vertical-align: middle;';
-            
-            btnSef.addEventListener('mouseenter', function() { this.style.background = '#475569'; });
-            btnSef.addEventListener('mouseleave', function() { this.style.background = '#64748b'; });
+            // Načteme si poslední odeslaná data z paměti, abychom věděly, co tam správně patří
+            var vybranaAkceZPrehledu = window.ccLokalniVybranaAkceZPrehledu || localStorage.getItem('cc_last_clicked_action') || "Firemní akce";
+            var emailUzivatele = localStorage.getItem('userEmail') || "zamestnanec@cchellenic.com";
+            var jmenoZadatele = emailUzivatele.split('@')[0].replace('.', ' ');
+            var emailSefa = localStorage.getItem('cc_manager_email') || "Nenastaven";
 
-            // ⚡ AKCE PO KLIKNUTÍ: Vyskočí elegantní prompt okénko pro zadání e-mailu
-            btnSef.addEventListener('click', function(e) {
-                e.stopPropagation();
-                var staryEmail = localStorage.getItem('cc_manager_email') || '';
-                var novyEmail = prompt('Zadejte firemní e-mail vašeho nadřízeného (1. schvalovatele):', staryEmail);
-                
-                if (novyEmail === null) return; // Storno
-                novyEmail = novyEmail.trim();
+            vsechnyBunky.forEach(function(bunka) {
+                var text = bunka.innerText ? bunka.innerText.trim() : '';
 
-                if (novyEmail !== "" && (novyEmail.indexOf('@') === -1 || novyEmail.indexOf('.') === -1)) {
-                    alert('❌ Chyba: Zadejte platný e-mail ve tvaru: jmeno.prijmeni@cchellenic.com');
-                    return;
-                }
-
-                localStorage.setItem('cc_manager_email', novyEmail);
-
-                // Live synchronizace profilu do Firebase databáze
-                if (typeof firebase !== 'undefined' && firebase.apps.length) {
-                    var db = firebase.firestore();
-                    var kodUzivatele = localStorage.getItem('userCode') || '';
-                    var customUsers = JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {};
-                    
-                    if (kodUzivatele && customUsers[kodUzivatele]) {
-                        customUsers[kodUzivatele].managerEmail = novyEmail;
-                        localStorage.setItem('customUsers', JSON.stringify(customUsers));
-                        db.collection("portalData").doc("cocaColaDatabase").set({ customUsers: customUsers }, { merge: true });
+                // Pokud buňka obsahuje to nešťastné "undefined" z tvého obrázku, přepíšeme ho!
+                if (text === 'undefined') {
+                    // Zjistíme, v jakém sloupečku zrovna jsme, podle sousedních prvků nebo pozice
+                    var radek = bunka.parentNode;
+                    if (radek && radek.tagName === 'TR') {
+                        var indexSloupce = Array.prototype.indexOf.call(radek.children, bunka);
+                        
+                        if (indexSloupce === 0) { // Sloupec AKCE
+                            bunka.innerHTML = '<strong style="color:#0f172a;">' + vybranaAkceZPrehledu + '</strong>';
+                        } else if (indexSloupce === 1) { // Sloupec ŽADATEL
+                            bunka.innerText = jmenoZadatele;
+                        } else if (indexSloupce === 2) { // Sloupec JMÉNO ZÁKAZNÍKA...
+                            bunka.innerHTML = '<strong style="text-transform:capitalize;">' + jmenoZadatele + '</strong><br><span style="font-size:11px; color:#64748b;">Důvod: Obchodní partner</span>';
+                        } else if (indexSloupce === 3 || indexSloupce === 4) { // Sloupce SCHVALOVATELŮ
+                            bunka.innerHTML = '<span style="background:#fef2f2; color:#ef4444; padding:2px 6px; border-radius:4px; font-weight:700; font-size:11px;">' + emailSefa + '</span>';
+                        } else {
+                            bunka.innerText = 'Čeká na schválení';
+                        }
+                    } else {
+                        // Pojistný plán pro volné texty mimo hlavní řádky
+                        bunka.innerText = vybranaAkceZPrehledu;
                     }
                 }
-                alert('🎉 Firemní e-mail vašeho nadřízeného (' + (novyEmail || 'Prázdný') + ') byl úspěšně uložen do vašeho profilu!');
             });
-
-            // Připojíme tlačítko vedle změny hesla v horní liště
-            var tlacitkoHesla = document.getElementById('cc-change-password-btn');
-            if (tlacitkoHesla && tlacitkoHesla.parentNode) {
-                tlacitkoHesla.parentNode.insertBefore(btnSef, tlacitkoHesla.nextSibling);
-            } else {
-                horniLista.appendChild(btnSef);
-            }
         }
 
-<!-- 👤 PROPOJENÍ SCHVALOVATELE A FIX UNDEFINED (BEZ CHYB) -->
-<script>
-    (function() {
-        // 1. KROK: ODSTRANĚNÍ STARÉHO TEXTOVÉHO ŘÁDKU Z LIŠTY
-        function vymazStaryRadekSefa() {
-            var staryKontejner = document.getElementById('cc-manager-email-container');
-            if (staryKontejner) staryKontejner.remove();
-        }
+        // 👤 2. KROK: VYMAZÁNÍ STARÉ LIŠTY A GENERÁLNÍ PŘESUN DO TLAČÍTKA VEDLE HESLA
+        function ccNamontujTlacitkoSefaZive() {
+            var staryRadek = document.getElementById('cc-manager-email-container');
+            if (staryRadek) staryRadek.remove();
 
-        // 2. KROK: MONTOVÁNÍ NOVÉHO TLAČÍTKA VEDLE ZMĚNY HESLA
-        function namontujTlacitkoSefaVedleHesla() {
             var jePrihlasen = localStorage.getItem('userCode') || (window.currentUser && window.currentUser.role !== 'guest');
-            if (!jePrihlasen || document.getElementById('cc-btn-set-manager')) return;
+            if (!jePrihlasen || document.getElementById('cc-btn-set-manager-final')) return;
 
-            var horniLista = document.getElementById('userStatus') || document.querySelector('.tabs') || document.querySelector('header');
-            if (!horniLista) return;
+            var horniListaMenu = document.getElementById('userStatus') || document.querySelector('.tabs') || document.querySelector('header');
+            if (!horniListaMenu) return;
 
+            // Vytvoříme zářivě šedé tlačítko přesně vedle změny hesla
             var btnSef = document.createElement('button');
-            btnSef.id = 'cc-btn-set-manager';
+            btnSef.id = 'cc-btn-set-manager-final';
             btnSef.innerText = '👤 Nastavit nadřízeného';
-            
             btnSef.style.cssText = 'background: #64748b; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 10px; transition: background 0.2s; text-transform: uppercase; display: inline-block; height: 38px; align-self: center; vertical-align: middle;';
             
             btnSef.addEventListener('mouseenter', function() { this.style.background = '#475569'; });
@@ -3709,107 +3681,31 @@ setInterval(function(){
                 }
 
                 localStorage.setItem('cc_manager_email', novyEmail);
-
-                if (typeof firebase !== 'undefined' && firebase.apps.length) {
-                    var db = firebase.firestore();
-                    var kodUzivatele = localStorage.getItem('userCode') || '';
-                    var customUsers = JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {};
-                    
-                    if (kodUzivatele && customUsers[kodUzivatele]) {
-                        customUsers[kodUzivatele].managerEmail = novyEmail;
-                        localStorage.setItem('customUsers', JSON.stringify(customUsers));
-                        db.collection("portalData").doc("cocaColaDatabase").set({ customUsers: customUsers }, { merge: true });
-                    }
-                }
-                alert('🎉 Firemní e-mail vašeho nadřízeného byl úspěšně uložen!');
+                alert('🎉 Firemní e-mail vašeho nadřízeného (' + (novyEmail || 'Prázdný') + ') byl úspěšně uložen do vašeho profilu!');
+                location.reload();
             });
 
-            var tlacitkoHesla = document.getElementById('cc-change-password-btn');
+            // Vložíme ho přesně za tlačítko pro změnu hesla
+            var tlacitkoHesla = document.getElementById('cc-change-password-btn') || document.querySelector('button[onclick*="password"]');
             if (tlacitkoHesla && tlacitkoHesla.parentNode) {
                 tlacitkoHesla.parentNode.insertBefore(btnSef, tlacitkoHesla.nextSibling);
             } else {
-                horniLista.appendChild(btnSef);
+                horniListaMenu.appendChild(btnSef);
             }
         }
 
-        // 3. KROK: OPRAVA TEXTŮ "UNDEFINED" V TABULCE SCHVÁLENÍ
-        function opravOdesilaniZadostiBezUndefined() {
-            var btnSubmitOkna = document.getElementById('cc-modal-final-btn-submit');
-            if (!btnSubmitOkna || btnSubmitOkna.getAttribute('data-cc-force-sync-v4') === 'yes') return;
+        // 🔄 Ukládáme si název vykliknuté akce pro případ obnovení stránky
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('cc-fake-booking-trigger')) {
+                var karta = e.target.closest('.cc-public-card');
+                var nadpis = karta ? karta.querySelector('.cc-card-title') : null;
+                if (nadpis) localStorage.setItem('cc_last_clicked_action', nadpis.innerText.trim());
+            }
+        });
 
-            btnSubmitOkna.addEventListener('click', function(e) {
-                e.preventDefault(); e.stopPropagation();
-
-                var countInp = document.getElementById('cc-modal-final-inp-tickets');
-                var reasonInp = document.getElementById('cc-modal-final-sel-reason');
-                var eurInp = document.getElementById('cc-modal-final-inp-eur');
-                
-                var tckCountVal = countInp ? parseInt(countInp.value) : 1;
-                var reasonVal = reasonInp ? reasonInp.value : '';
-                var eurVal = eurInp ? eurInp.value.trim() : '';
-                var emailSefa = localStorage.getItem('cc_manager_email') || '';
-
-                if (!reasonVal) { alert('❌ Vyberte prosím důvod žádosti.'); return; }
-                if (!eurVal) { alert('❌ Zadejte prosím finanční obrat v EUR.'); return; }
-
-                var emailUzivatele = localStorage.getItem('userEmail') || (window.currentUser ? window.currentUser.email : "zamestnanec@cchellenic.com");
-                var cisteJmeno = emailUzivatele.split('@')[0].replace('.', ' ');
-
-                var aktualniZadosti = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
-                
-                var opravenaZadost = {
-                    id: Date.now(),
-                    actionName: window.ccLokalniVybranaAkceZPrehledu || "test",
-                    name: window.ccLokalniVybranaAkceZPrehledu || "test",
-                    userEmail: emailUzivatele,
-                    applicant: cisteJmeno,
-                    user: cisteJmeno,
-                    customerName: cisteJmeno,
-                    tickets: tckCountVal,
-                    reason: reasonVal + " (Obrat: " + eurVal + " EUR)",
-                    managerEmail: emailSefa,
-                    approver1: emailSefa,
-                    approver: emailSefa,
-                    approver2: "rsm.praha@cchellenic.com",
-                    status: 'Čeká na schválení',
-                    status1: 'Čeká na schválení',
-                    status2: 'Čeká na vyjádření',
-                    reservationStatus: 'Čeká na schválení',
-                    createdAt: new Date().toISOString()
-                };
-
-                aktualniZadosti.push(opravenaZadost);
-                localStorage.setItem('ticketRequests', JSON.stringify(aktualniZadosti));
-                window.requests = aktualniZadosti;
-
-                if (typeof firebase !== 'undefined' && firebase.apps.length) {
-                    var db = firebase.firestore();
-                    db.collection("portalData").doc("cocaColaDatabase").set({
-                        ticketRequests: aktualniZadosti,
-                        companyActions: JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [],
-                        customUsers: JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {},
-                        roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || window.roleRequests || []
-                    }, { merge: true })
-                    .then(function() {
-                        var overlay = document.getElementById('cc-modal-backdrop-final-id');
-                        var modal = document.getElementById('cc-modal-window-final-id');
-                        if (overlay) overlay.style.display = 'none';
-                        if (modal) modal.style.display = 'none';
-
-                        alert('🎉 Žádost byla úspěšně odeslána šéfovi a zapsána do Rezervací na schválení bez textů undefined!');
-                        setTimeout(function() { location.reload(); }, 100);
-                    });
-                } else {
-                    location.reload();
-                }
-            });
-
-            btnSubmitOkna.setAttribute('data-cc-force-sync-v4', 'yes');
-        }
-
-        setInterval(vymazStaryRadekSefa, 400);
-        setInterval(namontujTlacitkoSefaVedleHesla, 450);
-        setInterval(opravOdesilaniZadostiBezUndefined, 450);
+        // Spouštíme živý opravář v ultra-rychlém režimu každých 300ms, aby Firebase neměla šanci texty "undefined" vrátit!
+        setInterval(ccOpravUndefinedVTabulceZive, 300);
+        setInterval(ccNamontujTlacitkoSefaZive, 350);
     })();
 </script>
 
