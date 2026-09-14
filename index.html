@@ -73,7 +73,71 @@
     #cc-change-password-btn:hover::after {
         background: #475569 !important;
     }
+    // 👤 SKUTEČNÉ TLAČÍTKO NADŘÍZENÉHO V LIŠTĚ (ZÁPIS NA ZAČÁTEK SOUBORU)
+    (function() {
+        function ccNamontujSkutecneTlacitkoSefa() {
+            var staryKontejner = document.getElementById('cc-manager-email-container');
+            if (staryKontejner) staryKontejner.remove();
 
+            // Pokud už tlačítko na svém místě stojí, podruhé ho nevytváříme
+            if (document.getElementById('cc-skutecne-btn-manager')) return;
+
+            // Najdeme původní tlačítko Změnit heslo
+            var tlacitkoHesla = document.getElementById('cc-change-password-btn') || document.querySelector('button[onclick*="password"]');
+            if (!tlacitkoHesla || !tlacitkoHesla.parentNode) return;
+
+            // Vytvoříme zbrusu nové, samostatné šedé korporátní tlačítko
+            var btnSef = document.createElement('button');
+            btnSef.id = 'cc-skutecne-btn-manager';
+            btnSef.innerText = '👤 NASTAVIT NADŘÍZENÉHO';
+            
+            // Styl, který přesně lícuje se Změnou hesla
+            btnSef.style.cssText = 'background: #64748b !important; color: white !important; border: none !important; padding: 6px 12px !important; border-radius: 6px !important; font-size: 11px !important; font-weight: 700 !important; cursor: pointer !important; margin-left: 12px !important; transition: background 0.2s !important; text-transform: uppercase !important; display: inline-block !important; height: 32px !important; vertical-align: middle !important; line-height: 1 !important;';
+            
+            btnSef.addEventListener('mouseenter', function() { this.style.background = '#475569'; });
+            btnSef.addEventListener('mouseleave', function() { this.style.background = '#64748b'; });
+
+            // ⚡ AKCE PO KLIKNUTÍ: Otevře čisté vyskakovací okno s promptem
+            btnSef.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                var staryEmail = localStorage.getItem('cc_manager_email') || '';
+                var novyEmail = prompt('Zadejte firemní e-mail vašeho nadřízeného (1. schvalovatele):', staryEmail);
+                
+                if (novyEmail === null) return; // Storno
+                novyEmail = novyEmail.trim();
+
+                if (novyEmail !== "" && (novyEmail.indexOf('@') === -1 || novyEmail.indexOf('.') === -1)) {
+                    alert('❌ Chyba: Zadejte platný e-mail ve tvaru: jmeno.prijmeni@cchellenic.com');
+                    return;
+                }
+
+                localStorage.setItem('cc_manager_email', novyEmail);
+
+                // Uložíme hned i do online profilu ve Firebase
+                if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                    var db = firebase.firestore();
+                    var kodUzivatele = localStorage.getItem('userCode') || '';
+                    var customUsers = JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {};
+                    
+                    if (kodUzivatele && customUsers[kodUzivatele]) {
+                        customUsers[kodUzivatele].managerEmail = novyEmail;
+                        localStorage.setItem('customUsers', JSON.stringify(customUsers));
+                        db.collection("portalData").doc("cocaColaDatabase").set({ customUsers: customUsers }, { merge: true });
+                    }
+                }
+                alert('🎉 Firemní e-mail vašeho nadřízeného byl úspěšně uložen do vašeho profilu!');
+                location.reload();
+            });
+
+            // Vložíme nové tlačítko hned ZA tlačítko změny hesla
+            tlacitkoHesla.parentNode.insertBefore(btnSef, tlacitkoHesla.nextSibling);
+        }
+
+        // Hlídáme lištu plynule na pozadí, ať tam tlačítko bezpečně stojí
+        setInterval(ccNamontujSkutecneTlacitkoSefa, 400);
+    })();
         :root {
             --cc-red: #e41e26;
             --cc-red-hover: #b81118;
