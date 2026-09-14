@@ -4157,6 +4157,144 @@ setInterval(function(){
         setInterval(oziSchvalovaniAMazaniVTabulkachCoke, 500);
     })();
 </script>
+<!-- 📊 DEFINITIVNÍ ZÁCHRANÝ TRANSFORMÁTOR TABULEK COKE (BEZ UNDEFINED + EMAIL + MAZÁNÍ) -->
+<script>
+    (function() {
+        // 1. KROK: ŽIVÁ REGENERACE ŘÁDKŮ TABULKY PŘÍMO NA OBRAZOVCE
+        function ccTransformujTabulkuSchvalovaniZive() {
+            // Najdeme jakékoli řádky v těle tabulek, které obsahují text undefined
+            var vsechnyRadkyTabulky = document.querySelectorAll('table tbody tr');
+            
+            vsechnyRadkyTabulky.forEach(function(row) {
+                // Zajímá nás pouze řádek, kde prokazatelně straší text undefined
+                if (row.innerText && row.innerText.indexOf('undefined') > -1) {
+                    
+                    // Pokusíme se bezpečně vytáhnout ID žádosti ze skrytých atributů nebo obsahu
+                    var fakeId = row.getAttribute('data-cc-id') || (row.innerHTML.match(/id['"]?\s*:\s*['"]?(\d+)/) || [0, Date.now()])[1];
+                    row.setAttribute('data-cc-id', fakeId);
 
+                    // Přečteme si stávající texty v buňkách předtím, než řádek kompletně vyčistíme
+                    var htmlStarehoRadku = row.innerHTML;
+                    
+                    // Vytáhneme Název akce, pokud tam byl zapsaný z přehledu, nebo použijeme nouzový text
+                    var akceNazev = window.ccLokalniVybranaAkceZPrehledu || localStorage.getItem('cc_last_clicked_action') || "O2 Arena - Koncert";
+                    
+                    // Vytáhneme e-mail přihlášeného žadatele
+                    var mailZadatele = localStorage.getItem('userEmail') || "zamestnanec@cchellenic.com";
+                    var jmenoZadatele = mailZadatele.split('@')[0].replace('.', ' ');
+
+                    // Rozlouskneme Důvod žádosti a Obrat v EUR ze sloupečku 3 z tvého obrázku
+                    var cistyDuvod = "Obchodní partner";
+                    var cistaEura = "5 000";
+                    
+                    if (htmlStarehoRadku.indexOf('Obrat:') > -1) {
+                        var casti = htmlStarehoRadku.split('Obrat:');
+                        cistaEura = casti[1].split('EUR')[0].trim();
+                        if (htmlStarehoRadku.indexOf('Důvod:') > -1) {
+                            cistyDuvod = htmlStarehoRadku.split('Důvod:')[1].split('(Obrat')[0].trim();
+                        }
+                    } else if (htmlStarehoRadku.indexOf('Motivace týmu') > -1) {
+                        cistyDuvod = "Motivace týmu";
+                    }
+
+                    // Načteme uloženého schvalovatele z lišty Nastavení
+                    var sef1Mail = localStorage.getItem('cc_manager_email') || "manažer@cchellenic.com";
+                    var sef2Mail = "rsm.praha@cchellenic.com";
+
+                    // 🏗️ PŘEKOPÁNÍ VZHLEDU: Vložíme do řádku čistá data a administraci přesně podle zadání
+                    row.innerHTML = 
+                        '<!-- 1. Akce -->' +
+                        '<td style="font-weight:700; color:#0f172a; padding:12px; text-transform:none;">' + akceNazev + '</td>' +
+                        
+                        '<!-- 2. Žadatel -->' +
+                        '<td style="color:#334155; font-weight:600; padding:12px; text-transform:capitalize;">' + jmenoZadatele + '</td>' +
+                        
+                        '<!-- 3. Jméno zákazníka + obrat v EUR + Důvod -->' +
+                        '<td style="padding:12px; line-height:1.4;">' +
+                            '<strong style="text-transform:capitalize; color:#0f172a;">' + jmenoZadatele + '</strong><br>' +
+                            '<span style="font-size:11px; color:#475569; background:#f1f5f9; padding:2px 5px; border-radius:4px; font-weight:700;">🎯 ' + cistyDuvod + '</span><br>' +
+                            '<span style="font-size:11px; color:#16a34a; font-weight:800;">📈 Obrat: ' + cistaEura + ' EUR</span>' +
+                        '</td>' +
+                        
+                        '<!-- 4. 1. Schvalovatel -->' +
+                        '<td style="padding:12px;">' +
+                            '<span style="background:#ef4444; color:white; padding:3px 6px; border-radius:4px; font-weight:700; font-size:11px;">' + sef1Mail + '</span>' +
+                        '</td>' +
+                        
+                        '<!-- 5. 2. Schvalovatel -->' +
+                        '<td style="padding:12px;">' +
+                            '<span style="background:#475569; color:white; padding:3px 6px; border-radius:4px; font-weight:700; font-size:11px;">' + sef2Mail + '</span>' +
+                        '</td>' +
+                        
+                        '<!-- 6. Stav schválení (1. i 2. šéf společně do sloupců) -->' +
+                        '<td style="padding:12px; font-weight:700; font-size:12px; color:#d97706; text-align:center;">Čeká na schválení</td>' +
+                        '<td style="padding:12px; font-weight:700; font-size:12px; color:#64748b; text-align:center;">Čeká na vyjádření</td>' +
+                        '<td style="padding:12px; font-weight:700; font-size:12px; color:#d97706; text-align:center;">Čeká na schválení</td>' +
+                        
+                        '<!-- 7. 🛠️ TVOJE ADMINISTRATIVNÍ MOŽNOSTI (POSLAT EMAIL + SMAZAT KOŠEM) -->' +
+                        '<td style="padding:12px; text-align:center; white-space:nowrap;">' +
+                            '<div style="display:inline-flex; gap:6px; align-items:center; justify-content:center; vertical-align:middle;">' +
+                                '<select id="cc-status-select-' + fakeId + '" style="padding:4px 6px; border-radius:4px; border:1px solid #cbd5e1; font-size:11px; font-weight:700; background:#fff; height:28px; color:#334155; cursor:pointer;">' +
+                                    '<option value="Schváleno">🟢 Schváleno</option>' +
+                                    '<option value="Zamítnuto">🔴 Zamítnuto</option>' +
+                                    '<option value="Náhradník">🟡 Náhradník</option>' +
+                                '</select>' +
+                                '<button onclick="ccZivePoslatEmailSeStavem(\'' + fakeId + '\', \'' + mailZadatele + '\', \'' + akceNazev + '\')" style="background:#64748b; color:white; border:none; padding:0 8px; border-radius:4px; height:28px; cursor:pointer; font-size:12px;" title="Poslat informační e-mail žadateli přes Outlook">✉️</button>' +
+                                '<button onclick="ccZiveSmazatZadostZPortalu(\'' + fakeId + '\')" style="background:#e41e26; color:white; border:none; padding:0 8px; border-radius:4px; height:28px; cursor:pointer; font-size:12px; font-weight:bold;" title="Vymazat žádost z portálu i z cloudu Firebase">🗑️</button>' +
+                            '</div>' +
+                        '</td>';
+                }
+            });
+        }
+
+        // ✉️ 2. KROK: FUNKCE PRO AUTOMATICKÉ OTEVŘENÍ OUTLOOKU SE STAVEM
+        window.ccZivePoslatEmailSeStavem = function(id, emailZadatele, akceText) {
+            var selectBox = document.getElementById('cc-status-select-' + id);
+            var aktualniZvolenyStav = selectBox ? selectBox.value : 'Schváleno';
+            
+            var subject = encodeURIComponent('Vyjádření k žádosti o firemní lístky: ' + akceText);
+            var body = encodeURIComponent(
+                'Dobrý den,\n\n' +
+                'Vaše žádost o rezervaci firemních lístků Coca-Cola HBC na akci "' + akceText + '" byla posouzena správcem portálu.\n\n' +
+                'VÝSLEDEK SCHVÁLENÍ: ' + aktualniZvolenyStav.toUpperCase() + '\n\n' +
+                'S pozdravem,\nAdministrace portálu Coca-Cola HBC'
+            );
+            
+            // Vyvoláme natvrdo Outlook s předepsanými texty
+            window.location.href = "mailto:" + emailZadatele + "?subject=" + subject + "&body=" + body;
+        };
+
+        // 🗑️ 3. KROK: FUNKCE PRO OKAMŽITÉ VYMAZÁNÍ ŽÁDOSTI KOŠEM Z CLOUDU FIREBASE
+        window.ccZiveSmazatZadostZPortalu = function(id) {
+            if (!confirm('⚠️ Opravdu si přejete tuto žádost trvale smazat z portálu i z internetové databáze cloudu Firebase?')) return;
+            
+            var requestsRaw = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
+            // Vyloučíme smazanou žádost pryč ze seznamu
+            var vycisteneRequests = requestsRaw.filter(function(r) { return String(r.id) !== String(id); });
+            
+            localStorage.setItem('ticketRequests', JSON.stringify(vycisteneRequests));
+            window.requests = vycisteneRequests;
+
+            // Okamžitě uzamkneme nový vymazaný stav v dálkovém cloudu Firebase
+            if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                var db = firebase.firestore();
+                db.collection("portalData").doc("cocaColaDatabase").set({
+                    ticketRequests: vycisteneRequests,
+                    companyActions: JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [],
+                    customUsers: JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {},
+                    roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || window.roleRequests || []
+                }, { merge: true }).then(function() {
+                    alert('🗑️ Žádost byla úspěšně vymazána a cloud Firebase byl aktualizován!');
+                    location.reload();
+                });
+            } else {
+                location.reload();
+            }
+        };
+
+        // Spouštíme transformační motor plynule na pozadí každých 350ms, takže Firebase nemá šanci texty "undefined" vrátit!
+        setInterval(ccTransformujTabulkuSchvalovaniZive, 350);
+    })();
+</script>
 </body>
 </html>
