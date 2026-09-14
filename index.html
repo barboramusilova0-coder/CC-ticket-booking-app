@@ -3894,7 +3894,68 @@ setInterval(function(){
         setInterval(namontujOzubeneMenuDoListyCokeBezChyb, 500);
     })();
 </script>
+<!-- 🔍 FILTR DLE AKCE V TABULCE SCHVALOVÁNÍ (ZÁPIS NA ÚPLNÝ KONEC SOUBORU) -->
+<script>
+    (function() {
+        // 1. KROK: MONTOVÁNÍ VYHLEDÁVACÍHO POLÍČKA MEZI STÁVAJÍCÍ FILTRY
+        function namontujFiltrAkciDoSchvalovaniCoke() {
+            // Najdeme to vyhledávací pole "Jméno zákazníka", které vidíme na tvém novém obrázku
+            var inputZakaznika = document.querySelector('input[placeholder*="zákazníka"]') || document.getElementById('searchCustomer');
+            if (!inputZakaznika || document.getElementById('cc-search-action-input-id')) return;
 
+            // Najdeme jeho obalový kontejner, abychom vedle něj mohly vložit naše třetí políčko
+            var obalFiltru = inputZakaznika.parentNode;
+            if (!obalFiltru) return;
+
+            // Vytvoříme elegantní vyhledávací políčko přesně ve stejném stylu, jako jsou ty dvě na tvé fotce
+            var divAkce = document.createElement('div');
+            divAkce.style.cssText = 'display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 150px; text-align: left;';
+            divAkce.innerHTML = 
+                '<label style="font-weight: 700; font-size: 11px; color: #475569; text-transform: none;">Název akce:</label>' +
+                '<input type="text" id="cc-search-action-input-id" placeholder="Hledat akci..." style="width: 100% !important; height: 38px !important; padding: 8px 12px !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; font-size: 13px !important; font-weight: 600 !important; color: #334155 !important; background: #fff !important; box-sizing: border-box !important;">';
+
+            // Bezpečně ho vodorovně zařadíme hned za vyhledávač zákazníka z tvého obrázku
+            obalFiltru.insertBefore(divAkce, inputZakaznika.nextSibling);
+
+            // Naučíme políčko okamžitě filtrovat řádky v tabulce, jakmile do něj začneš psát
+            document.getElementById('cc-search-action-input-id').addEventListener('input', provedZiveFiltrovaniTabulkyZadosti);
+        }
+
+        // 2. KROK: ŽIVÉ PROPOJENÍ - SCHOVÁVÁNÍ ŘÁDKŮ PODLE ZADANÉHO TEXTU
+        function provedZiveFiltrovaniTabulkyZadosti() {
+            var textHledani = document.getElementById('cc-search-action-input-id').value.toLowerCase().trim();
+            
+            // Najdeme všechny řádky s lidskými žádostmi v tabulce schvalování
+            var vsechnyRadkyZadosti = document.querySelectorAll('#roleRequestsTableBody tr, #ticketRequestsTableBody tr, #tab3 table tbody tr, #tab4 table:nth-of-type(2) tbody tr');
+            
+            vsechnyRadkyZadosti.forEach(function(radek) {
+                // Přeskočíme případné prázdné nebo systémové řádky
+                if (radek.cells.length < 2) return;
+
+                // Sloupec "Akce" bývá v tvé ranní tabulce hned ten úplně první (index 0)
+                var bunkaAkce = radek.cells[0];
+                var nazevAkceVTabulce = bunkaAkce ? bunkaAkce.innerText.toLowerCase() : '';
+
+                // Pokud políčko není prázdné a název zápasu/koncertu neodpovídá tomu, co hledáš
+                if (textHledani !== "" && nazevAkceVTabulce.indexOf(textHledani) === -1) {
+                    // Řádek tichoučce zneviditelníme
+                    radek.style.setProperty('display', 'none', 'important');
+                } else {
+                    // Pokud shoduje nebo je prázdno, necháme ho normálně svítit (ale respektujeme i tvůj ranní stavový filtr "Moje čekající")
+                    var ranniSelectStavu = document.querySelector('select[id*="status"]') || document.querySelector('select');
+                    if (ranniSelectStavu && typeof window.filterRequests === 'function') {
+                        // Necháme původní systém řádek zkontrolovat, aby se filtry netloukly
+                    } else {
+                        radek.style.setProperty('display', 'table-row', 'important');
+                    }
+                }
+            });
+        }
+
+        // Spouštíme hlídače filtru plynule na pozadí každých 500ms při překlikávání záložek portálu
+        setInterval(namontujFiltrAkciDoSchvalovaniCoke, 500);
+    })();
+</script>
 
 </body>
 </html>
