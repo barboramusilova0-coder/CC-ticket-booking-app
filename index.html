@@ -3079,7 +3079,7 @@ function ccParticle(char,kind){
 }
 function ccBall(){
     var box=document.getElementById('cc-season-effects');if(!box)return;
-    var el=document.createElement('span');el.className='cc-summer-ball';el.textContent=['🏖️','⚽','🏐'][Math.floor(Math.random()*3)];el.style.left=(5+Math.random()*90)+'%';el.style.fontSize=(32+Math.random()*24)+'px';box.appendChild(el);setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},5000);
+    var el=document.createElement('span');el.className='cc-summer-ball';el.textContent=['🌞','⚽','🏐'][Math.floor(Math.random()*3)];el.style.left=(5+Math.random()*90)+'%';el.style.fontSize=(32+Math.random()*24)+'px';box.appendChild(el);setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},5000);
 }
 function ccApplySeason(mode,save){
     if(!CC_SEASONS[mode])mode='autumn';
@@ -3092,7 +3092,7 @@ function ccApplySeason(mode,save){
         var snow=['❄','❅','❆','✦','·'];for(var i=0;i<12;i++)(function(i){setTimeout(function(){ccParticle(snow[Math.floor(Math.random()*snow.length)],'snow');},i*500);})();
         ccSeasonTimers.push(setInterval(function(){ccParticle(snow[Math.floor(Math.random()*snow.length)],'snow');},850));
     }else if(mode==='spring'){
-        var flowers=['🌸','🌷','🌼','🌺'];for(var j=0;j<7;j++)(function(j){setTimeout(function(){ccParticle(flowers[Math.floor(Math.random()*flowers.length)],'flower');},j*650);})();
+        var flowers=['🌸','🐥','🐣','🌸'];for(var j=0;j<7;j++)(function(j){setTimeout(function(){ccParticle(flowers[Math.floor(Math.random()*flowers.length)],'flower');},j*650);})();
         ccSeasonTimers.push(setInterval(function(){ccParticle(flowers[Math.floor(Math.random()*flowers.length)],'flower');},1100));
     }else if(mode==='summer'){
         for(var k=0;k<3;k++)setTimeout(ccBall,k*900);
