@@ -3070,9 +3070,8 @@ setInterval(function(){
         font-weight: 600 !important;
     }
 </style>
-<!-- 🗛 ZÁCHRANNÝ ENGINE PRO OKAMŽITÉ ZOBRAZENÍ DLAŽDIC V PŘEHLEDU -->
+<!-- 🗛 ZÁCHRANNÝ ENGINE S POJISTKOU PROTI BLIKÁNÍ PRÁZDNÝCH DLAŽDIC -->
 <style>
-    /* Unikátní vzhled řady přepínačů, který ranní kód neumí zablokovat */
     .coke-filter-row-final {
         display: flex !important;
         gap: 12px !important;
@@ -3104,7 +3103,6 @@ setInterval(function(){
         box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
     }
 
-    /* Červené nasvícení aktivní vybrané dlaždice */
     .coke-filter-tile-final.cc-active-selected {
         border-color: #e41e26 !important;
         background: #fef2f2 !important;
@@ -3116,7 +3114,6 @@ setInterval(function(){
         font-size: 13px !important;
         color: #0f172a !important;
         margin: 0 0 2px 0 !important;
-        text-transform: none !important;
         line-height: 1.2 !important;
     }
     .coke-filter-tile-final span {
@@ -3131,15 +3128,12 @@ setInterval(function(){
         window.ccGlobalniZvolenyFiltrOstre = "vse";
 
         function vynutVykresleniAOdblokovaniDlazdic() {
-            // Najdeme plochu naší záložky Přehled akcí
             var plochaPrehledu = document.getElementById('tab-prehled-akci-coke-content');
             if (!plochaPrehledu || document.getElementById('cc-coke-filter-row-final-id')) return;
 
-            // 🧽 POJISTKA: Pokud na stránce visí staré blokující styly z Kroku 1, natvrdo je vypneme, aby neodstřihly nové dlaždice
             var blokujiciElementy = document.querySelectorAll('style');
             blokujiciElementy.forEach(function(st) {
                 if (st.innerHTML.indexOf('.tiles-grid') > -1 && st.innerHTML.indexOf('display: none') > -1) {
-                    // Upravíme starý styl, aby neblokoval naše nové unikátní třídy
                     st.innerHTML = st.innerHTML.replace('display: none !important', '');
                 }
             });
@@ -3156,7 +3150,6 @@ setInterval(function(){
                 '<div class="coke-filter-tile-final" data-cat="slavia"><h4>SKS Slavia</h4><span>Akce SKS Slavia</span></div>' +
                 '<div class="coke-filter-tile-final" data-cat="specialni"><h4>Speciální akce</h4><span>Mimořádné akce</span></div>';
 
-            // Vložíme řadu přímo nad ten čistý kontejner s kartami akcí
             var cilovyGrid = document.getElementById('cc-clean-cards-grid-container');
             if (cilovyGrid) {
                 cilovyGrid.parentNode.insertBefore(radek, cilovyGrid);
@@ -3164,7 +3157,6 @@ setInterval(function(){
                 plochaPrehledu.appendChild(radek);
             }
 
-            // Naučíme dlaždice filtrovat na jedno kliknutí
             radek.querySelectorAll('.coke-filter-tile-final').forEach(function(tile) {
                 tile.addEventListener('click', function() {
                     radek.querySelectorAll('.coke-filter-tile-final').forEach(function(t) { t.classList.remove('cc-active-selected'); });
@@ -3177,8 +3169,11 @@ setInterval(function(){
         }
 
         function provedBleskoveFiltrovaniKaretCoke() {
+            var gridContainer = document.getElementById('cc-clean-cards-grid-container');
             var karty = document.querySelectorAll('.cc-public-card');
             
+            var pocetViditelnychKaret = 0;
+
             karty.forEach(function(k) {
                 var textKartyMaly = (k.innerText || "").toLowerCase();
                 var splnujeFiltr = false;
@@ -3186,7 +3181,6 @@ setInterval(function(){
                 if (window.ccGlobalniZvolenyFiltrOstre === 'vse') {
                     splnujeFiltr = true;
                 } else {
-                    // Porovnáváme čistě v malých písmenech (vyřeší "KATEGORIE: FOTBAL")
                     if (textKartyMaly.indexOf(window.ccGlobalniZvolenyFiltrOstre) > -1) {
                         splnujeFiltr = true;
                     }
@@ -3194,17 +3188,32 @@ setInterval(function(){
 
                 if (splnujeFiltr) {
                     k.style.setProperty('display', 'inline-block', 'important');
+                    pocetViditelnychKaret++;
                 } else {
                     k.style.setProperty('display', 'none', 'important');
                 }
             });
+
+            // 🔥 POJISTKA PROTI BLIKÁNÍ: Pokud v dané dlaždici není žádná akce, vytvoříme pevný textový bod
+            var existujiciHlaska = document.getElementById('cc-empty-filter-message');
+            if (pocetViditelnychKaret === 0 && window.ccGlobalniZvolenyFiltrOstre !== 'vse') {
+                if (!existujiciHlaska && gridContainer) {
+                    var msg = document.createElement('div');
+                    msg.id = 'cc-empty-filter-message';
+                    msg.style.cssText = 'color:#64748b; font-size:13px; font-weight:600; padding:30px 10px; text-align:left; width:100%; font-style:italic;';
+                    msg.innerText = '✨ V této kategorii momentálně nejsou k dispozici žádné firemní lístky.';
+                    gridContainer.parentNode.insertBefore(msg, gridContainer.nextSibling);
+                }
+            } else {
+                if (existujiciHlaska) existujiciHlaska.remove();
+            }
         }
 
-        // Kontrolujeme a držíme dlaždice odemčené každých 400ms na pozadí
         setInterval(vynutVykresleniAOdblokovaniDlazdic, 400);
         setInterval(provedBleskoveFiltrovaniKaretCoke, 450);
     })();
 </script>
+
 
 </body>
 </html>
