@@ -3828,13 +3828,18 @@ setInterval(function(){
             dropdownContainer.id = 'cc-dropdown-settings-container-id';
             dropdownContainer.className = 'cc-dropdown-settings';
 
+                       // Posuneme celé menu úplně doprava na samotný okraj lišty
+            dropdownContainer.style.cssText = 'position: relative !important; display: inline-block !important; margin-left: auto !important; vertical-align: middle !important;';
+
+            // Vytvoříme čistě jen ozubené kolečko a rozevírací menu pod ním
             dropdownContainer.innerHTML = 
-                '<button id="cc-trigger-btn-id" class="cc-settings-trigger-btn">⚙️ Nastavení</button>' +
-                '<div id="cc-menu-box-id" class="cc-dropdown-menu-box">' +
+                '<button id="cc-trigger-btn-id" class="cc-settings-trigger-btn" style="padding: 6px 10px !important; font-size: 14px !important; min-width: 32px !important; justify-content: center !important;" title="Nastavení portálu">⚙️</button>' +
+                '<div id="cc-menu-box-id" class="cc-dropdown-menu-box" style="right: 0 !important; left: auto !important;">' +
                     '<button id="cc-item-pass-id" class="cc-dropdown-item-link">🔑 Změnit heslo</button>' +
                     '<div class="cc-dropdown-divider"></div>' +
                     '<button id="cc-item-manager-id" class="cc-dropdown-item-link">👤 Nastavit nadřízeného</button>' +
                 '</div>';
+
 
             ranniBtnHesla.parentNode.insertBefore(dropdownContainer, ranniBtnHesla.nextSibling);
 
