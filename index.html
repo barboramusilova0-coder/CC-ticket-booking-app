@@ -2848,5 +2848,286 @@ window.deleteCompanyAction = function(id) {
         setInterval(srovnejZalozkyAdminaDoJedneRoviny, 400);
     })();
 </script>
+
+<!-- =========================================================
+     CC FINAL UX LAYER: obrázky, tooltipy, filtrace akcí a sezónní vzhled
+     ========================================================= -->
+<style id="cc-final-ux-layer">
+.cc-event-card{position:relative!important;padding:0!important;overflow:visible!important;background:transparent!important;border:0!important;box-shadow:none!important;transform-origin:center top!important;z-index:1;transition:transform .22s ease,filter .22s ease!important;}
+.cc-event-card:hover{transform:scale(1.035)!important;z-index:50!important;filter:drop-shadow(0 12px 20px rgba(15,23,42,.14))!important;}
+.cc-event-card .cc-event-image{position:relative;width:100%;height:230px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#e2e8f0,#f8fafc);border:1px solid var(--border);box-shadow:0 5px 18px rgba(15,23,42,.07);background-size:cover;background-position:center;}
+.cc-event-card .cc-event-image::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(15,23,42,.82) 0%,rgba(15,23,42,.18) 55%,rgba(15,23,42,0) 100%);pointer-events:none;}
+.cc-event-card .cc-event-overlay{position:absolute;left:0;right:0;bottom:0;padding:18px;color:#fff;z-index:2;}
+.cc-event-card .cc-event-overlay h3{color:#fff!important;margin:7px 0 5px!important;font-size:19px!important;text-shadow:0 1px 3px rgba(0,0,0,.35);}
+.cc-event-card .cc-event-overlay .cc-event-category{background:rgba(255,255,255,.9);color:#334155;font-size:10px;}
+.cc-event-card .cc-event-overlay .cc-event-meta{color:#fff;font-size:12px;line-height:1.5;text-shadow:0 1px 3px rgba(0,0,0,.35);}
+.cc-event-card .cc-event-info{margin-top:10px;padding:12px 14px;border-radius:12px;background:#fff;border:1px solid #dbe3ec;box-shadow:0 12px 28px rgba(15,23,42,.16);color:#334155;font-size:13px;line-height:1.55;text-align:left;position:absolute;left:0;right:0;top:calc(100% - 4px);z-index:100;opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease,visibility .18s ease;pointer-events:none;}
+.cc-event-card:hover .cc-event-info{opacity:1;visibility:visible;transform:translateY(0);}
+.cc-event-card .cc-event-info strong{display:block;color:#0f172a;margin-bottom:4px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;}
+.cc-event-card .cc-event-actions{margin-top:12px;padding:0;}
+.cc-event-card .cc-event-reserve{margin-top:0!important;width:100%;}
+.cc-event-card .cc-event-capacity{margin-top:10px;padding-top:0;border-top:0;color:#fff;font-size:12px;text-shadow:0 1px 3px rgba(0,0,0,.35);}
+.cc-admin-upload-box{margin-top:16px;padding:15px;border:1px solid var(--border);border-radius:12px;background:#f8fafc;}
+.cc-admin-upload-box label{font-weight:700;font-size:13px;color:#334155;display:block;margin-bottom:6px;}
+.cc-admin-upload-box input[type=file]{width:100%;box-sizing:border-box;padding:9px;border:1px dashed #94a3b8;border-radius:8px;background:#fff;cursor:pointer;}
+.cc-image-preview{display:none;margin-top:10px;width:150px;height:85px;border-radius:10px;object-fit:cover;border:1px solid var(--border);}
+.cc-season-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:14px;}
+.cc-season-card{border:1px solid #dbe3ec;background:#fff;border-radius:14px;padding:15px 10px;cursor:pointer;text-align:center;transition:.18s ease;min-height:112px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-sizing:border-box;}
+.cc-season-card:hover{transform:translateY(-2px);box-shadow:0 7px 18px rgba(15,23,42,.09);border-color:#94a3b8;}
+.cc-season-card.active{border:2px solid var(--cc-red);box-shadow:0 6px 18px rgba(228,30,38,.12);}
+.cc-season-card .cc-season-icon{font-size:30px;line-height:1;margin-bottom:9px;}
+.cc-season-card strong{font-size:12px;color:#0f172a;}
+.cc-season-card small{font-size:10px;color:#64748b;margin-top:4px;line-height:1.3;}
+.cc-season-status{margin-top:10px;padding:9px 12px;border-radius:9px;background:#f8fafc;color:#475569;font-size:12px;font-weight:700;text-align:center;}
+@media(max-width:900px){.cc-season-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
+@media(max-width:600px){.cc-season-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.cc-event-card .cc-event-info{position:relative;top:auto;left:auto;right:auto;opacity:1;visibility:visible;transform:none;margin-top:8px;pointer-events:auto;}.cc-event-card:hover{transform:none!important;filter:none!important;}.cc-event-card .cc-event-image{height:210px;}}
+
+/* Sezónní efekty */
+#cc-season-effects{position:fixed;inset:0;pointer-events:none;z-index:99998;overflow:hidden;}
+.cc-season-particle{position:absolute;top:-60px;user-select:none;pointer-events:none;animation:ccSeasonFall linear forwards;}
+@keyframes ccSeasonFall{0%{transform:translate3d(0,-60px,0) rotate(0deg);opacity:0}8%{opacity:.9}50%{transform:translate3d(45px,52vh,0) rotate(180deg)}92%{opacity:.85}100%{transform:translate3d(-25px,108vh,0) rotate(360deg);opacity:0}}
+.cc-summer-ball{position:absolute;bottom:-70px;animation:ccSummerBounce 4.2s cubic-bezier(.35,.05,.65,.95) forwards;}
+@keyframes ccSummerBounce{0%{transform:translate3d(0,80px,0) rotate(0deg);opacity:0}8%{opacity:.95}25%{transform:translate3d(20px,-42vh,0) rotate(90deg)}48%{transform:translate3d(-25px,0,0) rotate(210deg)}67%{transform:translate3d(35px,-20vh,0) rotate(300deg)}84%{transform:translate3d(-15px,0,0) rotate(390deg);opacity:.9}100%{transform:translate3d(20px,90px,0) rotate(500deg);opacity:0}}
+
+/* Ikonka obnovovacího tlačítka podle zvoleného režimu */
+body.cc-season-autumn .cc-refresh-btn::before{content:'🎃'!important;}
+body.cc-season-normal .cc-refresh-btn::before{content:''!important;opacity:0!important;}
+body.cc-season-winter .cc-refresh-btn::before{content:'🎄'!important;opacity:.8!important;}
+body.cc-season-spring .cc-refresh-btn::before{content:'🥚'!important;opacity:.85!important;}
+body.cc-season-summer .cc-refresh-btn::before{content:'☀️'!important;opacity:.8!important;}
+</style>
+
+<script id="cc-final-ux-script">
+(function(){
+'use strict';
+
+function ccActions(){
+    try { return JSON.parse(localStorage.getItem('companyActions')) || (typeof companyActions!=='undefined'?companyActions:[]) || []; }
+    catch(e){ return (typeof companyActions!=='undefined'?companyActions:[]) || []; }
+}
+function ccEsc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+function ccFmtDate(v){if(!v)return '';var p=String(v).split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:String(v);}
+function ccKnownCategory(a){return a && (a.category==='O2 Arena'||a.category==='Fotbal'||a.category==='SKS Slavia'||a.category==='Reprezentace') ? a.category : '';}
+
+/* ---------- Obrázek akce při vytváření nové akce ---------- */
+function installActionImageFields(){
+    var form=document.querySelector('#tab4 form[onsubmit*="handleCreateActionSubmit"]');
+    if(!form || document.getElementById('cc-admin-image-box')) return;
+    var box=document.createElement('div');
+    box.id='cc-admin-image-box';
+    box.className='cc-admin-upload-box';
+    box.innerHTML='<label for="cc-action-image">🖼️ Obrázek akce do dlaždice:</label>'+
+        '<div style="font-size:11px;color:#64748b;margin-bottom:8px;line-height:1.4;">Obrázek bude použit jako pozadí dlaždice v záložce Plánované akce. Doporučený je vodorovný obrázek.</div>'+
+        '<input type="file" id="cc-action-image" accept="image/*">'+
+        '<img id="cc-action-image-preview" class="cc-image-preview" alt="Náhled obrázku akce">'+
+        '<label for="cc-action-description" style="margin-top:14px;">📝 Informace o akci:</label>'+
+        '<textarea id="cc-action-description" rows="4" placeholder="Sem napište informace, které se zobrazí při najetí na dlaždici…" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;resize:vertical;font-family:inherit;font-size:13px;"></textarea>';
+    var cap=document.getElementById('actNewCapacity');
+    if(cap && cap.parentElement) cap.parentElement.insertAdjacentElement('afterend',box); else form.insertBefore(box,form.lastElementChild);
+    var input=document.getElementById('cc-action-image'), preview=document.getElementById('cc-action-image-preview');
+    input.addEventListener('change',function(){
+        var file=input.files&&input.files[0];
+        if(!file){preview.style.display='none';return;}
+        var reader=new FileReader();
+        reader.onload=function(){preview.src=reader.result;preview.style.display='block';};
+        reader.readAsDataURL(file);
+    });
+}
+
+function ccCompressImage(file, done){
+    if(!file){done('');return;}
+    var reader=new FileReader();
+    reader.onload=function(){
+        var img=new Image();
+        img.onload=function(){
+            var max=1100, scale=Math.min(1,max/Math.max(img.width,img.height));
+            var canvas=document.createElement('canvas');
+            canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));
+            var ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,canvas.width,canvas.height);
+            done(canvas.toDataURL('image/jpeg',.72));
+        };
+        img.onerror=function(){done(reader.result);}; img.src=reader.result;
+    };
+    reader.onerror=function(){done('');};reader.readAsDataURL(file);
+}
+
+/* ---------- Vytvoření akce: vždy uloží kategorii + obrázek + popis ---------- */
+function installCreateOverride(){
+    window.handleCreateActionSubmit=function(e){
+        e.preventDefault();
+        var cat=document.getElementById('actNewCategory')?document.getElementById('actNewCategory').value:'';
+        var sub=document.getElementById('actNewSubcategory')?document.getElementById('actNewSubcategory').value:'';
+        if(!cat){alert('Vyberte kategorii akce.');return;}
+        if(cat==='O2 Arena'&&!sub){alert('U akce O2 Arena vyberte Koncert nebo Hokej.');return;}
+        var name=(document.getElementById('actNewName')||{}).value||'';
+        name=name.trim();
+        if(!name){alert('Vyplňte název akce.');return;}
+        var imageInput=document.getElementById('cc-action-image');
+        var description=((document.getElementById('cc-action-description')||{}).value||'').trim();
+        var file=imageInput&&imageInput.files?imageInput.files[0]:null;
+        var finish=function(imageData){
+            var list=ccActions();
+            var action={
+                id:Date.now(),name:name,
+                date:document.getElementById('actNewDate').value,
+                time:document.getElementById('actNewTime').value,
+                place:document.getElementById('actNewPlace').value.trim(),
+                capacity:parseInt(document.getElementById('actNewCapacity').value)||0,
+                category:cat,subcategory:sub,status:'Aktivní',
+                image:imageData||'',description:description
+            };
+            list.push(action);
+            localStorage.setItem('companyActions',JSON.stringify(list));
+            try{companyActions=list;}catch(err){}
+            e.target.reset();
+            var subEl=document.getElementById('actNewSubcategory');if(subEl)subEl.innerHTML='<option value="">-- Pro O2 Arena vyberte Koncert/Hokej --</option>';
+            var prev=document.getElementById('cc-action-image-preview');if(prev){prev.src='';prev.style.display='none';}
+            try{if(typeof renderAdminSection==='function')renderAdminSection();}catch(err){}
+            try{if(typeof updateActionSelectOptions==='function')updateActionSelectOptions();}catch(err){}
+            try{if(typeof renderPlannedEvents==='function')renderPlannedEvents();}catch(err){}
+            try{if(typeof window.renderPlannedEvents==='function')window.renderPlannedEvents();}catch(err){}
+            alert('Akce byla vytvořena a zařazena do kategorie '+cat+(sub?' – '+sub:'')+'.');
+        };
+        if(file){
+            ccCompressImage(file,finish);
+        }else finish('');
+    };
+}
+
+/* ---------- Nová rezervace: robustní synchronizace seznamu akcí ---------- */
+function refreshReservationActionData(){
+    var list=ccActions().filter(function(a){return a.status==='Aktivní'||!a.status;});
+    var sel=document.getElementById('actionSelect');
+    if(sel){
+        var current=sel.value;
+        var html='<option value="">-- Vyberte akci --</option>';
+        list.forEach(function(a){html+='<option value="'+ccEsc(a.name)+'">'+ccEsc(a.name)+'</option>';});
+        if(sel.innerHTML!==html)sel.innerHTML=html;
+        if(list.some(function(a){return a.name===current;}))sel.value=current;
+    }
+    var filter=document.getElementById('cc-action-filter');
+    if(filter){
+        var currentF=filter.value;
+        var htmlF='<option value="">--- Všechny akce ---</option>';
+        var seen={};list.forEach(function(a){if(!seen[a.name]){seen[a.name]=1;htmlF+='<option value="'+ccEsc(a.name)+'">'+ccEsc(a.name)+'</option>';}});
+        if(filter.innerHTML!==htmlF)filter.innerHTML=htmlF;
+        if(seen[currentF])filter.value=currentF;
+    }
+}
+
+/* ---------- Plánované akce: obrázek v pozadí + tooltip bez posouvání ---------- */
+window.renderPlannedEvents=function(){
+    var grid=document.getElementById('cc-planned-grid');if(!grid)return;
+    var actions=ccActions().filter(function(a){return a.status==='Aktivní'||!a.status;});
+    actions.sort(function(a,b){return ((a.date||'9999-99-99')+' '+(a.time||'99:99')).localeCompare((b.date||'9999-99-99')+' '+(b.time||'99:99'));});
+    if(!actions.length){grid.innerHTML='<div class="cc-empty-events" style="grid-column:1/-1">Zatím nebyla vytvořena žádná aktivní akce.</div>';return;}
+    var reqs=[];try{reqs=JSON.parse(localStorage.getItem('ticketRequests'))||[];}catch(e){reqs=(typeof requests!=='undefined'?requests:[])||[];}
+    grid.innerHTML='';
+    actions.forEach(function(a){
+        var card=document.createElement('div');card.className='cc-event-card';
+        var approved=reqs.filter(function(r){return r.action===a.name&&r.status1==='Schváleno'&&r.status2==='Schváleno';}).reduce(function(sum,r){return sum+(parseInt(r.tickets)||0);},0);
+        var known=ccKnownCategory(a), catText=known+(a.subcategory?' · '+ccEsc(a.subcategory):'');
+        var image=a.image||'';
+        var bg=image?' style="background-image:url(\''+String(image).replace(/'/g,'%27')+'\')"':'';
+        var categoryBadge=catText?'<span class="cc-event-category">'+ccEsc(catText)+'</span>':'';
+        var meta=(a.date?'📅 '+ccFmtDate(a.date)+'<br>':'')+(a.time?'⏰ '+ccEsc(a.time)+'<br>':'')+(a.place?'📍 '+ccEsc(a.place):'');
+        var info=a.description?'<div class="cc-event-info"><strong>O akci</strong>'+ccEsc(a.description).replace(/\n/g,'<br>')+'</div>':'';
+        card.innerHTML='<div class="cc-event-image"'+bg+'><div class="cc-event-overlay">'+categoryBadge+'<h3>'+ccEsc(a.name)+'</h3><div class="cc-event-meta">'+meta+'</div><div class="cc-event-capacity">🎟️ Obsazeno: <strong>'+approved+'</strong> / '+(Number(a.capacity)||0)+'</div></div></div>'+info+'<div class="cc-event-actions"><button type="button" class="cc-event-reserve">Rezervovat lístky</button></div>';
+        card.querySelector('.cc-event-reserve').addEventListener('click',function(){
+            window.openTab(2);
+            setTimeout(function(){
+                var cat=ccKnownCategory(a);
+                if(cat==='O2 Arena'&&a.subcategory&&typeof window.ccShowCategory==='function')window.ccShowCategory('O2 Arena',a.subcategory);
+                else if(cat&&typeof window.ccShowCategory==='function')window.ccShowCategory(cat);
+                setTimeout(function(){if(typeof window.ccSelectAction==='function')window.ccSelectAction(a.name);},80);
+            },100);
+        });
+        grid.appendChild(card);
+    });
+};
+
+/* ---------- Tooltip: na mobilu je detail stále čitelný, na PC se vznáší ---------- */
+function ensurePlannedHover(){
+    document.querySelectorAll('#cc-planned-grid .cc-event-card').forEach(function(card){
+        card.addEventListener('mouseenter',function(){card.style.zIndex='50';});
+        card.addEventListener('mouseleave',function(){card.style.zIndex='1';});
+    });
+}
+
+/* ---------- Odstranění „Ostatní“ z dlaždic i starších akcí ---------- */
+function removeOtherLabels(){
+    document.querySelectorAll('#cc-planned-grid .cc-event-category').forEach(function(el){
+        if(el.textContent.trim().toLowerCase().indexOf('ostatní')===0)el.remove();
+    });
+}
+
+/* ---------- Globální sezónní režimy ---------- */
+var CC_SEASONS={
+    autumn:{name:'Podzimní mód',icon:'🍁',desc:'Padající podzimní listí'},
+    normal:{name:'Běžný mód',icon:'☁️',desc:'Bez sezónních efektů'},
+    winter:{name:'Zimní mód',icon:'❄️',desc:'Třpytivý padající sníh'},
+    spring:{name:'Jarní mód',icon:'🌷',desc:'Padající květiny'},
+    summer:{name:'Letní mód',icon:'🏖️',desc:'Skákající plážové míče'}
+};
+var ccSeasonTimers=[];
+function ccStopEffects(){ccSeasonTimers.forEach(clearInterval);ccSeasonTimers=[];var box=document.getElementById('cc-season-effects');if(box)box.innerHTML='';}
+function ccParticle(char,kind){
+    var box=document.getElementById('cc-season-effects');if(!box)return;
+    var el=document.createElement('span');el.className='cc-season-particle';el.textContent=char;el.style.left=(Math.random()*100)+'%';el.style.fontSize=(16+Math.random()*22)+'px';el.style.animationDuration=(7+Math.random()*8)+'s';el.style.animationDelay='0s';
+    if(kind==='snow'){el.style.textShadow='0 0 6px rgba(255,255,255,.95),0 0 12px rgba(148,163,184,.65)';}
+    box.appendChild(el);setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},16000);
+}
+function ccBall(){
+    var box=document.getElementById('cc-season-effects');if(!box)return;
+    var el=document.createElement('span');el.className='cc-summer-ball';el.textContent=['🏖️','⚽','🏐'][Math.floor(Math.random()*3)];el.style.left=(5+Math.random()*90)+'%';el.style.fontSize=(32+Math.random()*24)+'px';box.appendChild(el);setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},5000);
+}
+function ccApplySeason(mode,save){
+    if(!CC_SEASONS[mode])mode='autumn';
+    document.body.classList.remove('cc-season-autumn','cc-season-normal','cc-season-winter','cc-season-spring','cc-season-summer');
+    document.body.classList.add('cc-season-'+mode);
+    ccStopEffects();
+    var old=document.querySelector('.leaves-container');if(old)old.style.display=(mode==='autumn'?'':'none');
+    var box=document.getElementById('cc-season-effects');if(!box){box=document.createElement('div');box.id='cc-season-effects';document.body.appendChild(box);}
+    if(mode==='winter'){
+        var snow=['❄','❅','❆','✦','·'];for(var i=0;i<12;i++)(function(i){setTimeout(function(){ccParticle(snow[Math.floor(Math.random()*snow.length)],'snow');},i*500);})();
+        ccSeasonTimers.push(setInterval(function(){ccParticle(snow[Math.floor(Math.random()*snow.length)],'snow');},850));
+    }else if(mode==='spring'){
+        var flowers=['🌸','🌷','🌼','🌺'];for(var j=0;j<7;j++)(function(j){setTimeout(function(){ccParticle(flowers[Math.floor(Math.random()*flowers.length)],'flower');},j*650);})();
+        ccSeasonTimers.push(setInterval(function(){ccParticle(flowers[Math.floor(Math.random()*flowers.length)],'flower');},1100));
+    }else if(mode==='summer'){
+        for(var k=0;k<3;k++)setTimeout(ccBall,k*900);
+        ccSeasonTimers.push(setInterval(ccBall,1900));
+    }
+    if(save){localStorage.setItem('ccSeasonMode',mode);ccSaveSeasonToFirebase(mode);}
+    updateSeasonTiles(mode);
+}
+function updateSeasonTiles(mode){document.querySelectorAll('.cc-season-card').forEach(function(c){c.classList.toggle('active',c.getAttribute('data-season')===mode);});var st=document.getElementById('cc-season-status');if(st&&CC_SEASONS[mode])st.textContent='Aktivní vzhled: '+CC_SEASONS[mode].name;}
+function ccSaveSeasonToFirebase(mode){
+    try{if(typeof firebase!=='undefined'&&firebase.apps.length){firebase.firestore().collection('portalData').doc('cocaColaDatabase').set({ccSeasonMode:mode},{merge:true}).catch(function(e){console.error('Season Firebase:',e);});}}catch(e){}
+}
+function ccLoadSeason(){
+    var local=localStorage.getItem('ccSeasonMode')||'autumn';ccApplySeason(local,false);
+    try{if(typeof firebase!=='undefined'&&firebase.apps.length){firebase.firestore().collection('portalData').doc('cocaColaDatabase').onSnapshot(function(s){var d=s.exists?s.data():{};if(d&&d.ccSeasonMode&&CC_SEASONS[d.ccSeasonMode]&&d.ccSeasonMode!==localStorage.getItem('ccSeasonMode')){localStorage.setItem('ccSeasonMode',d.ccSeasonMode);ccApplySeason(d.ccSeasonMode,false);}});}}catch(e){}
+}
+function buildSeasonSettings(){
+    var box=document.getElementById('cc-admin-reasons-group');if(!box||document.getElementById('cc-season-settings'))return;
+    var sec=document.createElement('div');sec.id='cc-season-settings';sec.style.cssText='margin-top:22px;padding-top:18px;border-top:1px solid #e2e8f0;';
+    sec.innerHTML='<label style="font-weight:800;font-size:14px;color:#1e293b;display:block;">🎨 Vzhled portálu</label><p style="font-size:11px;color:#64748b;margin:4px 0 10px;line-height:1.4;">Vyberte globální sezónní vzhled portálu. Změna se uloží i do Firebase a projeví se ostatním uživatelům.</p><div id="cc-season-grid" class="cc-season-grid"></div><div id="cc-season-status" class="cc-season-status"></div>';
+    box.appendChild(sec);
+    var grid=sec.querySelector('#cc-season-grid');Object.keys(CC_SEASONS).forEach(function(key){var d=CC_SEASONS[key];var b=document.createElement('button');b.type='button';b.className='cc-season-card';b.setAttribute('data-season',key);b.innerHTML='<span class="cc-season-icon">'+d.icon+'</span><strong>'+d.name+'</strong><small>'+d.desc+'</small>';b.addEventListener('click',function(){ccApplySeason(key,true);});grid.appendChild(b);});
+    updateSeasonTiles(localStorage.getItem('ccSeasonMode')||'autumn');
+}
+
+/* ---------- Inicializace a opakovaná ochrana proti překreslení původním kódem ---------- */
+function ccInit(){
+    try{installActionImageFields();installCreateOverride();buildSeasonSettings();refreshReservationActionData();if(typeof window.renderPlannedEvents==='function')window.renderPlannedEvents();ensurePlannedHover();removeOtherLabels();}catch(e){console.error('CC UX init:',e);}
+}
+ccLoadSeason();
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ccInit);else ccInit();
+setInterval(function(){
+    try{installActionImageFields();installCreateOverride();buildSeasonSettings();refreshReservationActionData();if(document.getElementById('cc-planned-grid')){window.renderPlannedEvents();ensurePlannedHover();removeOtherLabels();}}catch(e){}
+},800);
+})();
+</script>
 </body>
 </html>
