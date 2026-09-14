@@ -3269,4 +3269,161 @@ function install(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(install,50);});else setTimeout(install,50);
 })();
 </script>
+        <!-- 🔌 REZERVAČNÍ ENGINE: 1. ČÁST - NEPRŮSTŘELNÉ UKLÁDÁNÍ AKCÍ DO FIREBASE -->
+<script>
+    (function() {
+        function definitivniOpravaUkladaniAkciCoke() {
+            var adminForm = document.querySelector('#tab4 form') || document.getElementById('actionForm') || document.querySelector('#actionForm');
+            if (!adminForm || adminForm.getAttribute('data-cc-final-save-fixed') === 'yes') return;
+
+            adminForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Bezpečně posbíráme data z obrazovky bez ohledu na to, zda jsou v harmonice nebo venku
+                var jmenoInp = adminForm.querySelector('input[type="text"]') || document.getElementById('actionName');
+                var capInp = adminForm.querySelector('input[type="number"]') || document.getElementById('actionCapacity');
+                
+                // Naše nová vylepšená políčka (Kategorie, PC Kalendář a Čas)
+                var dateInp = document.getElementById('cc-visual-date') || document.getElementById('actionDate') || adminForm.querySelector('input[type="date"]');
+                var timeInp = document.getElementById('cc-visual-time') || document.getElementById('actionTime') || adminForm.querySelector('select:not(#cc-action-category-select)');
+                var catInp = document.getElementById('cc-action-category-select');
+
+                var jmenoVal = jmenoInp ? jmenoInp.value.trim() : '';
+                var capVal = capInp ? parseInt(capInp.value) : 50;
+                var dateVal = dateInp ? dateInp.value : '';
+                var timeVal = timeInp ? timeInp.value : '';
+                var catVal = catInp ? catInp.value : '';
+
+                if (jmenoVal && catVal) {
+                    var aktualniAkce = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+                    
+                    var novaCokeAkce = {
+                        id: Date.now(),
+                        name: jmenoVal,
+                        capacity: capVal,
+                        date: dateVal,
+                        time: timeVal,
+                        category: catVal,         // Propojení pro rezervační dlaždice
+                        actionCategory: catVal,   // Propojení pro administrativní filtry
+                        status: 'Aktivní'
+                    };
+
+                    aktualniAkce.push(novaCokeAkce);
+                    localStorage.setItem('companyActions', JSON.stringify(aktualniAkce));
+                    window.companyActions = aktualniAkce;
+
+                    // 🌐 OKAMŽITÝ LIVE EXPORT DO CLOUDU FIREBASE
+                    if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                        var db = firebase.firestore();
+                        var dataBalicek = {
+                            companyActions: aktualniAkce,
+                            ticketRequests: JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [],
+                            customUsers: JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {},
+                            roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || window.roleRequests || []
+                        };
+
+                        db.collection("portalData").doc("cocaColaDatabase").set(dataBalicek, { merge: true })
+                        .then(function() {
+                            adminForm.reset();
+                            alert('🎉 Nová firemní akce byla úspěšně vytvořena, odeslána do cloudu a synchronizována!');
+                            setTimeout(function() { location.reload(); }, 100);
+                        })
+                        .catch(function(err) {
+                            console.error("Chyba cloudu:", err);
+                            adminForm.reset();
+                            setTimeout(function() { location.reload(); }, 150);
+                        });
+                    } else {
+                        adminForm.reset();
+                        alert('🎉 Akce uložena lokálně.');
+                        setTimeout(function() { location.reload(); }, 150);
+                    }
+                } else {
+                    alert('❌ Prosím vyplňte Název akce a přiřaďte ji do správné grafické dlaždice!');
+                }
+            });
+
+            adminForm.setAttribute('data-cc-final-save-fixed', 'yes');
+        }
+        setInterval(definitvniOpravaUkladaniAkciCoke, 400);
+        // 📥 REZERVAČNÍ ENGINE: 2. ČÁST - OKAMŽITÝ PROPIS DO ZÁLOŽEK A ROLETEK DLAŽDIC
+        function synchronizujZalozkyANoveRezervaceCoke() {
+            var akce = JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [];
+            
+            // ----------------------------------------------------
+            // A) PROPIS DO ZÁLOŽKY "PLÁNOVANÉ AKCE" (Generování dlaždic)
+            // ----------------------------------------------------
+            var plochaPlanovanychAkci = document.getElementById('planovaneAkceGrid') || document.querySelector('.planovane-akce-container') || document.getElementById('tab5') || document.getElementById('tab-planovane');
+            if (plochaPlanovanychAkci) {
+                var htmlDlazdic = '';
+                akce.forEach(function(act) {
+                    if (act.status !== 'Zrušena') {
+                        var detailyText = act.place || "Žádné další informace nebyly specifikovány.";
+                        htmlDlazdic += '<div class="action-tile-coke" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:15px; margin:10px; display:inline-block; min-width:220px; text-align:left; box-shadow:0 2px 5px rgba(0,0,0,0.02); vertical-align:top;">' +
+                                            '<h4 style="margin:0 0 5px 0; color:#0f172a; font-size:14px; font-weight:700;">' + act.name + '</h4>' +
+                                            '<div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:5px;">📅 ' + (act.date || 'Termín upřesníme') + (act.time ? ' ⏰ ' + act.time : '') + '</div>' +
+                                            '<div style="font-size:11px; color:#94a3b8; font-weight:500; font-style:italic;">' + (act.category || 'Nespecifikováno') + '</div>' +
+                                       '</div>';
+                    }
+                });
+
+                var cilovyKontejner = plochaPlanovanychAkci.querySelector('.grid') || plochaPlanovanychAkci;
+                if (cilovyKontejner && htmlDlazdic !== '') {
+                    // Najdeme případný vnitřní div na lístky, abychom nepřemazali hlavní nadpisy záložky
+                    var seznamDiv = document.getElementById('cc-injected-planovane-list');
+                    if (!seznamDiv) {
+                        seznamDiv = document.createElement('div');
+                        seznamDiv.id = 'cc-injected-planovane-list';
+                        seznamDiv.style.display = 'flex';
+                        seznamDiv.style.flexWrap = 'wrap';
+                        cilovyKontejner.appendChild(seznamDiv);
+                    }
+                    if (seznamDiv.innerHTML !== htmlDlazdic) {
+                        seznamDiv.innerHTML = htmlDlazdic;
+                    }
+                }
+            }
+
+            // ----------------------------------------------------
+            // B) PROPIS DO FILTRU VÝBĚRU "NOVÉ REZERVACE" (Odemčení roletky pod kliknutou dlaždicí)
+            // ----------------------------------------------------
+            var roletkaFormulareSelect = document.getElementById('actionSelect') || document.querySelector('#ticketForm select');
+            var vybranaKategorieDlazdice = window.vybranaKategoriePortalu || window.selectedCategory || "";
+            
+            if (roletkaFormulareSelect && vybranaKategorieDlazdice) {
+                var htmlMožnostíFormuláře = '<option value="">-- Vyberte konkrétní zápas / koncert --</option>';
+                var nalezenaAlesponJednaAkce = false;
+
+                akce.forEach(function(a) {
+                    var katAkce = (a.category || a.actionCategory || "").trim();
+                    if (katAkce === vybranaKategorieDlazdice && (a.status === 'Aktivní' || !a.status)) {
+                        var infoD = a.date ? ' | ' + a.date : '';
+                        htmlMožnostíFormuláře += '<option value="' + a.name + '">' + a.name + infoD + '</option>';
+                        nalezenaAlesponJednaAkce = true;
+                    }
+                });
+
+                if (!nalezenaAlesponJednaAkce) {
+                    htmlMožnostíFormuláře = '<option value="">V této kategorii momentálně nejsou žádné volné lístky</option>';
+                }
+
+                // Bezpečně zapíšeme možnosti do roletky, pouze pokud se liší od stávajících (prevence blikání)
+                var unikatniHash = htmlMožnostíFormuláře.length + vybranaKategorieDlazdice;
+                if (roletkaFormulareSelect.getAttribute('data-cc-hash') !== unikatniHash) {
+                    roletkaFormulareSelect.innerHTML = htmlMožnostíFormuláře;
+                    roletkaFormulareSelect.setAttribute('data-cc-hash', unikatniHash);
+                    
+                    // Pokud původní systém filtruje roletky přes schovanou funkci, vyvoláme obnovení
+                    if (typeof window.updateActionSelectOptions === 'function') {
+                        // Tichá systémová aktualizace
+                    }
+                }
+            }
+        }
+
+        // Plynule udržujeme synchronizaci dat na pozadí každých 500ms
+        setInterval(synchronizujZalozkyANoveRezervaceCoke, 500);
+    })();
+</script>
 </html>
