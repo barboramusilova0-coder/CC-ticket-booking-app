@@ -4583,49 +4583,52 @@ setInterval(function(){
         setInterval(ccDomontujAdministrativniTlacitkaZive, 450);
     })();
 </script>
-<!-- 📊 REZERVAČNÍ MOTOR FIX: 1. ČÁST - OPRAVA JMÉNA AKCE A UKLÁDÁNÍ ŽÁDOSTÍ DO CLOUDU -->
+<!-- 🎪 OPRAVA PRO PROPIS SKUTEČNÉHO JMÉNA AKCE DO DATABÁZE -->
 <script>
     (function() {
-        // Hlídač, který při odeslání z vyskakovacího okna natvrdo protlačí správné jméno akce a odemkne zápis
-        function ccOpravOdesilaniZadostiAZapisJmenaAkce() {
-            var btnOdeslatZModalWindow = document.getElementById('cc-modal-final-btn-submit');
-            if (!btnOdeslatZModalWindow || btnOdeslatZModalWindow.getAttribute('data-cc-ultimate-fix') === 'yes') return;
+        function ccOpravZapisJmenaAkceDoZadosti() {
+            var btnOdeslatZModal = document.getElementById('cc-modal-final-btn-submit');
+            if (!btnOdeslatZModal || btnOdeslatZModal.getAttribute('data-cc-name-fixed') === 'yes') return;
 
-            btnOdeslatZModalWindow.addEventListener('click', function(e) {
-                // Úplně odřízneme staré zaseknuté chování
-                e.preventDefault(); e.stopPropagation();
+            btnOdeslatZModal.addEventListener('click', function(e) {
+                // Zastavíme jakékoliv jiné pokusy o odeslání na pozadí
+                e.preventDefault();
+                e.stopPropagation();
 
                 var countInp = document.getElementById('cc-modal-final-inp-tickets');
                 var custInp = document.getElementById('cc-modal-final-inp-customer');
                 var reasonInp = document.getElementById('cc-modal-final-sel-reason');
                 var eurInp = document.getElementById('cc-modal-final-inp-eur');
-                
+                var actionInp = document.getElementById('cc-modal-final-inp-action'); // Políčko v okně s názvem akce
+
                 var tckCountVal = countInp ? parseInt(countInp.value) : 1;
                 var customerVal = custInp ? custInp.value.trim() : '';
                 var reasonVal = reasonInp ? reasonInp.value : '';
                 var eurVal = eurInp ? eurInp.value.trim() : '';
                 var emailSefa = localStorage.getItem('cc_manager_email') || '';
 
+                // 🔥 POJISTKA PRO PŘESNÝ NÁZEV: Vezmeme text přímo z uzamčeného políčka ve vyskakovacím okně, 
+                // kde je stoprocentně zapsané správné jméno zápasu/koncertu z karty!
+                var ostreJmenoAkce = actionInp ? actionInp.value.trim() : (window.ccLokalniVybranaAkceZPrehledu || "Firemní akce");
+
                 if (!customerVal) { alert('❌ Vyplňte prosím Jméno zákazníka.'); return; }
                 if (!reasonVal) { alert('❌ Vyberte prosím důvod žádosti.'); return; }
                 if (!eurVal) { alert('❌ Zadejte prosím finanční obrat v EUR.'); return; }
 
-                // 🔥 KLÍČOVÁ OPRAVA: Vytáhneme skutečné textové jméno vykliknuté akce z paměti, nikoliv klientský filtr dlaždic!
-                var cisteJmenoAkceOstre = window.ccLokalniVybranaAkceZPrehledu || localStorage.getItem('cc_last_clicked_action') || "O2 Arena - Zápas";
-
                 var emailUzivatele = localStorage.getItem('userEmail') || (window.currentUser ? window.currentUser.email : "zamestnanec@cchellenic.com");
                 var jmenoZadatele = localStorage.getItem('userName') || emailUzivatele.split('@')[0].replace('.', ' ');
 
-                var aktualniZadosti = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
+                var listZadosti = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
                 
-                var novaZadostSeZakaznikem = {
+                // Vytvoříme čistý balíček s opravdovým jménem akce
+                var novaZadost = {
                     id: Date.now(),
-                    actionName: cisteJmenoAkceOstre, // Zde zapisujeme opravdový název akce!
-                    name: cisteJmenoAkceOstre,
+                    actionName: ostreJmenoAkce, // Zde letí správný název (např. SKS Slavia - Sparta)
+                    name: ostreJmenoAkce,
                     userEmail: emailUzivatele,
                     applicant: jmenoZadatele,
                     user: jmenoZadatele,
-                    customerName: customerVal, 
+                    customerName: customerVal,
                     tickets: tckCountVal,
                     reason: reasonVal + " (Obrat: " + eurVal + " EUR)",
                     managerEmail: emailSefa,
@@ -4639,158 +4642,46 @@ setInterval(function(){
                     createdAt: new Date().toISOString()
                 };
 
-                aktualniZadosti.push(novaZadostSeZakaznikem);
-                localStorage.setItem('ticketRequests', JSON.stringify(aktualniZadosti));
-                window.requests = aktualniZadosti;
+                listZadosti.push(novaZadost);
+                localStorage.setItem('ticketRequests', JSON.stringify(listZadosti));
+                window.requests = listZadosti;
 
+                // Odešleme live do tvé internetové Firebase databáze
                 if (typeof firebase !== 'undefined' && firebase.apps.length) {
                     var db = firebase.firestore();
                     db.collection("portalData").doc("cocaColaDatabase").set({
-                        ticketRequests: aktualniZadosti,
+                        ticketRequests: listZadosti,
                         companyActions: JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [],
                         customUsers: JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {},
                         roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || window.roleRequests || []
                     }, { merge: true })
                     .then(function() {
+                        // Skryjeme okno a plynule obnovíme portál
                         var overlay = document.getElementById('cc-modal-backdrop-final-id');
                         var modal = document.getElementById('cc-modal-window-final-id');
                         if (overlay) overlay.style.display = 'none';
                         if (modal) modal.style.display = 'none';
 
-                        alert('🎉 Žádost na akci "' + cisteJmenoAkceOstre + '" byla úspěšně odeslána!');
+                        alert('🎉 Žádost na akci "' + ostreJmenoAkce + '" pro zákazníka "' + customerVal + '" byla úspěšně odeslána!');
                         setTimeout(function() { location.reload(); }, 100);
+                    })
+                    .catch(function(err) {
+                        console.error("Chyba zápisu:", err);
+                        location.reload();
                     });
                 } else {
                     location.reload();
                 }
             });
 
-            btnOdeslatZModalWindow.setAttribute('data-cc-ultimate-fix', 'yes');
+            btnOdeslatZModal.setAttribute('data-cc-name-fixed', 'yes');
         }
 
-        setInterval(ccOpravOdesilaniZadostiBezUndefined ?, 400);
-        setInterval(ccOpravOdesilaniZadostiAZapisJmenaAkce, 450);
-        // 📊 REZERVAČNÍ MOTOR FIX: 2. ČÁST - UKLÁDÁNÍ STAVŮ ROLETEK DO FIREBASE A CHYTRÁ OBÁLKA
-        function ccZajistiUkladaniRoletekAHlidejObalku() {
-            var vsechnyRadkyTabulky = document.querySelectorAll('table tbody tr');
-
-            vsechnyRadkyTabulky.forEach(function(row) {
-                // Hledáme pouze řádky s lístky, které už náš systém propojil
-                if (row.cells.length < 5) return;
-
-                var fakeId = row.getAttribute('data-cc-msg-id') || 'msg_' + Math.floor(Math.random() * 100000);
-                row.setAttribute('data-cc-msg-id', fakeId);
-
-                // Najdeme roletky schvalovatelů uvnitř řádku
-                var sel1 = row.querySelector('select[id*="sef1"]') || row.querySelector('select:nth-of-type(1)');
-                var sel2 = row.querySelector('select[id*="sef2"]') || row.querySelector('select:nth-of-type(2)');
-
-                // 🌐 LIVE SYNC: Pokud manažer překlikne roletku, okamžitě data uložíme live do Firebase cloudu!
-                if (sel1 && !sel1.getAttribute('data-sync-hooked')) {
-                    sel1.addEventListener('change', function() { ccUlozAktualniStavyZRadkuDoFirebase(row); });
-                    sel1.setAttribute('data-sync-hooked', 'yes');
-                }
-                if (sel2 && !sel2.getAttribute('data-sync-hooked')) {
-                    sel2.addEventListener('change', function() { ccUlozAktualniStavyZRadkuDoFirebase(row); });
-                    sel2.setAttribute('data-sync-hooked', 'yes');
-                }
-
-                // 🎯 PŘESNÉ ZOBRAZENÍ OBÁLKY: Kontrolujeme čistě textové sloupce stavů (sloupec 6, 7 nebo 8)
-                var textRadkuMaly = (row.innerText || "").toLowerCase();
-                
-                // Obálka vyskočí pouze v momentě, kdy text prokazatelně obsahuje stav schválení
-                var jeSkutecneSchvaleno = (textRadkuMaly.indexOf('schváleno') > -1);
-                var posledniBunka = row.cells[row.cells.length - 1];
-                
-                if (posledniBunka) {
-                    var existujeUzObalka = document.getElementById('cc-smart-email-btn-' + fakeId);
-
-                    if (jeSkutecneSchvaleno) {
-                        if (!existujeUzObalka) {
-                            var akceText = row.cells[0] ? row.cells[0].innerText.trim() : "Firemní lístky";
-                            
-                            // 👤 ADRESNÝ CÍL: Vytáhneme text z 2. sloupečku (Žadatel)
-                            var textZadatele = row.cells[1] ? row.cells[1].innerText.trim() : "";
-                            var emailZadateleCil = textZadatele;
-                            
-                            // Pokud je v buňce zapsané jen jméno, složíme z něj firemní e-mail
-                            if (emailZadateleCil.indexOf('@') === -1) {
-                                var upraveneJmeno = emailZadateleCil.toLowerCase().replace(/[^a-z0-9]/g, '.');
-                                emailZadateleCil = upraveneJmeno + "@cchellenic.com";
-                            }
-
-                            var divObal = document.createElement('div');
-                            divObal.id = 'cc-smart-email-btn-' + fakeId;
-                            divObal.style.cssText = 'display: inline-flex; margin-left: 8px; vertical-align: middle;';
-                            divObal.innerHTML = '<button onclick="ccOtevriOutlookProSchvalenouAkciFinalOstre(\'' + emailZadateleCil + '\', \'' + akceText + '\')" style="background: #64748b !important; color: white !important; border: none !important; padding: 4px 10px !important; border-radius: 4px !important; height: 28px !important; cursor: pointer !important; font-size: 11px !important; font-weight: 700 !important; text-transform: uppercase !important;">✉️ Vyrozumět</button>';
-                            
-                            posledniBunka.appendChild(divObal);
-                        }
-                    } else {
-                        if (existujeUzObalka) existujeUzObalka.remove();
-                    }
-                }
-            });
-        }
-
-        // 🔥 GLOBÁLNÍ FUNKCE PRO ZÁPIS ROLETEK DO FIREBASE CLOUDU
-        function ccUlozAktualniStavyZRadkuDoFirebase(row) {
-            var akceNazevZRadku = row.cells[0] ? row.cells[0].innerText.trim() : "";
-            var zadatelZRadku = row.cells[1] ? row.cells[1].innerText.trim().toLowerCase() : "";
-
-            var sel1 = row.querySelector('select[id*="sef1"]') || row.querySelector('select:nth-of-type(1)');
-            var sel2 = row.querySelector('select[id*="sef2"]') || row.querySelector('select:nth-of-type(2)');
-            
-            var novyStav1 = sel1 ? sel1.value : "Čeká na schválení";
-            var novyStav2 = sel2 ? sel2.value : "Čeká na vyjádření";
-
-            var requestsRaw = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
-            
-            // Najdeme v poli dálkové paměti tuto konkrétní žádost a přepíšeme jí stavy
-            requestsRaw.forEach(function(r) {
-                var ranniAkceMala = (r.actionName || r.name || "").toLowerCase();
-                var ranniApplicantMaly = (r.applicant || r.userEmail || "").toLowerCase();
-                
-                if (ranniAkceMala.indexOf(akceNazevZRadku.toLowerCase()) > -1 && (ranniApplicantMaly.indexOf(zadatelZRadku) > -1 || zadatelZRadku.indexOf(ranniApplicantMaly) > -1)) {
-                    r.status = novyStav1;
-                    r.status1 = novyStav1;
-                    r.status2 = novyStav2;
-                    if (novyStav1 === 'ANO' && novyStav2 === 'ANO') { r.reservationStatus = 'Schváleno'; }
-                    else if (novyStav1 === 'NE' || novyStav2 === 'NE') { r.reservationStatus = 'Zamítnuto'; }
-                    else { r.reservationStatus = 'Čeká na schválení'; }
-                }
-            });
-
-            localStorage.setItem('ticketRequests', JSON.stringify(requestsRaw));
-            window.requests = requestsRaw;
-
-            // Vystřelíme upravené stavy roletek live na internet do Firebase
-            if (typeof firebase !== 'undefined' && firebase.apps.length) {
-                var db = firebase.firestore();
-                db.collection("portalData").doc("cocaColaDatabase").set({
-                    ticketRequests: requestsRaw,
-                    companyActions: JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [],
-                    customUsers: JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {},
-                    roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || window.roleRequests || []
-                }, { merge: true });
-            }
-        }
-
-        // FUNKCE OTEVŘENÍ OUTLOOKU SMĚROVANÁ ROVNOU NA EMAL ŽADATELE
-        window.ccOtevriOutlookProSchvalenouAkciFinalOstre = function(emailZadatele, akceText) {
-            var subject = encodeURIComponent('Potvrzení rezervace lístků Coca-Cola HBC: ' + akceText);
-            var body = encodeURIComponent(
-                'Dobrý den,\n\n' +
-                'Vaše žádost o firemní lístky Coca-Cola HBC na akci "' + akceText + '" byla úspěšně SCHVÁLENA.\n\n' +
-                'Lístky máte plně rezervované. Podrobnosti o předání lístků obdržíte v blízké době.\n\n' +
-                'S pozdravem,\nAdministrace portálu Coca-Cola HBC'
-            );
-            window.location.href = "mailto:" + emailZadatele + "?subject=" + subject + "&body=" + body;
-        };
-
-        setInterval(ccZajistiUkladaniRoletekAHlidejObalku, 500);
+        // Kontrolujeme a držíme odesílání bezpečně aktivní
+        setInterval(ccOpravZapisJmenaAkceDoZadosti, 500);
     })();
 </script>
+
 
 </body>
 </html>
