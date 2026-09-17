@@ -4583,74 +4583,75 @@ setInterval(function(){
         setInterval(ccDomontujAdministrativniTlacitkaZive, 450);
     })();
 </script>
-<!-- ✉️ ENGINE SMART OBÁLKY: 1. ČÁST - ŽIVÉ ZOBRAZENÍ PODLE STAVU SCHVÁLENÍ -->
+<!-- ✉️ REZERVAČNÍ MOTOR EMAILŮ: 1. ČÁST - CÍLENÍ NA ŽADATELE A PŘESNÝ STAV -->
 <script>
     (function() {
-        function ccHlidejStavAMontujObalkuAdmina() {
-            // Najdeme všechny řádky v těle tabulek schvalování žádostí
+        function ccHlidejStavAPosilejZadateliZive() {
             var vsechnyRadkyTabulky = document.querySelectorAll('table tbody tr');
 
             vsechnyRadkyTabulky.forEach(function(row) {
-                // Přeskočíme řádky, které nemají dostatek sloupců
                 if (row.cells.length < 5) return;
 
-                // Vyhledáme v řádku textový stav finálního schválení (obvykle bývá ve sloupcích ke konci řádku)
-                var textCelkovy = row.innerText || "";
+                // 🎯 KONTROLA STAVU: Sledujeme stavové sloupce (6, 7, 8), ne celou tabulku, aby obálka neblikala hned!
+                var stavText1 = row.cells[5] ? row.cells[5].innerText || "" : "";
+                var stavText2 = row.cells[6] ? row.cells[6].innerText || "" : "";
+                var stavText3 = row.cells[7] ? row.cells[7].innerText || "" : "";
                 
-                // 🔥 KLÍČOVÁ PODMÍNKA: Obálka se ukáže POUZE V MOMENTĚ, kdy je žádost finálně SCHVÁLENA
-                var jeSchvaleno = (textCelkovy.indexOf('Schváleno') > -1 || textCelkovy.indexOf('SCHVÁLENO') > -1);
+                var jeSkutecneSchvaleno = (stavText1.indexOf('Schváleno') > -1 || stavText2.indexOf('Schváleno') > -1 || stavText3.indexOf('Schváleno') > -1);
 
-                // Najdeme úplně poslední buňku v řádku (kde máš akce / prázdné místo), abychom tam obálku usadily
                 var posledniBunka = row.cells[row.cells.length - 1];
                 if (!posledniBunka) return;
 
-                // Vygenerujeme pro řádek unikátní identifikátor, pokud ho ještě nemá
                 var fakeId = row.getAttribute('data-cc-msg-id') || 'msg_' + Math.floor(Math.random() * 100000);
                 row.setAttribute('data-cc-msg-id', fakeId);
 
                 var existujeUzObalka = document.getElementById('cc-smart-email-btn-' + fakeId);
 
-                if (jeSchvaleno) {
-                    // Pokud je schváleno a obálka ještě na konci nesvítí, bezpečně ji tam přidáme
+                if (jeSkutecneSchvaleno) {
                     if (!existujeUzObalka) {
-                        // Vytáhneme data přímo z řádku pro předvyplnění e-mailu
-                        var akceText = row.cells[0] ? row.cells[0].innerText.trim() : "Firemní akce";
-                        var emailZadatele = localStorage.getItem('userEmail') || "zamestnanec@cchellenic.com";
+                        var akceText = row.cells[0] ? row.cells[0].innerText.trim() : "Firemní lístky";
+                        
+                        // 👤 CYCHYTRÉ CYLENÍ: Vytáhneme e-mail nebo jméno žadatele přímo z 2. sloupečku této konkrétní řádky!
+                        var textZadatele = row.cells[1] ? row.cells[1].innerText.trim() : "";
+                        var emailZadateleCil = textZadatele;
+                        
+                        // Pokud v buňce není celý e-mail, ale jen jméno, zkusíme najít skrytý mail nebo složit firemní tvar
+                        if (emailZadateleCil.indexOf('@') === -1) {
+                            var upraveneJmeno = emailZadateleCil.toLowerCase().replace(/\s+/g, '.');
+                            emailZadateleCil = upraveneJmeno + "@cchellenic.com";
+                        }
 
                         var divObal = document.createElement('div');
                         divObal.id = 'cc-smart-email-btn-' + fakeId;
                         divObal.style.cssText = 'display: inline-flex; margin-left: 8px; vertical-align: middle;';
-                        divObal.innerHTML = '<button onclick="ccOtevriOutlookProSchvalenouAkci(\'' + emailZadatele + '\', \'' + akceText + '\')" style="background: #64748b !important; color: white !important; border: none !important; padding: 4px 10px !important; border-radius: 4px !important; height: 28px !important; cursor: pointer !important; font-size: 11px !important; font-weight: 700 !important; text-transform: uppercase !important;" title="Odeslat žadateli potvrzení do Outlooku">✉️ Vyrozumět</button>';
+                        divObal.innerHTML = '<button onclick="ccOtevriOutlookProSchvalenouAkciFinal(\'' + emailZadateleCil + '\', \'' + akceText + '\')" style="background: #64748b !important; color: white !important; border: none !important; padding: 4px 10px !important; border-radius: 4px !important; height: 28px !important; cursor: pointer !important; font-size: 11px !important; font-weight: 700 !important; text-transform: uppercase !important;">✉️ Vyrozumět</button>';
                         
                         posledniBunka.appendChild(divObal);
                     }
                 } else {
-                    // Pokud stav skočí na Čeká nebo Zamítnuto, obálka automaticky potichu zmizí
                     if (existujeUzObalka) existujeUzObalka.remove();
                 }
             });
         }
 
-        // Hlídáme stav tabulky neustále každou půl vteřinu na pozadí
-        setInterval(ccHlidejStavAMontujObalkuAdmina, 500);
-        // ✉️ ENGINE SMART OBÁLKY: 2. ČÁST - TEXT EMAILU PRO OUTLOOK A UZAVŘENÍ
-        window.ccOtevriOutlookProSchvalenouAkci = function(emailZadatele, akceText) {
+        setInterval(ccHlidejStavAPosilejZadateliZive, 500);
+        // ✉️ REZERVAČNÍ MOTOR EMAILŮ: 2. ČÁST - OTEVŘENÍ OUTLOOKU NA ŽADATELE A UZAVŘENÍ
+        window.ccOtevriOutlookProSchvalenouAkciFinal = function(emailZadatele, akceText) {
             var subject = encodeURIComponent('Potvrzení rezervace lístků Coca-Cola HBC: ' + akceText);
             
-            // Sestavení přehledného a profesionálního e-mailu pro zaměstnance
+            // Sestavení textu zprávy, která se předepíše do e-mailu
             var body = encodeURIComponent(
                 'Dobrý den,\n\n' +
-                'Vaše žádost o firemní lístky Coca-Cola HBC na akci "' + akceText + '" byla úspěšně SCHVÁLENA oběma stupni schvalovatelů.\n\n' +
+                'Vaše žádost o firemní lístky Coca-Cola HBC na akci "' + akceText + '" byla úspěšně SCHVÁLENA.\n\n' +
                 'Lístky máte plně rezervované. Podrobnosti o předání lístků obdržíte v blízké době.\n\n' +
                 'S pozdravem,\nAdministrace portálu Coca-Cola HBC'
             );
             
-            // Natvrdo vyvoláme Outlook nebo výchozí poštovní program s předepsanými daty
+            // Otevřeme Outlook adresovaný přímo na konkrétního žadatele
             window.location.href = "mailto:" + emailZadatele + "?subject=" + subject + "&body=" + body;
         };
     })();
 </script>
-
 
 </body>
 </html>
