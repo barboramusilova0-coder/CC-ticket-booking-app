@@ -4583,114 +4583,266 @@ setInterval(function(){
         setInterval(ccDomontujAdministrativniTlacitkaZive, 450);
     })();
 </script>
-<!-- 🔐 FINÁLNÍ MECHANISMUS PRÁV: ADRESNÁ VIDITELNOST A POSLOUPNOST PRO SCHVALOVATELE -->
+<!-- 📊 PŘEMĚNA ROLETEK NA TLAČÍTKA: 1. ČÁST - GRAFICKÉ ČUDLÍKY A STRUKTURA ŘÁDKU -->
+<style>
+    /* Stylování nových elegantních schvalovacích tlačítek */
+    .cc-btn-approve-click { display: inline-flex !important; align-items: center !important; justify-content: center !important; padding: 4px 10px !important; border-radius: 6px !important; font-size: 11px !important; font-weight: 700 !important; cursor: pointer !important; text-transform: uppercase !important; border: 1px solid #cbd5e1 !important; background: #fff !important; color: #334155 !important; transition: all 0.2s ease !important; height: 28px !important; box-sizing: border-box !important; }
+    
+    .cc-btn-approve-click.cc-active-yes { background: #16a34a !important; color: white !important; border-color: #16a34a !important; box-shadow: 0 2px 6px rgba(22, 163, 74, 0.2) !important; }
+    .cc-btn-approve-click.cc-active-no { background: #e41e26 !important; color: white !important; border-color: #e41e26 !important; box-shadow: 0 2px 6px rgba(228, 30, 38, 0.2) !important; }
+    .cc-btn-approve-click.cc-active-wait { background: #d97706 !important; color: white !important; border-color: #d97706 !important; box-shadow: 0 2px 6px rgba(217, 119, 6, 0.2) !important; }
+    
+    .cc-btn-approve-click:disabled { background: #f1f5f9 !important; color: #94a3b8 !important; border-color: #cbd5e1 !important; cursor: not-allowed !important; box-shadow: none !important; }
+</style>
+
 <script>
     (function() {
-        function ccZabezpecFiltrAViditelnostSchvalovani() {
-            // Zjistíme, kdo je zrovna přihlášený (role: 'admin', 'manager', atd. a jeho e-mail)
+        function ccPrekopniRoletkyNaTlacitkaZive() {
             var prihlasenyEmail = (localStorage.getItem('userEmail') || "").toLowerCase().trim();
             var prihlasenaRole = (localStorage.getItem('userRole') || window.currentUserRole || "").toLowerCase().trim();
-            
-            // Pojistka pro určení role na základě přihlašovacího jména z tvého ranního kódu
-            if (prihlasenyEmail.indexOf('rsm.praha') > -1) prihlasenaRole = "rsm"; // 2. Schvalovatel
+            if (prihlasenyEmail.indexOf('rsm.praha') > -1) prihlasenaRole = "rsm";
             if (prihlasenyEmail.indexOf('admin') > -1) prihlasenaRole = "admin";
 
             var vsechnyRadkyTabulky = document.querySelectorAll('table tbody tr');
 
             vsechnyRadkyTabulky.forEach(function(row) {
                 var htmlObsah = row.innerHTML;
-                
-                // Zajímavá nás pouze řádky s lístky, které už náš systém propojil
-                if (row.getAttribute('data-cc-rebuilt-vfinal') === 'yes') {
-                    var fakeId = row.getAttribute('data-cc-id');
-                    
-                    var sel1 = document.getElementById('cc-sef1-status-' + fakeId);
-                    var sel2 = document.getElementById('cc-sef2-status-' + fakeId);
-                    
-                    // Vytáhneme e-mail 1. schvalovatele přiřazeného k této konkrétní žádosti
-                    var bunkaSefa1 = row.cells[3]; 
-                    var prirazenySef1Email = bunkaSefa1 ? bunkaSefa1.innerText.replace('👤', '').toLowerCase().trim() : '';
+                if (htmlObsah.indexOf('Obrat:') > -1 || htmlObsah.indexOf('Obchodní partner') > -1 || htmlObsah.indexOf('undefined') > -1) {
+                    var fakeId = row.getAttribute('data-cc-id') || 'cc_' + Math.floor(Math.random() * 1000000);
+                    row.setAttribute('data-cc-id', fakeId);
 
-                    // -------------------------------------------------------------------------
-                    // 📑 KROK 1: KONTROLA PRÁV A VIDITELNOSTI (Kdo co smí vidět a ovládat)
-                    // -------------------------------------------------------------------------
-                    var zneviditelnitRadek = false;
+                    if (row.getAttribute('data-cc-buttons-live') === 'yes') return;
 
-                    if (prihlasenaRole === 'admin') {
-                        // Admin vidí všechno a může ovládat obě roletky bez omezení
-                        if (sel1) sel1.removeAttribute('disabled');
-                        if (sel2 && sel1 && sel1.value === 'ANO') sel2.removeAttribute('disabled');
-                    } 
-                    else if (prihlasenyEmail === prirazenySef1Email) {
-                        // Přihlášený uživatel je PŘESNĚ TEN 1. schvalovatel, kterého si žadatel zvolil!
-                        // Smí vidět svou žádost, ovládat pouze 1. roletku, druhá je pro něj zamčená.
-                        if (sel1) {
-                            sel1.removeAttribute('disabled');
-                            sel1.style.background = '#fff';
-                        }
-                        if (sel2) {
-                            sel2.setAttribute('disabled', 'disabled');
-                            sel2.style.background = '#f1f5f9';
-                            sel2.style.cursor = 'not-allowed';
-                        }
-                    } 
-                    else if (prihlasenaRole === 'rsm' || prihlasenyEmail.indexOf('rsm.praha') > -1) {
-                        // Přihlášený uživatel je 2. schvalovatel (RSM Praha Central)
-                        // 🔥 KLÍČOVÁ PODMÍNKA: Pokud 1. schvalovatel ještě nedal "ANO", RSM žádost vůbec neuvidí!
-                        if (sel1 && sel1.value !== 'ANO') {
-                            zneviditelnitRadek = true; // Žádost pro RSM kompletně zmizí z obrazovky
-                        } else {
-                            // Pokud 1. schvalovatel schválil, RSM žádost uvidí, ale smí ovládat jen svou 2. roletku
-                            if (sel1) sel1.setAttribute('disabled', 'disabled');
-                            if (sel2) {
-                                sel2.removeAttribute('disabled');
-                                sel2.style.background = '#fff';
-                            }
-                        }
-                    } 
-                    else {
-                        // Pokud je přihlášený jakýkoliv jiný manažer (1. schvalovatel), kterému tato žádost nepatří,
-                        // nebo běžný zaměstnanec, žádost před ním kompletně schováme!
-                        zneveritelnitRadek = true;
+                    var stavSef1 = row.getAttribute('data-cc-state-sef1') || "Čeká na schválení";
+                    var stavSef2 = row.getAttribute('data-cc-state-sef2') || "Čeká na vyjádření";
+
+                    var mailZadatele = localStorage.getItem('userEmail') || "zamestnanec@cchellenic.com";
+                    var akceNazev = row.cells[0] ? row.cells[0].innerText.trim() : "O2 Arena - Zápas";
+                    var jmenoZadatele = row.cells[1] ? row.cells[1].innerText.trim() : "Zaměstnanec";
+                    var sloupecCistyReason = row.cells[2] ? row.cells[2].innerHTML : "";
+
+                    var sef1Mail = localStorage.getItem('cc_manager_email') || "manazer@cchellenic.com";
+                    var sef2Mail = "rsm.praha@cchellenic.com";
+
+                    // 🛠️ STRUKTURA NOVÉHO ŘÁDKU S TLAČÍTKY MÍSTO ROLETEK
+                    row.innerHTML = 
+                        '<td style="font-weight:700; color:#0f172a; padding:12px; vertical-align:middle;">' + akceNazev + '</td>' +
+                        '<td style="color:#1e293b; font-weight:700; padding:12px; text-transform:capitalize; vertical-align:middle;">' + jmenoZadatele + '</td>' +
+                        '<td style="padding:12px; line-height:1.4; vertical-align:middle;">' + sloupecCistyReason + '</td>' +
+                        
+                        '<!-- 1. Schvalovatel: Tlačítka ANO / NE -->' +
+                        '<td style="padding:12px; vertical-align:middle; min-width:140px;">' +
+                            '<div style="font-size:11px; color:#64748b; font-weight:700; margin-bottom:6px;">👤 ' + sef1Mail.split('@')[0] + '</div>' +
+                            '<div style="display:flex; gap:4px;">' +
+                                '<button id="cc-btn-s1-yes-' + fakeId + '" class="cc-btn-approve-click ' + (stavSef1==='ANO'?'cc-active-yes':'') + '">ANO</button>' +
+                                '<button id="cc-btn-s1-no-' + fakeId + '" class="cc-btn-approve-click ' + (stavSef1==='NE'?'cc-active-no':'') + '">NE</button>' +
+                            '</div>' +
+                        '</td>' +
+                        
+                        '<!-- 2. Schvalovatel: Tlačítka ANO / NE / NÁHRADNÍK -->' +
+                        '<td style="padding:12px; vertical-align:middle; min-width:210px;">' +
+                            '<div style="font-size:11px; color:#64748b; font-weight:700; margin-bottom:6px;">👤 ' + sef2Mail.split('@')[0] + '</div>' +
+                            '<div style="display:flex; gap:4px;">' +
+                                '<button id="cc-btn-s2-yes-' + fakeId + '" class="cc-btn-approve-click ' + (stavSef2==='ANO'?'cc-active-yes':'') + '">ANO</button>' +
+                                '<button id="cc-btn-s2-no-' + fakeId + '" class="cc-btn-approve-click ' + (stavSef2==='NE'?'cc-active-no':'') + '">NE</button>' +
+                                '<button id="cc-btn-s2-wait-' + fakeId + '" class="cc-btn-approve-click ' + (stavSef2==='Náhradník'?'cc-active-wait':'') + '">NÁHRADNÍK</button>' +
+                            '</div>' +
+                        '</td>' +
+                        
+                        '<td id="cc-txt-s1-' + fakeId + '" style="padding:12px; font-weight:700; font-size:11px; text-align:center; vertical-align:middle;">' + stavSef1 + '</td>' +
+                        '<td id="cc-txt-s2-' + fakeId + '" style="padding:12px; font-weight:700; font-size:11px; text-align:center; vertical-align:middle;">' + stavSef2 + '</td>' +
+                        '<td id="cc-txt-res-' + fakeId + '" style="padding:12px; font-weight:700; font-size:11px; text-align:center; vertical-align:middle;">' + stavSef1 + '</td>' +
+                        
+                        '<!-- Administrace: Obálka a Koš -->' +
+                        '<td id="cc-actions-cell-final-' + fakeId + '" style="padding:12px; text-align:center; vertical-align:middle; white-space:nowrap;"></td>';
+
+                    row.setAttribute('data-cc-buttons-live', 'yes');
+                    row.setAttribute('data-cc-state-sef1', stavSef1);
+                    row.setAttribute('data-cc-state-sef2', stavSef2);
+                }
+            });
+        }
+        setInterval(ccPrekopniRoletkyNaTlacitkaZive, 400);
+        // 📊 PŘEMĚNA ROLETEK: 2. ČÁST (BLOK A) - LOGIKA KLIKÁNÍ A PRÁVA
+        function ccOživTlačítkaAStranickéFiltryZive() {
+            var prihlasenyEmail = (localStorage.getItem('userEmail') || "").toLowerCase().trim();
+            var prihlasenaRole = (localStorage.getItem('userRole') || window.currentUserRole || "").toLowerCase().trim();
+            if (prihlasenyEmail.indexOf('rsm.praha') > -1) prihlasenaRole = "rsm";
+            if (prihlasenyEmail.indexOf('admin') > -1) prihlasenaRole = "admin";
+
+            var vsechnyRadky = document.querySelectorAll('table tbody tr[data-cc-buttons-live="yes"]');
+
+            vsechnyRadky.forEach(function(row) {
+                var fakeId = row.getAttribute('data-cc-id');
+                var stavSef1 = row.getAttribute('data-cc-state-sef1') || "Čeká na schválení";
+                var stavSef2 = row.getAttribute('data-cc-state-sef2') || "Čeká na vyjádření";
+
+                var bunkaSefa1 = row.cells;
+                var prirazenySef1Email = bunkaSefa1 ? bunkaSefa1.innerText.replace('👤', '').toLowerCase().trim() : '';
+
+                var b1Yes = document.getElementById('cc-btn-s1-yes-' + fakeId);
+                var b1No = document.getElementById('cc-btn-s1-no-' + fakeId);
+                var b2Yes = document.getElementById('cc-btn-s2-yes-' + fakeId);
+                var b2No = document.getElementById('cc-btn-s2-no-' + fakeId);
+                var b2Wait = document.getElementById('cc-btn-s2-wait-' + fakeId);
+                var bunkaAdminTlacitek = document.getElementById('cc-actions-cell-final-' + fakeId);
+
+                var schovatCelouZadost = false;
+
+                if (prihlasenaRole === 'admin') {
+                    if (b1Yes) b1Yes.removeAttribute('disabled');
+                    if (b1No) b1No.removeAttribute('disabled');
+                    if (b2Yes && stavSef1 === 'ANO') b2Yes.removeAttribute('disabled');
+                    if (b2No && stavSef1 === 'ANO') b2No.removeAttribute('disabled');
+                    if (b2Wait && stavSef1 === 'ANO') b2Wait.removeAttribute('disabled');
+                } 
+                else if (prihlasenyEmail && prirazenySef1Email && prirazenySef1Email.indexOf(prihlasenyEmail) > -1) {
+                    if (b1Yes) b1Yes.removeAttribute('disabled');
+                    if (b1No) b1No.removeAttribute('disabled');
+                    if (b2Yes) b2Yes.setAttribute('disabled', 'disabled');
+                    if (b2No) b2No.setAttribute('disabled', 'disabled');
+                    if (b2Wait) b2Wait.setAttribute('disabled', 'disabled');
+                } 
+                else if (prihlasenaRole === 'rsm' || prihlasenyEmail.indexOf('rsm.praha') > -1) {
+                    if (stavSef1 !== 'ANO') { schovatCelouZadost = true; } else {
+                        if (b1Yes) b1Yes.setAttribute('disabled', 'disabled');
+                        if (b1No) b1No.setAttribute('disabled', 'disabled');
+                        if (b2Yes) b2Yes.removeAttribute('disabled');
+                        if (b2No) b2No.removeAttribute('disabled');
+                        if (b2Wait) b2Wait.removeAttribute('disabled');
+                    }
+                } 
+                else { schovatCelouZadost = true; }
+
+                if (schovatCelouZadost && prihlasenaRole !== 'admin') {
+                    row.style.setProperty('display', 'none', 'important'); return;
+                } else { row.style.setProperty('display', 'table-row', 'important'); }
+
+                if (stavSef1 !== 'ANO' && (b2Yes || b2No || b2Wait)) {
+                    if (b2Yes) b2Yes.setAttribute('disabled', 'disabled');
+                    if (b2No) b2No.setAttribute('disabled', 'disabled');
+                    if (b2Wait) b2Wait.setAttribute('disabled', 'disabled');
+                }
+                // 📊 PŘEMĚNA ROLETEK: 2. ČÁST (BLOK B) - EMAIL, MAZÁNÍ A UKONČENÍ
+                if (bunkaAdminTlacitek && bunkaAdminTlacitek.innerHTML === "") {
+                    var akceJmeno = row.cells ? row.cells[0].innerText.trim() : "test";
+                    var mailZadat = localStorage.getItem('userEmail') || "zamestnanec@cchellenic.com";
+
+                    bunkaAdminTlacitek.innerHTML = 
+                        '<div style="display:inline-flex; gap:6px; align-items:center;">' +
+                            '<button id="cc-email-trigger-btn-' + fakeId + '" style="background:#64748b; color:white; border:none; padding:0 10px; border-radius:4px; height:28px; cursor:pointer; font-size:12px; font-weight:700;">✉️ Vyrozumět</button>' +
+                            '<button id="cc-delete-trigger-btn-' + fakeId + '" style="background:#e41e26; color:white; border:none; padding:0 10px; border-radius:4px; height:28px; cursor:pointer; font-size:12px; font-weight:bold;">🗑️</button>' +
+                        '</div>';
+
+                    document.getElementById('cc-email-trigger-btn-' + fakeId).addEventListener('click', function(e) {
+                        e.preventDefault(); e.stopPropagation();
+                        ccOdeslatZiveInformacniEmailTlacitka(fakeId, mailZadat, akceJmeno);
+                    });
+
+                    document.getElementById('cc-delete-trigger-btn-' + fakeId).addEventListener('click', function(e) {
+                        e.preventDefault(); e.stopPropagation();
+                        ccSmazatZadostZLiveFirebaseTlacitka(fakeId, akceJmeno);
+                    });
+                }
+
+                function aktualizujStavAProvis(novyS1, novyS2) {
+                    row.setAttribute('data-cc-state-sef1', novyS1);
+                    row.setAttribute('data-cc-state-sef2', novyS2);
+
+                    var t1 = document.getElementById('cc-txt-s1-' + fakeId);
+                    var t2 = document.getElementById('cc-txt-s2-' + fakeId);
+                    var tRes = document.getElementById('cc-txt-res-' + fakeId);
+
+                    if (t1) { t1.innerText = novyS1; t1.style.color = novyS1 === 'ANO' ? '#16a34a' : (novyS1 === 'NE' ? '#e41e26' : '#d97706'); }
+                    if (t2) { t2.innerText = novyS2; t2.style.color = novyS2 === 'ANO' ? '#16a34a' : (novyS2 === 'NE' ? '#e41e26' : '#64748b'); }
+                    if (tRes) {
+                        if (novyS1 === 'NE' || novyS2 === 'NE') { tRes.innerText = 'Zamítnuto'; tRes.style.color = '#e41e26'; }
+                        else if (novyS1 === 'ANO' && novyS2 === 'ANO') { tRes.innerText = 'Schváleno'; tRes.style.color = '#16a34a'; }
+                        else { tRes.innerText = 'Čeká na schválení'; tRes.style.color = '#d97706'; }
                     }
 
-                    // Provést fyzické schování/zobrazení na obrazovce
-                    if (zneviditelnitRadek && prihlasenaRole !== 'admin') {
-                        row.style.setProperty('display', 'none', 'important');
-                    } else {
-                        // Pokud řádek prochází filtrem viditelnosti, ukážeme ho ve standardním tabulkovém zobrazení
-                        if (row.style.display === 'none') {
-                            row.style.setProperty('display', 'table-row', 'important');
-                        }
-                    }
+                    if (b1Yes) { b1Yes.className = 'cc-btn-approve-click ' + (novyS1==='ANO'?'cc-active-yes':''); }
+                    if (b1No) { b1No.className = 'cc-btn-approve-click ' + (novyS1==='NE'?'cc-active-no':''); }
+                    if (b2Yes) { b2Yes.className = 'cc-btn-approve-click ' + (novyS2==='ANO'?'cc-active-yes':''); }
+                    if (b2No) { b2No.className = 'cc-btn-approve-click ' + (novyS2==='NE'?'cc-active-no':''); }
+                    if (b2Wait) { b2Wait.className = 'cc-btn-approve-click ' + (novyS2==='Náhradník'?'cc-active-wait':''); }
+                }
 
-                    // -------------------------------------------------------------------------
-                    // 🎛️ KROK 2: ÚPRAVA MOŽNOSTÍ V ROLETKÁCH (ANO/NE) PŘESNĚ DLE ZADÁNÍ
-                    // -------------------------------------------------------------------------
-                    if (sel1 && !sel1.getAttribute('data-cc-options-fixed')) {
-                        sel1.innerHTML = 
-                            '<option value="Čeká na schválení">⏳ Čeká na schválení</option>' +
-                            '<option value="ANO">✅ ANO</option>' +
-                            '<option value="NE">❌ NE</option>';
-                        sel1.setAttribute('data-cc-options-fixed', 'yes');
-                    }
-
-                    if (sel2 && !sel2.getAttribute('data-cc-options-fixed')) {
-                        sel2.innerHTML = 
-                            '<option value="Čeká na vyjádření">⏳ Čeká na vyjádření</option>' +
-                            '<option value="ANO">✅ ANO</option>' +
-                            '<option value="NE">❌ NE</option>' +
-                            '<option value="Náhradník">⚠️ NÁHRADNÍK</option>';
-                        sel2.setAttribute('data-cc-options-fixed', 'yes');
-                    }
+                if (b1Yes && !b1Yes.getAttribute('data-hooked')) {
+                    b1Yes.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); aktualizujStavAProvis('ANO', stavSef2); });
+                    b1Yes.setAttribute('data-hooked', 'yes');
+                }
+                if (b1No && !b1No.getAttribute('data-hooked')) {
+                    b1No.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); aktualizujStavAProvis('NE', 'Čeká na vyjádření'); });
+                    b1No.setAttribute('data-hooked', 'yes');
+                }
+                if (b2Yes && !b2Yes.getAttribute('data-hooked')) {
+                    b2Yes.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); aktualizujStavAProvis(stavSef1, 'ANO'); });
+                    b2Yes.setAttribute('data-hooked', 'yes');
+                }
+                if (b2No && !b2No.getAttribute('data-hooked')) {
+                    b2No.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); aktualizujStavAProvis(stavSef1, 'NE'); });
+                    b2No.setAttribute('data-hooked', 'yes');
+                }
+                if (b2Wait && !b2Wait.getAttribute('data-hooked')) {
+                    b2Wait.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); aktualizujStavAProvis(stavSef1, 'Náhradník'); });
+                    b2Wait.setAttribute('data-hooked', 'yes');
                 }
             });
         }
 
-        // Spouštíme kontrolu zabezpečení, viditelnosti a adresnosti každých 400ms na pozadí
-        setInterval(ccZabezpecFiltrAViditelnostSchvalovani, 400);
+        window.ccOdeslatZiveInformacniEmailTlacitka = function(fakeId, emailZadatele, akceText) {
+            var row = document.querySelector('tr[data-cc-id="' + fakeId + '"]');
+            var s1 = row ? row.getAttribute('data-cc-state-sef1') : 'Čeká na schválení';
+            var s2 = row ? row.getAttribute('data-cc-state-sef2') : 'Čeká na vyjádření';
+            
+            var vyslednyStavVzkazu = "ČEKÁ NA VYJÁDŘENÍ";
+            if (s1 === 'NE' || s2 === 'NE') vyslednyStavVzkazu = "ZAMÍTNUTO";
+            else if (s1 === 'ANO' && s2 === 'ANO') vyslednyStavVzkazu = "SCHVÁLENO";
+            else if (s1 === 'ANO' && s2 === 'Náhradník') vyslednyStavVzkazu = "NÁHRADNÍK";
+            else if (s1 === 'ANO') vyslednyStavVzkazu = "SCHVÁLENO 1. STUPNĚM (ČEKÁ NA REGIONÁLNÍHO MANAŽERA)";
+
+            var subject = encodeURIComponent('Aktualizace stavu schválení lístků Coca-Cola HBC: ' + akceText);
+            var body = encodeURIComponent(
+                'Dobrý den,\n\n' +
+                'Vaše žádost o firemní lístky Coca-Cola HBC na akci "' + akceText + '" byla posouzena manažery.\n\n' +
+                'CELKOVÝ VÝSLEDNÝ STAV: ' + vyslednyStavVzkazu + '\n' +
+                '  - 1. Schvalovatel (Přímý nadřízený): ' + s1.toUpperCase() + '\n' +
+                '  - 2. Schvalovatel (RSM Praha Central): ' + s2.toUpperCase() + '\n\n' +
+                'S pozdravem,\nAdministrace portálu Coca-Cola HBC'
+            );
+            window.location.href = "mailto:" + emailZadatele + "?subject=" + subject + "&body=" + body;
+        };
+
+        window.ccSmazatZadostZLiveFirebaseTlacitka = function(id, akceJmeno) {
+            if (!confirm('⚠️ Opravdu si přejete tuto žádost trvale smazat?')) return;
+            var requestsRaw = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
+            var vycisteneRequests = requestsRaw.filter(function(r) { 
+                var shodaId = (String(r.id) === String(id));
+                var shodaJmena = (r.actionName || r.name || "").toLowerCase() === akceJmeno.toLowerCase();
+                if (shodaId) return false;
+                if (!r.id && shodaJmena) return false;
+                return true; 
+            });
+            localStorage.setItem('ticketRequests', JSON.stringify(vycisteneRequests));
+            window.requests = vycisteneRequests;
+
+            if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                var db = firebase.firestore();
+                db.collection("portalData").doc("cocaColaDatabase").set({
+                    ticketRequests: vycisteneRequests,
+                    companyActions: JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [],
+                    customUsers: JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {},
+                    roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || window.roleRequests || []
+                }, { merge: true }).then(function() {
+                    alert('🗑️ Žádost byla trvale vymazána z cloudu Firebase!');
+                    location.reload();
+                });
+            } else { location.reload(); }
+        };
+
+        setInterval(ccOživTlačítkaAStranickéFiltryZive, 450);
     })();
 </script>
-
 </body>
 </html>
