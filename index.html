@@ -4663,22 +4663,14 @@ setInterval(function(){
             });
         }
         setInterval(ccPrekopniRoletkyNaTlacitkaZive, 400);
-        // 📊 PŘEMĚNA ROLETEK: 2. ČÁST (BLOK A) - LOGIKA KLIKÁNÍ A PRÁVA
+        // 📊 2. ČÁST: (KUS A) - ODLOKOVÁNÍ ČUDLÍKŮ, EMAILY A KOŠ
         function ccOživTlačítkaAStranickéFiltryZive() {
-            var prihlasenyEmail = (localStorage.getItem('userEmail') || "").toLowerCase().trim();
-            var prihlasenaRole = (localStorage.getItem('userRole') || window.currentUserRole || "").toLowerCase().trim();
-            if (prihlasenyEmail.indexOf('rsm.praha') > -1) prihlasenaRole = "rsm";
-            if (prihlasenyEmail.indexOf('admin') > -1) prihlasenaRole = "admin";
-
             var vsechnyRadky = document.querySelectorAll('table tbody tr[data-cc-buttons-live="yes"]');
 
             vsechnyRadky.forEach(function(row) {
                 var fakeId = row.getAttribute('data-cc-id');
                 var stavSef1 = row.getAttribute('data-cc-state-sef1') || "Čeká na schválení";
                 var stavSef2 = row.getAttribute('data-cc-state-sef2') || "Čeká na vyjádření";
-
-                var bunkaSefa1 = row.cells;
-                var prirazenySef1Email = bunkaSefa1 ? bunkaSefa1.innerText.replace('👤', '').toLowerCase().trim() : '';
 
                 var b1Yes = document.getElementById('cc-btn-s1-yes-' + fakeId);
                 var b1No = document.getElementById('cc-btn-s1-no-' + fakeId);
@@ -4687,51 +4679,22 @@ setInterval(function(){
                 var b2Wait = document.getElementById('cc-btn-s2-wait-' + fakeId);
                 var bunkaAdminTlacitek = document.getElementById('cc-actions-cell-final-' + fakeId);
 
-                var schovatCelouZadost = false;
+                // 🔓 ÚPLNÉ ODLOKOVÁNÍ: Odstraníme "disabled", aby Admin i manažeři mohli hned klikat!
+                if (b1Yes) b1Yes.removeAttribute('disabled');
+                if (b1No) b1No.removeAttribute('disabled');
+                if (b2Yes) b2Yes.removeAttribute('disabled');
+                if (b2No) b2No.removeAttribute('disabled');
+                if (b2Wait) b2Wait.removeAttribute('disabled');
 
-                if (prihlasenaRole === 'admin') {
-                    if (b1Yes) b1Yes.removeAttribute('disabled');
-                    if (b1No) b1No.removeAttribute('disabled');
-                    if (b2Yes && stavSef1 === 'ANO') b2Yes.removeAttribute('disabled');
-                    if (b2No && stavSef1 === 'ANO') b2No.removeAttribute('disabled');
-                    if (b2Wait && stavSef1 === 'ANO') b2Wait.removeAttribute('disabled');
-                } 
-                else if (prihlasenyEmail && prirazenySef1Email && prirazenySef1Email.indexOf(prihlasenyEmail) > -1) {
-                    if (b1Yes) b1Yes.removeAttribute('disabled');
-                    if (b1No) b1No.removeAttribute('disabled');
-                    if (b2Yes) b2Yes.setAttribute('disabled', 'disabled');
-                    if (b2No) b2No.setAttribute('disabled', 'disabled');
-                    if (b2Wait) b2Wait.setAttribute('disabled', 'disabled');
-                } 
-                else if (prihlasenaRole === 'rsm' || prihlasenyEmail.indexOf('rsm.praha') > -1) {
-                    if (stavSef1 !== 'ANO') { schovatCelouZadost = true; } else {
-                        if (b1Yes) b1Yes.setAttribute('disabled', 'disabled');
-                        if (b1No) b1No.setAttribute('disabled', 'disabled');
-                        if (b2Yes) b2Yes.removeAttribute('disabled');
-                        if (b2No) b2No.removeAttribute('disabled');
-                        if (b2Wait) b2Wait.removeAttribute('disabled');
-                    }
-                } 
-                else { schovatCelouZadost = true; }
-
-                if (schovatCelouZadost && prihlasenaRole !== 'admin') {
-                    row.style.setProperty('display', 'none', 'important'); return;
-                } else { row.style.setProperty('display', 'table-row', 'important'); }
-
-                if (stavSef1 !== 'ANO' && (b2Yes || b2No || b2Wait)) {
-                    if (b2Yes) b2Yes.setAttribute('disabled', 'disabled');
-                    if (b2No) b2No.setAttribute('disabled', 'disabled');
-                    if (b2Wait) b2Wait.setAttribute('disabled', 'disabled');
-                }
-                // 📊 PŘEMĚNA ROLETEK: 2. ČÁST (BLOK B) - EMAIL, MAZÁNÍ A UKONČENÍ
+                // Vykreslení obálky ✉️ a koše 🗑️ na konci řádku
                 if (bunkaAdminTlacitek && bunkaAdminTlacitek.innerHTML === "") {
-                    var akceJmeno = row.cells ? row.cells[0].innerText.trim() : "test";
+                    var akceJmeno = row.cells ? row.cells.innerText.trim() : "test";
                     var mailZadat = localStorage.getItem('userEmail') || "zamestnanec@cchellenic.com";
 
                     bunkaAdminTlacitek.innerHTML = 
-                        '<div style="display:inline-flex; gap:6px; align-items:center;">' +
-                            '<button id="cc-email-trigger-btn-' + fakeId + '" style="background:#64748b; color:white; border:none; padding:0 10px; border-radius:4px; height:28px; cursor:pointer; font-size:12px; font-weight:700;">✉️ Vyrozumět</button>' +
-                            '<button id="cc-delete-trigger-btn-' + fakeId + '" style="background:#e41e26; color:white; border:none; padding:0 10px; border-radius:4px; height:28px; cursor:pointer; font-size:12px; font-weight:bold;">🗑️</button>' +
+                        '<div style="display:inline-flex; gap:6px; align-items:center; justify-content:center;">' +
+                            '<button id="cc-email-trigger-btn-' + fakeId + '" style="background:#64748b!important; color:white!important; border:none!important; padding:0 10px!important; border-radius:4px!important; height:28px!important; cursor:pointer!important; font-size:12px!important; font-weight:700!important; display:inline-flex!important; align-items:center!important; justify-content:center!important;">✉️ Vyrozumět</button>' +
+                            '<button id="cc-delete-trigger-btn-' + fakeId + '" style="background:#e41e26!important; color:white!important; border:none!important; padding:0 10px!important; border-radius:4px!important; height:28px!important; cursor:pointer!important; font-size:12px!important; font-weight:bold!important; display:inline-flex!important; align-items:center!important; justify-content:center!important;">🗑️</button>' +
                         '</div>';
 
                     document.getElementById('cc-email-trigger-btn-' + fakeId).addEventListener('click', function(e) {
@@ -4744,7 +4707,7 @@ setInterval(function(){
                         ccSmazatZadostZLiveFirebaseTlacitka(fakeId, akceJmeno);
                     });
                 }
-
+                // 📊 2. ČÁST: (KUS B) - BAREVNÉ REAKCE, OUTLOOK A DESTRUKCE REZERVACÍ CLOUDU
                 function aktualizujStavAProvis(novyS1, novyS2) {
                     row.setAttribute('data-cc-state-sef1', novyS1);
                     row.setAttribute('data-cc-state-sef2', novyS2);
@@ -4815,15 +4778,18 @@ setInterval(function(){
         };
 
         window.ccSmazatZadostZLiveFirebaseTlacitka = function(id, akceJmeno) {
-            if (!confirm('⚠️ Opravdu si přejete tuto žádost trvale smazat?')) return;
+            if (!confirm('⚠️ Opravdu si přejete tuto žádost o lístky na akci "' + akceJmeno + '" trvale smazat z portálu i z live cloudu Firebase?')) return;
+            
             var requestsRaw = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
+            
             var vycisteneRequests = requestsRaw.filter(function(r) { 
                 var shodaId = (String(r.id) === String(id));
-                var shodaJmena = (r.actionName || r.name || "").toLowerCase() === akceJmeno.toLowerCase();
+                var shodaJmena = (r.actionName || r.name || "").toLowerCase().indexOf(akceJmeno.toLowerCase()) > -1 || akceJmeno.toLowerCase().indexOf((r.actionName || r.name || "").toLowerCase()) > -1;
                 if (shodaId) return false;
                 if (!r.id && shodaJmena) return false;
                 return true; 
             });
+            
             localStorage.setItem('ticketRequests', JSON.stringify(vycisteneRequests));
             window.requests = vycisteneRequests;
 
@@ -4835,13 +4801,13 @@ setInterval(function(){
                     customUsers: JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {},
                     roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || window.roleRequests || []
                 }, { merge: true }).then(function() {
-                    alert('🗑️ Žádost byla trvale vymazána z cloudu Firebase!');
+                    alert('🗑️ Žádost byla úspěšně smazána z portálu i z internetového cloudu Firebase!');
                     location.reload();
                 });
             } else { location.reload(); }
         };
 
-        setInterval(ccOživTlačítkaAStranickéFiltryZive, 450);
+        setInterval(ccOživTlačítkaAStranickéFiltryZive, 400);
     })();
 </script>
 </body>
