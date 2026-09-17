@@ -4583,225 +4583,74 @@ setInterval(function(){
         setInterval(ccDomontujAdministrativniTlacitkaZive, 450);
     })();
 </script>
-<!-- 📊 REZERVAČNÍ ENGINE COKE: 1. ČÁST - GRAFICKÝ STYL ČUDLÍKŮ A START ENGIFU -->
-<style>
-    /* Stylování nových klikacích schvalovacích tlačítek */
-    .cc-btn-approve-click { display: inline-flex !important; align-items: center !important; justify-content: center !important; padding: 4px 10px !important; border-radius: 6px !important; font-size: 11px !important; font-weight: 700 !important; cursor: pointer !important; text-transform: uppercase !important; border: 1px solid #cbd5e1 !important; background: #fff !important; color: #334155 !important; transition: all 0.2s ease !important; height: 28px !important; box-sizing: border-box !important; }
-    
-    .cc-btn-approve-click.cc-active-yes { background: #16a34a !important; color: white !important; border-color: #16a34a !important; box-shadow: 0 2px 6px rgba(22, 163, 74, 0.2) !important; }
-    .cc-btn-approve-click.cc-active-no { background: #e41e26 !important; color: white !important; border-color: #e41e26 !important; box-shadow: 0 2px 6px rgba(228, 30, 38, 0.2) !important; }
-    .cc-btn-approve-click.cc-active-wait { background: #d97706 !important; color: white !important; border-color: #d97706 !important; box-shadow: 0 2px 6px rgba(217, 119, 6, 0.2) !important; }
-</style>
-
+<!-- ✉️ ENGINE SMART OBÁLKY: 1. ČÁST - ŽIVÉ ZOBRAZENÍ PODLE STAVU SCHVÁLENÍ -->
 <script>
     (function() {
-        // Generujeme novou přehlednou strukturu řádku bez ošklivých roletek
-        function ccPrekopniRoletkyNaTlacitkaZive() {
+        function ccHlidejStavAMontujObalkuAdmina() {
+            // Najdeme všechny řádky v těle tabulek schvalování žádostí
             var vsechnyRadkyTabulky = document.querySelectorAll('table tbody tr');
 
             vsechnyRadkyTabulky.forEach(function(row) {
-                var htmlObsah = row.innerHTML;
-                if (htmlObsah.indexOf('Obrat:') > -1 || htmlObsah.indexOf('Obchodní partner') > -1 || htmlObsah.indexOf('undefined') > -1) {
-                    var fakeId = row.getAttribute('data-cc-id') || 'cc_' + Math.floor(Math.random() * 1000000);
-                    row.setAttribute('data-cc-id', fakeId);
+                // Přeskočíme řádky, které nemají dostatek sloupců
+                if (row.cells.length < 5) return;
 
-                    if (row.getAttribute('data-cc-buttons-live') === 'yes') return;
+                // Vyhledáme v řádku textový stav finálního schválení (obvykle bývá ve sloupcích ke konci řádku)
+                var textCelkovy = row.innerText || "";
+                
+                // 🔥 KLÍČOVÁ PODMÍNKA: Obálka se ukáže POUZE V MOMENTĚ, kdy je žádost finálně SCHVÁLENA
+                var jeSchvaleno = (textCelkovy.indexOf('Schváleno') > -1 || textCelkovy.indexOf('SCHVÁLENO') > -1);
 
-                    var stavSef1 = row.getAttribute('data-cc-state-sef1') || "Čeká na schválení";
-                    var stavSef2 = row.getAttribute('data-cc-state-sef2') || "Čeká na vyjádření";
+                // Najdeme úplně poslední buňku v řádku (kde máš akce / prázdné místo), abychom tam obálku usadily
+                var posledniBunka = row.cells[row.cells.length - 1];
+                if (!posledniBunka) return;
 
-                    var mailZadatele = localStorage.getItem('userEmail') || "zamestnanec@cchellenic.com";
-                    var akceNazev = row.cells ? row.cells.innerText.trim() : "O2 Arena - Zápas";
-                    
-                    var jmenoZadatele = localStorage.getItem('userName');
-                    if (!jmenoZadatele || jmenoZadatele === "undefined") {
-                        jmenoZadatele = mailZadatele.split('@').replace(/[^a-zA-Z]/g, ' ');
+                // Vygenerujeme pro řádek unikátní identifikátor, pokud ho ještě nemá
+                var fakeId = row.getAttribute('data-cc-msg-id') || 'msg_' + Math.floor(Math.random() * 100000);
+                row.setAttribute('data-cc-msg-id', fakeId);
+
+                var existujeUzObalka = document.getElementById('cc-smart-email-btn-' + fakeId);
+
+                if (jeSchvaleno) {
+                    // Pokud je schváleno a obálka ještě na konci nesvítí, bezpečně ji tam přidáme
+                    if (!existujeUzObalka) {
+                        // Vytáhneme data přímo z řádku pro předvyplnění e-mailu
+                        var akceText = row.cells[0] ? row.cells[0].innerText.trim() : "Firemní akce";
+                        var emailZadatele = localStorage.getItem('userEmail') || "zamestnanec@cchellenic.com";
+
+                        var divObal = document.createElement('div');
+                        divObal.id = 'cc-smart-email-btn-' + fakeId;
+                        divObal.style.cssText = 'display: inline-flex; margin-left: 8px; vertical-align: middle;';
+                        divObal.innerHTML = '<button onclick="ccOtevriOutlookProSchvalenouAkci(\'' + emailZadatele + '\', \'' + akceText + '\')" style="background: #64748b !important; color: white !important; border: none !important; padding: 4px 10px !important; border-radius: 4px !important; height: 28px !important; cursor: pointer !important; font-size: 11px !important; font-weight: 700 !important; text-transform: uppercase !important;" title="Odeslat žadateli potvrzení do Outlooku">✉️ Vyrozumět</button>';
+                        
+                        posledniBunka.appendChild(divObal);
                     }
-                    
-                    var sloupecCistyReason = row.cells ? row.cells.innerHTML : "";
-                    var sef1Mail = localStorage.getItem('cc_manager_email') || "manazer@cchellenic.com";
-                    var sef2Mail = "rsm.praha@cchellenic.com";
-
-                    row.innerHTML = 
-                        '<td style="font-weight:700; color:#0f172a; padding:12px; vertical-align:middle;">' + akceNazev + '</td>' +
-                        '<td style="color:#1e293b; font-weight:700; padding:12px; text-transform:capitalize; vertical-align:middle;">' + jmenoZadatele + '</td>' +
-                        '<td style="padding:12px; line-height:1.4; vertical-align:middle;">' + sloupecCistyReason + '</td>' +
-                        
-                        '<td style="padding:12px; vertical-align:middle; min-width:140px;">' +
-                            '<div style="font-size:11px; color:#64748b; font-weight:700; margin-bottom:6px;">👤 ' + sef1Mail.split('@') + '</div>' +
-                            '<div style="display:flex; gap:4px;">' +
-                                '<button id="cc-btn-s1-yes-' + fakeId + '" class="cc-btn-approve-click ' + (stavSef1==='ANO'?'cc-active-yes':'') + '">ANO</button>' +
-                                '<button id="cc-btn-s1-no-' + fakeId + '" class="cc-btn-approve-click ' + (stavSef1==='NE'?'cc-active-no':'') + '">NE</button>' +
-                            '</div>' +
-                        '</td>' +
-                        
-                        '<td style="padding:12px; vertical-align:middle; min-width:210px;">' +
-                            '<div style="font-size:11px; color:#64748b; font-weight:700; margin-bottom:6px;">👤 ' + sef2Mail.split('@') + '</div>' +
-                            '<div style="display:flex; gap:4px;">' +
-                                '<button id="cc-btn-s2-yes-' + fakeId + '" class="cc-btn-approve-click ' + (stavSef2==='ANO'?'cc-active-yes':'') + '">ANO</button>' +
-                                '<button id="cc-btn-s2-no-' + fakeId + '" class="cc-btn-approve-click ' + (stavSef2==='NE'?'cc-active-no':'') + '">NE</button>' +
-                                '<button id="cc-btn-s2-wait-' + fakeId + '" class="cc-btn-approve-click ' + (stavSef2==='Náhradník'?'cc-active-wait':'') + '">NÁHRADNÍK</button>' +
-                            '</div>' +
-                        '</td>' +
-                        
-                        '<td id="cc-txt-s1-' + fakeId + '" style="padding:12px; font-weight:700; font-size:11px; text-align:center; vertical-align:middle;">' + stavSef1 + '</td>' +
-                        '<td id="cc-txt-s2-' + fakeId + '" style="padding:12px; font-weight:700; font-size:11px; text-align:center; vertical-align:middle;">' + stavSef2 + '</td>' +
-                        '<td id="cc-txt-res-' + fakeId + '" style="padding:12px; font-weight:700; font-size:11px; text-align:center; vertical-align:middle;">' + stavSef1 + '</td>' +
-                        
-                        '<td id="cc-actions-cell-final-' + fakeId + '" style="padding:12px; text-align:center; vertical-align:middle; white-space:nowrap;"></td>';
-
-                    row.setAttribute('data-cc-buttons-live', 'yes');
-                    row.setAttribute('data-cc-state-sef1', stavSef1);
-                    row.setAttribute('data-cc-state-sef2', stavSef2);
-                }
-            });
-        }
-        // 📊 REZERVAČNÍ ENGINE COKE: 2. ČÁST - ODZAMKNUTÍ TLAČÍTEK, EMAILY A KOŠ
-        function ccOživTlačítkaAStranickéFiltryZive() {
-            var vsechnyRadky = document.querySelectorAll('table tbody tr[data-cc-buttons-live="yes"]');
-
-            vsechnyRadky.forEach(function(row) {
-                var fakeId = row.getAttribute('data-cc-id');
-                var stavSef1 = row.getAttribute('data-cc-state-sef1') || "Čeká na schválení";
-                var stavSef2 = row.getAttribute('data-cc-state-sef2') || "Čeká na vyjádření";
-
-                var b1Yes = document.getElementById('cc-btn-s1-yes-' + fakeId);
-                var b1No = document.getElementById('cc-btn-s1-no-' + fakeId);
-                var b2Yes = document.getElementById('cc-btn-s2-yes-' + fakeId);
-                var b2No = document.getElementById('cc-btn-s2-no-' + fakeId);
-                var b2Wait = document.getElementById('cc-btn-s2-wait-' + fakeId);
-                var bunkaAdminTlacitetk = document.getElementById('cc-actions-cell-final-' + fakeId);
-
-                // 🔓 ÚPLNÉ ODZAMKNUTÍ TLAČÍTEK PRO ADMINA I MANAŽERY
-                if (b1Yes) b1Yes.removeAttribute('disabled');
-                if (b1No) b1No.removeAttribute('disabled');
-                if (b2Yes) b2Yes.removeAttribute('disabled');
-                if (b2No) b2No.removeAttribute('disabled');
-                if (b2Wait) b2Wait.removeAttribute('disabled');
-
-                // Vložení obálky a mazacího koše
-                if (bunkaAdminTlacitetk && bunkaAdminTlacitetk.innerHTML === "") {
-                    var akceJmeno = row.cells ? row.cells.innerText.trim() : "test";
-                    var mailZadat = localStorage.getItem('userEmail') || "zamestnanec@cchellenic.com";
-
-                    bunkaAdminTlacitetk.innerHTML = 
-                        '<div style="display:inline-flex; gap:6px; align-items:center;">' +
-                            '<button id="cc-email-trigger-btn-' + fakeId + '" style="background:#64748b!important; color:white!important; border:none!important; padding:0 10px!important; border-radius:4px!important; height:28px!important; cursor:pointer!important; font-size:12px!important; font-weight:700!important; display:inline-flex!important; align-items:center!important; justify-content:center!important;">✉️ Vyrozumět</button>' +
-                            '<button id="cc-delete-trigger-btn-' + fakeId + '" style="background:#e41e26!important; color:white!important; border:none!important; padding:0 10px!important; border-radius:4px!important; height:28px!important; cursor:pointer!important; font-size:12px!important; font-weight:bold!important; display:inline-flex!important; align-items:center!important; justify-content:center!important;">🗑️</button>' +
-                        '</div>';
-
-                    document.getElementById('cc-email-trigger-btn-' + fakeId).addEventListener('click', function(e) {
-                        e.preventDefault(); e.stopPropagation();
-                        ccOdeslatZiveInformacniEmailTlacitka(fakeId, mailZadat, akceJmeno);
-                    });
-
-                    document.getElementById('cc-delete-trigger-btn-' + fakeId).addEventListener('click', function(e) {
-                        e.preventDefault(); e.stopPropagation();
-                        ccSmazatZadostZLiveFirebaseTlacitka(fakeId, akceJmeno);
-                    });
-                }
-                // 📊 REZERVAČNÍ ENGINE COKE: 3. ČÁST - BAREVNÉ REAKCE, OUTLOOK, MAZÁNÍ A UZAVŘENÍ
-                function aktualizujStavAProvis(novyS1, novyS2) {
-                    row.setAttribute('data-cc-state-sef1', novyS1);
-                    row.setAttribute('data-cc-state-sef2', novyS2);
-
-                    var t1 = document.getElementById('cc-txt-s1-' + fakeId);
-                    var t2 = document.getElementById('cc-txt-s2-' + fakeId);
-                    var tRes = document.getElementById('cc-txt-res-' + fakeId);
-
-                    if (t1) { t1.innerText = novyS1; t1.style.color = novyS1 === 'ANO' ? '#16a34a' : (novyS1 === 'NE' ? '#e41e26' : '#d97706'); }
-                    if (t2) { t2.innerText = novyS2; t2.style.color = novyS2 === 'ANO' ? '#16a34a' : (novyS2 === 'NE' ? '#e41e26' : '#64748b'); }
-                    if (tRes) {
-                        if (novyS1 === 'NE' || novyS2 === 'NE') { tRes.innerText = 'Zamítnuto'; tRes.style.color = '#e41e26'; }
-                        else if (novyS1 === 'ANO' && novyS2 === 'ANO') { tRes.innerText = 'Schváleno'; tRes.style.color = '#16a34a'; }
-                        else { tRes.innerText = 'Čeká na schválení'; tRes.style.color = '#d97706'; }
-                    }
-
-                    if (b1Yes) { b1Yes.className = 'cc-btn-approve-click ' + (novyS1==='ANO'?'cc-active-yes':''); }
-                    if (b1No) { b1No.className = 'cc-btn-approve-click ' + (novyS1==='NE'?'cc-active-no':''); }
-                    if (b2Yes) { b2Yes.className = 'cc-btn-approve-click ' + (novyS2==='ANO'?'cc-active-yes':''); }
-                    if (b2No) { b2No.className = 'cc-btn-approve-click ' + (novyS2==='NE'?'cc-active-no':''); }
-                    if (b2Wait) { b2Wait.className = 'cc-btn-approve-click ' + (novyS2==='Náhradník'?'cc-active-wait':''); }
-                }
-
-                if (b1Yes && !b1Yes.getAttribute('data-hooked')) {
-                    b1Yes.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); aktualizujStavAProvis('ANO', stavSef2); });
-                    b1Yes.setAttribute('data-hooked', 'yes');
-                }
-                if (b1No && !b1No.getAttribute('data-hooked')) {
-                    b1No.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); aktualizujStavAProvis('NE', 'Čeká na vyjádření'); });
-                    b1No.setAttribute('data-hooked', 'yes');
-                }
-                if (b2Yes && !b2Yes.getAttribute('data-hooked')) {
-                    b2Yes.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); aktualizujStavAProvis(stavSef1, 'ANO'); });
-                    b2Yes.setAttribute('data-hooked', 'yes');
-                }
-                if (b2No && !b2No.getAttribute('data-hooked')) {
-                    b2No.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); aktualizujStavAProvis(stavSef1, 'NE'); });
-                    b2No.setAttribute('data-hooked', 'yes');
-                }
-                if (b2Wait && !b2Wait.getAttribute('data-hooked')) {
-                    b2Wait.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); aktualizujStavAProvis(stavSef1, 'Náhradník'); });
-                    b2Wait.setAttribute('data-hooked', 'yes');
+                } else {
+                    // Pokud stav skočí na Čeká nebo Zamítnuto, obálka automaticky potichu zmizí
+                    if (existujeUzObalka) existujeUzObalka.remove();
                 }
             });
         }
 
-        window.ccOdeslatZiveInformacniEmailTlacitka = function(fakeId, emailZadatele, akceText) {
-            var row = document.querySelector('tr[data-cc-id="' + fakeId + '"]');
-            var s1 = row ? row.getAttribute('data-cc-state-sef1') : 'Čeká na schválení';
-            var s2 = row ? row.getAttribute('data-cc-state-sef2') : 'Čeká na vyjádření';
+        // Hlídáme stav tabulky neustále každou půl vteřinu na pozadí
+        setInterval(ccHlidejStavAMontujObalkuAdmina, 500);
+        // ✉️ ENGINE SMART OBÁLKY: 2. ČÁST - TEXT EMAILU PRO OUTLOOK A UZAVŘENÍ
+        window.ccOtevriOutlookProSchvalenouAkci = function(emailZadatele, akceText) {
+            var subject = encodeURIComponent('Potvrzení rezervace lístků Coca-Cola HBC: ' + akceText);
             
-            var vyslednyStavVzkazu = "ČEKÁ NA VYJÁDŘENÍ";
-            if (s1 === 'NE' || s2 === 'NE') vyslednyStavVzkazu = "ZAMÍTNUTO";
-            else if (s1 === 'ANO' && s2 === 'ANO') vyslednyStavVzkazu = "SCHVÁLENO";
-            else if (s1 === 'ANO' && s2 === 'Náhradník') vyslednyStavVzkazu = "NÁHRADNÍK";
-            else if (s1 === 'ANO') vyslednyStavVzkazu = "SCHVÁLENO 1. STUPNĚM (ČEKÁ NA REGIONÁLNÍHO MANAŽERA)";
-
-            var subject = encodeURIComponent('Aktualizace stavu schválení lístků Coca-Cola HBC: ' + akceText);
+            // Sestavení přehledného a profesionálního e-mailu pro zaměstnance
             var body = encodeURIComponent(
                 'Dobrý den,\n\n' +
-                'Vaše žádost o firemní lístky Coca-Cola HBC na akci "' + akceText + '" byla posouzena manažery.\n\n' +
-                'CELKOVÝ VÝSLEDNÝ STAV: ' + vyslednyStavVzkazu + '\n' +
-                '  - 1. Schvalovatel (Přímý nadřízený): ' + s1.toUpperCase() + '\n' +
-                '  - 2. Schvalovatel (RSM Praha Central): ' + s2.toUpperCase() + '\n\n' +
+                'Vaše žádost o firemní lístky Coca-Cola HBC na akci "' + akceText + '" byla úspěšně SCHVÁLENA oběma stupni schvalovatelů.\n\n' +
+                'Lístky máte plně rezervované. Podrobnosti o předání lístků obdržíte v blízké době.\n\n' +
                 'S pozdravem,\nAdministrace portálu Coca-Cola HBC'
             );
+            
+            // Natvrdo vyvoláme Outlook nebo výchozí poštovní program s předepsanými daty
             window.location.href = "mailto:" + emailZadatele + "?subject=" + subject + "&body=" + body;
         };
-
-        window.ccSmazatZadostZLiveFirebaseTlacitka = function(id, akceJmeno) {
-            if (!confirm('⚠️ Opravdu si přejete tuto žádost o lístky na akci "' + akceJmeno + '" trvale smazat z portálu i z live cloudu Firebase?')) return;
-            var requestsRaw = JSON.parse(localStorage.getItem('ticketRequests')) || window.requests || [];
-            
-            var vycisteneRequests = requestsRaw.filter(function(r) { 
-                var shodaId = (String(r.id) === String(id));
-                var shodaJmena = (r.actionName || r.name || "").toLowerCase().indexOf(akceJmeno.toLowerCase()) > -1 || akceJmeno.toLowerCase().indexOf((r.actionName || r.name || "").toLowerCase()) > -1;
-                if (shodaId) return false;
-                if (!r.id && shodaJmena) return false;
-                return true; 
-            });
-            localStorage.setItem('ticketRequests', JSON.stringify(vycisteneRequests));
-            window.requests = vycisteneRequests;
-
-            if (typeof firebase !== 'undefined' && firebase.apps.length) {
-                var db = firebase.firestore();
-                db.collection("portalData").doc("cocaColaDatabase").set({
-                    ticketRequests: vycisteneRequests,
-                    companyActions: JSON.parse(localStorage.getItem('companyActions')) || window.companyActions || [],
-                    customUsers: JSON.parse(localStorage.getItem('customUsers')) || window.customUsers || {},
-                    roleRequests: JSON.parse(localStorage.getItem('roleRequests')) || window.roleRequests || []
-                }, { merge: true }).then(function() {
-                    alert('🗑️ Žádost byla trvale vymazána z cloudu Firebase!');
-                    location.reload();
-                });
-            } else { location.reload(); }
-        };
-
-        setInterval(ccPrekopniRoletkyNaTlacitkaZive, 400);
-        setInterval(ccOživTlačítkaAStranickéFiltryZive, 450);
     })();
 </script>
+
 
 </body>
 </html>
