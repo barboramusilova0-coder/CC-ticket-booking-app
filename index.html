@@ -4583,7 +4583,114 @@ setInterval(function(){
         setInterval(ccDomontujAdministrativniTlacitkaZive, 450);
     })();
 </script>
+<!-- 🔐 FINÁLNÍ MECHANISMUS PRÁV: ADRESNÁ VIDITELNOST A POSLOUPNOST PRO SCHVALOVATELE -->
+<script>
+    (function() {
+        function ccZabezpecFiltrAViditelnostSchvalovani() {
+            // Zjistíme, kdo je zrovna přihlášený (role: 'admin', 'manager', atd. a jeho e-mail)
+            var prihlasenyEmail = (localStorage.getItem('userEmail') || "").toLowerCase().trim();
+            var prihlasenaRole = (localStorage.getItem('userRole') || window.currentUserRole || "").toLowerCase().trim();
+            
+            // Pojistka pro určení role na základě přihlašovacího jména z tvého ranního kódu
+            if (prihlasenyEmail.indexOf('rsm.praha') > -1) prihlasenaRole = "rsm"; // 2. Schvalovatel
+            if (prihlasenyEmail.indexOf('admin') > -1) prihlasenaRole = "admin";
 
+            var vsechnyRadkyTabulky = document.querySelectorAll('table tbody tr');
+
+            vsechnyRadkyTabulky.forEach(function(row) {
+                var htmlObsah = row.innerHTML;
+                
+                // Zajímavá nás pouze řádky s lístky, které už náš systém propojil
+                if (row.getAttribute('data-cc-rebuilt-vfinal') === 'yes') {
+                    var fakeId = row.getAttribute('data-cc-id');
+                    
+                    var sel1 = document.getElementById('cc-sef1-status-' + fakeId);
+                    var sel2 = document.getElementById('cc-sef2-status-' + fakeId);
+                    
+                    // Vytáhneme e-mail 1. schvalovatele přiřazeného k této konkrétní žádosti
+                    var bunkaSefa1 = row.cells[3]; 
+                    var prirazenySef1Email = bunkaSefa1 ? bunkaSefa1.innerText.replace('👤', '').toLowerCase().trim() : '';
+
+                    // -------------------------------------------------------------------------
+                    // 📑 KROK 1: KONTROLA PRÁV A VIDITELNOSTI (Kdo co smí vidět a ovládat)
+                    // -------------------------------------------------------------------------
+                    var zneviditelnitRadek = false;
+
+                    if (prihlasenaRole === 'admin') {
+                        // Admin vidí všechno a může ovládat obě roletky bez omezení
+                        if (sel1) sel1.removeAttribute('disabled');
+                        if (sel2 && sel1 && sel1.value === 'ANO') sel2.removeAttribute('disabled');
+                    } 
+                    else if (prihlasenyEmail === prirazenySef1Email) {
+                        // Přihlášený uživatel je PŘESNĚ TEN 1. schvalovatel, kterého si žadatel zvolil!
+                        // Smí vidět svou žádost, ovládat pouze 1. roletku, druhá je pro něj zamčená.
+                        if (sel1) {
+                            sel1.removeAttribute('disabled');
+                            sel1.style.background = '#fff';
+                        }
+                        if (sel2) {
+                            sel2.setAttribute('disabled', 'disabled');
+                            sel2.style.background = '#f1f5f9';
+                            sel2.style.cursor = 'not-allowed';
+                        }
+                    } 
+                    else if (prihlasenaRole === 'rsm' || prihlasenyEmail.indexOf('rsm.praha') > -1) {
+                        // Přihlášený uživatel je 2. schvalovatel (RSM Praha Central)
+                        // 🔥 KLÍČOVÁ PODMÍNKA: Pokud 1. schvalovatel ještě nedal "ANO", RSM žádost vůbec neuvidí!
+                        if (sel1 && sel1.value !== 'ANO') {
+                            zneviditelnitRadek = true; // Žádost pro RSM kompletně zmizí z obrazovky
+                        } else {
+                            // Pokud 1. schvalovatel schválil, RSM žádost uvidí, ale smí ovládat jen svou 2. roletku
+                            if (sel1) sel1.setAttribute('disabled', 'disabled');
+                            if (sel2) {
+                                sel2.removeAttribute('disabled');
+                                sel2.style.background = '#fff';
+                            }
+                        }
+                    } 
+                    else {
+                        // Pokud je přihlášený jakýkoliv jiný manažer (1. schvalovatel), kterému tato žádost nepatří,
+                        // nebo běžný zaměstnanec, žádost před ním kompletně schováme!
+                        zneveritelnitRadek = true;
+                    }
+
+                    // Provést fyzické schování/zobrazení na obrazovce
+                    if (zneviditelnitRadek && prihlasenaRole !== 'admin') {
+                        row.style.setProperty('display', 'none', 'important');
+                    } else {
+                        // Pokud řádek prochází filtrem viditelnosti, ukážeme ho ve standardním tabulkovém zobrazení
+                        if (row.style.display === 'none') {
+                            row.style.setProperty('display', 'table-row', 'important');
+                        }
+                    }
+
+                    // -------------------------------------------------------------------------
+                    // 🎛️ KROK 2: ÚPRAVA MOŽNOSTÍ V ROLETKÁCH (ANO/NE) PŘESNĚ DLE ZADÁNÍ
+                    // -------------------------------------------------------------------------
+                    if (sel1 && !sel1.getAttribute('data-cc-options-fixed')) {
+                        sel1.innerHTML = 
+                            '<option value="Čeká na schválení">⏳ Čeká na schválení</option>' +
+                            '<option value="ANO">✅ ANO</option>' +
+                            '<option value="NE">❌ NE</option>';
+                        sel1.setAttribute('data-cc-options-fixed', 'yes');
+                    }
+
+                    if (sel2 && !sel2.getAttribute('data-cc-options-fixed')) {
+                        sel2.innerHTML = 
+                            '<option value="Čeká na vyjádření">⏳ Čeká na vyjádření</option>' +
+                            '<option value="ANO">✅ ANO</option>' +
+                            '<option value="NE">❌ NE</option>' +
+                            '<option value="Náhradník">⚠️ NÁHRADNÍK</option>';
+                        sel2.setAttribute('data-cc-options-fixed', 'yes');
+                    }
+                }
+            });
+        }
+
+        // Spouštíme kontrolu zabezpečení, viditelnosti a adresnosti každých 400ms na pozadí
+        setInterval(ccZabezpecFiltrAViditelnostSchvalovani, 400);
+    })();
+</script>
 
 </body>
 </html>
