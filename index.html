@@ -765,5 +765,338 @@ if(currentUser)updateSession();
 else{$("loginGate").classList.remove("hidden");$("app").classList.add("hidden")}
 renderAll();subscribe();
 </script>
+
+<style id="cc-final-admin-enhancements">
+.cc-admin-shell{margin-top:18px}
+.cc-admin-nav{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}
+.cc-admin-nav button{border:1px solid #dbe2ea;background:#fff;color:#334155;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer}
+.cc-admin-nav button.active{background:#e41e26;color:#fff;border-color:#e41e26}
+.cc-admin-panel{display:none}.cc-admin-panel.active{display:block}
+.cc-action-admin-grid{display:grid;gap:12px}
+.cc-action-admin-row{border:1px solid #e2e8f0;border-radius:13px;padding:14px;background:#fff}
+.cc-action-admin-top{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.cc-action-admin-title{font-weight:900;font-size:16px}
+.cc-action-admin-meta{font-size:12px;color:#64748b;margin-top:4px}
+.cc-action-admin-controls{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.cc-action-admin-controls button,.cc-mini-btn{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:8px 10px;font-weight:750;cursor:pointer}
+.cc-action-admin-controls button.danger,.cc-mini-btn.danger{color:#b91c1c;border-color:#fecaca}
+.cc-action-admin-controls button.locked{background:#f1f5f9}
+.cc-action-admin-edit{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid #eef2f7}
+.cc-action-admin-edit label,.cc-add-box-grid label{font-size:12px;font-weight:800;color:#475569}
+.cc-action-admin-edit input,.cc-action-admin-edit select,.cc-action-admin-edit textarea,
+.cc-add-box-grid input,.cc-add-box-grid select,.cc-add-box-grid textarea{width:100%;box-sizing:border-box;margin-top:4px;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;font:inherit}
+.cc-action-admin-edit .wide,.cc-add-box-grid .wide{grid-column:1/-1}
+.cc-add-box{border:1px dashed #cbd5e1;border-radius:12px;padding:14px;background:#f8fafc}
+.cc-add-box-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.cc-reason-list{display:grid;gap:8px;margin:12px 0}
+.cc-reason-row{display:flex;gap:8px;align-items:center}
+.cc-reason-row input{flex:1;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px}
+.cc-approved-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px}
+.cc-approved-card{border:1px solid #e2e8f0;border-radius:13px;padding:15px;background:#fff}
+.cc-approved-card h4{margin:0 0 7px}
+.cc-approved-card .cc-count{font-size:12px;color:#64748b;margin-bottom:8px}
+.cc-approved-card ul{margin:7px 0 0;padding-left:20px}
+.cc-season-grid-final{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-top:12px}
+.cc-season-final-card{border:1px solid #dbe2ea;background:#fff;border-radius:12px;padding:14px;text-align:left;cursor:pointer}
+.cc-season-final-card.active{border-color:#e41e26;box-shadow:0 0 0 2px rgba(228,30,38,.08)}
+.cc-season-final-card .ico{font-size:26px;display:block;margin-bottom:6px}
+#cc-season-effects{position:fixed;inset:0;pointer-events:none;z-index:9998;overflow:hidden}
+.cc-season-particle{position:absolute;top:-60px;user-select:none;pointer-events:none;animation:ccSeasonFall linear forwards}
+@keyframes ccSeasonFall{0%{transform:translate3d(0,-60px,0) rotate(0deg);opacity:0}8%{opacity:.9}50%{transform:translate3d(45px,52vh,0) rotate(180deg)}92%{opacity:.85}100%{transform:translate3d(-25px,108vh,0) rotate(360deg);opacity:0}}
+@media(max-width:650px){.cc-action-admin-edit,.cc-add-box-grid{grid-template-columns:1fr}.cc-action-admin-edit .wide,.cc-add-box-grid .wide{grid-column:auto}}
+</style>
+
+<script id="cc-final-admin-enhancements">
+(function(){
+"use strict";
+const DB=["portalData","cocaColaDatabase"];
+const DEFAULT_CATS=[
+ {id:"o2",name:"O2 Arena"},{id:"football",name:"Fotbal"},{id:"slavia",name:"SKS Slavia"},
+ {id:"national",name:"Reprezentace"},{id:"special",name:"Speciální akce"}
+];
+
+function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}
+function actions(){try{let a=JSON.parse(localStorage.getItem("companyActions")||"[]");return Array.isArray(a)?a:[]}catch(e){return[]}}
+function saveActions(a){localStorage.setItem("companyActions",JSON.stringify(a));try{window.companyActions=a}catch(e){}}
+function requests(){try{let a=JSON.parse(localStorage.getItem("ticketRequests")||"[]");return Array.isArray(a)?a:[]}catch(e){return[]}}
+function settings(){try{return JSON.parse(localStorage.getItem("portalSettings")||"{}")||{}}catch(e){return{}}}
+function saveSettings(s){localStorage.setItem("portalSettings",JSON.stringify(s))}
+function cloud(data){
+ try{
+  if(window.firebase&&firebase.apps&&firebase.apps.length)
+   return firebase.firestore().collection(DB[0]).doc(DB[1]).set(data,{merge:true});
+ }catch(e){}
+ return Promise.resolve();
+}
+function normalize(a){
+ a.category=a.category||a.cat||"Speciální akce";
+ if(typeof a.locked!=="boolean")a.locked=false;
+ if(!a.status)a.status="Aktivní";
+ return a;
+}
+function reasonList(){
+ const s=settings();
+ if(Array.isArray(s.reasons)&&s.reasons.length)return s.reasons;
+ const old=(localStorage.getItem("cc_dynamic_reasons")||"").split(",").map(x=>x.trim()).filter(Boolean);
+ return old.length?old:[
+  "Obchodní schůzka s klíčovým zákazníkem v rámci rozvoje obchodního vztahu.",
+  "Setkání se zákazníkem.",
+  "Ostatní obchodní jednání."
+ ];
+}
+function saveReasons(a){
+ a=[...new Set(a.map(x=>String(x||"").trim()).filter(Boolean))];
+ const s=settings();s.reasons=a;saveSettings(s);
+ localStorage.setItem("cc_dynamic_reasons",a.join(","));
+ return cloud({portalSettings:s,cc_dynamic_reasons:a.join(",")});
+}
+function approvedFor(name){
+ return requests().filter(r=>{
+  const a=r.action||r.event||"";
+  const s1=String(r.status1||"").toLowerCase();
+  const s2=String(r.status2||"").toLowerCase();
+  return a===name&&(s1==="schváleno"||s1==="approved")&&(s2==="schváleno"||s2==="approved");
+ });
+}
+
+/* ---------- Refresh button: explicitly restore it ---------- */
+function ensureRefreshButton(){
+ let btn=document.querySelector(".cc-refresh-btn,[data-action='refresh'],#refreshBtn,#refreshButton");
+ if(!btn){
+  const candidates=[...document.querySelectorAll("button")].filter(b=>/obnov|refresh|načíst/i.test(b.textContent||""));
+  btn=candidates[0];
+ }
+ if(!btn){
+  const header=document.querySelector("header")||document.querySelector(".topbar")||document.querySelector(".navbar")||document.body.firstElementChild;
+  if(header){
+   btn=document.createElement("button");
+   btn.type="button";btn.className="cc-refresh-btn";
+   btn.title="Obnovit data";
+   btn.innerHTML="↻ <span>Obnovit</span>";
+   btn.style.cssText="margin-left:8px;border:1px solid #cbd5e1;background:#fff;border-radius:9px;padding:8px 11px;font-weight:800;cursor:pointer";
+   header.appendChild(btn);
+  }
+ }
+ if(btn && !btn.dataset.ccRefreshBound){
+  btn.dataset.ccRefreshBound="1";
+  btn.addEventListener("click",function(){
+   try{
+    if(window.firebase&&firebase.apps&&firebase.apps.length){
+     firebase.firestore().collection(DB[0]).doc(DB[1]).get().then(s=>{
+      if(s.exists){
+       const d=s.data()||{};
+       if(Array.isArray(d.companyActions)){saveActions(d.companyActions);window.companyActions=d.companyActions}
+       if(Array.isArray(d.ticketRequests))localStorage.setItem("ticketRequests",JSON.stringify(d.ticketRequests));
+       if(d.portalSettings){saveSettings(d.portalSettings);if(d.portalSettings.seasonMode)applySeason(d.portalSettings.seasonMode,false)}
+      }
+      location.reload();
+     }).catch(()=>location.reload());
+    }else location.reload();
+   }catch(e){location.reload()}
+  });
+ }
+}
+
+/* ---------- Seasons: old-style visible modes restored ---------- */
+function currentSeason(){return settings().seasonMode||localStorage.getItem("ccSeasonMode")||"normal"}
+function applySeason(mode,save){
+ const valid=["normal","autumn","winter","spring","summer"];
+ if(!valid.includes(mode))mode="normal";
+ localStorage.setItem("ccSeasonMode",mode);
+ document.body.dataset.season=mode;
+ document.body.classList.remove("cc-season-normal","cc-season-autumn","cc-season-winter","cc-season-spring","cc-season-summer");
+ document.body.classList.add("cc-season-"+mode);
+ let box=document.getElementById("cc-season-effects");
+ if(!box){box=document.createElement("div");box.id="cc-season-effects";document.body.appendChild(box)}
+ box.innerHTML="";
+ if(window.__ccTimers)window.__ccTimers.forEach(clearInterval);
+ window.__ccTimers=[];
+ const chars={
+  autumn:["🍁","🍂","🍃"],winter:["❄","❅","❆","✦"],spring:["🌸","🌷","🌼","🌺"],summer:["☀️","🏖️","⚽","🏐"]
+ };
+ function drop(){
+  const e=document.createElement("span");e.className="cc-season-particle";
+  e.textContent=chars[mode][Math.floor(Math.random()*chars[mode].length)];
+  e.style.left=Math.random()*100+"%";e.style.fontSize=15+Math.random()*22+"px";
+  e.style.animationDuration=7+Math.random()*8+"s";box.appendChild(e);setTimeout(()=>e.remove(),16000);
+ }
+ if(chars[mode]){
+  for(let i=0;i<8;i++)setTimeout(drop,i*420);
+  window.__ccTimers.push(setInterval(drop,mode==="summer"?1500:850));
+ }
+ updateRefreshSeasonIcon(mode);
+ document.querySelectorAll(".cc-season-final-card").forEach(x=>x.classList.toggle("active",x.dataset.season===mode));
+ if(save){const s=settings();s.seasonMode=mode;saveSettings(s);cloud({portalSettings:s,ccSeasonMode:mode})}
+}
+function updateRefreshSeasonIcon(mode){
+ const b=document.querySelector(".cc-refresh-btn,[data-action='refresh'],#refreshBtn,#refreshButton");
+ if(!b)return;
+ const icon={normal:"↻",autumn:"🎃",winter:"🎄",spring:"🌸",summer:"☀️"}[mode]||"↻";
+ const span=b.querySelector("[data-season-refresh-icon]");
+ if(span)span.textContent=icon;else b.innerHTML=icon+" <span>Obnovit</span>";
+}
+function loadSeason(){applySeason(currentSeason(),false)}
+
+/* ---------- Admin panels ---------- */
+function renderActions(){
+ const h=document.getElementById("cc-final-action-admin");if(!h)return;
+ const arr=actions().map(normalize);saveActions(arr);
+ h.innerHTML=`
+ <div class="cc-add-box">
+  <strong>➕ Přidat novou dlaždici</strong>
+  <div class="cc-add-box-grid">
+   <label>Název dlaždice<input id="cc-new-name" placeholder="Např. Finále fotbalu"></label>
+   <label>Kategorie<select id="cc-new-cat">${DEFAULT_CATS.map(c=>`<option>${esc(c.name)}</option>`).join("")}</select></label>
+   <label>Podkategorie<input id="cc-new-sub" placeholder="Koncert / Hokej / …"></label>
+   <label>Kapacita<input id="cc-new-cap" type="number" min="0" value="10"></label>
+   <label>Datum<input id="cc-new-date" type="date"></label>
+   <label>Čas<input id="cc-new-time" type="time"></label>
+   <label class="wide">Místo<input id="cc-new-place"></label>
+   <label class="wide">Popis / tooltip<textarea id="cc-new-desc" rows="3"></textarea></label>
+   <div class="wide"><button class="cc-mini-btn" id="cc-add-action" type="button">➕ Přidat dlaždici</button></div>
+  </div>
+ </div>
+ <div class="cc-action-admin-grid" style="margin-top:14px">
+ ${arr.length?arr.map(a=>`
+  <div class="cc-action-admin-row" data-id="${esc(a.id)}">
+   <div class="cc-action-admin-top">
+    <div><div class="cc-action-admin-title">${esc(a.name||"Bez názvu")}</div>
+    <div class="cc-action-admin-meta">${esc(a.category)}${a.subcategory?" · "+esc(a.subcategory):""} · kapacita ${Number(a.capacity)||0}</div></div>
+    <div>${a.locked?"🔒 Zamčeno":"🔓 Odemčeno"} · ${esc(a.status)}</div>
+   </div>
+   <div class="cc-action-admin-controls">
+    <button type="button" data-cmd="edit">✏️ Přejmenovat / upravit</button>
+    <button type="button" data-cmd="lock" class="${a.locked?"locked":""}">${a.locked?"🔓 Odemknout":"🔒 Zamknout"}</button>
+    <button type="button" data-cmd="toggle">${a.status==="Aktivní"?"⏸️ Skrýt":"▶️ Aktivovat"}</button>
+    <button type="button" data-cmd="delete" class="danger">🗑️ Odebrat</button>
+   </div>
+   <div class="cc-action-admin-edit" data-edit style="display:none">
+    <label>Název<input data-f="name" value="${esc(a.name||"")}"></label>
+    <label>Kategorie<select data-f="category">${DEFAULT_CATS.map(c=>`<option ${a.category===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}</select></label>
+    <label>Podkategorie<input data-f="subcategory" value="${esc(a.subcategory||"")}"></label>
+    <label>Kapacita<input data-f="capacity" type="number" min="0" value="${Number(a.capacity)||0}"></label>
+    <label>Datum<input data-f="date" type="date" value="${esc(a.date||"")}"></label>
+    <label>Čas<input data-f="time" type="time" value="${esc(a.time||"")}"></label>
+    <label class="wide">Místo<input data-f="place" value="${esc(a.place||"")}"></label>
+    <label class="wide">Popis / tooltip<textarea data-f="description" rows="3">${esc(a.description||"")}</textarea></label>
+    <div class="wide"><button type="button" class="cc-mini-btn" data-cmd="save">💾 Uložit změny</button></div>
+   </div>
+  </div>`).join(""):"<div class='empty-state'>Zatím nejsou žádné dlaždice.</div>"}
+ </div>`;
+ document.getElementById("cc-add-action").onclick=()=>{
+  const name=document.getElementById("cc-new-name").value.trim();if(!name){alert("Zadejte název dlaždice.");return}
+  const a={id:"a_"+Date.now()+"_"+Math.random().toString(36).slice(2,7),name,
+   category:document.getElementById("cc-new-cat").value,subcategory:document.getElementById("cc-new-sub").value.trim(),
+   capacity:Number(document.getElementById("cc-new-cap").value)||0,date:document.getElementById("cc-new-date").value,
+   time:document.getElementById("cc-new-time").value,place:document.getElementById("cc-new-place").value.trim(),
+   description:document.getElementById("cc-new-desc").value.trim(),status:"Aktivní",locked:false};
+  const x=actions();x.push(a);saveActions(x);cloud({companyActions:x});renderActions();refreshPortal();
+ };
+ h.querySelectorAll(".cc-action-admin-row").forEach(row=>{
+  const id=row.dataset.id;
+  row.querySelectorAll("[data-cmd]").forEach(btn=>btn.onclick=()=>{
+   const x=actions(),a=x.find(z=>String(z.id)===String(id));if(!a)return;
+   const c=btn.dataset.cmd;
+   if(c==="edit"){row.querySelector("[data-edit]").style.display=row.querySelector("[data-edit]").style.display==="none"?"grid":"none";return}
+   if(c==="lock"){a.locked=!a.locked}
+   if(c==="toggle"){a.status=a.status==="Aktivní"?"Skryta":"Aktivní"}
+   if(c==="delete"){
+    if(a.locked){alert("Dlaždice je zamčená. Nejdříve ji odemkněte.");return}
+    if(!confirm("Opravdu chcete dlaždici odebrat?"))return;
+    const y=x.filter(z=>String(z.id)!==String(id));saveActions(y);cloud({companyActions:y});renderActions();refreshPortal();return;
+   }
+   if(c==="save"){
+    a.name=row.querySelector('[data-f="name"]').value.trim()||a.name;
+    a.category=row.querySelector('[data-f="category"]').value;
+    a.subcategory=row.querySelector('[data-f="subcategory"]').value.trim();
+    a.capacity=Number(row.querySelector('[data-f="capacity"]').value)||0;
+    a.date=row.querySelector('[data-f="date"]').value;
+    a.time=row.querySelector('[data-f="time"]').value;
+    a.place=row.querySelector('[data-f="place"]').value.trim();
+    a.description=row.querySelector('[data-f="description"]').value.trim();
+   }
+   saveActions(x);cloud({companyActions:x});renderActions();refreshPortal();
+  });
+ });
+}
+function renderReasons(){
+ const h=document.getElementById("cc-final-reasons-admin");if(!h)return;
+ const rs=reasonList();
+ h.innerHTML=`<p style="color:#64748b;font-size:12px">Zde můžeš důvody přidávat, mazat i přepisovat. Ve formuláři žádosti se zobrazí jako výběr.</p>
+ <div class="cc-reason-list">${rs.map((r,i)=>`<div class="cc-reason-row"><input data-ri="${i}" value="${esc(r)}"><button type="button" class="cc-mini-btn danger" data-del="${i}">🗑️</button></div>`).join("")}</div>
+ <button type="button" class="cc-mini-btn" id="cc-add-reason">➕ Přidat důvod</button>
+ <button type="button" class="cc-mini-btn" id="cc-save-reasons" style="margin-left:6px">💾 Uložit</button>`;
+ h.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{let a=reasonList();a.splice(Number(b.dataset.del),1);saveReasons(a).then(renderReasons)});
+ h.querySelector("#cc-add-reason").onclick=()=>{let a=reasonList();a.push("Nový důvod žádosti");saveReasons(a).then(renderReasons)};
+ h.querySelector("#cc-save-reasons").onclick=()=>{let a=[...h.querySelectorAll("[data-ri]")].map(x=>x.value);saveReasons(a).then(()=>{alert("Důvody byly uloženy.");renderReasons();refreshPortal()})};
+}
+function renderApproved(){
+ const h=document.getElementById("cc-final-approved-admin");if(!h)return;
+ const arr=actions().filter(a=>a.status!=="Skryta");
+ h.innerHTML=`<div class="cc-approved-grid">${arr.map(a=>{
+  const r=approvedFor(a.name),n=r.reduce((s,x)=>s+(Number(x.tickets||x.ticketCount)||0),0);
+  return `<div class="cc-approved-card"><h4>${esc(a.name)}</h4><div class="cc-count">Finálně schválených žádostí: ${r.length} · lístků: ${n} / ${Number(a.capacity)||0}</div>
+   ${r.length?`<ul>${r.map(x=>`<li>${esc(x.applicantName||x.employeeName||x.name||"Žadatel")} — ${Number(x.tickets||x.ticketCount)||0} ks${x.customer?" · "+esc(x.customer):""}</li>`).join("")}</ul>`:"<div style='color:#64748b;font-size:12px'>Zatím žádná finálně schválená žádost.</div>"}
+  </div>`}).join("")}</div>`;
+}
+function renderSeason(){
+ const h=document.getElementById("cc-final-season-admin");if(!h)return;
+ const m=[["normal","↻","Běžný","Bez efektů"],["autumn","🍁","Podzim","Padající listí + dýně u obnovy"],["winter","❄️","Zima","Sníh + vánoční stromek u obnovy"],["spring","🌸","Jaro","Padající květiny"],["summer","☀️","Léto","Lehký letní motiv"]];
+ h.innerHTML=`<p style="color:#64748b;font-size:12px">Mód se uloží a po obnovení stránky zůstane aktivní.</p><div class="cc-season-grid-final">${m.map(x=>`<button type="button" class="cc-season-final-card ${currentSeason()===x[0]?"active":""}" data-season="${x[0]}"><span class="ico">${x[1]}</span><strong>${x[2]}</strong><br><small>${x[3]}</small></button>`).join("")}</div>`;
+ h.querySelectorAll("[data-season]").forEach(b=>b.onclick=()=>applySeason(b.dataset.season,true));
+}
+
+/* Add/replace the admin area without disturbing the existing main application. */
+function installAdmin(){
+ if(!document.body||document.getElementById("cc-final-admin"))return;
+ const admin=document.createElement("section");admin.id="cc-final-admin";admin.className="cc-admin-shell";
+ admin.innerHTML=`<div class="cc-admin-nav">
+  <button data-panel="actions" class="active">🎟️ Akce a dlaždice</button>
+  <button data-panel="reasons">📝 Důvody žádostí</button>
+  <button data-panel="approved">✅ Schválené žádosti</button>
+  <button data-panel="season">🎨 Vzhled</button>
+ </div>
+ <div class="cc-admin-panel active" id="cc-panel-actions"><div id="cc-final-action-admin"></div></div>
+ <div class="cc-admin-panel" id="cc-panel-reasons"><div id="cc-final-reasons-admin"></div></div>
+ <div class="cc-admin-panel" id="cc-panel-approved"><div id="cc-final-approved-admin"></div></div>
+ <div class="cc-admin-panel" id="cc-panel-season"><div id="cc-final-season-admin"></div></div>`;
+ const adminTab=[...document.querySelectorAll("button,a")].find(x=>/Administrace/i.test(x.textContent||""));
+ const target=adminTab?.closest("section,div,main")||document.querySelector("main")||document.body;
+ target.appendChild(admin);
+ admin.querySelectorAll("[data-panel]").forEach(b=>b.onclick=()=>{
+  admin.querySelectorAll("[data-panel]").forEach(x=>x.classList.toggle("active",x===b));
+  admin.querySelectorAll(".cc-admin-panel").forEach(x=>x.classList.toggle("active",x.id==="cc-panel-"+b.dataset.panel));
+  renderActions();renderReasons();renderApproved();renderSeason();
+ });
+ renderActions();renderReasons();renderApproved();renderSeason();
+}
+function refreshPortal(){
+ try{
+  if(typeof renderCompanyActions==="function")renderCompanyActions();
+  if(typeof renderEvents==="function")renderEvents();
+  if(typeof renderActionTiles==="function")renderActionTiles();
+  if(typeof renderRequests==="function")renderRequests();
+  if(typeof renderRequestList==="function")renderRequestList();
+  if(typeof populateActionFilters==="function")populateActionFilters();
+  if(typeof initFilters==="function")initFilters();
+ }catch(e){}
+ renderActions();renderReasons();renderApproved();
+ ensureRefreshButton();updateRefreshSeasonIcon(currentSeason());
+}
+function boot(){
+ ensureRefreshButton();loadSeason();
+ if(!ccIsAdmin())return;
+ installAdmin();
+ refreshPortal();
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(boot,350));
+else setTimeout(boot,350);
+})();
+</script>
+
 </body>
 </html>
+
+<style id="cc-hide-security-tab">
+button[data-tab="security"],button[data-panel="security"],[data-admin-tab="security"],#adminSecurityTab{display:none!important}
+</style>
