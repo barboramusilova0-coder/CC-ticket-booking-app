@@ -32,6 +32,18 @@ h3{color:#1e293b}
 .tab-btn{border:0;background:transparent;padding:13px 19px;color:var(--muted);font-weight:700;border-bottom:3px solid transparent;white-space:nowrap}
 .tab-btn:hover,.tab-btn.active{color:var(--cc-red);border-bottom-color:var(--cc-red)}
 .tab-content{display:none}.tab-content.active{display:block}
+.admin-subtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.admin-subtab{border:1px solid var(--border);background:#fff;color:var(--muted);border-radius:8px;padding:9px 13px;font-weight:700}
+.admin-subtab.active{background:var(--cc-red);color:#fff;border-color:var(--cc-red)}
+.admin-panel{display:none}.admin-panel.active{display:block}
+.modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.58);display:flex;align-items:center;justify-content:center;padding:20px;z-index:1000}
+.modal{width:min(760px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.25);padding:24px}
+.modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
+.modal-close{border:0;background:#f1f5f9;border-radius:50%;width:38px;height:38px;font-size:20px}
+.locked-card{opacity:.55;cursor:not-allowed!important;position:relative}
+.locked-card:after{content:"🔒";position:absolute;right:12px;top:10px;font-size:18px}
+.readonly-note{font-size:12px;color:var(--muted);margin-top:6px}
+
 .box{background:#fff;border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:22px}
 .info{background:#f8fafc;border:1px solid var(--border);border-left:4px solid var(--info);border-radius:9px;padding:14px 16px;margin-bottom:20px;font-size:14px}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
@@ -73,8 +85,33 @@ tr:last-child td{border-bottom:0}
 @media(max-width:900px){.grid,.category-grid{grid-template-columns:1fr 1fr}.container{padding:20px}}
 @media(max-width:620px){.grid,.category-grid{grid-template-columns:1fr}.login-bar{align-items:flex-start;flex-direction:column}}
 </style>
-</head>
 
+<style>
+body[data-season="winter"]{background:linear-gradient(#f7fbff,#eef6ff)}
+body[data-season="autumn"]{background:linear-gradient(#fffaf4,#fff1df)}
+body[data-season="summer"]{background:linear-gradient(#fffef5,#f6fbff)}
+body[data-season="spring"]{background:linear-gradient(#fbfff9,#f2fff5)}
+body[data-season="basic"]{background:var(--bg,#f5f6f8)}
+</style>
+
+<style>
+.hidden{display:none!important}
+.modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.62);z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:#fff;border-radius:16px;max-width:820px;width:100%;max-height:92vh;overflow:auto;box-shadow:0 24px 80px rgba(0,0,0,.3);padding:26px}
+.modal-head{display:flex;justify-content:space-between;gap:15px;align-items:flex-start;margin-bottom:20px}
+.modal-close{border:0;background:#f1f5f9;border-radius:50%;width:38px;height:38px;font-size:20px}
+.admin-subtabs{display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:20px}
+.admin-subtab{border:1px solid var(--border);background:#fff;border-radius:8px;padding:9px 13px;font-weight:700;color:var(--muted)}
+.admin-subtab.active{background:var(--cc-red);border-color:var(--cc-red);color:#fff}
+.admin-panel{display:none}.admin-panel.active{display:block}
+.event-card{position:relative;transition:transform .15s,box-shadow .15s}.event-card:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(15,23,42,.12)}
+.event-card.locked{opacity:.55;cursor:not-allowed!important}.event-card.locked:after{content:"🔒";position:absolute;right:12px;top:12px;background:#fff;border-radius:50%;padding:5px}
+.tooltip-text{font-size:13px;color:var(--muted);margin-top:7px;line-height:1.4}
+.capacity-ok{color:#047857;font-weight:700}.capacity-low{color:#b45309;font-weight:700}.capacity-full{color:#b91c1c;font-weight:700}
+.security-note{background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px;color:#9a3412;font-size:13px;line-height:1.5}
+.name-list{margin-top:18px}.name-list table{margin-bottom:0}
+</style>
+</head>
 <body>
 <div id="loginGate" class="login-gate">
   <div style="font-size:40px">🔴</div>
@@ -84,15 +121,15 @@ tr:last-child td{border-bottom:0}
     <strong>Jak portál funguje</strong>
     <ol>
       <li>Přihlaste se svým přístupovým kódem.</li>
-      <li>Vyberte akci a odešlete žádost.</li>
-      <li>Žádost nejprve posoudí nadřízený žadatele.</li>
-      <li>Po schválení 1. stupně pokračuje žádost ke 2. schvalovateli.</li>
-      <li>Po dokončení procesu může administrátor odeslat žadateli e-mail se stavem.</li>
+      <li>Na hlavní stránce vyberte plánovanou akci.</li>
+      <li>Ve vyskakovacím okně doplňte zákazníka, obrat a další údaje.</li>
+      <li>Žádost nejprve posoudí váš nadřízený a následně 2. schvalovatel.</li>
+      <li>Po dokončení procesu může administrátor informovat žadatele e-mailem.</li>
     </ol>
   </div>
   <div class="gate-code">
     <label for="gateToken">Vstupní kód</label>
-    <input id="gateToken" type="password" placeholder="Zadejte svůj unikátní kód">
+    <input id="gateToken" type="password" autocomplete="off" placeholder="Zadejte svůj unikátní kód">
     <button id="loginBtn" class="primary" style="width:100%;margin-top:10px">Vstoupit do systému</button>
     <button id="guestAccessBtn" class="info-btn" style="width:100%;margin-top:9px">Požádat o přístup</button>
   </div>
@@ -102,7 +139,6 @@ tr:last-child td{border-bottom:0}
   <div class="login-bar">
     <div class="user-info">Přihlášen jako: <strong id="loggedName">–</strong> <span id="loggedRole"></span></div>
     <div class="actions">
-      <button id="managerBtn" class="secondary hidden">👤 Nastavit nadřízeného</button>
       <button id="logoutBtn" class="danger">Odhlásit</button>
     </div>
   </div>
@@ -113,68 +149,27 @@ tr:last-child td{border-bottom:0}
   </div>
 
   <div class="tabs">
-    <button id="tabBtn1" class="tab-btn" data-tab="1">Nová rezervace</button>
+    <button id="tabBtn1" class="tab-btn" data-tab="1">📅 Plánované akce</button>
     <button id="tabBtn2" class="tab-btn" data-tab="2">Seznam žádostí</button>
     <button id="tabBtn3" class="tab-btn" data-tab="3">Požádat o přístup</button>
     <button id="tabBtn4" class="tab-btn hidden" data-tab="4">⚙️ Administrace</button>
-    <button id="tabBtn5" class="tab-btn" data-tab="5">📅 Plánované akce</button>
   </div>
 
   <section id="tab1" class="tab-content">
-    <h2>Nová rezervace</h2>
-    <div class="info">Vyberte akci, doplňte zákazníka, obrat v EUR, počet lístků a důvod žádosti. Žádost bude odeslána nejprve 1. schvalovateli.</div>
-
+    <h2>Plánované akce</h2>
+    <div class="info">Vyberte akci. Rezervační formulář se otevře ve vyskakovacím okně a údaje žadatele, jeho e-mail, nadřízený a nastavený důvod se doplní automaticky.</div>
     <div id="categoryGrid" class="category-grid"></div>
     <div id="reservationEventBox" class="box hidden">
       <h3 id="selectedCategoryTitle" style="margin-top:0"></h3>
       <div id="reservationEvents" class="event-grid"></div>
     </div>
-
-    <form id="reservationForm" class="box hidden">
-      <div class="grid">
-        <div class="form-group">
-          <label>Vybraná akce</label>
-          <input id="selectedAction" readonly>
-        </div>
-        <div class="form-group">
-          <label>Žadatel</label>
-          <input id="applicantName" required>
-        </div>
-        <div class="form-group">
-          <label>Jméno zákazníka / partnera</label>
-          <input id="customerName" required>
-        </div>
-        <div class="form-group">
-          <label>Obrat v EUR</label>
-          <input id="revenueEUR" type="number" min="0" step="0.01" required>
-        </div>
-        <div class="form-group">
-          <label>Počet lístků</label>
-          <input id="ticketCount" type="number" min="1" max="10" value="1" required>
-        </div>
-        <div class="form-group">
-          <label>E-mail 1. schvalovatele (nadřízeného)</label>
-          <input id="managerEmail" type="email" required>
-        </div>
-        <div class="form-group full">
-          <label>Důvod žádosti</label>
-          <textarea id="reason" rows="4" required placeholder="Popište obchodní důvod žádosti."></textarea>
-        </div>
-        <div class="form-group full">
-          <label class="checkbox-row">
-            <input id="complianceCheck" type="checkbox">
-            <span>Potvrzuji, že jsem se seznámil/a s Kodexem chování a Pravidly chování pro zákazníky a jsem si vědom/a povinnosti je dodržovat.</span>
-          </label>
-        </div>
-      </div>
-      <button id="submitReservation" class="primary" type="submit" disabled>Odeslat žádost</button>
-    </form>
+    <div id="plannedEvents" class="event-grid"></div>
   </section>
 
   <section id="tab2" class="tab-content">
     <div style="display:flex;justify-content:space-between;gap:15px;align-items:center;flex-wrap:wrap">
       <h2 style="margin-bottom:0">Seznam žádostí</h2>
-      <button id="exportBtn" class="success">📥 Stáhnout do Excelu</button>
+      <button id="exportBtn" class="success">📥 Export</button>
     </div>
     <div id="requestFilters" class="filterbar" style="margin-top:18px">
       <select id="requestStatusFilter">
@@ -189,19 +184,10 @@ tr:last-child td{border-bottom:0}
     </div>
     <div class="table-wrap">
       <table>
-        <thead>
-          <tr>
-            <th>Akce</th>
-            <th>Žadatel</th>
-            <th>Zákazník</th>
-            <th>Obrat EUR</th>
-            <th>Důvod žádosti</th>
-            <th>1. schvalovatel</th>
-            <th>2. schvalovatel</th>
-            <th>Stav rezervace</th>
-            <th>Akce</th>
-          </tr>
-        </thead>
+        <thead><tr>
+          <th>Akce</th><th>Žadatel</th><th>Zákazník</th><th>Obrat EUR</th><th>Důvod žádosti</th>
+          <th>1. schvalovatel</th><th>2. schvalovatel</th><th>Stav rezervace</th><th>Akce</th>
+        </tr></thead>
         <tbody id="requestsBody"></tbody>
       </table>
     </div>
@@ -209,85 +195,143 @@ tr:last-child td{border-bottom:0}
 
   <section id="tab3" class="tab-content">
     <h2>Žádost o přístup</h2>
-    <div class="box">
-      <form id="accessForm">
-        <div class="grid">
-          <div class="form-group"><label>Celé jméno</label><input id="accessName" required></div>
-          <div class="form-group"><label>Pracovní e-mail</label><input id="accessEmail" type="email" required></div>
-          <div class="form-group full">
-            <label>Požadovaná role</label>
-            <select id="accessRole" required>
-              <option value="applicant">0 – Žadatel</option>
-              <option value="manager">1. stupeň – ASM / RSM</option>
-              <option value="rsm_praha">2. stupeň – RSM Praha Central</option>
-              <option value="admin">Administrátor</option>
-            </select>
-          </div>
+    <div class="box"><form id="accessForm">
+      <div class="grid">
+        <div class="form-group"><label>Celé jméno</label><input id="accessName" required></div>
+        <div class="form-group"><label>Pracovní e-mail</label><input id="accessEmail" type="email" required></div>
+        <div class="form-group full"><label>Požadovaná role</label>
+          <select id="accessRole" required>
+            <option value="applicant">0 – Žadatel</option>
+            <option value="manager">1. stupeň – Nadřízený</option>
+            <option value="rsm_praha">2. stupeň – RSM Praha Central</option>
+          </select>
         </div>
-        <button class="primary">Odeslat žádost ke schválení</button>
-      </form>
-    </div>
+      </div>
+      <button class="primary">Odeslat žádost ke schválení</button>
+    </form></div>
   </section>
 
   <section id="tab4" class="tab-content">
     <h2>Administrace</h2>
+    <div class="admin-subtabs">
+      <button class="admin-subtab active" data-admin-panel="events">Akce a dlaždice</button>
+      <button class="admin-subtab" data-admin-panel="users">Uživatelé</button>
+      <button class="admin-subtab" data-admin-panel="access">Přístupy</button>
+      <button class="admin-subtab" data-admin-panel="appearance">Vzhled</button>
+      <button class="admin-subtab" data-admin-panel="security">Bezpečnost</button>
+    </div>
 
-    <div class="box">
-      <h3>Vytvořit novou akci</h3>
-      <form id="eventForm">
-        <div class="grid">
-          <div class="form-group"><label>Název akce</label><input id="eventName" required></div>
-          <div class="form-group"><label>Kategorie</label>
-            <select id="eventCategory" required>
-              <option value="O2 Arena - Koncert">O2 Arena – Koncert</option>
-              <option value="O2 Arena - Hokej">O2 Arena – Hokej</option>
-              <option value="Fotbal">Fotbal</option>
-              <option value="SKS Slavia">SKS Slavia</option>
-              <option value="Reprezentace">Reprezentace</option>
-              <option value="Specialni">Speciální akce</option>
-            </select>
+    <div id="adminPanel-events" class="admin-panel active">
+      <div class="box">
+        <h3>Nová / upravená akce</h3>
+        <form id="eventForm">
+          <div class="grid">
+            <div class="form-group"><label>Název akce</label><input id="eventName" required></div>
+            <div class="form-group"><label>Kategorie</label>
+              <select id="eventCategory" required>
+                <option value="O2 Arena - Koncert">O2 Arena – Koncert</option>
+                <option value="O2 Arena - Hokej">O2 Arena – Hokej</option>
+                <option value="Fotbal">Fotbal</option>
+                <option value="SKS Slavia">SKS Slavia</option>
+                <option value="Reprezentace">Reprezentace</option>
+                <option value="Specialni">Speciální akce</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Datum</label><input id="eventDate" type="date" required></div>
+            <div class="form-group"><label>Čas</label><input id="eventTime" type="time" required></div>
+            <div class="form-group"><label>Místo konání</label><input id="eventPlace"></div>
+            <div class="form-group"><label>Kapacita lístků</label><input id="eventCapacity" type="number" min="1" required></div>
+            <div class="form-group full"><label>Text tooltipu</label><textarea id="eventDescription" rows="3"></textarea></div>
+            <div class="form-group full"><label>Obrázek dlaždice</label><input id="eventImage" type="file" accept="image/*"><div id="imagePreview" class="small"></div></div>
           </div>
-          <div class="form-group"><label>Datum</label><input id="eventDate" type="date" required></div>
-          <div class="form-group"><label>Čas</label><input id="eventTime" type="time" required></div>
-          <div class="form-group"><label>Místo konání</label><input id="eventPlace"></div>
-          <div class="form-group"><label>Kapacita lístků</label><input id="eventCapacity" type="number" min="1" required></div>
-          <div class="form-group full"><label>Popis akce / text tooltipu</label><textarea id="eventDescription" rows="3" placeholder="Tento text se zobrazí u dlaždice akce."></textarea></div>
-          <div class="form-group full"><label>Obrázek dlaždice (volitelné)</label><input id="eventImage" type="file" accept="image/*"><div id="imagePreview" class="small"></div></div>
+          <button class="success">Uložit akci</button>
+        </form>
+      </div>
+      <div class="box">
+        <h3>Akce a dlaždice</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Akce</th><th>Kategorie</th><th>Datum</th><th>Kapacita</th><th>Stav</th><th>Akce</th></tr></thead>
+          <tbody id="adminEventsBody"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <div id="adminPanel-users" class="admin-panel">
+      <div class="box">
+        <h3>Aktivní uživatelé</h3>
+        <div class="table-wrap"><table><thead><tr><th>Jméno</th><th>E-mail</th><th>Role</th><th>Nadřízený</th><th>Akce</th></tr></thead>
+        <tbody id="usersBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <div id="adminPanel-access" class="admin-panel">
+      <div class="box"><h3>Čekající žádosti o přístup</h3>
+        <div class="table-wrap"><table><thead><tr><th>Jméno</th><th>E-mail</th><th>Role</th><th>Akce</th></tr></thead>
+        <tbody id="accessRequestsBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <div id="adminPanel-appearance" class="admin-panel">
+      <div class="box">
+        <h3>Vzhled portálu</h3>
+        <div class="form-group"><label for="seasonMode">Mód portálu</label>
+          <select id="seasonMode">
+            <option value="basic">Basic</option><option value="winter">Winter</option>
+            <option value="autumn">Podzim</option><option value="summer">Letní</option><option value="spring">Jarní</option>
+          </select>
         </div>
-        <button class="success">Uložit novou akci</button>
-      </form>
+        <button id="saveSeasonMode" class="primary" type="button">Uložit mód</button>
+      </div>
     </div>
 
-    <div class="box">
-      <h3>Akce v systému</h3>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Akce</th><th>Kategorie</th><th>Datum</th><th>Kapacita</th><th>Stav</th><th>Akce</th></tr></thead>
-        <tbody id="adminEventsBody"></tbody>
-      </table></div>
-    </div>
-
-    <div class="box">
-      <h3>Čekající žádosti o přístup</h3>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Jméno</th><th>E-mail</th><th>Role</th><th>Akce</th></tr></thead>
-        <tbody id="accessRequestsBody"></tbody>
-      </table></div>
-    </div>
-
-    <div class="box">
-      <h3>Aktivní uživatelé</h3>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Jméno</th><th>E-mail</th><th>Role</th><th>Kód</th><th>Akce</th></tr></thead>
-        <tbody id="usersBody"></tbody>
-      </table></div>
+    <div id="adminPanel-security" class="admin-panel">
+      <div class="box">
+        <h3>Kontrola kapacity a soukromí</h3>
+        <div class="security-note">
+          Portál zobrazuje jmenný seznam účastníků pouze administrátorovi a 2. schvalovateli.
+          Ostatní role vidí pouze údaje, které potřebují ke schvalování své části procesu.
+        </div>
+        <div class="box" style="margin-top:15px">
+          <h3>Obsazenost akcí</h3>
+          <div class="table-wrap"><table><thead><tr><th>Akce</th><th>Kapacita</th><th>Schváleno</th><th>Zbývá</th></tr></thead>
+          <tbody id="capacityBody"></tbody></table></div>
+        </div>
+        <p class="small">Poznámka: skutečné firemní zabezpečení dat musí být vynuceno také Firebase Authentication a Firestore Security Rules. Samotný HTML soubor nemůže být bezpečnostní hranicí.</p>
+      </div>
     </div>
   </section>
+</div>
 
-  <section id="tab5" class="tab-content">
-    <h2>Plánované akce</h2>
-    <div class="info">Přehled aktivních akcí. Kliknutím na dlaždici můžete rovnou přejít k rezervaci.</div>
-    <div id="plannedEvents" class="event-grid"></div>
-  </section>
+<div id="reservationModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-head">
+      <div><h2 style="margin:0">Nová rezervace</h2><div class="small" id="modalActionInfo"></div></div>
+      <button class="modal-close" id="closeReservationModal" type="button" aria-label="Zavřít">×</button>
+    </div>
+    <form id="reservationForm">
+      <input type="hidden" id="selectedActionId">
+      <div class="grid">
+        <div class="form-group"><label>Vybraná akce</label><input id="selectedAction" readonly></div>
+        <div class="form-group"><label>Žadatel</label><input id="applicantName" readonly></div>
+        <div class="form-group"><label>E-mail žadatele</label><input id="applicantEmail" readonly></div>
+        <div class="form-group"><label>1. schvalovatel (nadřízený)</label><input id="managerEmail" readonly></div>
+        <div class="form-group"><label>Jméno zákazníka / partnera</label><input id="customerName" required maxlength="120"></div>
+        <div class="form-group"><label>Obrat v EUR</label><input id="revenueEUR" type="number" min="0" step="0.01" required></div>
+        <div class="form-group"><label>Počet lístků</label><input id="ticketCount" type="number" min="1" max="50" value="1" required></div>
+        <div class="form-group full"><label>Důvod rezervace</label><textarea id="reason" rows="4" readonly></textarea>
+          <div class="readonly-note">Tento text nastavuje administrátor a žadatel jej nemůže měnit.</div>
+        </div>
+        <div class="form-group full"><label class="checkbox-row">
+          <input id="complianceCheck" type="checkbox">
+          <span>Potvrzuji, že jsem se seznámil/a s Kodexem chování a Pravidly chování pro zákazníky a jsem si vědom/a povinnosti je dodržovat.</span>
+        </label></div>
+      </div>
+      <div class="actions" style="justify-content:flex-end">
+        <button type="button" class="secondary" id="cancelReservation">Zrušit</button>
+        <button id="submitReservation" class="primary" type="submit" disabled>Odeslat žádost</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <div id="toast" class="toast hidden"></div>
@@ -295,724 +339,431 @@ tr:last-child td{border-bottom:0}
 <script>
 "use strict";
 
-/* ============================================================
-   JEDINÁ HLAVNÍ APLIKAČNÍ LOGIKA
-   ============================================================ */
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCPSV3AauKHMPfnAKjbfvEDbb6RFJMiJA",
-  authDomain: "cc-tickets-booking-app.firebaseapp.com",
-  projectId: "cc-tickets-booking-app",
-  storageBucket: "cc-tickets-booking-app.firebasestorage.app",
-  messagingSenderId: "998442761726",
-  appId: "1:998442761726:web:e5bbe201f68c9594ea54af",
-  measurementId: "G-GKKE8GCN0T"
+const firebaseConfig={
+  apiKey:"AIzaSyCPSV3AauKHMPfnkACjbfvEDbb6RFJMiJA",
+  authDomain:"cc-tickets-booking-app.firebaseapp.com",
+  projectId:"cc-tickets-booking-app",
+  storageBucket:"cc-tickets-booking-app.firebasestorage.app",
+  messagingSenderId:"998442761726",
+  appId:"1:998442761726:web:e5bbe201f68c9594ea54af",
+  measurementId:"G-GKKE8GCN0T"
 };
-
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const DATA_REF = db.collection("portalData").doc("cocaColaDatabase");
-const ADMIN_TOKEN = "Magnolie27";
-const SECOND_APPROVER_EMAIL = "rsm.praha@cchellenic.com";
+const db=firebase.firestore();
+const DATA_REF=db.collection("portalData").doc("cocaColaDatabase");
 
-let currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
-let companyActions = JSON.parse(localStorage.getItem("companyActions") || "[]");
-let requests = JSON.parse(localStorage.getItem("ticketRequests") || "[]");
-let roleRequests = JSON.parse(localStorage.getItem("roleRequests") || "[]");
-let customUsers = JSON.parse(localStorage.getItem("customUsers") || "{}");
-let selectedCategory = "";
-let selectedActionId = null;
-let unsubscribe = null;
-let imageData = "";
+/*
+  SECURITY NOTE:
+  This client is intentionally defensive, but client-side JavaScript is not a security boundary.
+  For production, enforce the same permissions in Firebase Authentication + Firestore Security Rules.
+*/
+const ADMIN_TOKEN="Magnolie27";
+const SECOND_APPROVER_EMAIL="rsm.praha@cchellenic.com";
+const DEFAULT_REASON="Obchodní schůzka s klíčovým zákazníkem v rámci rozvoje obchodního vztahu.";
 
-const $ = id => document.getElementById(id);
-const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({
-  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-}[c]));
+let currentUser=JSON.parse(localStorage.getItem("currentUser")||"null");
+let companyActions=JSON.parse(localStorage.getItem("companyActions")||"[]");
+let requests=JSON.parse(localStorage.getItem("ticketRequests")||"[]");
+let roleRequests=JSON.parse(localStorage.getItem("roleRequests")||"[]");
+let customUsers=JSON.parse(localStorage.getItem("customUsers")||"{}");
+let portalSettings=JSON.parse(localStorage.getItem("portalSettings")||"{}");
+let selectedCategory="";
+let unsubscribe=null;
+let imageData="";
 
-function showToast(message){
-  $("toast").textContent = message;
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+const normEmail=v=>String(v||"").trim().toLowerCase();
+
+function toast(msg){
+  $("toast").textContent=msg;
   $("toast").classList.remove("hidden");
-  clearTimeout(showToast.timer);
-  showToast.timer = setTimeout(() => $("toast").classList.add("hidden"), 3000);
+  clearTimeout(toast.t);
+  toast.t=setTimeout(()=>$("toast").classList.add("hidden"),3500);
 }
-
 function saveLocal(){
-  localStorage.setItem("companyActions", JSON.stringify(companyActions));
-  localStorage.setItem("ticketRequests", JSON.stringify(requests));
-  localStorage.setItem("roleRequests", JSON.stringify(roleRequests));
-  localStorage.setItem("customUsers", JSON.stringify(customUsers));
+  localStorage.setItem("companyActions",JSON.stringify(companyActions));
+  localStorage.setItem("ticketRequests",JSON.stringify(requests));
+  localStorage.setItem("roleRequests",JSON.stringify(roleRequests));
+  localStorage.setItem("customUsers",JSON.stringify(customUsers));
+  localStorage.setItem("portalSettings",JSON.stringify(portalSettings));
 }
-
 async function saveCloud(){
   saveLocal();
   try{
-    await DATA_REF.set({
-      companyActions,
-      ticketRequests: requests,
-      roleRequests,
-      customUsers,
-      updatedAt: new Date().toISOString()
-    }, {merge:true});
-  }catch(error){
-    console.error("Firebase:", error);
-    showToast("Data byla uložena lokálně, ale Firebase se nepodařilo aktualizovat.");
+    await DATA_REF.set({companyActions,ticketRequests:requests,roleRequests,customUsers,portalSettings},{merge:true});
+  }catch(e){
+    console.error(e); toast("Data se nepodařilo uložit do Firebase.");
+    throw e;
   }
 }
-
-function hydrateFromCloud(data){
-  if(!data) return;
-  if(Array.isArray(data.companyActions)) companyActions = data.companyActions;
-  if(Array.isArray(data.ticketRequests)) requests = normalizeRequests(data.ticketRequests);
-  if(Array.isArray(data.roleRequests)) roleRequests = data.roleRequests;
-  if(data.customUsers && typeof data.customUsers === "object") customUsers = data.customUsers;
-  saveLocal();
-  renderEverything();
+function hydrate(d){
+  if(Array.isArray(d.companyActions)) companyActions=d.companyActions;
+  if(Array.isArray(d.ticketRequests)) requests=d.ticketRequests;
+  if(Array.isArray(d.roleRequests)) roleRequests=d.roleRequests;
+  if(d.customUsers&&typeof d.customUsers==="object") customUsers=d.customUsers;
+  if(d.portalSettings&&typeof d.portalSettings==="object") portalSettings=d.portalSettings;
+  saveLocal(); renderAll();
 }
-
-function normalizeRequests(list){
-  return list.map(r => ({
-    id: r.id || Date.now() + Math.random(),
-    actionId: r.actionId || null,
-    action: r.action || r.actionName || r.name || "",
-    applicant: r.applicant || r.employee || r.user || "",
-    applicantEmail: r.applicantEmail || r.userEmail || "",
-    customer: r.customer || r.customerName || "",
-    revenueEUR: r.revenueEUR ?? extractRevenue(r.reason),
-    tickets: r.tickets || 1,
-    reason: cleanReason(r.reason || ""),
-    managerEmail: (r.managerEmail || r.manager || r.approver1 || "").toLowerCase(),
-    approver2Email: r.approver2Email || SECOND_APPROVER_EMAIL,
-    status1: normalizeStatus1(r.status1),
-    status2: normalizeStatus2(r.status2),
-    reservationStatus: r.reservationStatus || calculateReservationStatus(r),
-    approvedBy1: r.approvedBy1 || "",
-    approvedBy2: r.approvedBy2 || "",
-    emailSent: Boolean(r.emailSent),
-    createdAt: r.createdAt || new Date().toISOString()
-  }));
+function roleLabel(r){return ({admin:"Administrátor",manager:"1. schvalovatel",rsm_praha:"2. schvalovatel",applicant:"Žadatel",guest:"Host"})[r]||r||"–"}
+function isAdmin(){return currentUser?.role==="admin"}
+function isManager(){return currentUser?.role==="manager"}
+function isSecond(){return currentUser?.role==="rsm_praha"}
+function isApplicant(){return currentUser?.role==="applicant"}
+function getManagerEmail(){
+  return normEmail(currentUser?.managerEmail || (currentUser?.token&&customUsers[currentUser.token]?.managerEmail) || "");
 }
-
-function extractRevenue(reason){
-  const match = String(reason).match(/(?:Obrat|EUR)\s*:?\s*([\d\s,.]+)/i);
-  return match ? Number(match[1].replace(/\s/g,"").replace(",", ".")) || "" : "";
+function reasonTemplate(){return String(portalSettings.defaultReason||DEFAULT_REASON)}
+function activeEvents(){return companyActions.filter(a=>a.status!=="Zrušena"&&a.status!=="Neaktivní")}
+function eventDateText(a){return [a.date,a.time,a.place].filter(Boolean).join(" • ")}
+function approvedCount(actionId){
+  return requests.filter(r=>String(r.actionId)===String(actionId)&&r.status1==="Schváleno"&&r.status2==="Schváleno")
+    .reduce((n,r)=>n+Math.max(0,Number(r.tickets)||0),0);
 }
-
-function cleanReason(reason){
-  return String(reason).replace(/\s*\(Obrat:\s*[\d\s,.]+\s*EUR\)\s*$/i,"").trim();
+function pendingCount(actionId){
+  return requests.filter(r=>String(r.actionId)===String(actionId)&&r.status1==="Schváleno"&&r.status2==="Čeká na vyjádření")
+    .reduce((n,r)=>n+Math.max(0,Number(r.tickets)||0),0);
 }
-
-function normalizeStatus1(s){
-  if(!s) return "Čeká na schválení";
-  if(s === "Čeká") return "Čeká na schválení";
-  return s;
+function remainingCapacity(a){
+  return Math.max(0,Number(a.capacity||0)-approvedCount(a.id)-pendingCount(a.id));
 }
-
-function normalizeStatus2(s){
-  if(!s) return "Čeká na vyjádření";
-  if(s === "Čeká") return "Čeká na vyjádření";
-  return s;
+function isFinal(r){return r.status1==="Zamítnuto" || (r.status1==="Schváleno" && ["Schváleno","Zamítnuto"].includes(r.status2))}
+function reservationStatus(r){
+  if(r.status1==="Zamítnuto") return "Zamítnuto 1. schvalovatelem";
+  if(r.status1==="Schváleno"&&r.status2==="Zamítnuto") return "Zamítnuto 2. schvalovatelem";
+  if(r.status1==="Schváleno"&&r.status2==="Schváleno") return "Schváleno";
+  if(r.status1==="Schváleno") return "Čeká na 2. schvalovatele";
+  return "Čeká na 1. schvalovatele";
 }
-
-function calculateReservationStatus(r){
-  const s1 = normalizeStatus1(r.status1), s2 = normalizeStatus2(r.status2);
-  if(s1 === "Zamítnuto") return "Zamítnuto 1. schvalovatelem";
-  if(s1 !== "Schváleno") return "Čeká na 1. schvalovatele";
-  if(s2 === "Zamítnuto") return "Zamítnuto 2. schvalovatelem";
-  if(s2 !== "Schváleno") return "Čeká na 2. schvalovatele";
-  return "Schváleno";
-}
-
-function roleLabel(role){
-  return {
-    applicant:"Žadatel (0. stupeň)",
-    manager:"1. schvalovatel – ASM/RSM",
-    rsm_praha:"2. schvalovatel – RSM Praha Central",
-    admin:"Administrátor"
-  }[role] || "";
-}
-
-function isAdmin(){ return currentUser?.role === "admin"; }
-function isManager(){ return currentUser?.role === "manager"; }
-function isSecond(){ return currentUser?.role === "rsm_praha"; }
-
-function getOwnManagerEmail(){
-  return (localStorage.getItem("cc_manager_email") || currentUser?.managerEmail || "").toLowerCase().trim();
-}
-
-function setTab(num){
-  document.querySelectorAll(".tab-content").forEach(x => x.classList.remove("active"));
-  document.querySelectorAll(".tab-btn").forEach(x => x.classList.remove("active"));
-  $("tab"+num)?.classList.add("active");
-  $("tabBtn"+num)?.classList.add("active");
-  localStorage.setItem("activeCcTab", String(num));
-  if(num === 2) renderRequests();
-  if(num === 4) renderAdmin();
-  if(num === 5) renderPlannedEvents();
-}
-
-function updateSessionUI(){
-  $("loggedName").textContent = currentUser?.name || "–";
-  $("loggedRole").textContent = currentUser ? `(${roleLabel(currentUser.role)})` : "";
-  $("tabBtn4").classList.toggle("hidden", !isAdmin());
-  $("managerBtn").classList.toggle("hidden", !currentUser || currentUser.role === "guest");
-  $("loginGate").classList.toggle("hidden", Boolean(currentUser));
-  $("app").classList.toggle("hidden", !currentUser);
-  if(!currentUser) return;
-
-  const savedTab = Number(localStorage.getItem("activeCcTab") || "1");
-  setTab(isAdmin() || isManager() || isSecond() ? (savedTab || 2) : 1);
-  populateApplicant();
-  populateManagerEmail();
-}
-
-function populateApplicant(){
-  if(!$("applicantName")) return;
-  if(currentUser.role === "applicant"){
-    $("applicantName").value = currentUser.name || "";
-    $("applicantName").readOnly = true;
-  }else{
-    $("applicantName").value = currentUser.name || "";
-  }
-}
-
-function populateManagerEmail(){
-  $("managerEmail").value = getOwnManagerEmail();
-}
-
-function login(){
-  const token = $("gateToken").value.trim();
-  if(!token) return showToast("Zadejte přístupový kód.");
-  if(token === ADMIN_TOKEN){
-    currentUser = {name:"Hlavní správce",email:"admin@firma.cz",role:"admin"};
-  }else if(customUsers[token]){
-    currentUser = {...customUsers[token], token};
-  }else{
-    return showToast("Neplatný přístupový kód.");
-  }
-  localStorage.setItem("currentUser", JSON.stringify(currentUser));
-  updateSessionUI();
-}
-
-function logout(){
-  currentUser = null;
-  localStorage.removeItem("currentUser");
-  if(unsubscribe) unsubscribe();
-  updateSessionUI();
-  $("gateToken").value = "";
-}
-
-function openGuestAccess(){
-  currentUser = {name:"Anonymní žadatel",role:"guest",email:""};
-  $("loginGate").classList.add("hidden");
-  $("app").classList.remove("hidden");
-  document.querySelectorAll(".tab-btn").forEach(b => b.classList.add("hidden"));
-  $("tabBtn3").classList.remove("hidden");
-  setTab(3);
-}
-
-async function submitAccess(e){
-  e.preventDefault();
-  roleRequests.push({
-    id:Date.now(),
-    name:$("accessName").value.trim(),
-    email:$("accessEmail").value.trim().toLowerCase(),
-    role:$("accessRole").value,
-    createdAt:new Date().toISOString()
-  });
-  await saveCloud();
-  e.target.reset();
-  showToast("Žádost o přístup byla odeslána administrátorovi.");
-}
-
-function categoryData(){
-  return [
-    ["O2 Arena - Koncert","🎵","Koncerty v O2 Areně"],
-    ["O2 Arena - Hokej","🥅","Hokej v O2 Areně"],
-    ["Fotbal","⚽","Fotbalové zápasy"],
-    ["SKS Slavia","🔴","SKS Slavia"],
-    ["Reprezentace","🇨🇿","Reprezentace"],
-    ["Specialni","✨","Speciální akce"]
-  ];
-}
-
-function renderCategories(){
-  $("categoryGrid").innerHTML = categoryData().map(([cat,icon,desc]) =>
-    `<button class="category-card ${selectedCategory===cat?"active":""}" data-category="${esc(cat)}">
-      <span style="font-size:26px">${icon}</span><div>${esc(cat.replace(" - "," – "))}</div><small>${esc(desc)}</small>
-    </button>`).join("");
-  $("categoryGrid").querySelectorAll("[data-category]").forEach(btn =>
-    btn.addEventListener("click", () => {
-      selectedCategory = btn.dataset.category;
-      renderCategories();
-      renderReservationEvents();
-    })
-  );
-}
-
-function activeEvents(){
-  return companyActions.filter(a => a.status !== "Zrušena" && a.status !== "Neaktivní");
-}
-
-function eventDateText(a){
-  return `${a.date || "Datum neuvedeno"}${a.time ? " • "+a.time : ""}${a.place ? " • "+a.place : ""}`;
-}
-
-function renderReservationEvents(){
-  const box = $("reservationEventBox");
-  const list = $("reservationEvents");
-  if(!selectedCategory){
-    box.classList.add("hidden");
-    return;
-  }
-  box.classList.remove("hidden");
-  $("selectedCategoryTitle").textContent = selectedCategory.replace(" - "," – ");
-  const events = activeEvents().filter(a => (a.category || a.actionCategory || "Specialni") === selectedCategory);
-  list.innerHTML = events.length ? events.map(eventCard).join("") :
-    `<div class="empty" style="grid-column:1/-1">V této kategorii zatím není žádná plánovaná akce.</div>`;
-  list.querySelectorAll("[data-event-id]").forEach(card =>
-    card.addEventListener("click", () => selectEvent(card.dataset.eventId))
-  );
-}
-
-function eventCard(a){
-  const bg = a.image ? `style="background-image:url('${a.image.replace(/'/g,"%27")}')"` : "";
-  return `<div class="event-card" data-event-id="${esc(a.id)}" title="${esc(a.description || "")}" style="cursor:pointer">
-    <div class="event-image" ${bg}></div>
-    <div class="event-body">
-      <div class="event-title">${esc(a.name)}</div>
-      <div class="event-meta">${esc(eventDateText(a))}</div>
-      <div class="small" style="margin-top:7px">Kapacita: ${esc(a.capacity)}</div>
-    </div>
-  </div>`;
-}
-
-function selectEvent(id){
-  const event = companyActions.find(a => String(a.id) === String(id));
-  if(!event) return;
-  selectedActionId = event.id;
-  $("selectedAction").value = event.name;
-  $("reservationForm").classList.remove("hidden");
-  $("reservationForm").scrollIntoView({behavior:"smooth",block:"start"});
-}
-
-async function submitReservation(e){
-  e.preventDefault();
-  if(!$("complianceCheck").checked) return showToast("Nejdříve potvrďte seznámení s kodexem a pravidly.");
-  const event = companyActions.find(a => String(a.id) === String(selectedActionId));
-  if(!event) return showToast("Vyberte nejdříve akci.");
-
-  const managerEmail = $("managerEmail").value.trim().toLowerCase();
-  if(!managerEmail) return showToast("Zadejte e-mail 1. schvalovatele.");
-
-  const req = {
-    id:Date.now(),
-    actionId:event.id,
-    action:event.name,
-    applicant:$("applicantName").value.trim(),
-    applicantEmail:currentUser?.email || "",
-    customer:$("customerName").value.trim(),
-    revenueEUR:Number($("revenueEUR").value),
-    tickets:Number($("ticketCount").value),
-    reason:$("reason").value.trim(),
-    managerEmail,
-    approver2Email:SECOND_APPROVER_EMAIL,
-    status1:"Čeká na schválení",
-    status2:"Čeká na vyjádření",
-    reservationStatus:"Čeká na 1. schvalovatele",
-    approvedBy1:"",
-    approvedBy2:"",
-    emailSent:false,
-    createdAt:new Date().toISOString()
-  };
-
-  requests.push(req);
-
-  if(currentUser?.token && customUsers[currentUser.token]){
-    customUsers[currentUser.token].managerEmail = managerEmail;
-    currentUser.managerEmail = managerEmail;
-    localStorage.setItem("currentUser", JSON.stringify(currentUser));
-  }
-  localStorage.setItem("cc_manager_email", managerEmail);
-
-  await saveCloud();
-  e.target.reset();
-  $("applicantName").value = currentUser?.name || "";
-  $("managerEmail").value = managerEmail;
-  $("submitReservation").disabled = true;
-  selectedActionId = null;
-  $("reservationForm").classList.add("hidden");
-  showToast("Žádost byla odeslána 1. schvalovateli.");
-  setTab(2);
-}
-
-function requestVisibleToUser(r){
+function visibleRequest(r){
   if(isAdmin()) return true;
-  if(isManager()) return r.managerEmail === (currentUser.email || "").toLowerCase();
-  if(isSecond()) return r.status1 === "Schváleno";
-  if(currentUser?.role === "applicant") return r.applicantEmail === currentUser.email || r.applicant === currentUser.name;
+  if(isSecond()) return r.status1==="Schváleno";
+  if(isManager()) return normEmail(r.managerEmail)===normEmail(currentUser.email);
+  if(isApplicant()) return normEmail(r.applicantEmail)===normEmail(currentUser.email);
   return false;
 }
 
-function statusClass(s){
-  if(s === "Schváleno") return "approved";
-  if(s === "Zamítnuto") return "rejected";
-  if(s === "Čeká na vyjádření" || s === "Čeká na schválení") return "wait";
-  return "neutral";
+function setTab(n){
+  document.querySelectorAll(".tab-content").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(x=>x.classList.remove("active"));
+  $("tab"+n)?.classList.add("active"); $("tabBtn"+n)?.classList.add("active");
+  if(n===2) renderRequests();
+  if(n===4) renderAdmin();
+  localStorage.setItem("activeCcTab",String(n));
 }
-
-function isFinal(r){
-  return r.status1 === "Zamítnuto" || (r.status1 === "Schváleno" && r.status2 !== "Čeká na vyjádření");
+function updateSession(){
+  $("loggedName").textContent=currentUser?.name||"–";
+  $("loggedRole").textContent=currentUser?`(${roleLabel(currentUser.role)})`:"";
+  $("loginGate").classList.toggle("hidden",!!currentUser);
+  $("app").classList.toggle("hidden",!currentUser);
+  $("tabBtn4").classList.toggle("hidden",!isAdmin());
+  if(!currentUser)return;
+  setTab(1); // Always open on Planned Events after login.
 }
-
-function renderRequests(){
-  const body = $("requestsBody");
-  if(!body) return;
-  const statusFilter = $("requestStatusFilter").value;
-  const actionFilter = $("requestActionFilter").value;
-  const applicantFilter = $("requestApplicantFilter").value.toLowerCase().trim();
-  const customerFilter = $("requestCustomerFilter").value.toLowerCase().trim();
-
-  const visible = requests.filter(requestVisibleToUser).filter(r => {
-    if(statusFilter === "pending" && isFinal(r)) return false;
-    if(statusFilter === "done" && !isFinal(r)) return false;
-    if(statusFilter === "rejected" && !r.reservationStatus.toLowerCase().includes("zamítnuto")) return false;
-    if(actionFilter !== "all" && r.action !== actionFilter) return false;
-    if(applicantFilter && !r.applicant.toLowerCase().includes(applicantFilter)) return false;
-    if(customerFilter && !r.customer.toLowerCase().includes(customerFilter)) return false;
-    return true;
-  });
-
-  if(!visible.length){
-    body.innerHTML = `<tr><td colspan="9" class="empty">Žádné žádosti k zobrazení.</td></tr>`;
-    return;
-  }
-
-  body.innerHTML = visible.map(r => {
-    const firstCanAct = isManager() && r.managerEmail === (currentUser.email || "").toLowerCase() && r.status1 === "Čeká na schválení";
-    const secondCanAct = isSecond() && r.status1 === "Schváleno" && r.status2 === "Čeká na vyjádření";
-    const finalMail = isAdmin() && isFinal(r);
-
-    let actions = "";
-    if(firstCanAct){
-      actions += `<button class="success" data-approve1="${r.id}">Schválit</button>
-                  <button class="danger" data-reject1="${r.id}">Zamítnout</button>`;
-    }
-    if(secondCanAct){
-      actions += `<button class="success" data-approve2="${r.id}">Schválit</button>
-                  <button class="danger" data-reject2="${r.id}">Zamítnout</button>`;
-    }
-    if(finalMail){
-      actions += `<button class="info-btn" data-mail="${r.id}">${r.emailSent ? "✉ Odeslat znovu" : "✉ Informovat žadatele"}</button>`;
-    }
-    if(isAdmin() || (currentUser?.role === "applicant" && (r.applicantEmail === currentUser.email || r.applicant === currentUser.name))){
-      actions += `<button class="secondary" data-delete-request="${r.id}">Smazat</button>`;
-    }
-    if(!actions) actions = `<span class="small">Bez akce</span>`;
-
-    return `<tr>
-      <td><strong>${esc(r.action)}</strong></td>
-      <td>${esc(r.applicant)}<br><span class="small">${esc(r.applicantEmail)}</span></td>
-      <td>${esc(r.customer)}</td>
-      <td>${Number(r.revenueEUR || 0).toLocaleString("cs-CZ",{maximumFractionDigits:2})} €</td>
-      <td>${esc(r.reason)}</td>
-      <td><span class="status ${statusClass(r.status1)}">${esc(r.status1)}</span><br><span class="small">${esc(r.approvedBy1)}</span></td>
-      <td><span class="status ${statusClass(r.status2)}">${esc(r.status2)}</span><br><span class="small">${esc(r.approvedBy2)}</span></td>
-      <td><span class="status ${r.reservationStatus.includes("Zamítnuto")?"rejected":r.reservationStatus==="Schváleno"?"approved":"wait"}">${esc(r.reservationStatus)}</span></td>
-      <td><div class="actions">${actions}</div></td>
-    </tr>`;
-  }).join("");
-
-  body.querySelectorAll("[data-approve1]").forEach(b => b.onclick = () => decideFirst(b.dataset.approve1,"Schváleno"));
-  body.querySelectorAll("[data-reject1]").forEach(b => b.onclick = () => decideFirst(b.dataset.reject1,"Zamítnuto"));
-  body.querySelectorAll("[data-approve2]").forEach(b => b.onclick = () => decideSecond(b.dataset.approve2,"Schváleno"));
-  body.querySelectorAll("[data-reject2]").forEach(b => b.onclick = () => decideSecond(b.dataset.reject2,"Zamítnuto"));
-  body.querySelectorAll("[data-mail]").forEach(b => b.onclick = () => sendStatusEmail(b.dataset.mail));
-  body.querySelectorAll("[data-delete-request]").forEach(b => b.onclick = () => deleteRequest(b.dataset.deleteRequest));
+function login(){
+  const token=$("gateToken").value.trim();
+  if(!token)return toast("Zadejte přístupový kód.");
+  if(token===ADMIN_TOKEN) currentUser={name:"Hlavní správce",email:"admin@firma.cz",role:"admin"};
+  else if(customUsers[token]) currentUser={...customUsers[token],token};
+  else return toast("Neplatný přístupový kód.");
+  localStorage.setItem("currentUser",JSON.stringify(currentUser));
+  updateSession(); renderAll();
 }
-
-async function decideFirst(id,status){
-  const r = requests.find(x => String(x.id) === String(id));
-  if(!r || !isManager() || r.managerEmail !== (currentUser.email || "").toLowerCase()) return;
-  if(r.status1 !== "Čeká na schválení") return;
-  r.status1 = status;
-  r.approvedBy1 = currentUser.name;
-  r.reservationStatus = status === "Schváleno" ? "Čeká na 2. schvalovatele" : "Zamítnuto 1. schvalovatelem";
-  if(status === "Zamítnuto") r.status2 = "Není potřeba";
-  await saveCloud();
-  showToast("Vyjádření 1. schvalovatele bylo uloženo.");
-  renderRequests();
+function logout(){
+  currentUser=null; localStorage.removeItem("currentUser");
+  if(unsubscribe){unsubscribe();unsubscribe=null}
+  updateSession();
 }
-
-async function decideSecond(id,status){
-  const r = requests.find(x => String(x.id) === String(id));
-  if(!r || !isSecond() || r.status1 !== "Schváleno" || r.status2 !== "Čeká na vyjádření") return;
-  r.status2 = status;
-  r.approvedBy2 = currentUser.name;
-  r.reservationStatus = status === "Schváleno" ? "Schváleno" : "Zamítnuto 2. schvalovatelem";
-  await saveCloud();
-  showToast("Vyjádření 2. schvalovatele bylo uloženo.");
-  renderRequests();
+function openGuest(){
+  currentUser={name:"Anonymní žadatel",email:"",role:"guest"};
+  updateSession(); setTab(3);
 }
-
-function sendStatusEmail(id){
-  const r = requests.find(x => String(x.id) === String(id));
-  if(!r || !isAdmin() || !isFinal(r)) return;
-  if(!r.applicantEmail){
-    return showToast("U žádosti není uložen e-mail žadatele.");
-  }
-  const subject = `Stav žádosti o rezervaci lístků – ${r.action}`;
-  const body = [
-    "Dobrý den,",
-    "",
-    "informujeme Vás o výsledku Vaší žádosti o rezervaci lístků.",
-    "",
-    `Akce: ${r.action}`,
-    `Zákazník: ${r.customer}`,
-    `Obrat: ${r.revenueEUR} EUR`,
-    `Počet lístků: ${r.tickets}`,
-    `Důvod: ${r.reason}`,
-    `1. schvalovatel: ${r.status1}`,
-    `2. schvalovatel: ${r.status2}`,
-    `Stav rezervace: ${r.reservationStatus}`,
-    "",
-    "S pozdravem,",
-    "Administrátor rezervačního portálu"
-  ].join("\n");
-
-  r.emailSent = true;
-  saveCloud();
-  window.location.href = `mailto:${encodeURIComponent(r.applicantEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-}
-
-async function deleteRequest(id){
-  if(!confirm("Opravdu chcete tuto žádost smazat?")) return;
-  requests = requests.filter(r => String(r.id) !== String(id));
-  await saveCloud();
-  renderRequests();
-}
-
-function updateActionFilter(){
-  const sel = $("requestActionFilter");
-  const current = sel.value;
-  const names = [...new Set(requests.filter(requestVisibleToUser).map(r => r.action))].sort((a,b)=>a.localeCompare(b,"cs"));
-  sel.innerHTML = `<option value="all">Všechny akce</option>` + names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
-  if(names.includes(current)) sel.value = current;
-}
-
-function exportCSV(){
-  const rows = requests.filter(requestVisibleToUser);
-  const head = ["Akce","Žadatel","E-mail","Zákazník","Obrat EUR","Počet lístků","Důvod","1. schvalovatel","2. schvalovatel","Stav rezervace"];
-  const lines = [head,...rows.map(r=>[r.action,r.applicant,r.applicantEmail,r.customer,r.revenueEUR,r.tickets,r.reason,r.status1,r.status2,r.reservationStatus])]
-    .map(row=>row.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(";"));
-  const blob = new Blob(["\ufeff"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob); a.download = "seznam-zadosti.csv"; a.click();
-  URL.revokeObjectURL(a.href);
-}
-
-async function saveManagerEmail(){
-  const email = prompt("Zadejte pracovní e-mail svého nadřízeného (1. schvalovatele):", getOwnManagerEmail());
-  if(email === null) return;
-  const clean = email.trim().toLowerCase();
-  if(clean && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(clean)) return showToast("Zadejte platný e-mail.");
-  localStorage.setItem("cc_manager_email",clean);
-  if(currentUser?.token && customUsers[currentUser.token]){
-    customUsers[currentUser.token].managerEmail = clean;
-    currentUser.managerEmail = clean;
-    localStorage.setItem("currentUser",JSON.stringify(currentUser));
-    await saveCloud();
-  }
-  $("managerEmail").value = clean;
-  showToast("Nadřízený byl uložen.");
-}
-
-function readImage(file){
-  return new Promise((resolve,reject)=>{
-    if(!file) return resolve("");
-    if(file.size > 600000) return reject(new Error("Obrázek je příliš velký. Zvolte soubor do 600 kB."));
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-async function submitEvent(e){
+async function submitAccess(e){
   e.preventDefault();
-  const event = {
-    id:Date.now(),
-    name:$("eventName").value.trim(),
-    category:$("eventCategory").value,
-    date:$("eventDate").value,
-    time:$("eventTime").value,
-    place:$("eventPlace").value.trim(),
-    capacity:Number($("eventCapacity").value),
-    description:$("eventDescription").value.trim(),
-    image:imageData,
-    status:"Aktivní",
-    createdAt:new Date().toISOString()
-  };
-  companyActions.push(event);
-  await saveCloud();
-  e.target.reset(); imageData=""; $("imagePreview").textContent="";
-  showToast("Akce byla uložena.");
-  renderEverything();
+  const name=$("accessName").value.trim(), email=normEmail($("accessEmail").value), role=$("accessRole").value;
+  if(!name||!email)return toast("Vyplňte jméno a pracovní e-mail.");
+  roleRequests.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name,email,role,createdAt:new Date().toISOString()});
+  await saveCloud(); e.target.reset(); toast("Žádost o přístup byla odeslána.");
 }
 
-async function toggleEvent(id){
-  const a = companyActions.find(x=>String(x.id)===String(id));
-  if(!a) return;
-  a.status = a.status === "Aktivní" ? "Zrušena" : "Aktivní";
-  await saveCloud(); renderEverything();
-}
-
-async function deleteEvent(id){
-  if(!confirm("Opravdu chcete tuto akci smazat?")) return;
-  companyActions = companyActions.filter(a=>String(a.id)!==String(id));
-  await saveCloud(); renderEverything();
-}
-
-function renderAdmin(){
-  if(!isAdmin()) return;
-  $("adminEventsBody").innerHTML = companyActions.length ? companyActions.map(a =>
-    `<tr><td><strong>${esc(a.name)}</strong><br><span class="small">${esc(a.place)}</span></td>
-    <td>${esc((a.category||"Specialni").replace(" - "," – "))}</td>
-    <td>${esc(eventDateText(a))}</td><td>${esc(a.capacity)}</td>
-    <td><span class="status ${a.status==="Aktivní"?"approved":"rejected"}">${esc(a.status)}</span></td>
-    <td><div class="actions">
-      <button class="secondary" data-toggle-event="${a.id}">${a.status==="Aktivní"?"Zrušit":"Aktivovat"}</button>
-      <button class="danger" data-delete-event="${a.id}">Smazat</button>
-    </div></td></tr>`
-  ).join("") : `<tr><td colspan="6" class="empty">Žádné akce.</td></tr>`;
-
-  $("adminEventsBody").querySelectorAll("[data-toggle-event]").forEach(b=>b.onclick=()=>toggleEvent(b.dataset.toggleEvent));
-  $("adminEventsBody").querySelectorAll("[data-delete-event]").forEach(b=>b.onclick=()=>deleteEvent(b.dataset.deleteEvent));
-
-  $("accessRequestsBody").innerHTML = roleRequests.length ? roleRequests.map(r =>
-    `<tr><td>${esc(r.name)}</td><td>${esc(r.email)}</td><td>${esc(roleLabel(r.role))}</td>
-    <td><div class="actions"><button class="success" data-approve-role="${r.id}">Schválit</button><button class="danger" data-reject-role="${r.id}">Zamítnout</button></div></td></tr>`
-  ).join("") : `<tr><td colspan="4" class="empty">Žádné čekající žádosti.</td></tr>`;
-
-  $("accessRequestsBody").querySelectorAll("[data-approve-role]").forEach(b=>b.onclick=()=>approveRole(b.dataset.approveRole));
-  $("accessRequestsBody").querySelectorAll("[data-reject-role]").forEach(b=>b.onclick=()=>rejectRole(b.dataset.rejectRole));
-
-  const tokens = Object.keys(customUsers);
-  $("usersBody").innerHTML = tokens.length ? tokens.map(token => {
-    const u=customUsers[token];
-    return `<tr><td>${esc(u.name)}</td><td>${esc(u.email)}</td><td>${esc(roleLabel(u.role))}</td><td><strong>${esc(token)}</strong></td><td><button class="danger" data-delete-user="${esc(token)}">Deaktivovat</button></td></tr>`;
-  }).join("") : `<tr><td colspan="5" class="empty">Žádní aktivní uživatelé.</td></tr>`;
-  $("usersBody").querySelectorAll("[data-delete-user]").forEach(b=>b.onclick=()=>deleteUser(b.dataset.deleteUser));
-}
-
-function generateToken(){
-  const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let token="";
-  do{
-    token=Array.from({length:5},()=>chars[Math.floor(Math.random()*chars.length)]).join("");
-  }while(customUsers[token]);
-  return token;
-}
-
-async function approveRole(id){
-  const req=roleRequests.find(r=>String(r.id)===String(id));
-  if(!req) return;
-  const token=generateToken();
-  customUsers[token]={name:req.name,email:req.email,role:req.role};
-  roleRequests=roleRequests.filter(r=>String(r.id)!==String(id));
-  await saveCloud();
-  alert(`Uživatel byl schválen.\n\nPřístupový kód: ${token}`);
-  renderAdmin();
-}
-
-async function rejectRole(id){
-  if(!confirm("Opravdu chcete tuto žádost zamítnout?")) return;
-  roleRequests=roleRequests.filter(r=>String(r.id)!==String(id));
-  await saveCloud(); renderAdmin();
-}
-
-async function deleteUser(token){
-  if(!confirm("Deaktivovat uživatele a zneplatnit jeho kód?")) return;
-  delete customUsers[token];
-  await saveCloud(); renderAdmin();
-}
-
-function renderPlannedEvents(){
-  const events=activeEvents();
-  $("plannedEvents").innerHTML=events.length ? events.map(eventCard).join("") :
-    `<div class="empty">Momentálně nejsou naplánované žádné aktivní akce.</div>`;
-  $("plannedEvents").querySelectorAll("[data-event-id]").forEach(card =>
-    card.addEventListener("click",()=>{
-      if(currentUser?.role==="applicant" || currentUser?.role==="admin" || currentUser?.role==="manager" || currentUser?.role==="rsm_praha"){
-        selectedCategory = companyActions.find(a=>String(a.id)===String(card.dataset.eventId))?.category || "";
-        setTab(1); renderCategories(); renderReservationEvents(); selectEvent(card.dataset.eventId);
-      }
-    })
-  );
-}
-
-function renderEverything(){
-  renderCategories();
-  renderReservationEvents();
-  updateActionFilter();
-  renderRequests();
-  renderPlannedEvents();
-  if(isAdmin()) renderAdmin();
-}
-
-function subscribeCloud(){
-  if(unsubscribe) unsubscribe();
-  unsubscribe = DATA_REF.onSnapshot(snapshot=>{
-    if(snapshot.exists){
-      hydrateFromCloud(snapshot.data());
-    }else{
-      saveCloud();
-    }
-  },error=>{
-    console.error("Firebase snapshot:",error);
+function categoryData(){return [
+  {id:"O2 Arena",label:"O2 Arena",subs:["O2 Arena - Koncert","O2 Arena - Hokej"]},
+  {id:"Fotbal",label:"Fotbal",subs:["Fotbal"]},
+  {id:"SKS Slavia",label:"SKS Slavia",subs:["SKS Slavia"]},
+  {id:"Reprezentace",label:"Reprezentace",subs:["Reprezentace"]},
+  {id:"Specialni",label:"Speciální akce",subs:["Specialni"]}
+]}
+function renderCategories(){
+  const grid=$("categoryGrid"); if(!grid)return;
+  grid.innerHTML=categoryData().map(c=>`<button class="category-card ${selectedCategory.startsWith(c.id)?"selected":""}" data-cat="${esc(c.id)}">${esc(c.label)}</button>`).join("");
+  grid.querySelectorAll("[data-cat]").forEach(b=>b.onclick=()=>{
+    selectedCategory=b.dataset.cat;
+    renderCategories(); renderReservationEvents();
   });
 }
-
-/* ---------- události ---------- */
-document.querySelectorAll(".tab-btn").forEach(btn=>btn.addEventListener("click",()=>{
-  if(btn.classList.contains("hidden")) return;
-  setTab(Number(btn.dataset.tab));
-}));
-$("loginBtn").onclick=login;
-$("logoutBtn").onclick=logout;
-$("guestAccessBtn").onclick=openGuestAccess;
-$("managerBtn").onclick=saveManagerEmail;
-$("accessForm").addEventListener("submit",submitAccess);
-$("reservationForm").addEventListener("submit",submitReservation);
-$("eventForm").addEventListener("submit",submitEvent);
-$("exportBtn").onclick=exportCSV;
-
-$("complianceCheck").addEventListener("change",()=>{
-  $("submitReservation").disabled=!$("complianceCheck").checked;
-});
-["requestStatusFilter","requestActionFilter","requestApplicantFilter","requestCustomerFilter"].forEach(id=>{
-  $(id).addEventListener("input",renderRequests);
-  $(id).addEventListener("change",renderRequests);
-});
-$("eventImage").addEventListener("change",async e=>{
-  try{
-    imageData=await readImage(e.target.files[0]);
-    $("imagePreview").textContent=imageData ? "Obrázek je připraven k uložení." : "";
-  }catch(err){
-    imageData=""; e.target.value=""; showToast(err.message);
-  }
-});
-
-/* ---------- start ---------- */
-requests=normalizeRequests(requests);
-if(currentUser){
-  updateSessionUI();
-}else{
-  $("app").classList.add("hidden");
-  $("loginGate").classList.remove("hidden");
+function renderReservationEvents(){
+  const box=$("reservationEventBox"), list=$("reservationEvents");
+  if(!selectedCategory){box.classList.add("hidden");return}
+  box.classList.remove("hidden");
+  $("selectedCategoryTitle").textContent=selectedCategory;
+  const cats=categoryData().find(c=>c.id===selectedCategory)?.subs||[selectedCategory];
+  const ev=activeEvents().filter(a=>cats.includes(a.category));
+  list.innerHTML=ev.length?ev.map(eventCard).join(""):`<div class="empty" style="grid-column:1/-1">V této kategorii nejsou žádné aktivní akce.</div>`;
+  list.querySelectorAll("[data-event-id]").forEach(c=>c.onclick=()=>openReservation(c.dataset.eventId));
 }
-renderEverything();
-subscribeCloud();
+function eventCard(a){
+  const locked=!!a.locked, rem=remainingCapacity(a);
+  const bg=a.image?`style="background-image:url('${a.image.replace(/'/g,"%27")}')"`:"";
+  const cap=Number(a.capacity||0);
+  return `<div class="event-card ${locked?"locked":""}" data-event-id="${esc(a.id)}" ${locked?'aria-disabled="true"':""}>
+    <div class="event-image" ${bg}></div><div class="event-body">
+      <div class="event-title">${esc(a.name)}</div>
+      <div class="event-meta">${esc(eventDateText(a))}</div>
+      <div class="small" style="margin-top:7px">Volná kapacita: <strong>${rem}</strong> / ${cap}</div>
+      ${a.description?`<div class="tooltip-text">${esc(a.description)}</div>`:""}
+      ${locked?'<div class="small" style="margin-top:6px">Akce je uzamčena administrátorem.</div>':""}
+    </div></div>`;
+}
+function renderPlannedEvents(){
+  const list=$("plannedEvents"); if(!list)return;
+  const ev=activeEvents();
+  list.innerHTML=ev.length?ev.map(eventCard).join(""):`<div class="empty">Momentálně nejsou naplánované žádné aktivní akce.</div>`;
+  list.querySelectorAll("[data-event-id]").forEach(c=>c.onclick=()=>{
+    const a=companyActions.find(x=>String(x.id)===String(c.dataset.eventId));
+    if(a&&!a.locked) openReservation(a.id);
+    else if(a?.locked) toast("Tato akce je momentálně uzamčena.");
+  });
+}
+function openReservation(id){
+  const a=companyActions.find(x=>String(x.id)===String(id));
+  if(!a||a.locked)return toast("Tato akce není dostupná.");
+  if(!isApplicant()&&!isManager()&&!isSecond()&&!isAdmin())return toast("Pro rezervaci se musíte přihlásit.");
+  const manager=getManagerEmail();
+  if(!manager&&!isAdmin())return toast("Nejdříve je potřeba mít nastaveného nadřízeného.");
+  $("selectedActionId").value=a.id; $("selectedAction").value=a.name;
+  $("modalActionInfo").textContent=eventDateText(a);
+  $("applicantName").value=currentUser?.name||"";
+  $("applicantEmail").value=currentUser?.email||"";
+  $("managerEmail").value=isAdmin()?SECOND_APPROVER_EMAIL:manager;
+  $("customerName").value=""; $("revenueEUR").value=""; $("ticketCount").value="1";
+  $("reason").value=reasonTemplate(); $("complianceCheck").checked=false; $("submitReservation").disabled=true;
+  $("reservationModal").classList.remove("hidden");
+}
+function closeReservation(){$("reservationModal").classList.add("hidden")}
+async function submitReservation(e){
+  e.preventDefault();
+  if(!$("complianceCheck").checked)return toast("Nejdříve potvrďte seznámení s kodexem a pravidly.");
+  const a=companyActions.find(x=>String(x.id)===$("selectedActionId").value);
+  if(!a||a.locked)return toast("Akce není dostupná.");
+  const tickets=Math.floor(Number($("ticketCount").value));
+  const revenue=Number($("revenueEUR").value);
+  if(!Number.isInteger(tickets)||tickets<1)return toast("Počet lístků musí být celé číslo.");
+  if(!Number.isFinite(revenue)||revenue<0)return toast("Obrat musí být nezáporné číslo.");
+  if(tickets>remainingCapacity(a))return toast(`Na akci zbývá pouze ${remainingCapacity(a)} volných lístků.`);
+  const manager=isAdmin()?SECOND_APPROVER_EMAIL:getManagerEmail();
+  if(!manager)return toast("Chybí 1. schvalovatel.");
+  const req={
+    id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),
+    actionId:a.id,action:a.name,applicant:currentUser.name,applicantEmail:normEmail(currentUser.email),
+    customer:$("customerName").value.trim(),revenueEUR:revenue,tickets,
+    reason:reasonTemplate(),managerEmail:manager,approver2Email:SECOND_APPROVER_EMAIL,
+    status1:"Čeká na schválení",status2:"Čeká na vyjádření",reservationStatus:"Čeká na 1. schvalovatele",
+    approvedBy1:"",approvedBy2:"",emailSent:false,createdAt:new Date().toISOString()
+  };
+  if(!req.customer)return toast("Vyplňte zákazníka / partnera.");
+  requests.push(req);
+  if(currentUser.token&&customUsers[currentUser.token]){
+    customUsers[currentUser.token].managerEmail=manager; currentUser.managerEmail=manager;
+    localStorage.setItem("currentUser",JSON.stringify(currentUser));
+  }
+  await saveCloud(); closeReservation(); renderAll(); setTab(2); toast("Žádost byla odeslána 1. schvalovateli.");
+}
+
+function statusClass(s){return s==="Schváleno"?"approved":s==="Zamítnuto"?"rejected":s.startsWith("Čeká")?"wait":"neutral"}
+function renderRequests(){
+  const body=$("requestsBody"); if(!body)return;
+  updateActionFilter();
+  const sf=$("requestStatusFilter").value, af=$("requestActionFilter").value;
+  const q1=$("requestApplicantFilter").value.toLowerCase().trim(), q2=$("requestCustomerFilter").value.toLowerCase().trim();
+  const rows=requests.filter(visibleRequest).filter(r=>{
+    const st=reservationStatus(r);
+    if(sf==="pending"&&isFinal(r))return false;
+    if(sf==="done"&&!isFinal(r))return false;
+    if(sf==="rejected"&&!st.toLowerCase().includes("zamítnuto"))return false;
+    if(af!=="all"&&r.action!==af)return false;
+    return (!q1||r.applicant.toLowerCase().includes(q1))&&(!q2||r.customer.toLowerCase().includes(q2));
+  });
+  body.innerHTML=rows.length?rows.map(r=>{
+    const first=isManager()&&normEmail(r.managerEmail)===normEmail(currentUser.email)&&r.status1==="Čeká na schválení";
+    const second=isSecond()&&r.status1==="Schváleno"&&r.status2==="Čeká na vyjádření";
+    const finalMail=isAdmin()&&isFinal(r);
+    let actions="";
+    if(first)actions+=`<button class="success" data-a1="${esc(r.id)}">Schválit</button><button class="danger" data-r1="${esc(r.id)}">Zamítnout</button>`;
+    if(second)actions+=`<button class="success" data-a2="${esc(r.id)}">Schválit</button><button class="danger" data-r2="${esc(r.id)}">Zamítnout</button>`;
+    if(finalMail)actions+=`<button class="info-btn" data-mail="${esc(r.id)}">${r.emailSent?"✉ Odeslat znovu":"✉ Informovat žadatele"}</button>`;
+    if(isAdmin())actions+=`<button class="secondary" data-delete-request="${esc(r.id)}">Smazat</button>`;
+    return `<tr>
+      <td><strong>${esc(r.action)}</strong></td><td>${esc(r.applicant)}<br><span class="small">${esc(r.applicantEmail)}</span></td>
+      <td>${esc(r.customer)}</td><td>${Number(r.revenueEUR).toLocaleString("cs-CZ",{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td>${esc(r.reason)}</td><td><span class="status ${statusClass(r.status1)}">${esc(r.status1)}${r.approvedBy1?`<br><span class="small">${esc(r.approvedBy1)}</span>`:""}</span></td>
+      <td><span class="status ${statusClass(r.status2)}">${esc(r.status2)}${r.approvedBy2?`<br><span class="small">${esc(r.approvedBy2)}</span>`:""}</span></td>
+      <td><span class="status ${statusClass(reservationStatus(r)==="Schváleno"?"Schváleno":reservationStatus(r).includes("Zamítnuto")?"Zamítnuto":"Čeká") }">${esc(reservationStatus(r))}</span></td>
+      <td><div class="actions">${actions||'<span class="small">Bez akce</span>'}</div></td>
+    </tr>`;
+  }).join(""):`<tr><td colspan="9" class="empty">Žádné žádosti k zobrazení.</td></tr>`;
+  body.querySelectorAll("[data-a1]").forEach(b=>b.onclick=()=>decideFirst(b.dataset.a1,"Schváleno"));
+  body.querySelectorAll("[data-r1]").forEach(b=>b.onclick=()=>decideFirst(b.dataset.r1,"Zamítnuto"));
+  body.querySelectorAll("[data-a2]").forEach(b=>b.onclick=()=>decideSecond(b.dataset.a2,"Schváleno"));
+  body.querySelectorAll("[data-r2]").forEach(b=>b.onclick=()=>decideSecond(b.dataset.r2,"Zamítnuto"));
+  body.querySelectorAll("[data-mail]").forEach(b=>b.onclick=()=>sendStatusEmail(b.dataset.mail));
+  body.querySelectorAll("[data-delete-request]").forEach(b=>b.onclick=()=>deleteRequest(b.dataset.deleteRequest));
+}
+function updateActionFilter(){
+  const sel=$("requestActionFilter"), old=sel.value;
+  const names=[...new Set(requests.filter(visibleRequest).map(r=>r.action))].sort((a,b)=>a.localeCompare(b,"cs"));
+  sel.innerHTML='<option value="all">Všechny akce</option>'+names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
+  if(names.includes(old))sel.value=old;
+}
+async function decideFirst(id,status){
+  const r=requests.find(x=>String(x.id)===String(id));
+  if(!r||!isManager()||normEmail(r.managerEmail)!==normEmail(currentUser.email)||r.status1!=="Čeká na schválení")return toast("Tuto žádost nemůžete schválit.");
+  r.status1=status;r.approvedBy1=currentUser.name;r.reservationStatus=reservationStatus(r);
+  await saveCloud();renderAll();toast(status==="Schváleno"?"1. schvalovatel žádost schválil.":"Žádost byla zamítnuta 1. schvalovatelem.");
+}
+async function decideSecond(id,status){
+  const r=requests.find(x=>String(x.id)===String(id));
+  if(!r||!isSecond()||r.status1!=="Schváleno"||r.status2!=="Čeká na vyjádření")return toast("Tuto žádost nemůžete schválit.");
+  if(status==="Schváleno"){
+    const a=companyActions.find(x=>String(x.id)===String(r.actionId));
+    if(!a)return toast("Akce již neexistuje.");
+    // Defensive capacity check. A server-side transaction/rule is still required for absolute enforcement.
+    if(Number(r.tickets)>remainingCapacity(a))return toast(`Schválení nelze provést: kapacita akce je překročena. Zbývá ${remainingCapacity(a)} lístků.`);
+  }
+  r.status2=status;r.approvedBy2=currentUser.name;r.reservationStatus=reservationStatus(r);
+  await saveCloud();renderAll();toast(status==="Schváleno"?"2. schvalovatel žádost schválil.":"Žádost byla zamítnuta 2. schvalovatelem.");
+}
+function sendStatusEmail(id){
+  const r=requests.find(x=>String(x.id)===String(id));
+  if(!r||!isAdmin()||!isFinal(r)||!r.applicantEmail)return toast("E-mail nelze připravit.");
+  const subject=`Stav žádosti o rezervaci – ${r.action}`;
+  const body=["Dobrý den,","",`Vaše žádost o rezervaci akce „${r.action}“ byla dokončena.`,"",`Stav: ${reservationStatus(r)}`,`Zákazník: ${r.customer}`,`Počet lístků: ${r.tickets}`,"","S pozdravem,","Administrátor rezervačního portálu"].join("\n");
+  r.emailSent=true;saveCloud();
+  location.href=`mailto:${encodeURIComponent(r.applicantEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+async function deleteRequest(id){
+  if(!isAdmin()||!confirm("Opravdu chcete tuto žádost smazat?"))return;
+  requests=requests.filter(r=>String(r.id)!==String(id));await saveCloud();renderAll();
+}
+function exportCSV(){
+  const rows=requests.filter(visibleRequest),head=["Akce","Žadatel","E-mail","Zákazník","Obrat EUR","Počet lístků","Důvod","1. schvalovatel","2. schvalovatel","Stav rezervace"];
+  const lines=[head,...rows.map(r=>[r.action,r.applicant,r.applicantEmail,r.customer,r.revenueEUR,r.tickets,r.reason,r.status1,r.status2,reservationStatus(r)])]
+    .map(row=>row.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(";"));
+  const blob=new Blob(["\ufeff"+lines.join("\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="rezervace.csv";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+async function readImage(file){
+  if(!file)return "";
+  if(file.size>600*1024)throw new Error("Obrázek je příliš velký. Maximum je 600 KB.");
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();fr.onload=()=>res(String(fr.result||""));fr.onerror=()=>rej(new Error("Obrázek se nepodařilo načíst."));fr.readAsDataURL(file);
+  });
+}
+async function submitEvent(e){
+  e.preventDefault();if(!isAdmin())return;
+  const name=$("eventName").value.trim(),cap=Math.floor(Number($("eventCapacity").value));
+  if(!name||!Number.isInteger(cap)||cap<1)return toast("Vyplňte název a platnou kapacitu.");
+  companyActions.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name,category:$("eventCategory").value,date:$("eventDate").value,time:$("eventTime").value,place:$("eventPlace").value.trim(),capacity:cap,description:$("eventDescription").value.trim(),image:imageData,status:"Aktivní",locked:false,createdAt:new Date().toISOString()});
+  await saveCloud();e.target.reset();imageData="";$("imagePreview").textContent="";renderAll();toast("Akce byla uložena.");
+}
+async function toggleEvent(id){
+  if(!isAdmin())return;const a=companyActions.find(x=>String(x.id)===String(id));if(!a)return;
+  a.status=a.status==="Aktivní"?"Zrušena":"Aktivní";await saveCloud();renderAll();
+}
+async function toggleLock(id){
+  if(!isAdmin())return;const a=companyActions.find(x=>String(x.id)===String(id));if(!a)return;
+  a.locked=!a.locked;await saveCloud();renderAll();
+}
+async function renameEvent(id){
+  if(!isAdmin())return;const a=companyActions.find(x=>String(x.id)===String(id));if(!a)return;
+  const n=prompt("Nový název dlaždice:",a.name);if(n===null)return;if(!n.trim())return toast("Název nesmí být prázdný.");
+  a.name=n.trim();await saveCloud();renderAll();
+}
+async function deleteEvent(id){
+  if(!isAdmin()||!confirm("Smazat akci? Existující žádosti zůstanou zachované."))return;
+  companyActions=companyActions.filter(a=>String(a.id)!==String(id));await saveCloud();renderAll();
+}
+function renderAdmin(){
+  if(!isAdmin())return;
+  $("adminEventsBody").innerHTML=companyActions.length?companyActions.map(a=>`<tr>
+    <td><strong>${esc(a.name)}</strong><br><span class="small">${esc(a.place||"")}</span></td>
+    <td>${esc((a.category||"Specialni").replace(" - "," – "))}</td><td>${esc(eventDateText(a))}</td><td>${esc(a.capacity)}</td>
+    <td>${a.locked?"🔒 Uzamčena":esc(a.status)}</td>
+    <td><div class="actions"><button class="secondary" data-rename="${esc(a.id)}">Přejmenovat</button>
+    <button class="secondary" data-lock="${esc(a.id)}">${a.locked?"Odemknout":"Zamknout"}</button>
+    <button class="secondary" data-toggle="${esc(a.id)}">${a.status==="Aktivní"?"Zrušit":"Aktivovat"}</button>
+    <button class="danger" data-del-event="${esc(a.id)}">Smazat</button></div></td></tr>`).join(""):`<tr><td colspan="6" class="empty">Žádné akce.</td></tr>`;
+  $("adminEventsBody").querySelectorAll("[data-rename]").forEach(b=>b.onclick=()=>renameEvent(b.dataset.rename));
+  $("adminEventsBody").querySelectorAll("[data-lock]").forEach(b=>b.onclick=()=>toggleLock(b.dataset.lock));
+  $("adminEventsBody").querySelectorAll("[data-toggle]").forEach(b=>b.onclick=()=>toggleEvent(b.dataset.toggle));
+  $("adminEventsBody").querySelectorAll("[data-del-event]").forEach(b=>b.onclick=()=>deleteEvent(b.dataset.delEvent));
+
+  const users=Object.entries(customUsers);
+  $("usersBody").innerHTML=users.length?users.map(([token,u])=>`<tr><td>${esc(u.name)}</td><td>${esc(u.email)}</td><td>${esc(roleLabel(u.role))}</td><td>${esc(u.managerEmail||"–")}</td><td><button class="danger" data-del-user="${esc(token)}">Deaktivovat</button></td></tr>`).join(""):`<tr><td colspan="5" class="empty">Žádní aktivní uživatelé.</td></tr>`;
+  $("usersBody").querySelectorAll("[data-del-user]").forEach(b=>b.onclick=()=>deleteUser(b.dataset.delUser));
+
+  $("accessRequestsBody").innerHTML=roleRequests.length?roleRequests.map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.email)}</td><td>${esc(roleLabel(r.role))}</td><td><div class="actions"><button class="success" data-ar-a="${esc(r.id)}">Schválit</button><button class="danger" data-ar-r="${esc(r.id)}">Zamítnout</button></div></td></tr>`).join(""):`<tr><td colspan="4" class="empty">Žádné čekající žádosti.</td></tr>`;
+  $("accessRequestsBody").querySelectorAll("[data-ar-a]").forEach(b=>b.onclick=()=>approveRole(b.dataset.arA));
+  $("accessRequestsBody").querySelectorAll("[data-ar-r]").forEach(b=>b.onclick=()=>rejectRole(b.dataset.arR));
+
+  $("capacityBody").innerHTML=activeEvents().map(a=>`<tr><td>${esc(a.name)}</td><td>${esc(a.capacity)}</td><td>${approvedCount(a.id)}</td><td class="${remainingCapacity(a)<=0?"capacity-full":remainingCapacity(a)<=Math.max(1,Math.ceil(a.capacity*.2))?"capacity-low":"capacity-ok"}">${remainingCapacity(a)}</td></tr>`).join("")||`<tr><td colspan="4" class="empty">Žádné akce.</td></tr>`;
+  $("seasonMode").value=portalSettings.seasonMode||"basic";
+}
+function approveRole(id){
+  if(!isAdmin())return;const r=roleRequests.find(x=>String(x.id)===String(id));if(!r)return;
+  const token=generateToken();customUsers[token]={name:r.name,email:r.email,role:r.role,managerEmail:""};
+  roleRequests=roleRequests.filter(x=>String(x.id)!==String(id));saveCloud().then(()=>{renderAdmin();toast(`Uživatel schválen. Přístupový kód: ${token}`)});
+}
+function rejectRole(id){if(!isAdmin())return;roleRequests=roleRequests.filter(x=>String(x.id)!==String(id));saveCloud().then(renderAdmin)}
+function deleteUser(token){if(!isAdmin()||!confirm("Deaktivovat uživatele?"))return;delete customUsers[token];saveCloud().then(renderAdmin)}
+function generateToken(){
+  const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let t="";
+  do{t=Array.from({length:8},()=>chars[Math.floor(Math.random()*chars.length)]).join("")}while(customUsers[t]);return t;
+}
+async function saveAppearance(){
+  if(!isAdmin())return;portalSettings.seasonMode=$("seasonMode").value;applySeason(portalSettings.seasonMode);await saveCloud();toast("Vzhled portálu byl uložen.");
+}
+function applySeason(mode){
+  const allowed=["basic","winter","autumn","summer","spring"];mode=allowed.includes(mode)?mode:"basic";
+  document.body.dataset.season=mode;
+}
+function renderAll(){renderCategories();renderReservationEvents();renderPlannedEvents();renderRequests();if(isAdmin())renderAdmin()}
+function subscribe(){
+  if(unsubscribe)unsubscribe();
+  unsubscribe=DATA_REF.onSnapshot(s=>{if(s.exists)hydrate(s.data());},e=>{console.error(e);toast("Nepodařilo se načíst synchronizovaná data.")});
+}
+
+document.querySelectorAll(".tab-btn").forEach(b=>b.onclick=()=>setTab(Number(b.dataset.tab)));
+document.querySelectorAll(".admin-subtab").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".admin-subtab").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".admin-panel").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");$("adminPanel-"+b.dataset.adminPanel).classList.add("active");
+});
+$("loginBtn").onclick=login;$("logoutBtn").onclick=logout;$("guestAccessBtn").onclick=openGuest;
+$("accessForm").onsubmit=submitAccess;$("reservationForm").onsubmit=submitReservation;$("eventForm").onsubmit=submitEvent;
+$("exportBtn").onclick=exportCSV;
+["requestStatusFilter","requestActionFilter","requestApplicantFilter","requestCustomerFilter"].forEach(id=>{$(id).oninput=renderRequests;$(id).onchange=renderRequests});
+$("complianceCheck").onchange=()=>{$("submitReservation").disabled=!$("complianceCheck").checked};
+$("closeReservationModal").onclick=closeReservation;$("cancelReservation").onclick=closeReservation;
+$("reservationModal").addEventListener("click",e=>{if(e.target.id==="reservationModal")closeReservation()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeReservation()});
+$("eventImage").onchange=async e=>{try{imageData=await readImage(e.target.files[0]);$("imagePreview").textContent=imageData?"Obrázek je připraven.":""}catch(err){e.target.value="";imageData="";toast(err.message)}};
+$("saveSeasonMode").onclick=saveAppearance;
+
+applySeason(portalSettings.seasonMode||"basic");
+if(currentUser)updateSession();
+else{$("loginGate").classList.remove("hidden");$("app").classList.add("hidden")}
+renderAll();subscribe();
 </script>
 </body>
 </html>
