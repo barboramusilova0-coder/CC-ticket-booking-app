@@ -3,137 +3,393 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#e41e26">
-<title>Rezervační portál lístků | Coca-Cola HBC</title>
+<title>CC Tickets – bezpečná migrace databáze</title>
 <style>
-:root{--red:#e41e26;--navy:#10243e;--ink:#172334;--muted:#66758a;--bg:#f4f6f9;--card:#fff;--line:#dfe5ec;--ok:#167346;--bad:#a52b23;--warn:#8a5a00;--shadow:0 10px 30px rgba(16,36,62,.08)}
-*{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--ink);background:var(--bg)}button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}
-.login{min-height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,#eef2f7,#fff)}.login-card{width:min(470px,calc(100% - 30px));padding:30px;background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:0 25px 70px rgba(16,36,62,.13)}.logo{width:58px;height:58px;border-radius:16px;background:var(--red);color:#fff;display:grid;place-items:center;font-weight:900;font-size:22px}.login h1{color:var(--navy);margin:18px 0 5px}.login p{font-size:13px;line-height:1.55;color:var(--muted)}
-.topbar{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;padding:0 28px;position:sticky;top:0;z-index:30}.brand{display:flex;gap:12px;align-items:center}.brandmark{width:42px;height:42px;border-radius:11px;background:var(--red);color:#fff;display:grid;place-items:center;font-weight:900}.brand b{display:block;color:var(--navy);font-size:15px}.brand small{color:var(--muted)}.top-actions{display:flex;gap:8px;align-items:center}.pill{border:1px solid var(--line);padding:8px 11px;border-radius:999px;font-size:11px;color:var(--muted)}
-.shell{max-width:1420px;margin:auto;padding:24px 28px 50px}.tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:20px}.tab{border:0;background:transparent;border-radius:10px;padding:11px 14px;color:var(--muted);font-weight:700}.tab.active{background:#fff;color:var(--red);box-shadow:var(--shadow)}
-.hero{background:linear-gradient(120deg,#10243e,#183b61);border-radius:20px;color:#fff;padding:26px 28px;display:flex;justify-content:space-between;gap:20px;align-items:center;box-shadow:var(--shadow);margin-bottom:22px}.hero h1{margin:0 0 5px;font-size:25px}.hero p{margin:0;color:#cbd7e5;font-size:13px}.btn{border:1px solid transparent;border-radius:9px;padding:9px 13px;font-weight:700}.btn.primary{background:var(--red);color:#fff}.btn.secondary{background:#fff;border-color:var(--line);color:var(--navy)}.btn.danger{background:#fff;border-color:#efc8c5;color:var(--bad)}.btn.small{padding:7px 10px;font-size:11px}.btn.icon{width:39px;height:39px;padding:0}.hero .btn.secondary{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#fff}
-.section{display:flex;justify-content:space-between;align-items:end;margin:24px 0 12px}.section h2{margin:0;color:var(--navy);font-size:18px}.section p{margin:4px 0 0;color:var(--muted);font-size:12px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:16px}.tile{background:#fff;border:1px solid var(--line);border-radius:17px;overflow:hidden;box-shadow:var(--shadow);transition:.18s}.tile:not(.locked){cursor:pointer}.tile:not(.locked):hover{transform:translateY(-3px)}.media{height:120px;background:linear-gradient(135deg,#203b5a,#e41e26);background-size:cover;background-position:center;position:relative}.badge{position:absolute;left:10px;top:10px;background:#fff;border-radius:999px;padding:5px 8px;font-size:10px;font-weight:800}.lock{position:absolute;right:10px;top:10px;background:#fff;border-radius:999px;padding:5px 8px}.tile-body{padding:14px}.tile h3{margin:0 0 8px;color:var(--navy);font-size:16px}.meta{display:flex;gap:6px;flex-wrap:wrap}.meta span{font-size:10px;color:var(--muted);background:#f2f5f8;border-radius:999px;padding:4px 7px}
-.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}.filters,.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.filters{grid-template-columns:repeat(5,minmax(0,1fr))}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:10px;text-transform:uppercase;font-weight:800;color:#59687b;letter-spacing:.04em}.field input,.field select,.field textarea{border:1px solid #cfd8e3;border-radius:9px;padding:10px;background:#fff;outline:0}.field textarea{min-height:90px;resize:vertical}.table-wrap{overflow:auto}.table{width:100%;border-collapse:collapse;font-size:11px}.table th{font-size:9px;text-transform:uppercase;color:#607085;text-align:left;background:#f7f9fb;padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}.table td{padding:10px;border-bottom:1px solid #edf0f3;vertical-align:top}.status{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:9px;font-weight:800;white-space:nowrap}.wait{background:#fff5df;color:var(--warn)}.ok{background:#eaf7f0;color:var(--ok)}.bad{background:#ffefee;color:var(--bad)}
-.admin-layout{display:grid;grid-template-columns:215px 1fr;gap:16px}.admin-nav{background:#fff;border:1px solid var(--line);border-radius:16px;padding:8px;height:max-content}.admin-nav button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:11px;border-radius:8px;color:var(--muted);font-weight:700;font-size:11px}.admin-nav button.active{background:#fbe9ea;color:var(--red)}.panel{display:none}.panel.active{display:block}.mini{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px}.mini small{color:var(--muted)}.actions{display:flex;gap:6px;flex-wrap:wrap}
-.modal-bg{position:fixed;inset:0;background:rgba(7,18,32,.58);display:grid;place-items:center;padding:18px;z-index:100}.modal{width:min(760px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:18px}.modal-head,.modal-foot{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.modal-foot{border-top:1px solid var(--line);border-bottom:0;justify-content:flex-end;gap:8px}.modal-head h2{margin:0;color:var(--navy);font-size:18px}.modal-body{padding:20px}.notice{padding:10px 12px;border-radius:9px;background:#eef5fb;color:#315b84;font-size:11px;margin-bottom:12px}.empty{padding:28px;text-align:center;color:var(--muted);border:1px dashed #cbd4df;border-radius:12px;background:#fff}.toast{position:fixed;right:18px;bottom:18px;background:#172334;color:#fff;padding:11px 14px;border-radius:9px;z-index:200;font-size:11px}
-@media(max-width:900px){.filters{grid-template-columns:repeat(2,1fr)}.admin-layout{grid-template-columns:1fr}}@media(max-width:600px){.topbar{padding:0 14px}.brand small,.pill{display:none}.shell{padding:16px 14px}.form-grid{grid-template-columns:1fr}.filters{grid-template-columns:1fr}.hero{align-items:flex-start;flex-direction:column}}
+body{font-family:Arial,sans-serif;background:#f5f7fa;margin:0;color:#172033}
+.wrap{max-width:900px;margin:40px auto;padding:0 20px}
+.card{background:#fff;border:1px solid #dfe5ec;border-radius:14px;padding:24px;margin-bottom:18px;box-shadow:0 4px 16px rgba(0,0,0,.05)}
+h1{margin-top:0}.muted{color:#64748b}.warn{background:#fff7ed;border:1px solid #fed7aa;padding:14px;border-radius:10px}
+.ok{background:#ecfdf5;border:1px solid #a7f3d0;padding:14px;border-radius:10px}
+button{border:0;border-radius:9px;padding:11px 16px;font-weight:700;cursor:pointer;margin:4px 6px 4px 0}
+.primary{background:#e41e26;color:white}.secondary{background:#e8edf3;color:#172033}
+button:disabled{opacity:.5;cursor:not-allowed}
+input{width:100%;box-sizing:border-box;padding:11px;border:1px solid #cbd5e1;border-radius:8px;margin:6px 0 12px}
+pre{background:#111827;color:#e5e7eb;padding:14px;border-radius:10px;white-space:pre-wrap;max-height:360px;overflow:auto}
+.hidden{display:none}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:700px){.grid{grid-template-columns:1fr}}
+.stat{font-size:25px;font-weight:800}.danger{color:#b91c1c}
 </style>
 </head>
 <body>
-<div id="login" class="login">
- <div class="login-card">
-  <div class="logo">CC</div>
-  <h1>Rezervační portál lístků</h1>
-  <p>Přihlášení je zabezpečeno přes Firebase Authentication. Přístupová oprávnění se kontrolují na straně Firestore Security Rules.</p>
-  <form id="loginForm">
-   <div class="field"><label>Pracovní e-mail</label><input id="email" type="email" autocomplete="username" required></div>
-   <div class="field" style="margin-top:12px"><label>Heslo</label><input id="password" type="password" autocomplete="current-password" required></div>
-   <button class="btn primary" style="width:100%;margin-top:15px">Přihlásit se</button>
-  </form>
-  <div id="loginError" style="color:#a52b23;font-size:11px;margin-top:10px"></div>
- </div>
+<div class="wrap">
+  <div class="card">
+    <h1>Bezpečná migrace Rezervačního portálu</h1>
+    <p class="muted">Jednorázový nástroj pro převod starého dokumentu <b>portalData/cocaColaDatabase</b> do nových kolekcí.</p>
+    <div class="warn"><b>Důležité:</b> tento nástroj používej pouze jako administrátor. Původní dokument nemaže. Nejdřív udělá náhled a lokální zálohu; teprve potom můžeš spustit zápis.</div>
+  </div>
+
+  <div id="loginCard" class="card">
+    <h2>1. Přihlášení administrátora</h2>
+    <label>E-mail</label>
+    <input id="email" type="email" autocomplete="username">
+    <label>Heslo</label>
+    <input id="password" type="password" autocomplete="current-password">
+    <button id="loginBtn" class="primary">Přihlásit</button>
+    <div id="loginMsg" class="danger"></div>
+  </div>
+
+  <div id="tool" class="hidden">
+    <div class="card">
+      <h2>2. Načíst starou databázi</h2>
+      <p>Přihlášený účet: <b id="who"></b></p>
+      <button id="loadBtn" class="primary">Načíst a analyzovat data</button>
+      <button id="backupBtn" class="secondary" disabled>Stáhnout JSON zálohu</button>
+      <div id="loadMsg"></div>
+    </div>
+
+    <div id="previewCard" class="card hidden">
+      <h2>3. Náhled migrace</h2>
+      <div class="grid">
+        <div><div class="stat" id="nActions">0</div><div class="muted">akcí → actions</div></div>
+        <div><div class="stat" id="nRequests">0</div><div class="muted">žádostí → requests</div></div>
+        <div><div class="stat" id="nRoles">0</div><div class="muted">žádostí o přístup → accessRequests</div></div>
+        <div><div class="stat" id="nCats">0</div><div class="muted">kategorií → categories</div></div>
+      </div>
+      <p class="muted">Důvody budou převedeny z <code>portalSettings.reasons</code>, pokud existují. Staré přístupové kódy z <code>customUsers</code> se do nové kolekce <code>users</code> NEPŘENÁŠEJÍ.</p>
+      <pre id="preview"></pre>
+      <button id="migrateBtn" class="primary">Spustit migraci</button>
+      <button id="cancelBtn" class="secondary">Zrušit</button>
+    </div>
+
+    <div id="resultCard" class="card hidden">
+      <h2>4. Výsledek</h2>
+      <div id="result"></div>
+      <pre id="log"></pre>
+    </div>
+  </div>
 </div>
 
-<div id="app" class="hidden">
-<header class="topbar">
- <div class="brand"><div class="brandmark">CC</div><div><b>Rezervační portál lístků</b><small> Coca-Cola HBC · zabezpečený interní systém</small></div></div>
- <div class="top-actions"><span id="userPill" class="pill"></span><button id="refresh" class="btn secondary icon" title="Obnovit">↻</button><button id="logout" class="btn secondary">Odhlásit</button></div>
-</header>
-<main class="shell">
-<nav class="tabs"><button class="tab active" data-tab="events">Plánované akce</button><button class="tab" data-tab="requests">Seznam žádostí</button><button class="tab" data-tab="access">Požádat o přístup</button><button id="adminTab" class="tab hidden" data-tab="admin">Administrace</button></nav>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import {
+  getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc, writeBatch
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
-<section id="eventsTab">
- <div class="hero"><div><h1>Plánované akce</h1><p>Vyberte akci a vytvořte žádost o vstupenky.</p></div><button id="refresh2" class="btn secondary">↻ Obnovit</button></div>
- <div id="categories"></div>
-</section>
+const firebaseConfig = {
+  apiKey: "AIzaSyCPSV3AauKHMPfnAKjbfvEDbb6RFJMiJA",
+  authDomain: "cc-tickets-booking-app.firebaseapp.com",
+  projectId: "cc-tickets-booking-app",
+  storageBucket: "cc-tickets-booking-app.firebasestorage.app",
+  messagingSenderId: "998442761726",
+  appId: "1:998442761726:web:e5bbe201f68c9594ea54af",
+  measurementId: "G-GKKE8GCN0T"
+};
 
-<section id="requestsTab" class="hidden">
- <div class="section"><div><h2>Seznam žádostí</h2><p>Obsah je omezen podle role a oprávnění.</p></div><button id="export" class="btn secondary small">Export CSV</button></div>
- <div class="card" style="margin-bottom:14px"><div class="filters"><div class="field"><label>Akce</label><select id="fEvent"><option value="">Všechny</option></select></div><div class="field"><label>Stav</label><select id="fStatus"><option value="">Všechny</option><option>Čeká na 1. schvalovatele</option><option>Čeká na 2. schvalovatele</option><option>Schváleno</option><option>Zamítnuto 1. schvalovatelem</option><option>Zamítnuto 2. schvalovatelem</option></select></div><div class="field"><label>Žadatel</label><input id="fApplicant"></div><div class="field"><label>Od</label><input id="fFrom" type="date"></div><div class="field"><label>Do</label><input id="fTo" type="date"></div></div></div>
- <div class="card table-wrap"><table class="table"><thead><tr><th>Akce</th><th>Žadatel</th><th>Zákazník</th><th>Lístky</th><th>Důvod</th><th>Stav</th><th>Akce</th></tr></thead><tbody id="requestRows"></tbody></table></div>
-</section>
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-<section id="accessTab" class="hidden">
- <div class="section"><div><h2>Požádat o přístup</h2><p>Žádost je uložena odděleně a není součástí provozních rezervací.</p></div></div>
- <div class="card" style="max-width:700px"><form id="accessForm"><div class="form-grid"><div class="field"><label>Jméno a příjmení</label><input id="aName" required></div><div class="field"><label>Pracovní e-mail</label><input id="aEmail" type="email" required></div><div class="field full"><label>Manažer / 1. schvalovatel</label><input id="aManager" type="email" required></div><div class="field full"><label>Poznámka</label><textarea id="aNote"></textarea></div></div><button class="btn primary" style="margin-top:13px">Odeslat žádost</button></form></div>
-</section>
+const $ = id => document.getElementById(id);
+let oldData = null;
+let prepared = null;
 
-<section id="adminTabContent" class="hidden">
- <div class="section"><div><h2>Administrace</h2><p>Administrátorské funkce jsou vynucovány Firestore Rules, ne pouze uživatelským rozhraním.</p></div></div>
- <div class="admin-layout"><div class="admin-nav" id="adminNav"><button class="active" data-panel="actions">Akce</button><button data-panel="cats">Dlaždice akcí</button><button data-panel="reasons">Důvody žádostí</button><button data-panel="approved">Schválené žádosti</button><button data-panel="users">Uživatelé</button><button data-panel="access">Žádosti o přístup</button></div>
- <div>
-  <div id="p-actions" class="panel active"><div class="card"><div class="section"><div><h2>Akce</h2><p>Vytvořit, upravit, uzamknout nebo odstranit.</p></div><button id="newAction" class="btn primary small">+ Nová akce</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Akce</th><th>Kategorie</th><th>Datum</th><th>Kapacita</th><th></th></tr></thead><tbody id="adminActions"></tbody></table></div></div></div>
-  <div id="p-cats" class="panel"><div class="card"><div class="section"><div><h2>Dlaždice akcí</h2><p>Přidat, přejmenovat, uzamknout nebo odebrat.</p></div><button id="newCat" class="btn primary small">+ Přidat</button></div><div id="catList"></div></div></div>
-  <div id="p-reasons" class="panel"><div class="card"><div class="section"><div><h2>Důvody žádostí</h2><p>Seznam používaný ve formuláři rezervace.</p></div><button id="newReason" class="btn primary small">+ Přidat</button></div><div id="reasonList"></div></div></div>
-  <div id="p-approved" class="panel"><div class="card"><div class="section"><div><h2>Schválené žádosti podle akce</h2><p>Účastníci jsou dostupní pouze oprávněným rolím.</p></div></div><div id="approvedList"></div></div></div>
-  <div id="p-users" class="panel"><div class="card"><div class="section"><div><h2>Uživatelé</h2><p>Role se mění pouze přes administrátorské oprávnění.</p></div></div><div id="userList"></div></div></div>
-  <div id="p-access" class="panel"><div class="card"><div class="section"><div><h2>Žádosti o přístup</h2><p>Schválení zde pouze eviduje žádost. Vytvoření účtu provádí administrátor v Firebase Authentication.</p></div></div><div id="accessList"></div></div></div>
- </div></div>
-</section>
-</main></div>
-<div id="modal"></div><div id="toast"></div>
-
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script>
-const firebaseConfig={apiKey:"AIzaSyCPSV3AauKHMPfnAKjbfvEDbb6RFJMiJA",authDomain:"cc-tickets-booking-app.firebaseapp.com",projectId:"cc-tickets-booking-app",storageBucket:"cc-tickets-booking-app.firebasestorage.app",messagingSenderId:"998442761726",appId:"1:998442761726:web:e5bbe201f68c9594ea54af",measurementId:"G-GKKE8GCN0T"};
-firebase.initializeApp(firebaseConfig);const auth=firebase.auth(),db=firebase.firestore();
-const $=id=>document.getElementById(id),esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
-const uid=p=>p+"_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8),now=()=>firebase.firestore.Timestamp.now();
-let me=null, role="user", cats=[],reasons=[],actions=[],requests=[],unsub=[];
-const SECOND="rsm.praha@cchellenic.com";
-function toast(x){const n=document.createElement("div");n.className="toast";n.textContent=x;$("toast").appendChild(n);setTimeout(()=>n.remove(),3000)}
-function modal(title,body,foot){$("modal").innerHTML=`<div class="modal-bg" id="mb"><div class="modal"><div class="modal-head"><h2>${title}</h2><button class="btn secondary" data-close>×</button></div><div class="modal-body">${body}</div><div class="modal-foot">${foot||""}</div></div></div>`;$("mb").onclick=e=>{if(e.target.id==="mb"||e.target.closest("[data-close]"))$("modal").innerHTML=""}}
-function isAdmin(){return role==="admin"}function isSecond(){return (me?.email||"").toLowerCase()===SECOND.toLowerCase()}
-function statusClass(s){return s==="Schváleno"?"ok":s?.startsWith("Zamítnuto")?"bad":"wait"}
-async function load(){
- const u=auth.currentUser;if(!u)return;
- const us=await db.collection("users").doc(u.uid).get();if(!us.exists||us.data().active===false)throw new Error("Uživatel nemá aktivní přístup.");
- const ud=us.data();me={uid:u.uid,email:u.email,name:ud.name||u.email,manager:ud.manager||""};role=ud.role||"user";
- const [c,r,a,q]=await Promise.all([db.collection("categories").orderBy("order").get(),db.collection("reasons").orderBy("order").get(),db.collection("actions").where("active","==",true).orderBy("date").get(),db.collection("requests").get()]);
- cats=c.docs.map(d=>({id:d.id,...d.data()}));reasons=r.docs.map(d=>({id:d.id,...d.data()}));actions=a.docs.map(d=>({id:d.id,...d.data()}));requests=q.docs.map(d=>({id:d.id,...d.data()}));
- $("login").classList.add("hidden");$("app").classList.remove("hidden");$("adminTab").classList.toggle("hidden",!isAdmin());$("userPill").textContent=`${me.name} · ${role}`;
- render();
+function safeId(value, fallback) {
+  let s = String(value ?? "").trim();
+  if (!s) s = fallback;
+  s = s.replace(/\//g, "_").replace(/\s+/g, "_");
+  return s.slice(0, 120) || fallback;
 }
-auth.onAuthStateChanged(async u=>{if(!u){$("login").classList.remove("hidden");$("app").classList.add("hidden");return}try{await load()}catch(e){await auth.signOut();$("loginError").textContent=e.message||"Přístup nebyl povolen."}});
-$("loginForm").onsubmit=async e=>{e.preventDefault();$("loginError").textContent="";try{await auth.signInWithEmailAndPassword($("email").value.trim(),$("password").value)}catch(err){$("loginError").textContent="Přihlášení se nezdařilo. Zkontrolujte e-mail a heslo."}};
-$("logout").onclick=()=>auth.signOut();$("refresh").onclick=()=>load().then(()=>toast("Data obnovena."));$("refresh2").onclick=()=>load().then(()=>toast("Data obnovena."));
-document.querySelector(".tabs").onclick=e=>{const b=e.target.closest("[data-tab]");if(!b)return;document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===b));["events","requests","access","adminTabContent"].forEach(x=>$(x+"Tab")?.classList.add("hidden"));if(b.dataset.tab==="events")$("eventsTab").classList.remove("hidden");if(b.dataset.tab==="requests")$("requestsTab").classList.remove("hidden");if(b.dataset.tab==="access")$("accessTab").classList.remove("hidden");if(b.dataset.tab==="admin")$("adminTabContent").classList.remove("hidden");};
-$("adminNav").onclick=e=>{const b=e.target.closest("[data-panel]");if(!b)return;document.querySelectorAll(".admin-nav button").forEach(x=>x.classList.toggle("active",x===b));document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));$("p-"+b.dataset.panel).classList.add("active")};
 
-function remaining(id){const a=actions.find(x=>x.id===id);if(!a)return 0;return Math.max(0,(a.capacity||0)-requests.filter(r=>r.eventId===id&&r.status==="Schváleno").reduce((n,r)=>n+(r.tickets||0),0))}
-function render(){renderEvents();renderRequests();renderAdmin()}
-function renderEvents(){const root=$("categories");root.innerHTML="";cats.filter(c=>c.active!==false).forEach(c=>{const aa=actions.filter(a=>a.categoryId===c.id&&!a.locked);const all=actions.filter(a=>a.categoryId===c.id);const block=document.createElement("div");block.style.marginBottom="25px";block.innerHTML=`<div class="section"><div><h2>${esc(c.icon||"•")} ${esc(c.name)}</h2><p>${all.length} akcí</p></div></div>`;const grid=document.createElement("div");grid.className="grid";if(!all.length)grid.innerHTML='<div class="empty">V této kategorii zatím není žádná akce.</div>';all.forEach(a=>{const d=document.createElement("div");d.className="tile"+(a.locked?" locked":"");d.innerHTML=`<div class="media" style="${a.image?"background-image:url('"+a.image+"')":""}"><span class="badge">${esc(c.name)}</span>${a.locked?'<span class="lock">🔒</span>':""}</div><div class="tile-body"><h3>${esc(a.name)}</h3><div class="meta"><span>📅 ${esc(a.date||"—")} ${esc(a.time||"")}</span><span>📍 ${esc(a.place||"—")}</span><span>🎟️ ${remaining(a.id)}/${a.capacity}</span></div>${a.description?`<p title="${esc(a.description)}" style="font-size:11px;color:#6b788a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(a.description)}</p>`:""}</div>`;if(!a.locked)d.onclick=()=>reservation(a);grid.appendChild(d)});block.appendChild(grid);root.appendChild(block)})}
-function reservation(a){if(remaining(a.id)<1){toast("Na tuto akci už není kapacita.");return}modal("Nová rezervace",`<div class="notice">Akce: <b>${esc(a.name)}</b> · volná kapacita: <b>${remaining(a.id)}</b></div><form id="rf"><div class="form-grid"><div class="field"><label>Žadatel</label><input value="${esc(me.name)}" readonly></div><div class="field"><label>E-mail</label><input value="${esc(me.email)}" readonly></div><div class="field"><label>1. schvalovatel</label><input id="rm" value="${esc(me.manager)}" readonly required></div><div class="field"><label>Zákazník</label><input id="rc" required></div><div class="field"><label>Obrat EUR</label><input id="rv" type="number" min="0" required></div><div class="field"><label>Počet lístků</label><input id="rt" type="number" min="1" max="${remaining(a.id)}" value="1" required></div><div class="field full"><label>Důvod</label><select id="rr">${reasons.map(r=>`<option value="${esc(r.text)}">${esc(r.text)}</option>`).join("")}</select></div><div class="field full"><label>Doplňující informace</label><textarea id="rd"></textarea></div><div class="field full"><label style="text-transform:none;letter-spacing:0"><input id="ok" type="checkbox" required> Potvrzuji, že znám a budu dodržovat Kodex chování a Pravidla chování pro zákazníky.</label></div></div></form>`,`<button class="btn secondary" data-close>Zrušit</button><button id="sendR" class="btn primary">Odeslat</button>`);$("sendR").onclick=async()=>{const n=+$("rt").value;if(!me.manager){toast("U účtu není nastaven manažer.");return}if(n<1||n>remaining(a.id)){toast("Neplatný počet lístků.");return}await db.collection("requests").add({eventId:a.id,eventName:a.name,applicantUid:me.uid,applicantName:me.name,applicantEmail:me.email,firstApprover:me.manager,secondApprover:SECOND,customer:$("rc").value.trim(),revenue:+$("rv").value||0,tickets:n,reason:$("rr").value,detail:$("rd").value.trim(),status:"Čeká na 1. schvalovatele",createdAt:now(),updatedAt:now()});$("modal").innerHTML="";await load();toast("Žádost odeslána.")}}
-function allowedRequests(){if(isAdmin()||isSecond())return requests;return requests.filter(r=>r.applicantUid===me.uid||r.firstApprover?.toLowerCase()===me.email.toLowerCase())}
-function renderRequests(){const sel=$("fEvent");if(sel)sel.innerHTML='<option value="">Všechny</option>'+actions.map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join("");const body=$("requestRows");if(!body)return;let rs=allowedRequests();const ev=$("fEvent").value,st=$("fStatus").value,q=$("fApplicant").value.toLowerCase(),fr=$("fFrom").value,to=$("fTo").value;rs=rs.filter(r=>(!ev||r.eventId===ev)&&(!st||r.status===st)&&(!q||String(r.applicantName).toLowerCase().includes(q)||String(r.applicantEmail).toLowerCase().includes(q))&&(!fr||String(r.createdAt?.toDate?.()||"").slice(0,10)>=fr)&&(!to||String(r.createdAt?.toDate?.()||"").slice(0,10)<=to));body.innerHTML=rs.length?rs.map(r=>{const can1=r.status==="Čeká na 1. schvalovatele"&&r.firstApprover?.toLowerCase()===me.email.toLowerCase();const can2=r.status==="Čeká na 2. schvalovatele"&&(isSecond()||isAdmin());const name=(isAdmin()||isSecond()||r.applicantUid===me.uid)?esc(r.applicantName):"Skrytý žadatel";return `<tr><td>${esc(r.eventName)}</td><td>${name}</td><td>${esc(r.customer)}</td><td>${r.tickets}</td><td>${esc(r.reason)}</td><td><span class="status ${statusClass(r.status)}">${esc(r.status)}</span></td><td>${can1||can2?`<button class="btn small primary" onclick="approve('${r.id}')">Schválit</button> <button class="btn small danger" onclick="reject('${r.id}')">Zamítnout</button>`:"—"}</td></tr>`}).join(""):'<tr><td colspan="7"><div class="empty">Žádné odpovídající žádosti.</div></td></tr>'}
-["fEvent","fStatus","fApplicant","fFrom","fTo"].forEach(id=>$(id).addEventListener("input",renderRequests));
-async function approve(id){const r=requests.find(x=>x.id===id);if(!r)return;if(r.status==="Čeká na 1. schvalovatele")await db.collection("requests").doc(id).update({status:"Čeká na 2. schvalovatele",updatedAt:now()});else if(r.status==="Čeká na 2. schvalovatele"){const a=actions.find(x=>x.id===r.eventId);if(!a)return;const used=requests.filter(x=>x.eventId===r.eventId&&(x.status==="Schváleno"||x.status==="Čeká na 2. schvalovatele")&&x.id!==id).reduce((n,x)=>n+x.tickets,0);if(used+r.tickets>a.capacity){toast("Kapacita nestačí.");return}await db.collection("requests").doc(id).update({status:"Schváleno",updatedAt:now()})}await load();toast("Stav žádosti byl změněn.")}
-async function reject(id){const r=requests.find(x=>x.id===id);if(!r||!confirm("Zamítnout žádost?"))return;await db.collection("requests").doc(id).update({status:r.status==="Čeká na 1. schvalovatele"?"Zamítnuto 1. schvalovatelem":"Zamítnuto 2. schvalovatelem",updatedAt:now()});await load();toast("Žádost zamítnuta.")}
+function asArray(value) {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === "object") return Object.entries(value).map(([key,val]) => {
+    if (val && typeof val === "object" && !Array.isArray(val)) return { _legacyKey:key, ...val };
+    return { _legacyKey:key, value:val };
+  });
+  return [];
+}
 
-function renderAdmin(){if(!isAdmin())return;renderAdminActions();renderCats();renderReasons();renderApproved();renderUsers();renderAccess()}
-function renderAdminActions(){$("adminActions").innerHTML=actions.map(a=>`<tr><td>${esc(a.name)}${a.locked?" 🔒":""}</td><td>${esc(cats.find(c=>c.id===a.categoryId)?.name||"—")}</td><td>${esc(a.date||"—")} ${esc(a.time||"")}</td><td>${a.capacity}</td><td><button class="btn small secondary" onclick="editAction('${a.id}')">Upravit</button> <button class="btn small secondary" onclick="toggleAction('${a.id}')">${a.locked?"Odemknout":"Uzamknout"}</button> <button class="btn small danger" onclick="deleteAction('${a.id}')">Smazat</button></td></tr>`).join("")||'<tr><td colspan="5"><div class="empty">Žádné akce.</div></td></tr>'}
-function renderCats(){$("catList").innerHTML=cats.map(c=>`<div class="mini"><div><b>${esc(c.icon||"•")} ${esc(c.name)}</b><br><small>${c.locked?"🔒 Uzamčená":"Aktivní"}</small></div><div class="actions"><button class="btn small secondary" onclick="editCat('${c.id}')">Přejmenovat</button><button class="btn small secondary" onclick="toggleCat('${c.id}')">${c.locked?"Odemknout":"Uzamknout"}</button><button class="btn small danger" onclick="deleteCat('${c.id}')">Ubrat</button></div></div>`).join("")}
-function renderReasons(){$("reasonList").innerHTML=reasons.map(r=>`<div class="mini"><span>${esc(r.text)}</span><div class="actions"><button class="btn small secondary" onclick="editReason('${r.id}')">Upravit</button><button class="btn small danger" onclick="deleteReason('${r.id}')">Smazat</button></div></div>`).join("")}
-function renderApproved(){$("approvedList").innerHTML=actions.map(a=>{const rs=requests.filter(r=>r.eventId===a.id&&r.status==="Schváleno");if(!rs.length)return"";return `<div class="card" style="margin-bottom:10px"><b>${esc(a.name)}</b><div class="table-wrap" style="margin-top:8px"><table class="table"><tr><th>Účastník</th><th>E-mail</th><th>Zákazník</th><th>Lístky</th></tr>${rs.map(r=>`<tr><td>${esc(r.applicantName)}</td><td>${esc(r.applicantEmail)}</td><td>${esc(r.customer)}</td><td>${r.tickets}</td></tr>`).join("")}</table></div></div>`}).join("")||'<div class="empty">Žádné schválené žádosti.</div>'}
-async function renderUsers(){const s=await db.collection("users").get();$("userList").innerHTML=s.docs.map(d=>{const u=d.data();return `<div class="mini"><div><b>${esc(u.name||u.email)}</b><br><small>${esc(u.email)} · role: ${esc(u.role||"user")}</small></div></div>`}).join("")}
-async function renderAccess(){const s=await db.collection("accessRequests").orderBy("createdAt","desc").get();$("accessList").innerHTML=s.docs.map(d=>{const x=d.data();return `<div class="mini"><div><b>${esc(x.name)}</b><br><small>${esc(x.email)} · manažer: ${esc(x.manager)} · ${esc(x.status||"pending")}</small></div><div>${x.status==="pending"?`<button class="btn small primary" onclick="approveAccess('${d.id}')">Označit schváleno</button><button class="btn small danger" onclick="rejectAccess('${d.id}')">Zamítnout</button>`:""}</div></div>`}).join("")||'<div class="empty">Žádné žádosti.</div>'}
-$("accessForm").onsubmit=async e=>{e.preventDefault();await db.collection("accessRequests").add({name:$("aName").value.trim(),email:$("aEmail").value.trim().toLowerCase(),manager:$("aManager").value.trim().toLowerCase(),note:$("aNote").value.trim(),status:"pending",createdAt:now()});e.target.reset();toast("Žádost o přístup odeslána.")}
-async function approveAccess(id){await db.collection("accessRequests").doc(id).update({status:"approved",approvedAt:now(),approvedBy:me.uid});toast("Žádost označena jako schválená. Účet je nutné vytvořit v Firebase Authentication.");renderAdmin()}
-async function rejectAccess(id){await db.collection("accessRequests").doc(id).update({status:"rejected",updatedAt:now()});renderAdmin()}
-async function editCat(id){const c=cats.find(x=>x.id===id);modal("Upravit dlaždici",`<div class="form-grid"><div class="field"><label>Název</label><input id="cn" value="${esc(c.name)}"></div><div class="field"><label>Ikona</label><input id="ci" value="${esc(c.icon||"•")}"></div></div>`,`<button class="btn secondary" data-close>Zrušit</button><button id="save" class="btn primary">Uložit</button>`);$("save").onclick=async()=>{await db.collection("categories").doc(id).update({name:$("cn").value.trim(),icon:$("ci").value.trim()||"•"});$("modal").innerHTML="";await load()}}
-async function toggleCat(id){const c=cats.find(x=>x.id===id);await db.collection("categories").doc(id).update({locked:!c.locked});await load()}
-async function deleteCat(id){if(cats.find(x=>x.id===id)?.locked){toast("Uzamčenou dlaždici nelze odebrat.");return}if(actions.some(a=>a.categoryId===id)){toast("Dlaždice obsahuje akce.");return}if(confirm("Odebrat dlaždici?")){await db.collection("categories").doc(id).update({active:false});await load()}}
-$("newCat").onclick=async()=>{const id=uid("cat");await db.collection("categories").doc(id).set({name:"Nová dlaždice",icon:"•",locked:false,active:true,order:cats.length});await load();editCat(id)}
-function editReason(id){const r=reasons.find(x=>x.id===id);modal("Upravit důvod",`<div class="field"><label>Text</label><textarea id="rtxt">${esc(r.text)}</textarea></div>`,`<button class="btn secondary" data-close>Zrušit</button><button id="saveR" class="btn primary">Uložit</button>`);$("saveR").onclick=async()=>{await db.collection("reasons").doc(id).update({text:$("rtxt").value.trim()});$("modal").innerHTML="";await load()}}
-$("newReason").onclick=async()=>{const id=uid("reason");await db.collection("reasons").doc(id).set({text:"Nový důvod",order:reasons.length});await load();editReason(id)}
-async function deleteReason(id){if(reasons.length<=1){toast("Musí zůstat alespoň jeden důvod.");return}if(confirm("Smazat důvod?")){await db.collection("reasons").doc(id).delete();await load()}}
-function editAction(id){const a=actions.find(x=>x.id===id);modal("Upravit akci",`<div class="form-grid"><div class="field full"><label>Název</label><input id="en" value="${esc(a.name)}"></div><div class="field"><label>Kategorie</label><select id="ec">${cats.map(c=>`<option value="${c.id}" ${c.id===a.categoryId?"selected":""}>${esc(c.name)}</option>`).join("")}</select></div><div class="field"><label>Kapacita</label><input id="ep" type="number" min="1" value="${a.capacity}"></div><div class="field"><label>Datum</label><input id="ed" type="date" value="${esc(a.date||"")}"></div><div class="field"><label>Čas</label><input id="et" type="time" value="${esc(a.time||"")}"></div><div class="field full"><label>Místo</label><input id="el" value="${esc(a.place||"")}"></div><div class="field full"><label>Popis / tooltip</label><textarea id="ex">${esc(a.description||"")}</textarea></div></div>`,`<button class="btn secondary" data-close>Zrušit</button><button id="saveA" class="btn primary">Uložit</button>`);$("saveA").onclick=async()=>{await db.collection("actions").doc(id).update({name:$("en").value.trim(),categoryId:$("ec").value,capacity:+$("ep").value,date:$("ed").value,time:$("et").value,place:$("el").value.trim(),description:$("ex").value.trim(),updatedAt:now()});$("modal").innerHTML="";await load()}}
-$("newAction").onclick=()=>{const id=uid("act");db.collection("actions").doc(id).set({name:"Nová akce",categoryId:cats[0]?.id||"",capacity:10,date:"",time:"",place:"",description:"",locked:false,active:true,createdAt:now()}).then(()=>load()).then(()=>editAction(id))}
-async function toggleAction(id){const a=actions.find(x=>x.id===id);await db.collection("actions").doc(id).update({locked:!a.locked});await load()}
-async function deleteAction(id){if(requests.some(r=>r.eventId===id)){toast("Akci nelze smazat, protože má žádosti.");return}if(confirm("Smazat akci?")){await db.collection("actions").doc(id).update({active:false});await load()}}
-$("export").onclick=()=>{const rows=allowedRequests();const data=[["Akce","Žadatel","E-mail","Zákazník","Lístky","Důvod","Stav"],...rows.map(r=>[r.eventName,(isAdmin()||isSecond()||r.applicantUid===me.uid)?r.applicantName:"Skrytý žadatel",(isAdmin()||isSecond()||r.applicantUid===me.uid)?r.applicantEmail:"",r.customer,r.tickets,r.reason,r.status])];const csv="\ufeff"+data.map(x=>x.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(";")).join("\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="seznam-zadosti.csv";a.click()};
+function clean(value) {
+  if (value === undefined) return null;
+  if (typeof value === "number" && !Number.isFinite(value)) return null;
+  return value;
+}
+
+function firstString(...values) {
+  for (const v of values) if (typeof v === "string" && v.trim()) return v.trim();
+  return "";
+}
+
+function normalizeCategoryName(v) {
+  return firstString(v) || "Ostatní";
+}
+
+function requestStatus(r) {
+  const s1 = firstString(r.status1, r.approval1, r.status);
+  const s2 = firstString(r.status2, r.approval2);
+  if (/zamítnut/i.test(s1)) return "Zamítnuto 1. schvalovatelem";
+  if (/zamítnut/i.test(s2)) return "Zamítnuto 2. schvalovatelem";
+  if (/schválen/i.test(s1) && /schválen/i.test(s2)) return "Schváleno";
+  if (/schválen/i.test(s1)) return "Čeká na 2. schvalovatele";
+  return "Čeká na 1. schvalovatele";
+}
+
+function getReasons(data) {
+  const candidates = [
+    data.reasons,
+    data.portalSettings?.reasons,
+    data.cc_dynamic_reasons
+  ];
+  for (const c of candidates) {
+    if (Array.isArray(c)) return c.map(x => typeof x === "string" ? x.trim() : firstString(x?.name, x?.label)).filter(Boolean);
+    if (typeof c === "string") return c.split(",").map(x=>x.trim()).filter(Boolean);
+    if (c && typeof c === "object") {
+      return Object.values(c).map(x => typeof x === "string" ? x.trim() : firstString(x?.name, x?.label)).filter(Boolean);
+    }
+  }
+  return [];
+}
+
+function prepare(data) {
+  const rawActions = asArray(data.companyActions);
+  const rawRequests = asArray(data.ticketRequests);
+  const rawRoles = asArray(data.roleRequests);
+
+  const actions = rawActions.map((a,i) => {
+    const id = safeId(a.id ?? a._legacyKey, "legacy_action_"+i);
+    return {
+      id,
+      data: {
+        ...a,
+        id,
+        active: firstString(a.status) ? !/zrušen|skry/i.test(a.status) : true,
+        status: firstString(a.status) || "Aktivní",
+        category: normalizeCategoryName(a.category),
+        subcategory: firstString(a.subcategory),
+        name: firstString(a.name, a.title) || "Akce bez názvu",
+        capacity: Number(a.capacity) || 0,
+        date: firstString(a.date),
+        time: firstString(a.time),
+        place: firstString(a.place),
+        description: firstString(a.description)
+      }
+    };
+  });
+
+  const actionByName = new Map(actions.map(a => [a.data.name.toLowerCase(), a.id]));
+  const categoriesMap = new Map();
+
+  actions.forEach((a, i) => {
+    const name = normalizeCategoryName(a.data.category);
+    const id = safeId(name.toLowerCase(), "category_"+i);
+    if (!categoriesMap.has(id)) categoriesMap.set(id, {
+      id,
+      data:{name, order:categoriesMap.size, active:true}
+    });
+  });
+
+  const reasons = getReasons(data).map((name,i)=>({
+    id:safeId("reason_"+i+"_"+name,"reason_"+i),
+    data:{name, order:i, active:true}
+  }));
+
+  const requests = rawRequests.map((r,i) => {
+    const id = safeId(r.id ?? r._legacyKey, "legacy_request_"+i);
+    const actionName = firstString(r.eventName,r.actionName,r.action,r.name);
+    const eventId = actionByName.get(actionName.toLowerCase()) || safeId("legacy_event_"+actionName, "legacy_event_"+i);
+    const tickets = Math.max(1, parseInt(r.tickets ?? r.ticketCount ?? 1,10) || 1);
+    const applicantEmail = firstString(r.applicantEmail,r.userEmail,r.email);
+    const employee = firstString(r.employee,r.applicant,r.user,r.name);
+    const firstApprover = firstString(r.manager,r.managerEmail,r.approver1,r.approver);
+    const revenue = Number(r.revenue ?? r.eur ?? r.turnover ?? 0) || 0;
+    const status = requestStatus(r);
+    return {
+      id,
+      data:{
+        ...r,
+        id,
+        eventId,
+        legacyActionName: actionName,
+        applicantUid: firstString(r.applicantUid) || "",
+        applicantEmail,
+        applicantName: employee,
+        firstApprover,
+        secondApprover: firstString(r.approver2) || "rsm.praha@cchellenic.com",
+        customer:firstString(r.customer,r.customerName),
+        tickets,
+        revenue,
+        reason:firstString(r.reason),
+        status,
+        createdAt:firstString(r.createdAt) || new Date().toISOString()
+      }
+    };
+  });
+
+  const accessRequests = rawRoles.map((r,i)=>{
+    const id=safeId(r.id ?? r._legacyKey,"legacy_access_"+i);
+    return {
+      id,
+      data:{
+        id,
+        name:firstString(r.name,r.userName,r.employee),
+        email:firstString(r.email,r.userEmail),
+        requestedRole:firstString(r.role) || "user",
+        status:"pending",
+        migratedFrom:"roleRequests",
+        legacyData:r
+      }
+    };
+  });
+
+  return {
+    actions,categories:[...categoriesMap.values()],reasons,requests,accessRequests,
+    skippedCustomUsers:Object.keys(data.customUsers||{}).length
+  };
+}
+
+async function isAdminUser(user){
+  if(!user) return false;
+  const snap=await getDoc(doc(db,"users",user.uid));
+  return snap.exists() && snap.data().role==="admin" && snap.data().active===true;
+}
+
+async function writeCollection(name, items, log) {
+  let batch=writeBatch(db), count=0, total=0;
+  for (const item of items) {
+    batch.set(doc(db,name,item.id), item.data, {merge:true});
+    count++; total++;
+    if(count===450){ await batch.commit(); batch=writeBatch(db); count=0; log(`${name}: zapsáno ${total}`); }
+  }
+  if(count) await batch.commit();
+  log(`${name}: HOTOVO (${total})`);
+}
+
+function logLine(s){ $("log").textContent += s + "\n"; }
+
+$("loginBtn").onclick=async()=>{
+  $("loginMsg").textContent="";
+  try{
+    await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value);
+  }catch(e){
+    $("loginMsg").textContent="Přihlášení se nezdařilo. Zkontroluj e-mail a heslo.";
+  }
+};
+
+onAuthStateChanged(auth, async user=>{
+  if(!user) return;
+  try{
+    const admin=await isAdminUser(user);
+    if(!admin){
+      $("loginMsg").textContent="Tento účet není administrátor.";
+      await signOut(auth);
+      return;
+    }
+    $("loginCard").classList.add("hidden");
+    $("tool").classList.remove("hidden");
+    $("who").textContent=user.email || user.uid;
+  }catch(e){
+    $("loginMsg").textContent="Nepodařilo se ověřit administrátorská oprávnění.";
+    await signOut(auth);
+  }
+});
+
+$("loadBtn").onclick=async()=>{
+  $("loadMsg").textContent="Načítám…";
+  try{
+    const snap=await getDoc(doc(db,"portalData","cocaColaDatabase"));
+    if(!snap.exists()) throw new Error("Starý dokument portalData/cocaColaDatabase neexistuje.");
+    oldData=snap.data()||{};
+    prepared=prepare(oldData);
+
+    $("nActions").textContent=prepared.actions.length;
+    $("nRequests").textContent=prepared.requests.length;
+    $("nRoles").textContent=prepared.accessRequests.length;
+    $("nCats").textContent=prepared.categories.length;
+
+    $("preview").textContent=JSON.stringify({
+      zdroj:{
+        companyActions:Array.isArray(oldData.companyActions)?oldData.companyActions.length:Object.keys(oldData.companyActions||{}).length,
+        ticketRequests:Array.isArray(oldData.ticketRequests)?oldData.ticketRequests.length:Object.keys(oldData.ticketRequests||{}).length,
+        roleRequests:Array.isArray(oldData.roleRequests)?oldData.roleRequests.length:Object.keys(oldData.roleRequests||{}).length,
+        customUsers:Object.keys(oldData.customUsers||{}).length
+      },
+      cil:{
+        actions:prepared.actions.length,
+        requests:prepared.requests.length,
+        categories:prepared.categories.length,
+        reasons:prepared.reasons.length,
+        accessRequests:prepared.accessRequests.length,
+        customUsers_presunute_do_users:false
+      },
+      poznamka:"customUsers se záměrně nepřenášejí do users, protože obsahují starý přístupový kód. Nové účty patří výhradně do Firebase Authentication."
+    },null,2);
+
+    $("previewCard").classList.remove("hidden");
+    $("backupBtn").disabled=false;
+    $("loadMsg").innerHTML='<div class="ok">Data byla načtena. Nejdřív si stáhni zálohu JSON, potom spusť migraci.</div>';
+  }catch(e){
+    $("loadMsg").innerHTML='<div class="danger">Chyba: '+e.message+'</div>';
+  }
+};
+
+$("backupBtn").onclick=()=>{
+  if(!oldData)return;
+  const blob=new Blob([JSON.stringify(oldData,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="cocaColaDatabase_zaloha_"+new Date().toISOString().slice(0,10)+".json";
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+
+$("cancelBtn").onclick=()=>{$("previewCard").classList.add("hidden");prepared=null};
+
+$("migrateBtn").onclick=async()=>{
+  if(!prepared || !oldData)return;
+  if(!confirm("Opravdu spustit migraci? Původní dokument se NEBUDE mazat."))return;
+  $("migrateBtn").disabled=true;
+  $("log").textContent="";
+  $("resultCard").classList.remove("hidden");
+  try{
+    logLine("Začínám migraci…");
+    await writeCollection("actions",prepared.actions,logLine);
+    await writeCollection("categories",prepared.categories,logLine);
+    await writeCollection("reasons",prepared.reasons,logLine);
+    await writeCollection("requests",prepared.requests,logLine);
+    await writeCollection("accessRequests",prepared.accessRequests,logLine);
+
+    await setDoc(doc(db,"settings","portal"),{
+      seasonMode:firstString(oldData.portalSettings?.seasonMode) || firstString(oldData.ccSeasonMode) || "basic",
+      legacyThemeMode:firstString(oldData.cc_portal_theme_mode),
+      migratedFrom:"portalData/cocaColaDatabase",
+      migratedAt:new Date().toISOString()
+    },{merge:true});
+
+    await setDoc(doc(db,"settings","migration"),{
+      version:1,
+      source:"portalData/cocaColaDatabase",
+      completedAt:new Date().toISOString(),
+      counts:{
+        actions:prepared.actions.length,
+        categories:prepared.categories.length,
+        reasons:prepared.reasons.length,
+        requests:prepared.requests.length,
+        accessRequests:prepared.accessRequests.length
+      },
+      customUsersNotMigrated:true
+    },{merge:true});
+
+    $("result").innerHTML='<div class="ok"><b>Migrace proběhla.</b><br>Původní dokument <code>portalData/cocaColaDatabase</code> zůstal zachovaný.</div>';
+    logLine("MIGRACE ÚSPĚŠNĚ DOKONČENA.");
+  }catch(e){
+    $("result").innerHTML='<div class="warn"><b>POZOR:</b> migrace skončila chybou. Původní data nebyla smazána. Před dalším pokusem zkontroluj log.</div>';
+    logLine("CHYBA: "+(e.message||e));
+  }finally{
+    $("migrateBtn").disabled=false;
+  }
+};
 </script>
-</body></html>
+</body>
+</html>
