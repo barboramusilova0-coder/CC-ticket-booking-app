@@ -15,20 +15,15 @@ async function bootstrap(u){
   const path="users/"+u.uid;
   let snap;
   try{snap=await db.collection("users").doc(u.uid).get({source:"server"})}
-  catch(e){throw new Error("Firebase nedokázal načíst "+path+".
-Kód: "+(e.code||"neuveden")+"
-"+(e.message||""))}
+  catch(e){throw new Error("Firebase nedokázal načíst "+path+".\nKód: "+(e.code||"neuveden")+"\n"+(e.message||""))}
   if(!snap.exists){
     // A second direct read is intentionally made only to distinguish a real missing
     // document from a transient client/cache problem.
     try{const retry=await db.collection("users").doc(u.uid).get({source:"server"});if(retry.exists)snap=retry}catch(e){throw e}
   }
-  if(!snap.exists)throw new Error("Firebase říká, že dokument "+path+" neexistuje.
-Přihlášené UID: "+u.uid+"
-Projekt aplikace: "+firebase.app().options.projectId);
+  if(!snap.exists)throw new Error("Firebase říká, že dokument "+path+" neexistuje.\nPřihlášené UID: "+u.uid+"\nProjekt aplikace: "+firebase.app().options.projectId);
   profile=snap.data();
-  if(profile.active!==true)throw new Error("Účet je nalezen, ale není aktivní (pole active musí být Boolean true).
-UID: "+u.uid);
+  if(profile.active!==true)throw new Error("Účet je nalezen, ale není aktivní (pole active musí být Boolean true).\nUID: "+u.uid);
   $("who").textContent=(profile.name||u.email)+" · "+(profile.role||"user");
   $("login").classList.add("hidden");$("app").classList.remove("hidden");
   await load();tab("home");
