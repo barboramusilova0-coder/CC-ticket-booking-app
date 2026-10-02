@@ -3475,93 +3475,68 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 </script>
-<!-- ⚙️ UNIVERZÁLNÍ VISUÁLNÍ TRANSFORMÁTOR ADMIN PANELU COKE -->
+<!-- ⚙️ SUPER-JEDNODUCHÝ A ÚČINNÝ OPRAVÁŘ VZHLEDU ADMINISTRACE -->
 <style>
-    /* Styly, které natvrdo propálí dálkový server a zformují admin kartu na monitoru */
-    .cc-admin-box-card {
+    /* Chytne plochu Administrace (ať už má jakékoliv ranní ID) */
+    #tab-administrativni-pristup, #tab-admin, #tab5, [id*="admin"] {
+        max-width: 600px !important;
+        margin: 20px auto !important;
+        padding: 20px !important;
         background: #ffffff !important;
         border: 1px solid #cbd5e1 !important;
         border-radius: 10px !important;
-        padding: 24px !important;
-        margin: 20px auto !important;
-        max-width: 600px !important;
         box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
         box-sizing: border-box !important;
+        text-align: left !important;
+    }
+
+    /* 🔥 JEDNODUCHÝ TRIK: Všechna políčka a roletky v adminu se srovnají do lajny pod sebe */
+    #tab-administrativni-pristup input, #tab-administrativni-pristup select,
+    #tab-admin input, #tab-admin select,
+    [id*="admin"] input, [id*="admin"] select {
+        display: block !important;
+        width: 100% !important;
+        height: 38px !important;
+        padding: 8px 12px !important;
+        margin-top: 4px !important;
+        margin-bottom: 18px !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 6px !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        color: #334155 !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Když do políčka klikneš, elegantně červeně zhasne (styl Coca-Cola) */
+    #tab-administrativni-pristup input:focus, [id*="admin"] input:focus {
+        border-color: #e41e26 !important;
+        outline: none !important;
+    }
+
+    /* Všechna velká tlačítka v Administraci se roztáhnou a získají profi červený vzhled */
+    #tab-administrativni-pristup button, #tab-admin button, [id*="admin"] button {
+        display: block !important;
+        width: 100% !important;
+        height: 40px !important;
+        background: #e41e26 !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 6px !important;
+        font-weight: 700 !important;
+        font-size: 13px !important;
+        text-transform: uppercase !important;
+        cursor: pointer !important;
+        margin-top: 10px !important;
+        margin-bottom: 15px !important;
+        box-shadow: 0 2px 4px rgba(228, 30, 38, 0.15) !important;
+        transition: background 0.2s !important;
+    }
+    #tab-administrativni-pristup button:hover, [id*="admin"] button:hover {
+        background: #b6141a !important;
     }
 </style>
 
-<script>
-    (function() {
-        function ccZgruntuSrovnejAdministraciNaObrazovce() {
-            // Najdeme plochu záložky Administrativního přístupu (podle všech možných ranních názvů)
-            var adminPlocha = document.getElementById('tab-administrativni-pristup') || document.getElementById('tab-admin') || document.getElementById('tab5') || document.querySelector('[id*="admin"]');
-            if (!adminPlocha) return;
-
-            // 1. KROK: Pokud uvnitř administrace visí ranní formuláře, zabalíme je do profi bílých karet
-            var ranniFormulare = adminPlocha.querySelectorAll('form, .admin-section, #actionForm');
-            ranniFormulare.forEach(function(frm) {
-                if (!frm.classList.contains('cc-admin-box-card')) {
-                    frm.classList.add('cc-admin-box-card');
-                }
-            });
-
-            // 2. KROK: Chytneme úplně všechna textová políčka a roletky uvnitř admin záložky
-            var vsechnyVstupy = adminPlocha.querySelectorAll('input, select, textarea');
-            vsechnyVstupy.forEach(function(inp) {
-                // Pokud políčko není naše ozubené nastavení z lišty, srovnáme ho do jednotné výšky a stylu
-                if (inp.id !== 'cc-manager-email-input' && inp.id !== 'cc-search-action-input-id') {
-                    inp.style.setProperty('width', '100%', 'important');
-                    inp.style.setProperty('height', '38px', 'important');
-                    inp.style.setProperty('padding', '8px 12px', 'important');
-                    inp.style.setProperty('border', '1px solid #cbd5e1', 'important');
-                    inp.style.setProperty('border-radius', '6px', 'important');
-                    inp.style.setProperty('font-size', '13px', 'important');
-                    inp.style.setProperty('font-weight', '600', 'important');
-                    inp.style.setProperty('color', '#334155', 'important');
-                    inp.style.setProperty('margin-bottom', '15px', 'important');
-                    inp.style.setProperty('box-sizing', 'border-box', 'important');
-                    inp.style.setProperty('display', 'block', 'important');
-                    inp.style.setProperty('text-align', 'left', 'important');
-                }
-            });
-
-            // 3. KROK: Srovnáme textové popisky (Labely) nad políčky, aby stály čistě vlevo
-            var vsechnyLabely = adminPlocha.querySelectorAll('label');
-            vsechnyLabely.forEach(function(lbl) {
-                lbl.style.setProperty('font-weight', '700', 'important');
-                lbl.style.setProperty('font-size', '12px', 'important');
-                lbl.style.setProperty('color', '#475569', 'important');
-                lbl.style.setProperty('display', 'block', 'important');
-                lbl.style.setProperty('margin-bottom', '5px', 'important');
-                lbl.style.setProperty('text-align', 'left', 'important');
-            });
-
-            // 4. KROK: Proměníme odesílací tlačítka v profi červený Coca-Cola vzhled
-            var vsechnaTlacitka = adminPlocha.querySelectorAll('button, input[type="submit"]');
-            vsechnaTlacitka.forEach(function(btn) {
-                // Přeskočíme případné minulé ikony obálek nebo vyhledávání
-                if (btn.id !== 'cc-trigger-btn-id' && !btn.classList.contains('cc-dropdown-item-link') && !btn.innerText.includes('✉️') && !btn.innerText.includes('🗑️')) {
-                    btn.style.setProperty('background', '#e41e26', 'important');
-                    btn.style.setProperty('color', 'white', 'important');
-                    btn.style.setProperty('border', 'none', 'important');
-                    btn.style.setProperty('padding', '10px 20px', 'important');
-                    btn.style.setProperty('border-radius', '6px', 'important');
-                    btn.style.setProperty('font-weight', '700', 'important');
-                    btn.style.setProperty('font-size', '13px', 'important');
-                    btn.style.setProperty('cursor', 'pointer', 'important');
-                    btn.style.setProperty('text-transform', 'uppercase', 'important');
-                    btn.style.setProperty('width', '100%', 'important');
-                    btn.style.setProperty('height', '40px', 'important');
-                    btn.style.setProperty('margin-top', '10px', 'important');
-                    btn.style.setProperty('box-shadow', '0 2px 4px rgba(228, 30, 38, 0.15)', 'important');
-                }
-            });
-        }
-
-        // Spouštíme tento univerzální vizuální transformátor v super-rychlém režimu každých 300ms
-        setInterval(ccZgruntuSrovnejAdministraciNaObrazovce, 300);
-    })();
-</script>
 
 
 </body>
