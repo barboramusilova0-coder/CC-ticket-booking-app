@@ -3475,30 +3475,5 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 </script>
-<!-- SURGICAL UI REPAIR 2026-10-02 -->
-<script>
-(function(){
-'use strict';
-var css=document.createElement('style');css.textContent='.cc-admin-subtabs{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 18px;padding:5px;background:#f5f7fa;border:1px solid #e1e5ea;border-radius:10px}.cc-admin-subtab{border:0;background:transparent;color:#475569;padding:9px 14px;border-radius:7px;font-weight:700;cursor:pointer}.cc-admin-subtab.active{background:#fff;color:#111827;box-shadow:0 1px 5px rgba(0,0,0,.1)}.cc-admin-subpanel{display:none}.cc-admin-subpanel.active{display:block}';document.head.appendChild(css);
-function fix(){
- var dup=document.getElementById('btn-v3-planned');if(dup)dup.remove();
- var pb=document.getElementById('btn-planned');if(pb){pb.style.display='inline-flex';pb.textContent='Plánované akce';}
- var tab=document.getElementById('tab4');if(!tab)return;var h2=tab.querySelector(':scope > h2');if(!h2)return;
- var nav=tab.querySelector(':scope > .cc-admin-subtabs');
- var ps={};['events','access','settings'].forEach(function(k){ps[k]=tab.querySelector(':scope > .cc-admin-subpanel[data-panel="'+k+'"]');});
- if(!nav){nav=document.createElement('div');nav.className='cc-admin-subtabs';nav.innerHTML='<button type="button" class="cc-admin-subtab active" data-panel="events">Akce a obsazenost</button><button type="button" class="cc-admin-subtab" data-panel="access">Přístupy a uživatelé</button><button type="button" class="cc-admin-subtab" data-panel="settings">Globální nastavení</button>';h2.insertAdjacentElement('afterend',nav);}
- ['events','access','settings'].forEach(function(k){if(!ps[k]){ps[k]=document.createElement('div');ps[k].className='cc-admin-subpanel'+(k==='events'?' active':'');ps[k].dataset.panel=k;tab.appendChild(ps[k]);}});
- if(tab.dataset.adminGrouped!=='1'){
-   var current='events',kids=[].slice.call(tab.children),keep=[h2,nav,ps.events,ps.access,ps.settings];
-   kids.forEach(function(el){if(keep.indexOf(el)>=0)return;if(el.tagName==='H3'){var t=(el.textContent||'').trim();if(t.indexOf('Čekající žádosti')>=0||t.indexOf('Aktivní schvalovatelé')>=0)current='access';else if(t.indexOf('Globální')>=0||t.indexOf('nastavení')>=0)current='settings';else current='events';}ps[current].appendChild(el);});
-   tab.dataset.adminGrouped='1';
- }
- // Preserve any later-created global-settings panels; do not delete anything.
- [].slice.call(tab.children).forEach(function(el){if(el!==h2&&el!==nav&&!el.classList.contains('cc-admin-subpanel'))ps.settings.appendChild(el);});
- nav.querySelectorAll('.cc-admin-subtab').forEach(function(b){b.onclick=function(){nav.querySelectorAll('.cc-admin-subtab').forEach(function(x){x.classList.remove('active')});b.classList.add('active');Object.keys(ps).forEach(function(k){ps[k].classList.toggle('active',k===b.dataset.panel)});};});
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fix);else fix();setInterval(fix,1200);
-})();
-</script>
 </body>
 </html>
