@@ -3519,5 +3519,128 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         setInterval(ccVycistiDuplicitniZalozkyZive, 300);
     })();
 </script>
+    <!-- ⚙️ PREMIOVÝ DESIGN PRO ADMINISTRATIVNÍ PŘÍSTUP (BEZPEČNÝ ZÁPIS NA KONEC) -->
+<style>
+    /* 1. Hlavní plocha administrace: Nastavíme čisté moderní písmo a rozestupy */
+    #tab-administrativni-pristup,
+    #tab-admin, 
+    #tab5,
+    div[id*="admin"] {
+        font-family: inherit !important;
+        color: #0f172a !important;
+    }
+
+    /* 2. Rozdělení chaosu do luxusních bílých karet (Sekcí) s jemným stínem */
+    #tab-administrativni-pristup form,
+    #tab-admin form,
+    div[id*="admin"] form,
+    .admin-section,
+    .management-card {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 12px !important;
+        padding: 24px !important;
+        margin-bottom: 25px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
+        max-width: 650px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Nadpisy jednotlivých sekcí (např. Vytvořit novou akci, Správa uživatelů) */
+    #tab-administrativni-pristup h3,
+    #tab-admin h3,
+    div[id*="admin"] h3 {
+        font-size: 15px !important;
+        font-weight: 800 !important;
+        color: #0f172a !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.03em !important;
+        border-bottom: 2px solid #f1f5f9 !important;
+        padding-bottom: 10px !important;
+        margin-top: 0 !important;
+        margin-bottom: 20px !important;
+    }
+
+    /* 3. Profesionální zarovnání políček (Formulářové řádky) */
+    #tab-administrativni-pristup .form-group,
+    div[id*="admin"] .form-group,
+    #tab-custom-actions-form div[style*="column"] {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 6px !important;
+        margin-bottom: 16px !important;
+        text-align: left !important;
+        width: 100% !important;
+    }
+
+    /* Stylování popisků (Labelů) nad políčky */
+    #tab-administrativni-pristup label,
+    div[id*="admin"] label {
+        font-weight: 700 !important;
+        font-size: 12px !important;
+        color: #475569 !important;
+        text-transform: none !important;
+        margin: 0 !important;
+    }
+
+    /* 4. Sjednocení všech vstupních polí (Inputů a Selectů) do jednotného rozměru */
+    #tab-administrativni-pristup input[type="text"],
+    #tab-administrativni-pristup input[type="number"],
+    #tab-administrativni-pristup input[type="date"],
+    #tab-administrativni-pristup select,
+    div[id*="admin"] input,
+    div[id*="admin"] select {
+        width: 100% !important;
+        height: 38px !important;
+        padding: 8px 12px !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 6px !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        color: #334155 !important;
+        background: #ffffff !important;
+        box-sizing: border-box !important;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+    }
+
+    /* Světle červené ohraničení políčka, když do něj klikneš */
+    #tab-administrativni-pristup input:focus,
+    #tab-administrativni-pristup select:focus,
+    div[id*="admin"] input:focus:focus {
+        border-color: #e41e26 !important;
+        outline: none !important;
+        box-shadow: 0 0 0 3px rgba(228, 30, 38, 0.08) !important;
+    }
+
+    /* 5. Vyladění velkých odesílacích tlačítek na konci formulářů */
+    #tab-administrativni-pristup button[type="submit"],
+    #tab-administrativni-pristup .submit-btn,
+    div[id*="admin"] button[class*="submit"],
+    div[id*="admin"] button[onclick*="save"],
+    div[id*="admin"] button[onclick*="Vytvořit"] {
+        background: #e41e26 !important; /* Značková červená Coca-Cola */
+        color: white !important;
+        border: none !important;
+        padding: 10px 20px !important;
+        border-radius: 6px !important;
+        font-weight: 700 !important;
+        font-size: 13px !important;
+        cursor: pointer !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.02em !important;
+        transition: background 0.2s ease !important;
+        width: 100% !important; /* Tlačítko se elegantně roztáhne přes celou šířku karty */
+        height: 40px !important;
+        margin-top: 10px !important;
+        box-shadow: 0 2px 4px rgba(228, 30, 38, 0.15) !important;
+    }
+
+    #tab-administrativni-pristup button[type="submit"]:hover,
+    #tab-administrativni-pristup .submit-btn:hover {
+        background: #b6141a !important; /* Tmavší elegantní červená při najetí myší */
+    }
+</style>
 </body>
 </html>
