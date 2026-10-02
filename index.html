@@ -795,98 +795,6 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 </script>
-
-<!-- FINAL ORGANIZATION PATCH 2026-10-02 -->
-<script>
-(function(){
-  'use strict';
-  var css=document.createElement('style');
-  css.id='cc-final-org-css';
-  css.textContent=`
-    .cc-admin-subtabs{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 18px;padding:5px;background:#f5f7fa;border:1px solid #e1e5ea;border-radius:10px}
-    .cc-admin-subtab{border:0;background:transparent;color:#475569;padding:9px 14px;border-radius:7px;font-weight:700;cursor:pointer}
-    .cc-admin-subtab.active{background:#fff;color:#111827;box-shadow:0 1px 5px rgba(0,0,0,.10)}
-    .cc-admin-subpanel{display:none}.cc-admin-subpanel.active{display:block}
-    .cc-admin-subpanel>h3:first-child{margin-top:0}
-  `;
-  document.head.appendChild(css);
-
-  function adminSubtabs(){
-    var tab=document.getElementById('tab4');
-    if(!tab || tab.dataset.organized==='1') return;
-    var h2=tab.querySelector('h2');
-    if(!h2) return;
-
-    // Collect the existing administration sections exactly as they already exist.
-    var direct=[].slice.call(tab.children);
-    var firstBox=direct.find(function(x){return x.classList && x.classList.contains('box-section')});
-    var firstH3=direct.find(function(x){return x.tagName==='H3' && x.textContent.indexOf('Aktuální seznam akcí')>=0});
-    var firstTable=firstH3 ? firstH3.nextElementSibling : null;
-    var secondH3=direct.find(function(x){return x.tagName==='H3' && x.textContent.indexOf('Čekající žádosti')>=0});
-    var secondTable=secondH3 ? secondH3.nextElementSibling : null;
-    var thirdH3=direct.find(function(x){return x.tagName==='H3' && x.textContent.indexOf('Aktivní schvalovatelé')>=0});
-    var thirdTable=thirdH3 ? thirdH3.nextElementSibling : null;
-    var global1=document.getElementById('cc-v3-global');
-    var global2=document.getElementById('cc-final-admin-settings');
-
-    var nav=document.createElement('div');
-    nav.className='cc-admin-subtabs';
-    nav.innerHTML='<button class="cc-admin-subtab active" data-panel="events">Akce a obsazenost</button>'+
-                  '<button class="cc-admin-subtab" data-panel="access">Přístupy a uživatelé</button>'+
-                  '<button class="cc-admin-subtab" data-panel="settings">Globální nastavení</button>';
-    h2.insertAdjacentElement('afterend',nav);
-
-    var events=document.createElement('div'); events.className='cc-admin-subpanel active'; events.dataset.panel='events';
-    var access=document.createElement('div'); access.className='cc-admin-subpanel'; access.dataset.panel='access';
-    var settings=document.createElement('div'); settings.className='cc-admin-subpanel'; settings.dataset.panel='settings';
-
-    if(firstBox) events.appendChild(firstBox);
-    if(firstH3) events.appendChild(firstH3);
-    if(firstTable) events.appendChild(firstTable);
-
-    if(secondH3) access.appendChild(secondH3);
-    if(secondTable) access.appendChild(secondTable);
-    if(thirdH3) access.appendChild(thirdH3);
-    if(thirdTable) access.appendChild(thirdTable);
-
-    if(global1) settings.appendChild(global1);
-    if(global2) settings.appendChild(global2);
-
-    tab.appendChild(events); tab.appendChild(access); tab.appendChild(settings);
-    tab.dataset.organized='1';
-
-    nav.querySelectorAll('.cc-admin-subtab').forEach(function(btn){
-      btn.onclick=function(){
-        nav.querySelectorAll('.cc-admin-subtab').forEach(function(b){b.classList.remove('active')});
-        btn.classList.add('active');
-        [events,access,settings].forEach(function(panel){panel.classList.toggle('active',panel.dataset.panel===btn.dataset.panel)});
-      };
-    });
-  }
-
-  function removeDuplicatePlanned(){
-    // The older V3 patch created a second Planned Events button. Keep the original
-    // integrated tab-system button (#btn-planned) and remove/hide the duplicate.
-    var dup=document.getElementById('btn-v3-planned');
-    if(dup) dup.remove();
-    var original=document.getElementById('btn-planned');
-    if(original){
-      original.style.display='inline-flex';
-      original.textContent='Plánované akce';
-    }
-  }
-
-  function keepAdminClean(){
-    removeDuplicatePlanned();
-    adminSubtabs();
-  }
-
-  function run(){keepAdminClean();}
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else run();
-  setInterval(keepAdminClean,1000);
-})();
-</script>
-
 </body>
     <script>
     // 🔍 POKROČILÁ MANAŽERSKÁ VYHLEDÁVACÍ LIŠTA (Coca-Cola HBC)
@@ -3567,97 +3475,30 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 </script>
-
-<!-- FINAL ORGANIZATION PATCH 2026-10-02 -->
+<!-- SURGICAL UI REPAIR 2026-10-02 -->
 <script>
 (function(){
-  'use strict';
-  var css=document.createElement('style');
-  css.id='cc-final-org-css';
-  css.textContent=`
-    .cc-admin-subtabs{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 18px;padding:5px;background:#f5f7fa;border:1px solid #e1e5ea;border-radius:10px}
-    .cc-admin-subtab{border:0;background:transparent;color:#475569;padding:9px 14px;border-radius:7px;font-weight:700;cursor:pointer}
-    .cc-admin-subtab.active{background:#fff;color:#111827;box-shadow:0 1px 5px rgba(0,0,0,.10)}
-    .cc-admin-subpanel{display:none}.cc-admin-subpanel.active{display:block}
-    .cc-admin-subpanel>h3:first-child{margin-top:0}
-  `;
-  document.head.appendChild(css);
-
-  function adminSubtabs(){
-    var tab=document.getElementById('tab4');
-    if(!tab || tab.dataset.organized==='1') return;
-    var h2=tab.querySelector('h2');
-    if(!h2) return;
-
-    // Collect the existing administration sections exactly as they already exist.
-    var direct=[].slice.call(tab.children);
-    var firstBox=direct.find(function(x){return x.classList && x.classList.contains('box-section')});
-    var firstH3=direct.find(function(x){return x.tagName==='H3' && x.textContent.indexOf('Aktuální seznam akcí')>=0});
-    var firstTable=firstH3 ? firstH3.nextElementSibling : null;
-    var secondH3=direct.find(function(x){return x.tagName==='H3' && x.textContent.indexOf('Čekající žádosti')>=0});
-    var secondTable=secondH3 ? secondH3.nextElementSibling : null;
-    var thirdH3=direct.find(function(x){return x.tagName==='H3' && x.textContent.indexOf('Aktivní schvalovatelé')>=0});
-    var thirdTable=thirdH3 ? thirdH3.nextElementSibling : null;
-    var global1=document.getElementById('cc-v3-global');
-    var global2=document.getElementById('cc-final-admin-settings');
-
-    var nav=document.createElement('div');
-    nav.className='cc-admin-subtabs';
-    nav.innerHTML='<button class="cc-admin-subtab active" data-panel="events">Akce a obsazenost</button>'+
-                  '<button class="cc-admin-subtab" data-panel="access">Přístupy a uživatelé</button>'+
-                  '<button class="cc-admin-subtab" data-panel="settings">Globální nastavení</button>';
-    h2.insertAdjacentElement('afterend',nav);
-
-    var events=document.createElement('div'); events.className='cc-admin-subpanel active'; events.dataset.panel='events';
-    var access=document.createElement('div'); access.className='cc-admin-subpanel'; access.dataset.panel='access';
-    var settings=document.createElement('div'); settings.className='cc-admin-subpanel'; settings.dataset.panel='settings';
-
-    if(firstBox) events.appendChild(firstBox);
-    if(firstH3) events.appendChild(firstH3);
-    if(firstTable) events.appendChild(firstTable);
-
-    if(secondH3) access.appendChild(secondH3);
-    if(secondTable) access.appendChild(secondTable);
-    if(thirdH3) access.appendChild(thirdH3);
-    if(thirdTable) access.appendChild(thirdTable);
-
-    if(global1) settings.appendChild(global1);
-    if(global2) settings.appendChild(global2);
-
-    tab.appendChild(events); tab.appendChild(access); tab.appendChild(settings);
-    tab.dataset.organized='1';
-
-    nav.querySelectorAll('.cc-admin-subtab').forEach(function(btn){
-      btn.onclick=function(){
-        nav.querySelectorAll('.cc-admin-subtab').forEach(function(b){b.classList.remove('active')});
-        btn.classList.add('active');
-        [events,access,settings].forEach(function(panel){panel.classList.toggle('active',panel.dataset.panel===btn.dataset.panel)});
-      };
-    });
-  }
-
-  function removeDuplicatePlanned(){
-    // The older V3 patch created a second Planned Events button. Keep the original
-    // integrated tab-system button (#btn-planned) and remove/hide the duplicate.
-    var dup=document.getElementById('btn-v3-planned');
-    if(dup) dup.remove();
-    var original=document.getElementById('btn-planned');
-    if(original){
-      original.style.display='inline-flex';
-      original.textContent='Plánované akce';
-    }
-  }
-
-  function keepAdminClean(){
-    removeDuplicatePlanned();
-    adminSubtabs();
-  }
-
-  function run(){keepAdminClean();}
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else run();
-  setInterval(keepAdminClean,1000);
+'use strict';
+var css=document.createElement('style');css.textContent='.cc-admin-subtabs{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 18px;padding:5px;background:#f5f7fa;border:1px solid #e1e5ea;border-radius:10px}.cc-admin-subtab{border:0;background:transparent;color:#475569;padding:9px 14px;border-radius:7px;font-weight:700;cursor:pointer}.cc-admin-subtab.active{background:#fff;color:#111827;box-shadow:0 1px 5px rgba(0,0,0,.1)}.cc-admin-subpanel{display:none}.cc-admin-subpanel.active{display:block}';document.head.appendChild(css);
+function fix(){
+ var dup=document.getElementById('btn-v3-planned');if(dup)dup.remove();
+ var pb=document.getElementById('btn-planned');if(pb){pb.style.display='inline-flex';pb.textContent='Plánované akce';}
+ var tab=document.getElementById('tab4');if(!tab)return;var h2=tab.querySelector(':scope > h2');if(!h2)return;
+ var nav=tab.querySelector(':scope > .cc-admin-subtabs');
+ var ps={};['events','access','settings'].forEach(function(k){ps[k]=tab.querySelector(':scope > .cc-admin-subpanel[data-panel="'+k+'"]');});
+ if(!nav){nav=document.createElement('div');nav.className='cc-admin-subtabs';nav.innerHTML='<button type="button" class="cc-admin-subtab active" data-panel="events">Akce a obsazenost</button><button type="button" class="cc-admin-subtab" data-panel="access">Přístupy a uživatelé</button><button type="button" class="cc-admin-subtab" data-panel="settings">Globální nastavení</button>';h2.insertAdjacentElement('afterend',nav);}
+ ['events','access','settings'].forEach(function(k){if(!ps[k]){ps[k]=document.createElement('div');ps[k].className='cc-admin-subpanel'+(k==='events'?' active':'');ps[k].dataset.panel=k;tab.appendChild(ps[k]);}});
+ if(tab.dataset.adminGrouped!=='1'){
+   var current='events',kids=[].slice.call(tab.children),keep=[h2,nav,ps.events,ps.access,ps.settings];
+   kids.forEach(function(el){if(keep.indexOf(el)>=0)return;if(el.tagName==='H3'){var t=(el.textContent||'').trim();if(t.indexOf('Čekající žádosti')>=0||t.indexOf('Aktivní schvalovatelé')>=0)current='access';else if(t.indexOf('Globální')>=0||t.indexOf('nastavení')>=0)current='settings';else current='events';}ps[current].appendChild(el);});
+   tab.dataset.adminGrouped='1';
+ }
+ // Preserve any later-created global-settings panels; do not delete anything.
+ [].slice.call(tab.children).forEach(function(el){if(el!==h2&&el!==nav&&!el.classList.contains('cc-admin-subpanel'))ps.settings.appendChild(el);});
+ nav.querySelectorAll('.cc-admin-subtab').forEach(function(b){b.onclick=function(){nav.querySelectorAll('.cc-admin-subtab').forEach(function(x){x.classList.remove('active')});b.classList.add('active');Object.keys(ps).forEach(function(k){ps[k].classList.toggle('active',k===b.dataset.panel)});};});
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fix);else fix();setInterval(fix,1200);
 })();
 </script>
-
 </body>
 </html>
