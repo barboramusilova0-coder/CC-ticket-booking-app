@@ -1037,6 +1037,15 @@ window.addEventListener('scroll',function(){if(tipCard)positionTip(tipCard);},tr
 })();
 </script>
 
+
+<style id="cc-v8-responsive">
+@media (max-width:1100px){.container{max-width:100%!important;width:100%!important;box-sizing:border-box!important;padding:20px!important;margin:0!important;border-radius:0!important}.login-bar{flex-wrap:wrap!important;gap:12px!important}.tabs{display:flex!important;flex-wrap:wrap!important;gap:6px!important}.tab-btn{flex:1 1 140px!important;min-width:0!important;box-sizing:border-box!important}input,select,textarea,button{max-width:100%!important;box-sizing:border-box!important}.cc-v3-grid,.cc-v3-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media (max-width:700px){body{overflow-x:hidden!important}.container{padding:12px!important}.login-bar{padding:12px!important;margin-bottom:16px!important}.tabs{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}.tab-btn{width:100%!important;min-height:42px!important;padding:9px 8px!important;font-size:12px!important}.cc-v3-grid,.cc-v3-admin-grid{grid-template-columns:1fr!important}.cc-v3-card{min-height:130px!important;height:auto!important}.cc-admin-subtabs{grid-template-columns:1fr!important}.cc-v6-tooltip{max-width:calc(100vw - 32px)!important}table{font-size:12px!important}}
+@media (max-width:420px){.tabs{grid-template-columns:1fr!important}h1{font-size:21px!important}h2{font-size:18px!important}}
+</style>
+<script>
+(function(){function bootCloud(){if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length)return;try{firebase.firestore().collection('portalData').doc('cocaColaDatabase').get().then(function(snap){if(!snap.exists)return;var d=snap.data()||{};if(d.customUsers!==undefined)localStorage.setItem('customUsers',JSON.stringify(d.customUsers||{}));if(d.companyActions!==undefined)localStorage.setItem('companyActions',JSON.stringify(d.companyActions||[]));if(d.ticketRequests!==undefined)localStorage.setItem('ticketRequests',JSON.stringify(d.ticketRequests||[]));if(d.roleRequests!==undefined)localStorage.setItem('roleRequests',JSON.stringify(d.roleRequests||[]));if(d.ccPortalConfigV3!==undefined)localStorage.setItem('ccPortalConfigV3',JSON.stringify(d.ccPortalConfigV3||{}));console.log('V8: cloud data načtena');}).catch(function(e){console.error('V8 cloud boot:',e);});}catch(e){console.error('V8 cloud init:',e);}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootCloud);else bootCloud();})();
+</script>
 </body>
     <script>
     // 🔍 POKROČILÁ MANAŽERSKÁ VYHLEDÁVACÍ LIŠTA (Coca-Cola HBC)
@@ -3941,6 +3950,15 @@ window.addEventListener('scroll',function(){if(tipCard)positionTip(tipCard);},tr
 })();
 </script>
 
+
+<style id="cc-v8-responsive">
+@media (max-width:1100px){.container{max-width:100%!important;width:100%!important;box-sizing:border-box!important;padding:20px!important;margin:0!important;border-radius:0!important}.login-bar{flex-wrap:wrap!important;gap:12px!important}.tabs{display:flex!important;flex-wrap:wrap!important;gap:6px!important}.tab-btn{flex:1 1 140px!important;min-width:0!important;box-sizing:border-box!important}input,select,textarea,button{max-width:100%!important;box-sizing:border-box!important}.cc-v3-grid,.cc-v3-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media (max-width:700px){body{overflow-x:hidden!important}.container{padding:12px!important}.login-bar{padding:12px!important;margin-bottom:16px!important}.tabs{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}.tab-btn{width:100%!important;min-height:42px!important;padding:9px 8px!important;font-size:12px!important}.cc-v3-grid,.cc-v3-admin-grid{grid-template-columns:1fr!important}.cc-v3-card{min-height:130px!important;height:auto!important}.cc-admin-subtabs{grid-template-columns:1fr!important}.cc-v6-tooltip{max-width:calc(100vw - 32px)!important}table{font-size:12px!important}}
+@media (max-width:420px){.tabs{grid-template-columns:1fr!important}h1{font-size:21px!important}h2{font-size:18px!important}}
+</style>
+<script>
+(function(){function bootCloud(){if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length)return;try{firebase.firestore().collection('portalData').doc('cocaColaDatabase').get().then(function(snap){if(!snap.exists)return;var d=snap.data()||{};if(d.customUsers!==undefined)localStorage.setItem('customUsers',JSON.stringify(d.customUsers||{}));if(d.companyActions!==undefined)localStorage.setItem('companyActions',JSON.stringify(d.companyActions||[]));if(d.ticketRequests!==undefined)localStorage.setItem('ticketRequests',JSON.stringify(d.ticketRequests||[]));if(d.roleRequests!==undefined)localStorage.setItem('roleRequests',JSON.stringify(d.roleRequests||[]));if(d.ccPortalConfigV3!==undefined)localStorage.setItem('ccPortalConfigV3',JSON.stringify(d.ccPortalConfigV3||{}));console.log('V8: cloud data načtena');}).catch(function(e){console.error('V8 cloud boot:',e);});}catch(e){console.error('V8 cloud init:',e);}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootCloud);else bootCloud();})();
+</script>
 </body>
 </html>
 
