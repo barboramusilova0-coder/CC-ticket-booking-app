@@ -3537,134 +3537,77 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     }
 </style>
 
-<!-- 🗂️ JEDNODUCHÉ A NEPRŮSTŘELNÉ PODSLOŽKY V ADMINU (PŘÍMÝ ZÁPIS) -->
+<!-- 🗂️ LUXUSNÍ MINIMALISTICKÉ PODSLOŽKY V ADMINU (PŘÍMÝ DESIGN) -->
 <style>
-    /* Vytvoříme řadu čtyř malých přepínačů přímo pod hlavním nadpisem Administrace */
-    .cc-admin-nav-bar-final {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        gap: 8px !important;
-        margin: 15px 0 25px 0 !important;
-        border-bottom: 2px solid #e2e8f0 !important;
-        padding-bottom: 10px !important;
-        width: 100% !important;
-    }
-
-    .cc-nav-tab-btn-final {
+    /* 🔥 MAGICKÝ TRIK: Chytne ty 4 obří široké lišty z tvého 1. obrázku 
+       a bleskově je smrští a srovná vedle sebe do jedné elegantní vodorovné lajny! */
+    #tab-administrativni-pristup > div, 
+    #tab-admin > div,
+    [id*="admin"] > div,
+    .accordion, 
+    .collapse-header {
+        display: inline-flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: auto !important;
+        min-width: 160px !important;
+        max-width: 220px !important;
+        height: 38px !important; /* Elegantní tenký rozměr jako u předešlých tagů */
         background: #f1f5f9 !important;
         color: #475569 !important;
         border: 1px solid #cbd5e1 !important;
         border-radius: 6px !important;
-        padding: 6px 14px !important;
+        padding: 0 14px !important;
+        margin-right: 8px !important;
+        margin-bottom: 15px !important;
         font-size: 11px !important;
         font-weight: 700 !important;
         cursor: pointer !important;
         text-transform: uppercase !important;
-        transition: all 0.2s !important;
-        height: 32px !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        margin: 0 !important;
-        width: auto !important;
+        transition: all 0.2s ease !important;
+        box-shadow: none !important;
+        vertical-align: middle !important;
     }
 
-    /* Červené aktivní tlačítko Coca-Cola */
-    .cc-nav-tab-btn-final.cc-active-sub-final {
+    /* Vzhled lišty po najetí myší – zjemníme barvu do korporátního stylu */
+    #tab-administrativni-pristup > div:hover, [id*="admin"] > div:hover {
+        background: #e2e8f0 !important;
+        color: #0f172a !important;
+        border-color: #94a3b8 !important;
+    }
+
+    /* Schováme ty otravné černé šipky na pravé straně z tvého 1. obrázku, ať je vzhled dokonale čistý */
+    #tab-administrativni-pristup > div::after,
+    #tab-administrativni-pristup > div .arrow,
+    #tab-administrativni-pristup > div span:last-child {
+        display: none !important;
+    }
+
+    /* Písmo uvnitř nových podsložek – sjednotíme font a odstraníme obří mezery */
+    #tab-administrativni-pristup > div h3,
+    #tab-administrativni-pristup > div h4,
+    #tab-administrativni-pristup > div span {
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        color: #475569 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        letter-spacing: 0.02em !important;
+    }
+
+    /* Zářivě červené aktivní nasvícení té podsložky, kterou zrovna rozbalíš (Značka Coca-Cola) */
+    #tab-administrativni-pristup > div[style*="block"],
+    #tab-administrativni-pristup > div.active,
+    .accordion.open {
         background: #e41e26 !important;
-        color: white !important;
         border-color: #e41e26 !important;
         box-shadow: 0 2px 4px rgba(228, 30, 38, 0.15) !important;
     }
+    #tab-administrativni-pristup > div[style*="block"] h3,
+    #tab-administrativni-pristup > div[style*="block"] span {
+        color: white !important;
+    }
 </style>
-
-<script>
-    (function() {
-        function ccNamontuj4PodZalozkyNatvrdo() {
-            var adminPlocha = document.getElementById('tab-administrativni-pristup') || document.getElementById('tab-admin') || document.getElementById('tab5') || document.querySelector('[id*="admin"]');
-            if (!adminPlocha || document.getElementById('cc-admin-nav-bar-final-id')) return;
-
-            // Vytvoříme lištu se 4 tlačítky přesně podle tvých obrázků
-            var navBar = document.createElement('div');
-            navBar.id = 'cc-admin-nav-bar-final-id';
-            navBar.className = 'cc-admin-nav-bar-final';
-            navBar.innerHTML = 
-                '<button id="cc-final-btn-1" class="cc-nav-tab-btn-final cc-active-sub-final">🎪 Tvorba akcí</button>' +
-                '<button id="cc-final-btn-2" class="cc-nav-tab-btn-final">🔧 Globální nastavení</button>' +
-                '<button id="cc-final-btn-3" class="cc-nav-tab-btn-final">🔐 Registrace a přístupy</button>' +
-                '<button id="cc-final-btn-4" class="cc-nav-tab-btn-final">🔑 Aktivní schvalovatelé</button>';
-
-            adminPlocha.insertBefore(navBar, adminPlocha.firstChild);
-
-            var b1 = document.getElementById('cc-final-btn-1');
-            var b2 = document.getElementById('cc-final-btn-2');
-            var b3 = document.getElementById('cc-final-btn-3');
-            var b4 = document.getElementById('cc-final-btn-4');
-
-            // ⚡ CHYTRÉ PŘEPÍNÁNÍ PODLE POŘADÍ LIŠT Z TVÉHO OBRÁZKU
-            function prepniSekciOstre(cislo) {
-                // Najdeme ty široké bílé lišty s šipkou i s jejich vnitřním obsahem (formuláři)
-                var vsechnyPrvkyUvnitr = Array.from(adminPlocha.children);
-                
-                // Odznačíme všechna tlačítka
-                b1.classList.remove('cc-active-sub-final');
-                b2.classList.remove('cc-active-sub-final');
-                b3.classList.remove('cc-active-sub-final');
-                b4.classList.remove('cc-active-sub-final');
-
-                // Rozsvítíme červeně aktivní podsložku
-                if (cislo === 1) b1.classList.add('cc-active-sub-final');
-                if (cislo === 2) b2.classList.add('cc-active-sub-final');
-                if (cislo === 3) b3.classList.add('cc-active-sub-final');
-                if (cislo === 4) b4.classList.add('cc-active-sub-final');
-
-                // Indexujeme pouze ty velké ranní bloky z tvé fotky
-                var ranniBlokIndex = 0;
-
-                vsechnyPrvkyUvnitr.forEach(function(el) {
-                    if (el.id === 'cc-admin-nav-bar-final-id' || el.tagName === 'STYLE' || el.tagName === 'SCRIPT') return;
-
-                    // Pokud narazíme na velkou ranní lištu s šipkou (nebo hlavní div sekce)
-                    if (el.tagName === 'DIV' || el.tagName === 'H3' || el.classList.contains('cc-admin-box-card')) {
-                        ranniBlokIndex++;
-
-                        // První lišta = Tvorba akcí, Druhá = Globální nastavení, Třetí = Registrace, Čtvrtá = Schvalovatelé
-                        var urcenyIndexSlozky = 1;
-                        if (ranniBlokIndex === 2 || ranniBlokIndex === 3) urcenyIndexSlozky = 2; // Plovoucí dlaždice + pomocník
-                        if (ranniBlokIndex === 4 || ranniBlokIndex === 5) urcenyIndexSlozky = 3; // Registrace a přístupy
-                        if (ranniBlokIndex >= 6) urcenyIndexSlozky = 4; // Aktivní schvalovatelé
-
-                        // Upravíme výjimku čistě pro tvůj 1. obrázek
-                        if (el.innerText && el.innerText.indexOf('TVORBA A SPRÁVA') > -1) urcenyIndexSlozky = 1;
-                        if (el.innerText && el.innerText.indexOf('GLOBÁLNÍ NASTAVENÍ') > -1) urcenyIndexSlozky = 2;
-                        if (el.innerText && el.innerText.indexOf('ŽÁDOSTI O REGISTRACI') > -1) urcenyIndexSlozky = 3;
-                        if (el.innerText && el.innerText.indexOf('AKTIVNÍ SCHVALOVATELÉ') > -1) urcenyIndexSlozky = 4;
-
-                        if (urcenyIndexSlozky === cislo) {
-                            el.style.setProperty('display', 'block', 'important');
-                            // Nouzově zkusíme na harmoniku simulovat kliknutí, aby se pod ní rozevřel ten formulář z tvých fotek
-                            var vnitrek = el.nextElementSibling;
-                            if (vnitrek && vnitrek.style) vnitrek.style.setProperty('display', 'block', 'important');
-                        } else {
-                            el.style.setProperty('display', 'none', 'important');
-                            var vnitrekSchovat = el.nextElementSibling;
-                            if (vnitrekSchovat && vnitrekSchovat.style) vnitrekSchovat.style.setProperty('display', 'none', 'important');
-                        }
-                    }
-                });
-            }
-
-            b1.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); prepniSekciOstre(1); });
-            b2.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); prepniSekciOstre(2); });
-            b3.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); prepniSekciOstre(3); });
-            b4.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); prepniSekciOstre(4); });
-
-            // Jako výchozí stav hned po otevření Administrace zobrazíme 1. podsložku
-            prepniSekciOstre(1);
-        }
-
-        // Hlídáme lištu každých 400ms, aby se v Administraci trvale udržela a prořízla kód
-        setInterval(ccNamontuj4PodZalozkyNatvrdo, 400);
-    })();
-</script>
 </body>
 </html>
