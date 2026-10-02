@@ -13,16 +13,30 @@ auth.onAuthStateChanged(async u=>{if(!u){me=null;profile=null;$("login").classLi
 async function bootstrap(u){
   me=u;
   const path="users/"+u.uid;
-  let snap;
-  try{snap=await db.collection("users").doc(u.uid).get({source:"server"})}
-  catch(e){throw new Error("Firebase nedokázal načíst "+path+".\nKód: "+(e.code||"neuveden")+"\n"+(e.message||""))}
-  if(!snap.exists){
-    // A second direct read is intentionally made only to distinguish a real missing
-    // document from a transient client/cache problem.
-    try{const retry=await db.collection("users").doc(u.uid).get({source:"server"});if(retry.exists)snap=retry}catch(e){throw e}
+  // Načteme profil přes Firestore REST API. Tím obejdeme případný problém
+  // s lokální cache/SDK a zároveň dostaneme přesný HTTP status.
+  let snapData;
+  try{
+    const token=await u.getIdToken(true);
+    const url="https://firestore.googleapis.com/v1/projects/"+firebase.app().options.projectId+"/databases/(default)/documents/users/"+encodeURIComponent(u.uid);
+    const r=await fetch(url,{headers:{Authorization:"Bearer "+token}});
+    const body=await r.text();
+    if(!r.ok){
+      throw new Error("Firestore REST HTTP "+r.status+"\n"+body);
+    }
+    const json=JSON.parse(body);
+    snapData={};
+    for(const [k,v] of Object.entries(json.fields||{})){
+      if(v.booleanValue!==undefined)snapData[k]=v.booleanValue;
+      else if(v.stringValue!==undefined)snapData[k]=v.stringValue;
+      else if(v.integerValue!==undefined)snapData[k]=Number(v.integerValue);
+      else if(v.doubleValue!==undefined)snapData[k]=v.doubleValue;
+      else snapData[k]=null;
+    }
+  }catch(e){
+    throw new Error("PROFIL SE NEPODAŘILO NAČÍST\n\nUID: "+u.uid+"\nCesta: "+path+"\nProjekt: "+firebase.app().options.projectId+"\n\n"+(e.message||String(e)));
   }
-  if(!snap.exists)throw new Error("Firebase říká, že dokument "+path+" neexistuje.\nPřihlášené UID: "+u.uid+"\nProjekt aplikace: "+firebase.app().options.projectId);
-  profile=snap.data();
+  profile=snapData;
   if(profile.active!==true)throw new Error("Účet je nalezen, ale není aktivní (pole active musí být Boolean true).\nUID: "+u.uid);
   $("who").textContent=(profile.name||u.email)+" · "+(profile.role||"user");
   $("login").classList.add("hidden");$("app").classList.remove("hidden");
