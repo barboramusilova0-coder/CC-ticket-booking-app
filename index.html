@@ -795,6 +795,205 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 </script>
+
+<!-- CLOUD UI SYNC PATCH: sdílí globální nastavení a profily nadřízených mezi zařízeními -->
+<script>
+(function(){
+  'use strict';
+  if(typeof firebase==='undefined') return;
+  var db=firebase.firestore();
+  var ref=db.collection('portalData').doc('cocaColaDatabase');
+  var UI_KEY='ccPortalConfigV3';
+  var PROFILE_PREFIX='ccManager_';
+  var internal=false, timer=null;
+  var nativeSet=localStorage.setItem.bind(localStorage);
+  var nativeRemove=localStorage.removeItem.bind(localStorage);
+
+  function json(key,fallback){try{var v=localStorage.getItem(key);return v?JSON.parse(v):fallback;}catch(e){return fallback;}}
+  function managerProfiles(){return json('ccManagerProfilesCloud',{});}
+  function currentProfileKey(){
+    try{if(typeof currentUser!=='undefined'&&currentUser&&currentUser.email)return String(currentUser.email).toLowerCase();}catch(e){}
+    try{if(window.currentUser&&window.currentUser.email)return String(window.currentUser.email).toLowerCase();}catch(e){}
+    return '';
+  }
+  function collect(){
+    var d={};
+    var cfg=localStorage.getItem(UI_KEY); if(cfg) try{d.ccPortalConfigV3=JSON.parse(cfg);}catch(e){}
+    var profiles=managerProfiles();
+    var keys=[];
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(k&&k.indexOf(PROFILE_PREFIX)===0) keys.push(k);
+    }
+    keys.forEach(function(k){
+      var v=json(k,null); if(v) profiles[k.substring(PROFILE_PREFIX.length)]=v;
+    });
+    d.ccManagerProfiles=profiles;
+    return d;
+  }
+  function save(){
+    if(internal)return;
+    clearTimeout(timer);
+    timer=setTimeout(function(){ref.set(collect(),{merge:true}).catch(function(e){console.error('Cloud UI sync:',e);});},120);
+  }
+  localStorage.setItem=function(key,value){
+    nativeSet(key,value);
+    if(!internal&&(key===UI_KEY||key.indexOf(PROFILE_PREFIX)===0)) save();
+  };
+  localStorage.removeItem=function(key){
+    nativeRemove(key);
+    if(!internal&&(key===UI_KEY||key.indexOf(PROFILE_PREFIX)===0)) save();
+  };
+  ref.onSnapshot(function(snap){
+    var d=snap.exists?snap.data()||{}:{};
+    var changed=false;
+    internal=true;
+    try{
+      if(d.ccPortalConfigV3){nativeSet(UI_KEY,JSON.stringify(d.ccPortalConfigV3));changed=true;}
+      if(d.ccManagerProfiles&&typeof d.ccManagerProfiles==='object'){
+        Object.keys(d.ccManagerProfiles).forEach(function(email){
+          nativeSet(PROFILE_PREFIX+email,JSON.stringify(d.ccManagerProfiles[email]));
+        });
+        nativeSet('ccManagerProfilesCloud',JSON.stringify(d.ccManagerProfiles));
+        changed=true;
+      }
+    }finally{internal=false;}
+    if(!snap.exists||!d.ccPortalConfigV3||!d.ccManagerProfiles) save();
+    if(changed){
+      try{if(typeof renderLanding==='function')renderLanding();}catch(e){}
+      try{if(typeof renderFloatingEvent==='function')renderFloatingEvent();}catch(e){}
+      try{if(typeof renderHelp==='function')renderHelp();}catch(e){}
+      try{if(typeof renderAdminSettings==='function')renderAdminSettings();}catch(e){}
+    }
+  },function(e){console.error('Cloud UI snapshot:',e);});
+})();
+</script>
+
+<!-- FINAL CLEANUP 2026-10-02: one Planned tab, reliable cards/tooltips, paste images, admin tiles -->
+<style id="cc-v6-cleanup-css">
+.cc-admin-subtabs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px!important;background:transparent!important;border:0!important;padding:0!important;margin:0 0 22px!important}
+.cc-admin-subtab{min-height:112px!important;border:1px solid #dbe3ec!important;background:#fff!important;border-radius:16px!important;color:#334155!important;padding:18px!important;text-align:left!important;box-shadow:0 5px 18px rgba(15,23,42,.06)!important;transition:.18s ease!important;position:relative!important}
+.cc-admin-subtab:hover{transform:translateY(-2px)!important;box-shadow:0 10px 24px rgba(15,23,42,.11)!important;border-color:#b8c4d1!important}
+.cc-admin-subtab.active{border:2px solid var(--cc-red)!important;background:#fff!important;color:#0f172a!important;box-shadow:0 8px 24px rgba(228,30,38,.10)!important}
+.cc-admin-subtab .cc-admin-tile-icon{display:block;font-size:25px;margin-bottom:9px}
+.cc-admin-subtab .cc-admin-tile-title{display:block;font-size:14px;font-weight:800;margin-bottom:4px}
+.cc-admin-subtab .cc-admin-tile-desc{display:block;font-size:11px;font-weight:500;color:#64748b;line-height:1.35}
+.cc-admin-subpanel{display:none}.cc-admin-subpanel.active{display:block}
+.cc-paste-zone{margin-top:9px;border:2px dashed #cbd5e1;border-radius:10px;background:#fff;padding:13px;text-align:center;color:#64748b;font-size:12px;cursor:text;outline:none;transition:.15s ease}
+.cc-paste-zone:focus,.cc-paste-zone.cc-paste-active{border-color:#e41e26;background:#fff8f8;color:#334155}
+.cc-paste-zone strong{display:block;color:#334155;font-size:13px;margin-bottom:3px}
+.cc-paste-zone small{display:block;color:#94a3b8;margin-top:4px}
+.cc-v6-tooltip{position:fixed;display:none;max-width:330px;background:#111827;color:#fff;padding:12px 14px;border-radius:11px;box-shadow:0 14px 35px rgba(0,0,0,.24);font-size:12px;line-height:1.5;z-index:2147483000;pointer-events:none}
+.cc-v6-tooltip strong{display:block;margin-bottom:4px;font-size:13px}
+.cc-v6-card{position:relative!important;overflow:visible!important}
+#cc-v6-filterbar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}.cc-v3-filter{border:1px solid #dbe3ec;background:#fff;color:#475569;border-radius:999px;padding:8px 13px;font-weight:700;cursor:pointer}.cc-v3-filter.active{background:#111827;color:#fff;border-color:#111827}
+.cc-v6-card .cc-event-image{overflow:hidden!important}
+@media(max-width:800px){.cc-admin-subtabs{grid-template-columns:1fr!important}.cc-v6-tooltip{display:none!important}}
+</style>
+<script id="cc-v6-cleanup-script">
+(function(){
+'use strict';
+var tooltip=null, tipCard=null;
+function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+function actions(){try{return JSON.parse(localStorage.getItem('companyActions'))||[];}catch(e){return [];}}
+function reqs(){try{return JSON.parse(localStorage.getItem('ticketRequests'))||[];}catch(e){return [];}}
+function fmtDate(v){if(!v)return '';var p=String(v).split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:String(v);}
+function cat(a){return a&&(a.category||a.cat)||'';}
+function showTip(card,a){
+  if(window.innerWidth<=800)return;
+  if(!tooltip){tooltip=document.createElement('div');tooltip.id='cc-v6-tooltip';tooltip.className='cc-v6-tooltip';document.body.appendChild(tooltip);}
+  var d=a.description||'Popis akce nebyl zadán.';
+  tooltip.innerHTML='<strong>'+esc(a.name)+'</strong>'+esc(d).replace(/\n/g,'<br>');
+  tooltip.style.display='block';tipCard=card;positionTip(card);
+}
+function positionTip(card){if(!tooltip||tooltip.style.display==='none')return;var r=card.getBoundingClientRect(),tw=Math.min(330,window.innerWidth-24),left=Math.max(12,Math.min(r.left,window.innerWidth-tw-12));tooltip.style.width=tw+'px';tooltip.style.left=left+'px';var h=tooltip.offsetHeight;var top=r.bottom+10;if(top+h>window.innerHeight-12)top=r.top-h-10;if(top<12)top=12;tooltip.style.top=top+'px';}
+function hideTip(){if(tooltip)tooltip.style.display='none';tipCard=null;}
+function activatePlanned(){
+  ['tab1','tab2','tab3','tab4'].forEach(function(id){var x=document.getElementById(id);if(x)x.classList.remove('active');});
+  var p=document.getElementById('cc-planned-tab');if(p){p.classList.add('active');}
+  document.querySelectorAll('.tabs .tab-btn').forEach(function(b){b.classList.remove('active');});
+  var b=document.getElementById('btn-planned');if(b){b.classList.add('active');b.style.display='inline-flex';}
+  renderPlanned();
+}
+function cleanNav(){
+  document.querySelectorAll('.tabs .tab-btn').forEach(function(b){
+    if(b.id==='btn-v3-planned'){b.remove();return;}
+    if((b.textContent||'').trim()==='Seznam Akcí' || (b.textContent||'').trim()==='Seznam akcí'){b.remove();return;}
+  });
+  var b=document.getElementById('btn-planned');if(b){b.textContent='Plánované akce';b.style.display='inline-flex';b.onclick=function(e){if(e)e.preventDefault();activatePlanned();};}
+}
+function renderPlannedFilter(filter){window.__ccV6Filter=filter||'all';renderPlanned();}
+function renderPlanned(){
+  var p=document.getElementById('cc-planned-tab');if(!p)return;
+  var grid=document.getElementById('cc-planned-grid');
+  if(!grid){p.innerHTML='<h2>Plánované akce</h2><div id="cc-v6-filterbar" class="cc-v3-filterbar"></div><div id="cc-planned-grid" class="cc-planned-grid"></div>';grid=document.getElementById('cc-planned-grid');}
+  var fb=document.getElementById('cc-v6-filterbar');
+  if(fb){fb.innerHTML='';try{var cc=(typeof uiCfg==="function")?uiCfg():JSON.parse(localStorage.getItem("ccPortalConfigV3"))||{};var fs=(cc&&cc.filters)||[];fs.filter(function(f){return f.active!==false;}).forEach(function(f){var q=document.createElement("button");q.type="button";q.className="cc-v3-filter"+(f.id==="all"?" active":"");q.textContent=f.name;q.onclick=function(){fb.querySelectorAll(".cc-v3-filter").forEach(function(x){x.classList.remove("active")});q.classList.add("active");renderPlannedFilter(f.id);};fb.appendChild(q);});}catch(e){}}
+  var activeFilter=window.__ccV6Filter||'all';
+  var list=actions().filter(function(a){var visible=(a.status||'Aktivní')!=='Skryto' && (a.status||'Aktivní')!=='Zrušeno';var cf=cat(a);return visible && (activeFilter==='all'||cf===activeFilter);});
+  list.sort(function(a,b){return ((a.date||'9999-99-99')+' '+(a.time||'99:99')).localeCompare((b.date||'9999-99-99')+' '+(b.time||'99:99'));});
+  grid.innerHTML='';
+  if(!list.length){grid.innerHTML='<div class="cc-empty-events" style="grid-column:1/-1">Zatím nebyla vytvořena žádná aktivní akce.</div>';return;}
+  var rs=reqs();
+  list.forEach(function(a){
+    var card=document.createElement('div');card.className='cc-event-card cc-v6-card';
+    var approved=rs.filter(function(r){return r.action===a.name&&r.status1==='Schváleno'&&r.status2==='Schváleno';}).reduce(function(n,r){return n+(parseInt(r.tickets)||0);},0);
+    var cap=Number(a.capacity)||0, full=cap>0&&approved>=cap, status=a.portalStatus||'';
+    var image=a.image||a.imageUrl||a.backgroundImage||'';
+    var imgStyle=image?' style="background-image:url(\''+String(image).replace(/'/g,'%27')+'\')"':'';
+    var catText=cat(a)+(a.subcategory?' · '+a.subcategory:'');
+    card.innerHTML='<div class="cc-event-image"'+imgStyle+'><div class="cc-event-overlay">'+(catText?'<span class="cc-event-category">'+esc(catText)+'</span>':'')+'<h3>'+esc(a.name)+'</h3><div class="cc-event-meta">'+(a.date?'📅 '+fmtDate(a.date)+'<br>':'')+(a.time?'⏰ '+esc(a.time)+'<br>':'')+(a.place?'📍 '+esc(a.place):'')+'</div><div class="cc-event-capacity">🎟️ Obsazeno: <strong>'+approved+'</strong> / '+cap+'</div></div></div>'+(full?'<div class="cc-v3-badge">Plno</div>':'')+(status==='Zrušeno/Přesunuto'?'<div class="cc-v3-badge">Zrušeno / přesunuto</div>':'')+'<div class="cc-event-actions"><button type="button" class="cc-event-reserve"'+((full||status==='Zrušeno/Přesunuto')?' disabled':'')+'>Rezervovat lístky</button></div>';
+    card.addEventListener('mouseenter',function(){card.style.zIndex='500';showTip(card,a);});
+    card.addEventListener('mouseleave',function(){card.style.zIndex='1';hideTip();});
+    var rb=card.querySelector('.cc-event-reserve');if(rb&&!rb.disabled)rb.addEventListener('click',function(ev){ev.stopPropagation();try{openReservation(a);}catch(e){window.openTab&&window.openTab(2);}});
+    grid.appendChild(card);
+  });
+}
+function addPasteUI(){
+  var form=document.querySelector('#tab4 form[onsubmit*="handleCreateActionSubmit"]');if(!form||document.getElementById('cc-paste-zone'))return;
+  var input=document.getElementById('cc-action-image');if(!input)return;
+  var z=document.createElement('div');z.id='cc-paste-zone';z.className='cc-paste-zone';z.tabIndex=0;
+  z.innerHTML='<strong>📋 Nebo sem obrázek jednoduše vložte</strong>Ctrl+V / pravé tlačítko → Vložit<small>Stačí obrázek zkopírovat z webu nebo z Průzkumníka.</small>';
+  input.parentNode.insertBefore(z,input.nextSibling);
+  function useFile(file){if(!file||!file.type||file.type.indexOf('image/')!==0)return;try{var dt=new DataTransfer();dt.items.add(file);input.files=dt.files;input.dispatchEvent(new Event('change',{bubbles:true}));z.innerHTML='<strong>✓ Obrázek vložen</strong>'+esc(file.name||'Zkopírovaný obrázek')+'<small>Můžete pokračovat ve vytváření akce.</small>';}catch(e){var r=new FileReader();r.onload=function(){window.__ccPastedImageData=r.result;z.innerHTML='<strong>✓ Obrázek vložen</strong><small>Obrázek bude uložen při vytvoření akce.</small>';};r.readAsDataURL(file);}}
+  z.addEventListener('paste',function(e){var items=(e.clipboardData&&e.clipboardData.items)||[];for(var i=0;i<items.length;i++){if(items[i].type.indexOf('image/')===0){useFile(items[i].getAsFile());e.preventDefault();return;}}});
+  z.addEventListener('click',function(){z.focus();});
+}
+function patchCreateForPasted(){
+  var old=window.handleCreateActionSubmit;if(typeof old!=='function'||old.__ccV6)return;
+  function wrapped(e){var input=document.getElementById('cc-action-image');if(input&&(!input.files||!input.files.length)&&window.__ccPastedImageData){var data=window.__ccPastedImageData;var oldFile=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'files');try{Object.defineProperty(input,'files',{configurable:true,value:{0:{name:'pasted-image.jpg',type:'image/jpeg'},length:1}});window.__ccPastedImageOverride=data;}catch(x){} }
+    return old(e);
+  }
+  wrapped.__ccV6=true;window.handleCreateActionSubmit=wrapped;
+}
+function adminTiles(){
+  var nav=document.querySelector('#tab4 > .cc-admin-subtabs');if(!nav)return;
+  var data={events:['🎟️','Akce a obsazenost','Vytváření akcí, kapacity a přehled obsazenosti.'],access:['👥','Přístupy a uživatelé','Role, schvalovatelé a žádosti o přístup.'],settings:['⚙️','Globální nastavení','Dlaždice, pomocník, úvodní informace a vzhled portálu.']};
+  nav.querySelectorAll('.cc-admin-subtab').forEach(function(b){var d=data[b.dataset.panel];if(!d)return;b.innerHTML='<span class="cc-admin-tile-icon">'+d[0]+'</span><span class="cc-admin-tile-title">'+d[1]+'</span><span class="cc-admin-tile-desc">'+d[2]+'</span>';});
+}
+function boot(){
+  window.ensurePlanned=function(){renderPlanned();};
+  cleanNav();
+  if(document.getElementById('cc-planned-tab')){var b=document.getElementById('btn-planned');if(b)b.onclick=activatePlanned;}
+  addPasteUI();patchCreateForPasted();adminTiles();
+  if(document.getElementById('cc-planned-tab'))renderPlanned();
+}
+var oldOpen=window.openTab;
+window.openTab=function(num){
+  if(num===1){activatePlanned();return;}
+  if(num===2){['cc-planned-tab','tab3','tab4'].forEach(function(id){var x=document.getElementById(id);if(x)x.classList.remove('active');});var t=document.getElementById('tab1');if(t)t.classList.add('active');return;}
+  if(num===3){['cc-planned-tab','tab1','tab3','tab4'].forEach(function(id){var x=document.getElementById(id);if(x)x.classList.remove('active');});var t=document.getElementById('tab2');if(t)t.classList.add('active');if(typeof renderTable==='function')renderTable();return;}
+  if(num===4){['cc-planned-tab','tab1','tab2','tab4'].forEach(function(id){var x=document.getElementById(id);if(x)x.classList.remove('active');});var t=document.getElementById('tab3');if(t)t.classList.add('active');return;}
+  if(num===5){['cc-planned-tab','tab1','tab2','tab3'].forEach(function(id){var x=document.getElementById(id);if(x)x.classList.remove('active');});var t=document.getElementById('tab4');if(t)t.classList.add('active');if(typeof renderAdminSection==='function')renderAdminSection();adminTiles();return;}
+  if(oldOpen)oldOpen(num);
+};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+setTimeout(boot,700);setInterval(function(){cleanNav();addPasteUI();adminTiles();},1500);
+window.addEventListener('resize',function(){if(tipCard)positionTip(tipCard);});
+window.addEventListener('scroll',function(){if(tipCard)positionTip(tipCard);},true);
+})();
+</script>
+
 </body>
     <script>
     // 🔍 POKROČILÁ MANAŽERSKÁ VYHLEDÁVACÍ LIŠTA (Coca-Cola HBC)
@@ -3475,110 +3674,229 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 </script>
-<!-- ⚙️ SUPER-JEDNODUCHÝ A ÚČINNÝ OPRAVÁŘ VZHLEDU ADMINISTRACE -->
-<style>
-    /* Chytne plochu Administrace (ať už má jakékoliv ranní ID) */
-    #tab-administrativni-pristup, #tab-admin, #tab5, [id*="admin"] {
-        max-width: 600px !important;
-        margin: 20px auto !important;
-        padding: 20px !important;
-        background: #ffffff !important;
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 10px !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
-        box-sizing: border-box !important;
-        text-align: left !important;
-    }
-
-    /* 🔥 JEDNODUCHÝ TRIK: Všechna políčka a roletky v adminu se srovnají do lajny pod sebe */
-    #tab-administrativni-pristup input, #tab-administrativni-pristup select,
-    #tab-admin input, #tab-admin select,
-    [id*="admin"] input, [id*="admin"] select {
-        display: block !important;
-        width: 100% !important;
-        height: 38px !important;
-        padding: 8px 12px !important;
-        margin-top: 4px !important;
-        margin-bottom: 18px !important;
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 6px !important;
-        font-size: 13px !important;
-        font-weight: 600 !important;
-        color: #334155 !important;
-        box-sizing: border-box !important;
-    }
-
-    /* Když do políčka klikneš, elegantně červeně zhasne (styl Coca-Cola) */
-    #tab-administrativni-pristup input:focus, [id*="admin"] input:focus {
-        border-color: #e41e26 !important;
-        outline: none !important;
-    }
-
-    /* Všechna velká tlačítka v Administraci se roztáhnou a získají profi červený vzhled */
-    #tab-administrativni-pristup button, #tab-admin button, [id*="admin"] button {
-        display: block !important;
-        width: 100% !important;
-        height: 40px !important;
-        background: #e41e26 !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 6px !important;
-        font-weight: 700 !important;
-        font-size: 13px !important;
-        text-transform: uppercase !important;
-        cursor: pointer !important;
-        margin-top: 10px !important;
-        margin-bottom: 15px !important;
-        box-shadow: 0 2px 4px rgba(228, 30, 38, 0.15) !important;
-        transition: background 0.2s !important;
-    }
-    #tab-administrativni-pristup button:hover, [id*="admin"] button:hover {
-        background: #b6141a !important;
-    }
-</style>
-    <!-- 📑 ČIŠTĚNÍ DUPLICITNÍCH ZÁLOŽEK: 1. ČÁST - GRAFICKÉ SKRYTÍ DRUHÉHO TLAČÍTKA -->
-<style>
-    /* 🔥 CHYTRÝ ZAMĚŘOVAČ: Najdeme tlačítka v menu záložek (tabs), a pokud se tam slovo "Plánované akce" 
-       opakuje dvakrát, to druhé natvrdo zneviditelníme a vymažeme z lajny */
-    .tabs button:nth-of-type(2),
-    .tab-btn:nth-of-type(2) {
-        /* Pokud ranní kód generuje přesně dvě stejná tlačítka za sebou, toto druhé skryjeme */
-    }
-
-    /* Pojistka: Pokud jsou tlačítka generovaná dynamicky jako duplicity s textem, 
-       tento skript je bezpečně vyčistí přímo na obrazovce */
-    .cc-duplicate-tab-hide {
-        display: none !important;
-    }
-</style>
-
+<!-- SURGICAL UI REPAIR 2026-10-02 -->
 <script>
-    (function() {
-        function ccVycistiDuplicitniZalozkyZive() {
-            // Najdeme úplně všechna tlačítka záložek v horním menu portálu
-            var vsechnaTlacitkaZalozek = document.querySelectorAll('.tabs button, .tabs a, .tab-btn, button[onclick*="openTab"]');
-            
-            var nalezeneTexty = {};
-
-            vsechnaTlacitkaZalozek.forEach(function(btn) {
-                var textZalozky = btn.innerText ? btn.innerText.trim().toLowerCase() : '';
-                
-                if (textZalozky === 'plánované akce' || textZalozky === 'planovane akce') {
-                    // Pokud už jsme jednou na záložku "Plánované akce" narazily, tu druhou označíme pro okamžité smazání
-                    if (nalezeneTexty[textZalozky]) {
-                        btn.classList.add('cc-duplicate-tab-hide');
-                        btn.style.setProperty('display', 'none', 'important');
-                    } else {
-                        // První (správnou) záložku si zapamatujeme a necháme ji normálně svítit
-                        nalezeneTexty[textZalozky] = true;
-                    }
-                }
-            });
-        }
-        // 📑 ČIŠTĚNÍ DUPLICITNÍCH ZÁLOŽEK: 2. ČÁST - ŽIVÉ SPUŠTĚNÍ HLÍDAČE
-        // Hlídáme horní lištu neustále každých 300ms, aby se duplicita nevrátila při překlikávání rolí
-        setInterval(ccVycistiDuplicitniZalozkyZive, 300);
-    })();
+(function(){
+'use strict';
+var css=document.createElement('style');css.textContent='.cc-admin-subtabs{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 18px;padding:5px;background:#f5f7fa;border:1px solid #e1e5ea;border-radius:10px}.cc-admin-subtab{border:0;background:transparent;color:#475569;padding:9px 14px;border-radius:7px;font-weight:700;cursor:pointer}.cc-admin-subtab.active{background:#fff;color:#111827;box-shadow:0 1px 5px rgba(0,0,0,.1)}.cc-admin-subpanel{display:none}.cc-admin-subpanel.active{display:block}';document.head.appendChild(css);
+function fix(){
+ var dup=document.getElementById('btn-v3-planned');if(dup)dup.remove();
+ var pb=document.getElementById('btn-planned');if(pb){pb.style.display='inline-flex';pb.textContent='Plánované akce';}
+ var tab=document.getElementById('tab4');if(!tab)return;var h2=tab.querySelector(':scope > h2');if(!h2)return;
+ var nav=tab.querySelector(':scope > .cc-admin-subtabs');
+ var ps={};['events','access','settings'].forEach(function(k){ps[k]=tab.querySelector(':scope > .cc-admin-subpanel[data-panel="'+k+'"]');});
+ if(!nav){nav=document.createElement('div');nav.className='cc-admin-subtabs';nav.innerHTML='<button type="button" class="cc-admin-subtab active" data-panel="events">Akce a obsazenost</button><button type="button" class="cc-admin-subtab" data-panel="access">Přístupy a uživatelé</button><button type="button" class="cc-admin-subtab" data-panel="settings">Globální nastavení</button>';h2.insertAdjacentElement('afterend',nav);}
+ ['events','access','settings'].forEach(function(k){if(!ps[k]){ps[k]=document.createElement('div');ps[k].className='cc-admin-subpanel'+(k==='events'?' active':'');ps[k].dataset.panel=k;tab.appendChild(ps[k]);}});
+ if(tab.dataset.adminGrouped!=='1'){
+   var current='events',kids=[].slice.call(tab.children),keep=[h2,nav,ps.events,ps.access,ps.settings];
+   kids.forEach(function(el){if(keep.indexOf(el)>=0)return;if(el.tagName==='H3'){var t=(el.textContent||'').trim();if(t.indexOf('Čekající žádosti')>=0||t.indexOf('Aktivní schvalovatelé')>=0)current='access';else if(t.indexOf('Globální')>=0||t.indexOf('nastavení')>=0)current='settings';else current='events';}ps[current].appendChild(el);});
+   tab.dataset.adminGrouped='1';
+ }
+ // Preserve any later-created global-settings panels; do not delete anything.
+ [].slice.call(tab.children).forEach(function(el){if(el!==h2&&el!==nav&&!el.classList.contains('cc-admin-subpanel'))ps.settings.appendChild(el);});
+ nav.querySelectorAll('.cc-admin-subtab').forEach(function(b){b.onclick=function(){nav.querySelectorAll('.cc-admin-subtab').forEach(function(x){x.classList.remove('active')});b.classList.add('active');Object.keys(ps).forEach(function(k){ps[k].classList.toggle('active',k===b.dataset.panel)});};});
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fix);else fix();setInterval(fix,1200);
+})();
 </script>
+
+<!-- CLOUD UI SYNC PATCH: sdílí globální nastavení a profily nadřízených mezi zařízeními -->
+<script>
+(function(){
+  'use strict';
+  if(typeof firebase==='undefined') return;
+  var db=firebase.firestore();
+  var ref=db.collection('portalData').doc('cocaColaDatabase');
+  var UI_KEY='ccPortalConfigV3';
+  var PROFILE_PREFIX='ccManager_';
+  var internal=false, timer=null;
+  var nativeSet=localStorage.setItem.bind(localStorage);
+  var nativeRemove=localStorage.removeItem.bind(localStorage);
+
+  function json(key,fallback){try{var v=localStorage.getItem(key);return v?JSON.parse(v):fallback;}catch(e){return fallback;}}
+  function managerProfiles(){return json('ccManagerProfilesCloud',{});}
+  function currentProfileKey(){
+    try{if(typeof currentUser!=='undefined'&&currentUser&&currentUser.email)return String(currentUser.email).toLowerCase();}catch(e){}
+    try{if(window.currentUser&&window.currentUser.email)return String(window.currentUser.email).toLowerCase();}catch(e){}
+    return '';
+  }
+  function collect(){
+    var d={};
+    var cfg=localStorage.getItem(UI_KEY); if(cfg) try{d.ccPortalConfigV3=JSON.parse(cfg);}catch(e){}
+    var profiles=managerProfiles();
+    var keys=[];
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(k&&k.indexOf(PROFILE_PREFIX)===0) keys.push(k);
+    }
+    keys.forEach(function(k){
+      var v=json(k,null); if(v) profiles[k.substring(PROFILE_PREFIX.length)]=v;
+    });
+    d.ccManagerProfiles=profiles;
+    return d;
+  }
+  function save(){
+    if(internal)return;
+    clearTimeout(timer);
+    timer=setTimeout(function(){ref.set(collect(),{merge:true}).catch(function(e){console.error('Cloud UI sync:',e);});},120);
+  }
+  localStorage.setItem=function(key,value){
+    nativeSet(key,value);
+    if(!internal&&(key===UI_KEY||key.indexOf(PROFILE_PREFIX)===0)) save();
+  };
+  localStorage.removeItem=function(key){
+    nativeRemove(key);
+    if(!internal&&(key===UI_KEY||key.indexOf(PROFILE_PREFIX)===0)) save();
+  };
+  ref.onSnapshot(function(snap){
+    var d=snap.exists?snap.data()||{}:{};
+    var changed=false;
+    internal=true;
+    try{
+      if(d.ccPortalConfigV3){nativeSet(UI_KEY,JSON.stringify(d.ccPortalConfigV3));changed=true;}
+      if(d.ccManagerProfiles&&typeof d.ccManagerProfiles==='object'){
+        Object.keys(d.ccManagerProfiles).forEach(function(email){
+          nativeSet(PROFILE_PREFIX+email,JSON.stringify(d.ccManagerProfiles[email]));
+        });
+        nativeSet('ccManagerProfilesCloud',JSON.stringify(d.ccManagerProfiles));
+        changed=true;
+      }
+    }finally{internal=false;}
+    if(!snap.exists||!d.ccPortalConfigV3||!d.ccManagerProfiles) save();
+    if(changed){
+      try{if(typeof renderLanding==='function')renderLanding();}catch(e){}
+      try{if(typeof renderFloatingEvent==='function')renderFloatingEvent();}catch(e){}
+      try{if(typeof renderHelp==='function')renderHelp();}catch(e){}
+      try{if(typeof renderAdminSettings==='function')renderAdminSettings();}catch(e){}
+    }
+  },function(e){console.error('Cloud UI snapshot:',e);});
+})();
+</script>
+
+<!-- FINAL CLEANUP 2026-10-02: one Planned tab, reliable cards/tooltips, paste images, admin tiles -->
+<style id="cc-v6-cleanup-css">
+.cc-admin-subtabs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px!important;background:transparent!important;border:0!important;padding:0!important;margin:0 0 22px!important}
+.cc-admin-subtab{min-height:112px!important;border:1px solid #dbe3ec!important;background:#fff!important;border-radius:16px!important;color:#334155!important;padding:18px!important;text-align:left!important;box-shadow:0 5px 18px rgba(15,23,42,.06)!important;transition:.18s ease!important;position:relative!important}
+.cc-admin-subtab:hover{transform:translateY(-2px)!important;box-shadow:0 10px 24px rgba(15,23,42,.11)!important;border-color:#b8c4d1!important}
+.cc-admin-subtab.active{border:2px solid var(--cc-red)!important;background:#fff!important;color:#0f172a!important;box-shadow:0 8px 24px rgba(228,30,38,.10)!important}
+.cc-admin-subtab .cc-admin-tile-icon{display:block;font-size:25px;margin-bottom:9px}
+.cc-admin-subtab .cc-admin-tile-title{display:block;font-size:14px;font-weight:800;margin-bottom:4px}
+.cc-admin-subtab .cc-admin-tile-desc{display:block;font-size:11px;font-weight:500;color:#64748b;line-height:1.35}
+.cc-admin-subpanel{display:none}.cc-admin-subpanel.active{display:block}
+.cc-paste-zone{margin-top:9px;border:2px dashed #cbd5e1;border-radius:10px;background:#fff;padding:13px;text-align:center;color:#64748b;font-size:12px;cursor:text;outline:none;transition:.15s ease}
+.cc-paste-zone:focus,.cc-paste-zone.cc-paste-active{border-color:#e41e26;background:#fff8f8;color:#334155}
+.cc-paste-zone strong{display:block;color:#334155;font-size:13px;margin-bottom:3px}
+.cc-paste-zone small{display:block;color:#94a3b8;margin-top:4px}
+.cc-v6-tooltip{position:fixed;display:none;max-width:330px;background:#111827;color:#fff;padding:12px 14px;border-radius:11px;box-shadow:0 14px 35px rgba(0,0,0,.24);font-size:12px;line-height:1.5;z-index:2147483000;pointer-events:none}
+.cc-v6-tooltip strong{display:block;margin-bottom:4px;font-size:13px}
+.cc-v6-card{position:relative!important;overflow:visible!important}
+#cc-v6-filterbar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}.cc-v3-filter{border:1px solid #dbe3ec;background:#fff;color:#475569;border-radius:999px;padding:8px 13px;font-weight:700;cursor:pointer}.cc-v3-filter.active{background:#111827;color:#fff;border-color:#111827}
+.cc-v6-card .cc-event-image{overflow:hidden!important}
+@media(max-width:800px){.cc-admin-subtabs{grid-template-columns:1fr!important}.cc-v6-tooltip{display:none!important}}
+</style>
+<script id="cc-v6-cleanup-script">
+(function(){
+'use strict';
+var tooltip=null, tipCard=null;
+function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+function actions(){try{return JSON.parse(localStorage.getItem('companyActions'))||[];}catch(e){return [];}}
+function reqs(){try{return JSON.parse(localStorage.getItem('ticketRequests'))||[];}catch(e){return [];}}
+function fmtDate(v){if(!v)return '';var p=String(v).split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:String(v);}
+function cat(a){return a&&(a.category||a.cat)||'';}
+function showTip(card,a){
+  if(window.innerWidth<=800)return;
+  if(!tooltip){tooltip=document.createElement('div');tooltip.id='cc-v6-tooltip';tooltip.className='cc-v6-tooltip';document.body.appendChild(tooltip);}
+  var d=a.description||'Popis akce nebyl zadán.';
+  tooltip.innerHTML='<strong>'+esc(a.name)+'</strong>'+esc(d).replace(/\n/g,'<br>');
+  tooltip.style.display='block';tipCard=card;positionTip(card);
+}
+function positionTip(card){if(!tooltip||tooltip.style.display==='none')return;var r=card.getBoundingClientRect(),tw=Math.min(330,window.innerWidth-24),left=Math.max(12,Math.min(r.left,window.innerWidth-tw-12));tooltip.style.width=tw+'px';tooltip.style.left=left+'px';var h=tooltip.offsetHeight;var top=r.bottom+10;if(top+h>window.innerHeight-12)top=r.top-h-10;if(top<12)top=12;tooltip.style.top=top+'px';}
+function hideTip(){if(tooltip)tooltip.style.display='none';tipCard=null;}
+function activatePlanned(){
+  ['tab1','tab2','tab3','tab4'].forEach(function(id){var x=document.getElementById(id);if(x)x.classList.remove('active');});
+  var p=document.getElementById('cc-planned-tab');if(p){p.classList.add('active');}
+  document.querySelectorAll('.tabs .tab-btn').forEach(function(b){b.classList.remove('active');});
+  var b=document.getElementById('btn-planned');if(b){b.classList.add('active');b.style.display='inline-flex';}
+  renderPlanned();
+}
+function cleanNav(){
+  document.querySelectorAll('.tabs .tab-btn').forEach(function(b){
+    if(b.id==='btn-v3-planned'){b.remove();return;}
+    if((b.textContent||'').trim()==='Seznam Akcí' || (b.textContent||'').trim()==='Seznam akcí'){b.remove();return;}
+  });
+  var b=document.getElementById('btn-planned');if(b){b.textContent='Plánované akce';b.style.display='inline-flex';b.onclick=function(e){if(e)e.preventDefault();activatePlanned();};}
+}
+function renderPlannedFilter(filter){window.__ccV6Filter=filter||'all';renderPlanned();}
+function renderPlanned(){
+  var p=document.getElementById('cc-planned-tab');if(!p)return;
+  var grid=document.getElementById('cc-planned-grid');
+  if(!grid){p.innerHTML='<h2>Plánované akce</h2><div id="cc-v6-filterbar" class="cc-v3-filterbar"></div><div id="cc-planned-grid" class="cc-planned-grid"></div>';grid=document.getElementById('cc-planned-grid');}
+  var fb=document.getElementById('cc-v6-filterbar');
+  if(fb){fb.innerHTML='';try{var cc=(typeof uiCfg==="function")?uiCfg():JSON.parse(localStorage.getItem("ccPortalConfigV3"))||{};var fs=(cc&&cc.filters)||[];fs.filter(function(f){return f.active!==false;}).forEach(function(f){var q=document.createElement("button");q.type="button";q.className="cc-v3-filter"+(f.id==="all"?" active":"");q.textContent=f.name;q.onclick=function(){fb.querySelectorAll(".cc-v3-filter").forEach(function(x){x.classList.remove("active")});q.classList.add("active");renderPlannedFilter(f.id);};fb.appendChild(q);});}catch(e){}}
+  var activeFilter=window.__ccV6Filter||'all';
+  var list=actions().filter(function(a){var visible=(a.status||'Aktivní')!=='Skryto' && (a.status||'Aktivní')!=='Zrušeno';var cf=cat(a);return visible && (activeFilter==='all'||cf===activeFilter);});
+  list.sort(function(a,b){return ((a.date||'9999-99-99')+' '+(a.time||'99:99')).localeCompare((b.date||'9999-99-99')+' '+(b.time||'99:99'));});
+  grid.innerHTML='';
+  if(!list.length){grid.innerHTML='<div class="cc-empty-events" style="grid-column:1/-1">Zatím nebyla vytvořena žádná aktivní akce.</div>';return;}
+  var rs=reqs();
+  list.forEach(function(a){
+    var card=document.createElement('div');card.className='cc-event-card cc-v6-card';
+    var approved=rs.filter(function(r){return r.action===a.name&&r.status1==='Schváleno'&&r.status2==='Schváleno';}).reduce(function(n,r){return n+(parseInt(r.tickets)||0);},0);
+    var cap=Number(a.capacity)||0, full=cap>0&&approved>=cap, status=a.portalStatus||'';
+    var image=a.image||a.imageUrl||a.backgroundImage||'';
+    var imgStyle=image?' style="background-image:url(\''+String(image).replace(/'/g,'%27')+'\')"':'';
+    var catText=cat(a)+(a.subcategory?' · '+a.subcategory:'');
+    card.innerHTML='<div class="cc-event-image"'+imgStyle+'><div class="cc-event-overlay">'+(catText?'<span class="cc-event-category">'+esc(catText)+'</span>':'')+'<h3>'+esc(a.name)+'</h3><div class="cc-event-meta">'+(a.date?'📅 '+fmtDate(a.date)+'<br>':'')+(a.time?'⏰ '+esc(a.time)+'<br>':'')+(a.place?'📍 '+esc(a.place):'')+'</div><div class="cc-event-capacity">🎟️ Obsazeno: <strong>'+approved+'</strong> / '+cap+'</div></div></div>'+(full?'<div class="cc-v3-badge">Plno</div>':'')+(status==='Zrušeno/Přesunuto'?'<div class="cc-v3-badge">Zrušeno / přesunuto</div>':'')+'<div class="cc-event-actions"><button type="button" class="cc-event-reserve"'+((full||status==='Zrušeno/Přesunuto')?' disabled':'')+'>Rezervovat lístky</button></div>';
+    card.addEventListener('mouseenter',function(){card.style.zIndex='500';showTip(card,a);});
+    card.addEventListener('mouseleave',function(){card.style.zIndex='1';hideTip();});
+    var rb=card.querySelector('.cc-event-reserve');if(rb&&!rb.disabled)rb.addEventListener('click',function(ev){ev.stopPropagation();try{openReservation(a);}catch(e){window.openTab&&window.openTab(2);}});
+    grid.appendChild(card);
+  });
+}
+function addPasteUI(){
+  var form=document.querySelector('#tab4 form[onsubmit*="handleCreateActionSubmit"]');if(!form||document.getElementById('cc-paste-zone'))return;
+  var input=document.getElementById('cc-action-image');if(!input)return;
+  var z=document.createElement('div');z.id='cc-paste-zone';z.className='cc-paste-zone';z.tabIndex=0;
+  z.innerHTML='<strong>📋 Nebo sem obrázek jednoduše vložte</strong>Ctrl+V / pravé tlačítko → Vložit<small>Stačí obrázek zkopírovat z webu nebo z Průzkumníka.</small>';
+  input.parentNode.insertBefore(z,input.nextSibling);
+  function useFile(file){if(!file||!file.type||file.type.indexOf('image/')!==0)return;try{var dt=new DataTransfer();dt.items.add(file);input.files=dt.files;input.dispatchEvent(new Event('change',{bubbles:true}));z.innerHTML='<strong>✓ Obrázek vložen</strong>'+esc(file.name||'Zkopírovaný obrázek')+'<small>Můžete pokračovat ve vytváření akce.</small>';}catch(e){var r=new FileReader();r.onload=function(){window.__ccPastedImageData=r.result;z.innerHTML='<strong>✓ Obrázek vložen</strong><small>Obrázek bude uložen při vytvoření akce.</small>';};r.readAsDataURL(file);}}
+  z.addEventListener('paste',function(e){var items=(e.clipboardData&&e.clipboardData.items)||[];for(var i=0;i<items.length;i++){if(items[i].type.indexOf('image/')===0){useFile(items[i].getAsFile());e.preventDefault();return;}}});
+  z.addEventListener('click',function(){z.focus();});
+}
+function patchCreateForPasted(){
+  var old=window.handleCreateActionSubmit;if(typeof old!=='function'||old.__ccV6)return;
+  function wrapped(e){var input=document.getElementById('cc-action-image');if(input&&(!input.files||!input.files.length)&&window.__ccPastedImageData){var data=window.__ccPastedImageData;var oldFile=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'files');try{Object.defineProperty(input,'files',{configurable:true,value:{0:{name:'pasted-image.jpg',type:'image/jpeg'},length:1}});window.__ccPastedImageOverride=data;}catch(x){} }
+    return old(e);
+  }
+  wrapped.__ccV6=true;window.handleCreateActionSubmit=wrapped;
+}
+function adminTiles(){
+  var nav=document.querySelector('#tab4 > .cc-admin-subtabs');if(!nav)return;
+  var data={events:['🎟️','Akce a obsazenost','Vytváření akcí, kapacity a přehled obsazenosti.'],access:['👥','Přístupy a uživatelé','Role, schvalovatelé a žádosti o přístup.'],settings:['⚙️','Globální nastavení','Dlaždice, pomocník, úvodní informace a vzhled portálu.']};
+  nav.querySelectorAll('.cc-admin-subtab').forEach(function(b){var d=data[b.dataset.panel];if(!d)return;b.innerHTML='<span class="cc-admin-tile-icon">'+d[0]+'</span><span class="cc-admin-tile-title">'+d[1]+'</span><span class="cc-admin-tile-desc">'+d[2]+'</span>';});
+}
+function boot(){
+  window.ensurePlanned=function(){renderPlanned();};
+  cleanNav();
+  if(document.getElementById('cc-planned-tab')){var b=document.getElementById('btn-planned');if(b)b.onclick=activatePlanned;}
+  addPasteUI();patchCreateForPasted();adminTiles();
+  if(document.getElementById('cc-planned-tab'))renderPlanned();
+}
+var oldOpen=window.openTab;
+window.openTab=function(num){
+  if(num===1){activatePlanned();return;}
+  if(num===2){['cc-planned-tab','tab3','tab4'].forEach(function(id){var x=document.getElementById(id);if(x)x.classList.remove('active');});var t=document.getElementById('tab1');if(t)t.classList.add('active');return;}
+  if(num===3){['cc-planned-tab','tab1','tab3','tab4'].forEach(function(id){var x=document.getElementById(id);if(x)x.classList.remove('active');});var t=document.getElementById('tab2');if(t)t.classList.add('active');if(typeof renderTable==='function')renderTable();return;}
+  if(num===4){['cc-planned-tab','tab1','tab2','tab4'].forEach(function(id){var x=document.getElementById(id);if(x)x.classList.remove('active');});var t=document.getElementById('tab3');if(t)t.classList.add('active');return;}
+  if(num===5){['cc-planned-tab','tab1','tab2','tab3'].forEach(function(id){var x=document.getElementById(id);if(x)x.classList.remove('active');});var t=document.getElementById('tab4');if(t)t.classList.add('active');if(typeof renderAdminSection==='function')renderAdminSection();adminTiles();return;}
+  if(oldOpen)oldOpen(num);
+};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+setTimeout(boot,700);setInterval(function(){cleanNav();addPasteUI();adminTiles();},1500);
+window.addEventListener('resize',function(){if(tipCard)positionTip(tipCard);});
+window.addEventListener('scroll',function(){if(tipCard)positionTip(tipCard);},true);
+})();
+</script>
+
 </body>
 </html>
