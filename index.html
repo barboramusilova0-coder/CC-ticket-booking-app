@@ -3388,6 +3388,92 @@ function init(){injectCSS();hideOldReservationTab();addPlannedNav();patchOpenTab
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 
+
+
+/* FINAL UI PATCH 2026-10-02 */
+(function(){
+  var UI_KEY='ccPortalConfigV3';
+  function uiCfg(){try{var x=JSON.parse(localStorage.getItem(UI_KEY)||'null')||{}; x.landing=x.landing||{}; return x;}catch(e){return {};}}
+  function uiSave(c){localStorage.setItem(UI_KEY,JSON.stringify(c));}
+  function getUserSafe(){try{if(typeof currentUser!=='undefined' && currentUser)return currentUser;}catch(e){} return window.currentUser||JSON.parse(localStorage.getItem('currentUser')||'null')||null;}
+  function esc2(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function allActionsSafe(){try{return JSON.parse(localStorage.getItem('companyActions'))||[]}catch(e){return []}}
+  function upcomingActions(){var now=new Date();return allActionsSafe().filter(function(a){if(!a.date)return true; var d=new Date(String(a.date)+'T'+(a.time||'23:59')); return d>=now;}).sort(function(a,b){return String(a.date||'').localeCompare(String(b.date||''))||String(a.time||'').localeCompare(String(b.time||''));});}
+
+  var st=document.createElement('style');st.id='cc-final-ui-patch-css';st.textContent=`
+    #btn-admin{display:none!important}
+    #cc-final-admin-btn{display:none}
+    .cc-final-floating-event{position:fixed;left:18px;top:50%;transform:translateY(-50%);width:205px;height:138px;border-radius:14px;overflow:hidden;z-index:1200;box-shadow:0 10px 30px rgba(0,0,0,.18);background:#fff;border:1px solid rgba(255,255,255,.8);cursor:default}
+    .cc-final-floating-event .fe-img{position:absolute;inset:0;background-size:cover;background-position:center}
+    .cc-final-floating-event .fe-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.72))}
+    .cc-final-floating-event .fe-body{position:absolute;left:13px;right:13px;bottom:11px;color:#fff}
+    .cc-final-floating-event .fe-title{font-weight:800;font-size:14px;line-height:1.2}
+    .cc-final-floating-event .fe-meta{font-size:11px;margin-top:4px;opacity:.9}
+    .cc-final-floating-event .fe-tip{display:none;position:absolute;left:calc(100% + 10px);top:0;width:235px;background:#fff;color:#26323f;border:1px solid #d7dce3;border-radius:10px;padding:12px;box-shadow:0 10px 28px rgba(0,0,0,.16);font-size:12px;line-height:1.45}
+    .cc-final-floating-event:hover .fe-tip{display:block}
+    .cc-final-floating-event:hover{box-shadow:0 14px 36px rgba(0,0,0,.24)}
+    .cc-final-event-settings{border-top:1px solid #e5e7eb;margin-top:12px;padding-top:12px}
+    @media(max-width:760px){.cc-final-floating-event{left:8px;bottom:12px;top:auto;transform:none;width:175px;height:112px}.cc-final-floating-event .fe-tip{left:0;top:auto;bottom:calc(100% + 8px)}}
+  `;document.head.appendChild(st);
+
+  function ensureAdminAccess(){
+    var old=document.getElementById('btn-admin'); if(old) old.style.display='none';
+    var tabs=document.querySelector('.tabs'); if(!tabs)return;
+    var u=getUserSafe();
+    var existing=document.getElementById('cc-final-admin-btn');
+    if(!existing){
+      existing=document.createElement('button'); existing.id='cc-final-admin-btn'; existing.className='tab-btn'; existing.textContent='⚙️ Administrativní správa';
+      existing.onclick=function(){
+        var tab=document.getElementById('cc-planned-tab'); if(tab)tab.classList.remove('active');
+        ['tab2','tab3'].forEach(function(id){var x=document.getElementById(id);if(x)x.classList.remove('active')});
+        var t=document.getElementById('tab4');if(t)t.classList.add('active');
+        document.querySelectorAll('.tabs .tab-btn').forEach(function(x){x.classList.remove('active')});existing.classList.add('active');
+        try{if(typeof renderAdminSection==='function')renderAdminSection();}catch(e){}
+        adminPanelFinal();
+      };
+      tabs.appendChild(existing);
+    }
+    existing.style.display=(u&&u.role==='admin')?'inline-flex':'none';
+  }
+
+  function renderFloatingEvent(){
+    var old=document.getElementById('cc-final-floating-event');if(old)old.remove();
+    var gate=document.getElementById('welcomeGate');if(!gate || gate.style.display==='none')return;
+    var c=uiCfg(), l=c.landing||{}; if(l.floatingEnabled===false)return;
+    var acts=allActionsSafe(), selected=(l.floatingActionId&&acts.find(function(a){return String(a.id)===String(l.floatingActionId)}))||upcomingActions()[0];
+    if(!selected)return;
+    var wrap=document.createElement('div');wrap.id='cc-final-floating-event';wrap.className='cc-final-floating-event';
+    var img=selected.image||selected.imageUrl||selected.backgroundImage||'';
+    var title=l.floatingTitle||selected.name||'Nadcházející akce';
+    var desc=l.floatingText||selected.description||'Informace k nadcházející akci.';
+    var status=selected.portalStatus||'';
+    wrap.innerHTML='<div class="fe-img" style="background-image:url(\''+esc2(img)+ '\')"></div><div class="fe-shade"></div><div class="fe-body"><div class="fe-title">'+esc2(title)+'</div><div class="fe-meta">'+esc2((selected.date||'')+' '+(selected.time||''))+'</div></div><div class="fe-tip"><strong>'+esc2(title)+'</strong><br>'+esc2(desc)+(status?'<br><br><strong>'+esc2(status)+'</strong>':'')+'</div>';
+    gate.appendChild(wrap);
+  }
+
+  function adminPanelFinal(){
+    var tab=document.getElementById('tab4');if(!tab)return;
+    var box=document.getElementById('cc-final-admin-settings');
+    if(!box){
+      box=document.createElement('div');box.id='cc-final-admin-settings';box.className='box-section';
+      box.innerHTML='<h3>Globální nastavení portálu</h3><div class="cc-final-event-settings"><h4>Plovoucí informace před přihlášením</h4><p style="font-size:12px;color:#64748b">Na levé straně přihlašovací obrazovky se zobrazí malá dlaždice s obrázkem vybrané akce. Po najetí myší se zobrazí tooltip s podrobnostmi.</p><label>Akce</label><select id="cc-float-action"></select><label>Vlastní nadpis</label><input id="cc-float-title" placeholder="např. O2 Arena – koncert"><label>Informace / tooltip</label><textarea id="cc-float-text" rows="4" placeholder="Zde napište informace o akci, změně času nebo zrušení."></textarea><label style="display:flex;align-items:center;gap:8px;margin-top:8px"><input id="cc-float-enabled" type="checkbox" style="width:auto"> Zobrazovat před přihlášením</label><button class="cc-v3-smallbtn" id="cc-float-save">Uložit plovoucí dlaždici</button></div>';
+      tab.appendChild(box);
+    }
+    var c=uiCfg(),l=c.landing||{},sel=document.getElementById('cc-float-action'),acts=allActionsSafe();
+    sel.innerHTML='<option value="">Automaticky nejbližší akce</option>'+acts.map(function(a){return '<option value="'+esc2(a.id)+'">'+esc2(a.name)+'</option>';}).join('');
+    sel.value=l.floatingActionId||'';document.getElementById('cc-float-title').value=l.floatingTitle||'';document.getElementById('cc-float-text').value=l.floatingText||'';document.getElementById('cc-float-enabled').checked=l.floatingEnabled!==false;
+    document.getElementById('cc-float-save').onclick=function(){var cc=uiCfg();cc.landing=cc.landing||{};cc.landing.floatingActionId=sel.value;cc.landing.floatingTitle=document.getElementById('cc-float-title').value.trim();cc.landing.floatingText=document.getElementById('cc-float-text').value.trim();cc.landing.floatingEnabled=document.getElementById('cc-float-enabled').checked;uiSave(cc);renderFloatingEvent();alert('Plovoucí informace byla uložena.');};
+  }
+
+  function patchAdminTabName(){var b=document.getElementById('btn-admin');if(b)b.textContent='⚙️ Administrativní správa';}
+  function patchFloatingOnLogin(){renderFloatingEvent();}
+  function patchCurrentUserMirror(){var u=getUserSafe();if(u)window.currentUser=u;}
+
+  var oldInit=window.__ccFinalPatchInit;
+  function run(){patchCurrentUserMirror();patchAdminTabName();ensureAdminAccess();patchFloatingOnLogin();var u=getUserSafe();if(u&&u.role==='admin')adminPanelFinal();}
+  if(!oldInit){window.__ccFinalPatchInit=true; if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run(); setInterval(function(){patchCurrentUserMirror();ensureAdminAccess();if(getUserSafe()&&getUserSafe().role==='admin')adminPanelFinal();renderFloatingEvent();},2000);}
+})();
+
 </script>
 </body>
 </html>
