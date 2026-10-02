@@ -354,15 +354,58 @@
         openTab(3);
     }
 
-    function loginUserFromGate() {
-        const token = document.getElementById('gateUserToken').value.trim();
+    async function loginUserFromGate() {
+        const input = document.getElementById('gateUserToken');
+        const token = input ? input.value.trim() : '';
+        if (!token) { alert('Zadejte svůj přístupový kód.'); return; }
+
+        // Hlavní administrátorský kód funguje vždy, i bez načtení cloudu.
         if (token === masterAdminToken) {
             currentUser = { name: "Hlavní Správce", role: "admin", email: "admin@firma.cz" };
             saveAndStyleSession();
-        } else if (customUsers[token]) {
+            return;
+        }
+
+        // Nejdřív zkusíme lokální kopii.
+        if (customUsers[token]) {
             currentUser = customUsers[token];
             saveAndStyleSession();
-        } else { alert('Neplatný přístupový kód!'); }
+            return;
+        }
+
+        // Na novém zařízení ale customUsers ještě nemusí být v localStorage.
+        // Proto si při neznámém kódu vždy sáhneme přímo do Firebase.
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+            const btn = document.querySelector('#welcomeGate .gate-login-box button');
+            const oldText = btn ? btn.textContent : '';
+            if (btn) { btn.disabled = true; btn.textContent = 'Ověřuji kód…'; }
+            try {
+                const snap = await firebase.firestore().collection('portalData').doc('cocaColaDatabase').get();
+                const cloud = snap.exists ? (snap.data() || {}) : {};
+                const cloudUsers = cloud.customUsers || {};
+
+                // Aktualizujeme lokální cache i proměnné aplikace.
+                customUsers = cloudUsers;
+                localStorage.setItem('customUsers', JSON.stringify(cloudUsers));
+                window.customUsers = cloudUsers;
+
+                if (cloudUsers[token]) {
+                    currentUser = cloudUsers[token];
+                    saveAndStyleSession();
+                    return;
+                }
+
+                alert('Neplatný přístupový kód nebo účet ještě nebyl synchronizován.');
+            } catch (e) {
+                console.error('Přihlášení – Firebase:', e);
+                alert('Nepodařilo se ověřit přístupový kód přes cloud. Zkontrolujte připojení k internetu a oprávnění Firebase.');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = oldText || 'Vstoupit do systému'; }
+            }
+            return;
+        }
+
+        alert('Neplatný přístupový kód!');
     }
     function saveAndStyleSession() {
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
