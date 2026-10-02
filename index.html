@@ -3900,3 +3900,88 @@ window.addEventListener('scroll',function(){if(tipCard)positionTip(tipCard);},tr
 
 </body>
 </html>
+
+<!-- FINAL ADMIN TILE REPAIR 2026-10-02 -->
+<style id="cc-v6-admin-final-fix">
+#tab4 > .cc-admin-subtabs{position:relative;z-index:20}
+#tab4 > .cc-admin-subpanel{width:100%}
+#tab4 > .cc-admin-subpanel.active{display:block!important;visibility:visible!important;opacity:1!important}
+#tab4 > .cc-admin-subpanel:not(.active){display:none!important}
+</style>
+<script id="cc-v6-admin-final-fix-script">
+(function(){
+'use strict';
+function getTab(){return document.getElementById('tab4');}
+function setup(){
+  var tab=getTab(); if(!tab)return;
+  var h2=tab.querySelector(':scope > h2'); if(!h2)return;
+  var nav=tab.querySelector(':scope > .cc-admin-subtabs');
+  if(!nav){
+    nav=document.createElement('div');nav.className='cc-admin-subtabs';
+    h2.insertAdjacentElement('afterend',nav);
+  }
+  var defs=[
+    ['events','🎟️','Akce a obsazenost','Vytváření akcí, kapacity a přehled obsazenosti.'],
+    ['access','👥','Přístupy a uživatelé','Role, schvalovatelé a žádosti o přístup.'],
+    ['settings','⚙️','Globální nastavení','Dlaždice, pomocník, úvodní informace a vzhled portálu.']
+  ];
+  defs.forEach(function(d){
+    var b=nav.querySelector('.cc-admin-subtab[data-panel="'+d[0]+'"]');
+    if(!b){b=document.createElement('button');b.type='button';b.className='cc-admin-subtab';b.dataset.panel=d[0];nav.appendChild(b);}
+    b.innerHTML='<span class="cc-admin-tile-icon">'+d[1]+'</span><span class="cc-admin-tile-title">'+d[2]+'</span><span class="cc-admin-tile-desc">'+d[3]+'</span>';
+  });
+  var panels={};
+  defs.forEach(function(d){
+    var p=tab.querySelector(':scope > .cc-admin-subpanel[data-panel="'+d[0]+'"]');
+    if(!p){p=document.createElement('div');p.className='cc-admin-subpanel';p.dataset.panel=d[0];tab.appendChild(p);}
+    panels[d[0]]=p;
+  });
+
+  /* Anything still sitting directly in tab4 is classified by the content it owns. */
+  var direct=[].slice.call(tab.children);
+  direct.forEach(function(el){
+    if(el===h2||el===nav||Object.values(panels).indexOf(el)>=0)return;
+    var text=(el.textContent||'').toLowerCase();
+    var target='settings';
+    if(el.querySelector && (el.querySelector('form[onsubmit*="handleCreateActionSubmit"]')||el.querySelector('#adminActionsTableBody')||el.querySelector('#actNewName'))){target='events';}
+    else if(el.querySelector && (el.querySelector('#roleRequestsTableBody')||el.querySelector('#activeUsersTableBody'))){target='access';}
+    else if(text.indexOf('čekající žádosti o přidělení role')>=0||text.indexOf('aktivní schvalovatelé')>=0||text.indexOf('vydané kódy')>=0){target='access';}
+    else if(text.indexOf('aktuální seznam akcí')>=0||text.indexOf('obsazenost')>=0){target='events';}
+    panels[target].appendChild(el);
+  });
+
+  /* If an earlier repair already put the original event/access content inside Settings,
+     pull it back out by its unique IDs. */
+  function pull(selector,target){
+    var node=tab.querySelector(selector);if(!node)return;
+    var holder=node.closest('.box-section')||node.parentElement;
+    if(holder && holder!==panels[target] && !panels[target].contains(holder)){
+      panels[target].appendChild(holder);
+    }
+  }
+  pull('#actNewName','events');
+  pull('#adminActionsTableBody','events');
+  pull('#roleRequestsTableBody','access');
+  pull('#activeUsersTableBody','access');
+
+  function activate(key){
+    Object.keys(panels).forEach(function(k){panels[k].classList.toggle('active',k===key);});
+    nav.querySelectorAll('.cc-admin-subtab').forEach(function(b){b.classList.toggle('active',b.dataset.panel===key);});
+  }
+  nav.querySelectorAll('.cc-admin-subtab').forEach(function(b){
+    b.onclick=function(e){e.preventDefault();e.stopPropagation();activate(b.dataset.panel);};
+  });
+  if(!nav.dataset.ccFinalBound){
+    nav.dataset.ccFinalBound='1';
+    nav.addEventListener('click',function(e){
+      var b=e.target.closest('.cc-admin-subtab');if(!b)return;
+      activate(b.dataset.panel);
+    },true);
+  }
+  var active=nav.querySelector('.cc-admin-subtab.active');
+  activate(active?active.dataset.panel:'events');
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
+setTimeout(setup,400);setTimeout(setup,1200);setInterval(setup,2500);
+})();
+</script>
