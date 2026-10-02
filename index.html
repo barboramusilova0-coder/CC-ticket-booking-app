@@ -3923,3 +3923,200 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 setTimeout(setup,400);setTimeout(setup,1200);setInterval(setup,2500);
 })();
 </script>
+<!-- 🔧 VIZUÁLNÍ KONFIGURÁTOR ADMINU: 1. ČÁST - DESIGN A PŘEPÍNAČE -->
+<style>
+    /* Obalová řádka pro tvoje vlastní podsložky */
+    .cc-custom-tabs-wrapper {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        margin: 15px 0 20px 0 !important;
+        border-bottom: 2px solid #cbd5e1 !important;
+        padding-bottom: 12px !important;
+        width: 100% !important;
+        align-items: center !important;
+    }
+
+    /* Tvoje nová klikací tlačítka podsložek */
+    .cc-custom-tab-btn {
+        background: #f1f5f9 !important;
+        color: #475569 !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 6px !important;
+        padding: 6px 12px !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        cursor: pointer !important;
+        text-transform: uppercase !important;
+        transition: all 0.2s ease !important;
+    }
+    .cc-custom-tab-btn.cc-custom-active {
+        background: #e41e26 !important;
+        color: white !important;
+        border-color: #e41e26 !important;
+    }
+
+    /* Hlavní konfigurační tlačítko pro spuštění úprav */
+    .cc-config-trigger-btn {
+        background: #64748b !important;
+        color: white !important;
+        border: none !important;
+        padding: 6px 12px !important;
+        border-radius: 6px !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        cursor: pointer !important;
+        text-transform: uppercase !important;
+        margin-left: auto !important; /* Vystřelí tlačítko úplně doprava */
+    }
+    .cc-config-trigger-btn:hover { background: #475569 !important; }
+
+    /* Stylování konfiguračních políček, která se ti ukážou při úpravách */
+    .cc-config-input-box {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        background: #fff7ed !important;
+        border: 1px solid #fed7aa !important;
+        padding: 4px 8px !important;
+        border-radius: 4px !important;
+        font-size: 11px !important;
+        margin-left: 10px !important;
+    }
+    .cc-config-input-box input {
+        height: 24px !important;
+        font-size: 11px !important;
+        padding: 2px 6px !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 4px !important;
+        width: 110px !important;
+    }
+</style>
+
+<script>
+    (function() {
+        // V druhé navazující části spustíme to klikání, ukládání a schovávání bloků
+        // 🔧 VIZUÁLNÍ KONFIGURÁTOR ADMINU: 2. ČÁST - LOGIKA, UKLÁDÁNÍ A PŘEPÍNÁNÍ PÁSEM
+        var rezimUpravAktivni = false;
+
+        function ccSpustZivyKonfiguratorAdminu() {
+            var adminPlocha = document.getElementById('tab-administrativni-pristup') || document.getElementById('tab-admin') || document.getElementById('tab5') || document.querySelector('[id*="admin"]');
+            if (!adminPlocha || document.getElementById('cc-custom-tabs-line-id')) return;
+
+            // Najdeme ty široké bílé ranní lišty s šipkami z tvých obrázků
+            var ranniBloky = Array.from(adminPlocha.querySelectorAll('div[onclick*="toggle"], .accordion, .collapse-header, h3, div[style*="cursor: pointer"]'));
+            if (ranniBloky.length === 0) {
+                ranniBloky = Array.from(adminPlocha.children).filter(function(ch) {
+                    return ch.tagName === 'DIV' && (ch.innerText || "").trim().length > 10;
+                });
+            }
+            if (ranniBloky.length === 0) return;
+
+            // Načteme tvé vlastní rozřazení z paměti, nebo dáme výchozí startovací složky
+            var ulozenaKonfigurace = JSON.parse(localStorage.getItem('cc_admin_custom_mapping')) || {};
+            
+            // Vybudujeme hlavní lištu podsložek
+            var tabsWrapper = document.createElement('div');
+            tabsWrapper.id = 'cc-custom-tabs-line-id';
+            tabsWrapper.className = 'cc-custom-tabs-wrapper';
+            adminPlocha.insertBefore(tabsWrapper, adminPlocha.firstChild);
+
+            // Funkce, která spočítá unikátní složky a vykreslí mačkací tlačítka nahoře
+            function prekresliTlacitkaPodslozek() {
+                var aktualniSlozky = ["Vše"];
+                ranniBloky.forEach(function(blok, idx) {
+                    var prirazenaSlozka = ulozenaKonfigurace[idx] || "Složka 1";
+                    if (aktualniSlozky.indexOf(prirazenaSlozka) === -1) {
+                        aktualniSlozky.push(prirazenaSlozka);
+                    }
+                });
+
+                var activeTabNow = localStorage.getItem('cc_admin_active_subtab') || "Vše";
+                if (aktualniSlozky.indexOf(activeTabNow) === -1) activeTabNow = "Vše";
+
+                var htmlTlacitek = "";
+                aktualniSlozky.forEach(function(slozka) {
+                    var cls = (slozka === activeTabNow) ? "cc-custom-tab-btn cc-custom-active" : "cc-custom-tab-btn";
+                    htmlTlacitek += '<button class="' + cls + '" data-folder="' + slozka + '">' + slozka + '</button>';
+                });
+
+                htmlTlacitek += '<button id="cc-btn-toggle-config" class="cc-config-trigger-btn">' + (rezimUpravAktivni ? "💾 Uložit podsložky" : "🔧 Upravit podsložky") + '</button>';
+                tabsWrapper.innerHTML = htmlTlacitek;
+
+                // Zapojíme klikání na nově vytvořené podsložky
+                tabsWrapper.querySelectorAll('.cc-custom-tab-btn').forEach(function(btn) {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault(); e.stopPropagation();
+                        var kamSkočit = this.getAttribute('data-folder');
+                        localStorage.setItem('cc_admin_active_subtab', kamSkočit);
+                        prekresliTlacitkaPodslozek();
+                        provedFyzickeSchovaniBloku(kamSkočit);
+                    });
+                });
+
+                // Zapojíme konfigurační tlačítko pro úpravy
+                document.getElementById('cc-btn-toggle-config').addEventListener('click', function(e) {
+                    e.preventDefault(); e.stopPropagation();
+                    rezimUpravAktivni = !rezimUpravAktivni;
+                    if (!rezimUpravAktivni) {
+                        // Při uložení posbíráme texty z políček a zamkneme je do paměti browseru
+                        ranniBloky.forEach(function(blok, idx) {
+                            var inp = document.getElementById('cc-cfg-input-' + idx);
+                            if (inp) ulozenaKonfigurace[idx] = inp.value.trim() || "Složka 1";
+                        });
+                        localStorage.setItem('cc_admin_custom_mapping', JSON.stringify(ulozenaKonfigurace));
+                        alert('🎉 Tvoje vlastní rozřazení podsložek bylo úspěšně uloženo a aplikováno!');
+                    }
+                    prekresliTlacitkaPodslozek();
+                    prekresliVlastniInputyUprav();
+                    provedFyzickeSchovaniBloku(localStorage.getItem('cc_admin_active_subtab') || "Vše");
+                });
+            }
+
+            // Funkce, která lidsky schovává a odkrývá ranní harmoniky podle vybrané složky
+            function provedFyzickeSchovaniBloku(vybranaSlozka) {
+                ranniBloky.forEach(function(blok, idx) {
+                    if (!blok || !blok.style) return;
+                    var slozkaBloku = ulozenaKonfigurace[idx] || "Složka 1";
+
+                    if (vybranaSlozka === "Vše" || slozkaBloku === vybranaSlozka || rezimUpravAktivni) {
+                        blok.style.setProperty('display', 'block', 'important');
+                        var vnitrek = blok.nextElementSibling;
+                        if (vnitrek && vnitrek.style && vybranaSlozka !== "Vše") vnitrek.style.setProperty('display', 'block', 'important');
+                    } else {
+                        blok.style.setProperty('display', 'none', 'important');
+                        var vnitrekSchovat = blok.nextElementSibling;
+                        if (vnitrekSchovat && vnitrekSchovat.style) vnitrekSchovat.style.setProperty('display', 'none', 'important');
+                    }
+                });
+            }
+
+            // Funkce, která při stisknutí "Upravit" vykouzlí u každého pruhu oranžové políčko pro tvůj text
+            function prekresliVlastniInputyUprav() {
+                ranniBloky.forEach(function(blok, idx) {
+                    var staryBox = document.getElementById('cc-cfg-box-' + idx);
+                    if (staryBox) staryBox.remove();
+
+                    if (rezimUpravAktivni) {
+                        var hodnota = ulozenaKonfigurace[idx] || "Složka 1";
+                        var box = document.createElement('span');
+                        box.id = 'cc-cfg-box-' + idx;
+                        box.className = 'cc-config-input-box';
+                        box.innerHTML = 'Složka: <input type="text" id="cc-cfg-input-' + idx + '" value="' + hodnota + '">';
+                        
+                        // Oranžové políčko tichoučko připíchneme přímo na konec textu v bílé liště
+                        blok.appendChild(box);
+                        box.addEventListener('click', function(e) { e.stopPropagation(); }); // Pojistka, ať se lišta nerozbalí při psaní textu
+                    }
+                });
+            }
+
+            // Prvotní sestavení konfigurátoru na obrazovce
+            prekresliTlacitkaPodslozek();
+            provedFyzickeSchovaniBloku(localStorage.getItem('cc_admin_active_subtab') || "Vše");
+        }
+
+        // Hlídáme tvůj konfigurátor plynule každých 500ms na pozadí, ať tam drží jako skála!
+        setInterval(ccSpustZivyKonfiguratorAdminu, 500);
+    })();
+</script>
