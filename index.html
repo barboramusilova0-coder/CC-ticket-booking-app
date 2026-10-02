@@ -3475,5 +3475,49 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 </script>
+    <!-- 📑 ČIŠTĚNÍ DUPLICITNÍCH ZÁLOŽEK: 1. ČÁST - GRAFICKÉ SKRYTÍ DRUHÉHO TLAČÍTKA -->
+<style>
+    /* 🔥 CHYTRÝ ZAMĚŘOVAČ: Najdeme tlačítka v menu záložek (tabs), a pokud se tam slovo "Plánované akce" 
+       opakuje dvakrát, to druhé natvrdo zneviditelníme a vymažeme z lajny */
+    .tabs button:nth-of-type(2),
+    .tab-btn:nth-of-type(2) {
+        /* Pokud ranní kód generuje přesně dvě stejná tlačítka za sebou, toto druhé skryjeme */
+    }
+
+    /* Pojistka: Pokud jsou tlačítka generovaná dynamicky jako duplicity s textem, 
+       tento skript je bezpečně vyčistí přímo na obrazovce */
+    .cc-duplicate-tab-hide {
+        display: none !important;
+    }
+</style>
+
+<script>
+    (function() {
+        function ccVycistiDuplicitniZalozkyZive() {
+            // Najdeme úplně všechna tlačítka záložek v horním menu portálu
+            var vsechnaTlacitkaZalozek = document.querySelectorAll('.tabs button, .tabs a, .tab-btn, button[onclick*="openTab"]');
+            
+            var nalezeneTexty = {};
+
+            vsechnaTlacitkaZalozek.forEach(function(btn) {
+                var textZalozky = btn.innerText ? btn.innerText.trim().toLowerCase() : '';
+                
+                if (textZalozky === 'plánované akce' || textZalozky === 'planovane akce') {
+                    // Pokud už jsme jednou na záložku "Plánované akce" narazily, tu druhou označíme pro okamžité smazání
+                    if (nalezeneTexty[textZalozky]) {
+                        btn.classList.add('cc-duplicate-tab-hide');
+                        btn.style.setProperty('display', 'none', 'important');
+                    } else {
+                        // První (správnou) záložku si zapamatujeme a necháme ji normálně svítit
+                        nalezeneTexty[textZalozky] = true;
+                    }
+                }
+            });
+        }
+        // 📑 ČIŠTĚNÍ DUPLICITNÍCH ZÁLOŽEK: 2. ČÁST - ŽIVÉ SPUŠTĚNÍ HLÍDAČE
+        // Hlídáme horní lištu neustále každých 300ms, aby se duplicita nevrátila při překlikávání rolí
+        setInterval(ccVycistiDuplicitniZalozkyZive, 300);
+    })();
+</script>
 </body>
 </html>
