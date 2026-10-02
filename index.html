@@ -3537,156 +3537,134 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     }
 </style>
 
-<!-- ⚙️ ULTRA-PRAKTICKÉ PODZÁLOŽKY V ADMINU: 1. ČÁST - DESIGN LIŠTY -->
+<!-- 🗂️ JEDNODUCHÉ A NEPRŮSTŘELNÉ PODSLOŽKY V ADMINU (PŘÍMÝ ZÁPIS) -->
 <style>
-    /* Obalový řádek pro nová tlačítka administrace */
-    .cc-admin-subtabs-row-final {
+    /* Vytvoříme řadu čtyř malých přepínačů přímo pod hlavním nadpisem Administrace */
+    .cc-admin-nav-bar-final {
         display: flex !important;
         flex-wrap: wrap !important;
         gap: 8px !important;
         margin: 15px 0 25px 0 !important;
         border-bottom: 2px solid #e2e8f0 !important;
-        padding-bottom: 12px !important;
+        padding-bottom: 10px !important;
         width: 100% !important;
-        box-sizing: border-box !important;
     }
 
-    /* Vzhled jednotlivých moderních podzáložek */
-    .cc-admin-subtab-btn-final {
+    .cc-nav-tab-btn-final {
         background: #f1f5f9 !important;
         color: #475569 !important;
         border: 1px solid #cbd5e1 !important;
         border-radius: 6px !important;
-        padding: 8px 14px !important;
+        padding: 6px 14px !important;
         font-size: 11px !important;
         font-weight: 700 !important;
         cursor: pointer !important;
         text-transform: uppercase !important;
-        transition: all 0.2s ease !important;
-        font-family: inherit !important;
-        height: 34px !important;
+        transition: all 0.2s !important;
+        height: 32px !important;
         display: inline-flex !important;
         align-items: center !important;
         margin: 0 !important;
-        box-shadow: none !important;
         width: auto !important;
     }
-    .cc-admin-subtab-btn-final:hover {
-        background: #e2e8f0 !important;
-        color: #0f172a !important;
-    }
 
-    /* Aktivní podzáložka (Zářivě červená Coca-Cola s jemným stínem) */
-    .cc-admin-subtab-btn-final.cc-subtab-active-final {
+    /* Červené aktivní tlačítko Coca-Cola */
+    .cc-nav-tab-btn-final.cc-active-sub-final {
         background: #e41e26 !important;
         color: white !important;
         border-color: #e41e26 !important;
         box-shadow: 0 2px 4px rgba(228, 30, 38, 0.15) !important;
     }
-
-    /* Pomocná třída pro vynucené bezpečné skrytí starých dlouhých bloků */
-    .cc-admin-accordion-hidden-force {
-        display: none !important;
-    }
 </style>
 
 <script>
     (function() {
-        // V navazující části oživíme chytré klikání a přepínání bloků z tvých fotek
-        // ⚙️ ULTRA-PRAKTICKÉ PODZÁLOŽKY V ADMINU: 2. ČÁST - PROGRAMOVÁ LOGIKA PŘEPÍNÁNÍ
-        function ccUklidAdminDoPodzalozekLive() {
-            // Najdeme hlavní plochu administrativy (zkusíme všechna možná ID z tvého kódu)
+        function ccNamontuj4PodZalozkyNatvrdo() {
             var adminPlocha = document.getElementById('tab-administrativni-pristup') || document.getElementById('tab-admin') || document.getElementById('tab5') || document.querySelector('[id*="admin"]');
-            if (!adminPlocha || document.getElementById('cc-admin-subtabs-line-final-id')) return;
+            if (!adminPlocha || document.getElementById('cc-admin-nav-bar-final-id')) return;
 
-            // Najdeme v tabu ty široké bílé lišty z tvého 1. obrázku (často bývají jako divy, buttony nebo h3 s šipkou)
-            var vsechnyRanniHarmoniky = Array.from(adminPlocha.querySelectorAll('div[onclick*="toggle"], .accordion, .collapse-header, h3, div[style*="cursor: pointer"]'));
-            
-            // Pojistný plán: pokud ranní kód nepoužívá specifické třídy, vezmeme prostě hlavní přímé potomky administrace
-            if (vsechnyRanniHarmoniky.length === 0) {
-                vsechnyRanniHarmoniky = Array.from(adminPlocha.children).filter(function(child) {
-                    return child.tagName === 'DIV' && (child.innerText || "").replace(/\s+/g, " ").length > 5;
-                });
-            }
+            // Vytvoříme lištu se 4 tlačítky přesně podle tvých obrázků
+            var navBar = document.createElement('div');
+            navBar.id = 'cc-admin-nav-bar-final-id';
+            navBar.className = 'cc-admin-nav-bar-final';
+            navBar.innerHTML = 
+                '<button id="cc-final-btn-1" class="cc-nav-tab-btn-final cc-active-sub-final">🎪 Tvorba akcí</button>' +
+                '<button id="cc-final-btn-2" class="cc-nav-tab-btn-final">🔧 Globální nastavení</button>' +
+                '<button id="cc-final-btn-3" class="cc-nav-tab-btn-final">🔐 Registrace a přístupy</button>' +
+                '<button id="cc-final-btn-4" class="cc-nav-tab-btn-final">🔑 Aktivní schvalovatelé</button>';
 
-            if (vsechnyRanniHarmoniky.length === 0) return;
+            adminPlocha.insertBefore(navBar, adminPlocha.firstChild);
 
-            // 1. KROK: Vytvoříme elegantní horní lištu pro naše 4 nové podsložky přesně podle tvé fotky
-            var subtabsRow = document.createElement('div');
-            subtabsRow.id = 'cc-admin-subtabs-line-final-id';
-            subtabsRow.className = 'cc-admin-subtabs-row-final';
-            subtabsRow.innerHTML = 
-                '<button id="cc-final-subtab-1" class="cc-admin-subtab-btn-final cc-subtab-active-final">🎪 Tvorba akcí</button>' +
-                '<button id="cc-final-subtab-2" class="cc-admin-subtab-btn-final">🔧 Globální nastavení</button>' +
-                '<button id="cc-final-subtab-3" class="cc-admin-subtab-btn-final">🔐 Registrace a přístupy</button>' +
-                '<button id="cc-final-subtab-4" class="cc-admin-subtab-btn-final">🔑 Aktivní schvalovatelé</button>';
+            var b1 = document.getElementById('cc-final-btn-1');
+            var b2 = document.getElementById('cc-final-btn-2');
+            var b3 = document.getElementById('cc-final-btn-3');
+            var b4 = document.getElementById('cc-final-btn-4');
 
-            // Vložíme řadu tlačítek na samotný začátek admin panelu nahoře pod hlavní nadpis
-            adminPlocha.insertBefore(subtabsRow, adminPlocha.firstChild);
+            // ⚡ CHYTRÉ PŘEPÍNÁNÍ PODLE POŘADÍ LIŠT Z TVÉHO OBRÁZKU
+            function prepniSekciOstre(cislo) {
+                // Najdeme ty široké bílé lišty s šipkou i s jejich vnitřním obsahem (formuláři)
+                var vsechnyPrvkyUvnitr = Array.from(adminPlocha.children);
+                
+                // Odznačíme všechna tlačítka
+                b1.classList.remove('cc-active-sub-final');
+                b2.classList.remove('cc-active-sub-final');
+                b3.classList.remove('cc-active-sub-final');
+                b4.classList.remove('cc-active-sub-final');
 
-            // 2. KROK: HLAVNÍ PŘEPÍNACÍ LOGIKA
-            function prepniPodslozkuAdminu(indexPodslozky) {
-                // Odznačíme všechna 4 horní tlačítka (sebereme jim červenou barvu)
-                for (var i = 1; i <= 4; i++) {
-                    var btn = document.getElementById('cc-final-subtab-' + i);
-                    if (btn) btn.classList.remove('cc-subtab-active-final');
-                }
+                // Rozsvítíme červeně aktivní podsložku
+                if (cislo === 1) b1.classList.add('cc-active-sub-final');
+                if (cislo === 2) b2.classList.add('cc-active-sub-final');
+                if (cislo === 3) b3.classList.add('cc-active-sub-final');
+                if (cislo === 4) b4.classList.add('cc-active-sub-final');
 
-                // Rozsvítíme zářivě červeně to jedno, na které jsi zrovna klikla
-                var aktivniBtn = document.getElementById('cc-final-subtab-' + indexPodslozky);
-                if (aktivniBtn) aktivniBtn.classList.add('cc-subtab-active-final');
+                // Indexujeme pouze ty velké ranní bloky z tvé fotky
+                var ranniBlokIndex = 0;
 
-                // Projdeme ty dlouhé ranní harmoniky z tvých fotek a ukážeme jen tu vybranou
-                vsechnyRanniHarmoniky.forEach(function(harmonika, idx) {
-                    if (!harmonika || !harmonika.style) return;
+                vsechnyPrvkyUvnitr.forEach(function(el) {
+                    if (el.id === 'cc-admin-nav-bar-final-id' || el.tagName === 'STYLE' || el.tagName === 'SCRIPT') return;
 
-                    // Určíme, který blok patří pod které tlačítko (rozdělíme je podle pořadí 0, 1, 2, 3)
-                    var cilovyIndex = 1;
-                    if (idx === 1) cilovyIndex = 2;
-                    if (idx === 2) cilovyIndex = 3;
-                    if (idx >= 3) cilovyIndex = 4;
+                    // Pokud narazíme na velkou ranní lištu s šipkou (nebo hlavní div sekce)
+                    if (el.tagName === 'DIV' || el.tagName === 'H3' || el.classList.contains('cc-admin-box-card')) {
+                        ranniBlokIndex++;
 
-                    if (cilovyIndex === indexPodslozky) {
-                        // Vybranou podsložku zviditelníme a necháme ji na monitoru rozbalenou
-                        harmonika.style.setProperty('display', 'block', 'important');
-                        harmonika.classList.remove('cc-admin-accordion-hidden-force');
-                        
-                        // Nouzový trik: Pokud je obsah harmoniky schovaný pod vnitřním stylem, zkusíme na ni potichu simulovat kliknutí, aby se otevřela
-                        var vnitrniObsah = harmonika.nextElementSibling;
-                        if (vnitrniObsah && (vnitrniObsah.style.display === 'none' || vnitrniObsah.classList.contains('hidden'))) {
-                            harmonika.click();
-                        }
-                        if (vnitrniObsah && vnitrniObsah.style) {
-                            vnitrniObsah.style.setProperty('display', 'block', 'important');
-                        }
-                    } else {
-                        // Všechny ostatní podsložky i jejich vnitřní formuláře nekompromisně schováme pryč z očí
-                        harmonika.style.setProperty('display', 'none', 'important');
-                        harmonika.classList.add('cc-admin-accordion-hidden-force');
-                        
-                        var vnitrniObsahSchovat = harmonika.nextElementSibling;
-                        if (vnitrniObsahSchovat && vnitrniObschovat.style) {
-                            vnitrniObsahSchovat.style.setProperty('display', 'none', 'important');
+                        // První lišta = Tvorba akcí, Druhá = Globální nastavení, Třetí = Registrace, Čtvrtá = Schvalovatelé
+                        var urcenyIndexSlozky = 1;
+                        if (ranniBlokIndex === 2 || ranniBlokIndex === 3) urcenyIndexSlozky = 2; // Plovoucí dlaždice + pomocník
+                        if (ranniBlokIndex === 4 || ranniBlokIndex === 5) urcenyIndexSlozky = 3; // Registrace a přístupy
+                        if (ranniBlokIndex >= 6) urcenyIndexSlozky = 4; // Aktivní schvalovatelé
+
+                        // Upravíme výjimku čistě pro tvůj 1. obrázek
+                        if (el.innerText && el.innerText.indexOf('TVORBA A SPRÁVA') > -1) urcenyIndexSlozky = 1;
+                        if (el.innerText && el.innerText.indexOf('GLOBÁLNÍ NASTAVENÍ') > -1) urcenyIndexSlozky = 2;
+                        if (el.innerText && el.innerText.indexOf('ŽÁDOSTI O REGISTRACI') > -1) urcenyIndexSlozky = 3;
+                        if (el.innerText && el.innerText.indexOf('AKTIVNÍ SCHVALOVATELÉ') > -1) urcenyIndexSlozky = 4;
+
+                        if (urcenyIndexSlozky === cislo) {
+                            el.style.setProperty('display', 'block', 'important');
+                            // Nouzově zkusíme na harmoniku simulovat kliknutí, aby se pod ní rozevřel ten formulář z tvých fotek
+                            var vnitrek = el.nextElementSibling;
+                            if (vnitrek && vnitrek.style) vnitrek.style.setProperty('display', 'block', 'important');
+                        } else {
+                            el.style.setProperty('display', 'none', 'important');
+                            var vnitrekSchovat = el.nextElementSibling;
+                            if (vnitrekSchovat && vnitrekSchovat.style) vnitrekSchovat.style.setProperty('display', 'none', 'important');
                         }
                     }
                 });
             }
 
-            // 3. KROK: Zapojíme bleskové posluchače na kliknutí pro všechna 4 nová tlačítka
-            document.getElementById('cc-final-subtab-1').addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); prepniPodslozkuAdminu(1); });
-            document.getElementById('cc-final-subtab-2').addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); prepniPodslozkuAdminu(2); });
-            document.getElementById('cc-final-subtab-3').addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); prepniPodslozkuAdminu(3); });
-            document.getElementById('cc-final-subtab-4').addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); prepniPodslozkuAdminu(4); });
+            b1.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); prepniSekciOstre(1); });
+            b2.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); prepniSekciOstre(2); });
+            b3.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); prepniSekciOstre(3); });
+            b4.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); prepniSekciOstre(4); });
 
-            // Jako výchozí stav hned po otevření Administrace zobrazíme otevřenou hned 1. podsložku (Tvorba akcí)
-            prepniPodslozkuAdminu(1);
+            // Jako výchozí stav hned po otevření Administrace zobrazíme 1. podsložku
+            prepniSekciOstre(1);
         }
 
-        // Hlídáme a držíme podsložky plynule nasazené na pozadí každých 450ms, aby je Firebase nepřemazala
-        setInterval(ccUklidAdminDoPodzalozekLive, 450);
+        // Hlídáme lištu každých 400ms, aby se v Administraci trvale udržela a prořízla kód
+        setInterval(ccNamontuj4PodZalozkyNatvrdo, 400);
     })();
 </script>
-
-
 </body>
 </html>
