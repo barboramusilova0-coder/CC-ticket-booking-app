@@ -4017,7 +4017,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 setTimeout(setup,400);setTimeout(setup,1200);setInterval(setup,2500);
 })();
 </script>
-(function(){
+<script id="cc-admin-rebuild-script">(function(){
 'use strict';
 
 function A(){ try{return Array.isArray(companyActions)?companyActions:JSON.parse(localStorage.getItem('companyActions')||'[]')}catch(e){return []} }
@@ -4169,6 +4169,41 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 setTimeout(function(){try{patchLoginAndAdminTab()}catch(e){}},500);
 setTimeout(function(){try{if(isAdmin()&&document.getElementById('tab4').classList.contains('active'))showAdmin()}catch(e){}},1000);
 })();
+<script id="cc-admin-rebuild-visibility-patch">
+(function(){
+  function patch(){
+    try{
+      if(typeof renderCards==='function' && !window.__ccAdminVisibilityPatched){
+        var old=renderCards;
+        window.renderCards=function(filter){
+          var g=document.getElementById('cc-v3-eventgrid');
+          if(!g){return old(filter)}
+          var list=(typeof actions==='function'?actions():[]).filter(function(a){return a.visible!==false && (a.status||'Aktivní')!=='Skryto' && (filter==='all'||(a.category||a.cat||'')===filter)});
+          list.sort(function(a,b){return ((a.date||'9999')+' '+(a.time||'')).localeCompare((b.date||'9999')+' '+(b.time||''));});
+          g.innerHTML='';
+          if(!list.length){g.innerHTML='<div style="grid-column:1/-1;color:#64748b">Pro tento filtr zatím není žádná akce.</div>';return;}
+          var rs=typeof requests==='function'?requests():[];
+          list.forEach(function(a){
+            var approved=rs.filter(function(r){return r.action===a.name&&r.status1==='Schváleno'&&r.status2==='Schváleno';}).reduce(function(n,r){return n+(parseInt(r.tickets)||0)},0);
+            var cap=Number(a.capacity)||0,status=a.portalStatus||'',full=cap>0&&approved>=cap;
+            var card=document.createElement('div');card.className='cc-v3-card';
+            var bg=document.createElement('div');bg.className='cc-v3-bg';if(a.image)bg.style.backgroundImage='url("'+String(a.image).replace(/"/g,'%22')+'")';card.appendChild(bg);
+            if(status==='Zrušeno/Přesunuto'||status==='Plno'||full){var badge=document.createElement('div');badge.className='cc-v3-badge';badge.textContent=full?'Plno':status;card.appendChild(badge)}
+            var body=document.createElement('div');body.className='cc-v3-body';body.innerHTML='<h3>'+esc(a.name)+'</h3><div class="cc-v3-time">'+(a.date?esc(fmtDate(a.date))+' · ':'')+esc(a.time||'')+'</div>';card.appendChild(body);
+            var tip=document.createElement('div');tip.className='cc-v3-tip';tip.innerHTML='<strong>'+esc(a.name)+'</strong><br>'+esc(a.tooltip||a.description||'Popis akce nebyl zadán.').replace(/\n/g,'<br>');card.appendChild(tip);
+            card.onclick=function(){if(status==='Zrušeno/Přesunuto'||full){alert(status==='Zrušeno/Přesunuto'?'Tato akce je zrušena nebo přesunuta.':'Kapacita akce je naplněna.');return}openReservation(a)};g.appendChild(card)
+          });
+        };
+        window.__ccAdminVisibilityPatched=true;
+      }
+    }catch(e){console.error('Admin visibility patch',e)}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',patch);else patch();
+  setTimeout(patch,1200);
+})();
+</script>
+
+</script>
 <script id="cc-admin-rebuild-visibility-patch">
 (function(){
   function patch(){
