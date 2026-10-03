@@ -1099,7 +1099,192 @@ window.addEventListener('scroll',function(){if(tipCard)positionTip(tipCard);},tr
   };
   function firebaseReadyForLogin(){return typeof firebase!=='undefined'&&firebase.apps&&firebase.apps.length;}
 })();
-</script></body>
+</script>
+<!-- V10 UX / MOBILE / ACTION CARDS REPAIR 2026-10-03 -->
+<style id="cc-v10-style">
+  *{box-sizing:border-box}
+  body{overflow-x:hidden}
+  .cc-v10-action-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;margin-top:16px}
+  .cc-v10-action-card{position:relative;background:#fff;border:1px solid #dfe5ec;border-radius:16px;overflow:hidden;box-shadow:0 6px 20px rgba(15,23,42,.07);transition:transform .16s,box-shadow .16s}
+  .cc-v10-action-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(15,23,42,.11)}
+  .cc-v10-action-image{height:150px;background:#eef2f6 center/cover no-repeat;position:relative}
+  .cc-v10-action-image:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.03),rgba(0,0,0,.58));pointer-events:none}
+  .cc-v10-action-noimage{height:150px;background:linear-gradient(135deg,#f8fafc,#e9eef4);display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:12px}
+  .cc-v10-action-body{padding:14px}
+  .cc-v10-action-body h3{margin:0 0 7px;font-size:16px;color:#17202b}
+  .cc-v10-meta{font-size:12px;line-height:1.55;color:#64748b}
+  .cc-v10-status{display:inline-block;margin-top:9px;padding:4px 8px;border-radius:999px;background:#eef2f7;color:#475569;font-size:11px;font-weight:800}
+  .cc-v10-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}
+  .cc-v10-btn{border:1px solid #d5dce5;background:#fff;color:#334155;border-radius:8px;padding:8px 10px;font-size:12px;font-weight:750;cursor:pointer}
+  .cc-v10-btn.primary{background:#e41e26;color:#fff;border-color:#e41e26}
+  .cc-v10-btn.danger{color:#b91c1c}
+  .cc-v10-editor-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.52);z-index:2147482000;display:flex;align-items:center;justify-content:center;padding:16px}
+  .cc-v10-editor{width:min(680px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:18px;box-shadow:0 24px 70px rgba(0,0,0,.3);padding:20px}
+  .cc-v10-editor h3{margin:0 0 16px}.cc-v10-form{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cc-v10-form .full{grid-column:1/-1}
+  .cc-v10-form label{font-size:12px;font-weight:750;color:#475569;display:block;margin-bottom:5px}.cc-v10-form input,.cc-v10-form select,.cc-v10-form textarea{width:100%;padding:10px 11px;border:1px solid #cbd5e1;border-radius:8px;font:inherit;background:#fff}
+  .cc-v10-editor-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+  .cc-v10-paste{border:2px dashed #cbd5e1;border-radius:10px;padding:12px;text-align:center;color:#64748b;font-size:12px;cursor:text}.cc-v10-paste:focus{border-color:#e41e26;background:#fff8f8;outline:none}
+  .cc-v10-tooltip{position:fixed;z-index:2147483646;max-width:min(340px,calc(100vw - 24px));display:none;background:#111827;color:#fff;border-radius:11px;padding:12px 14px;box-shadow:0 16px 38px rgba(0,0,0,.28);font-size:12px;line-height:1.5;pointer-events:none}
+  .cc-v10-tooltip strong{display:block;font-size:13px;margin-bottom:5px}
+  .cc-v10-admin-title{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.cc-v10-admin-title p{margin:4px 0 0;color:#64748b;font-size:12px}
+  @media(max-width:800px){.cc-v10-action-grid{grid-template-columns:1fr 1fr;gap:11px}.cc-v10-action-image,.cc-v10-action-noimage{height:125px}.cc-v10-action-body{padding:11px}.cc-v10-action-body h3{font-size:14px}.cc-v10-form{grid-template-columns:1fr}.cc-v10-form .full{grid-column:auto}.cc-v10-tooltip{pointer-events:auto}.cc-v10-admin-title{align-items:flex-start}.cc-admin-subtabs{grid-template-columns:1fr!important}}
+  @media(max-width:520px){.cc-v10-action-grid{grid-template-columns:1fr}.cc-v10-action-image,.cc-v10-action-noimage{height:155px}.cc-v10-btn{flex:1;min-height:40px}.login-bar>div{max-width:100%}.brand-title h1{font-size:21px!important}.cc-v10-editor{padding:15px;border-radius:14px}.tabs{grid-template-columns:1fr!important}.tab-btn{min-height:44px!important}}
+</style>
+<script id="cc-v10-script">
+(function(){
+'use strict';
+var tip=null,tipTarget=null;
+function E(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function A(){try{return JSON.parse(localStorage.getItem('companyActions')||'[]')}catch(e){return []}}
+function R(){try{return JSON.parse(localStorage.getItem('ticketRequests')||'[]')}catch(e){return []}}
+function saveActions(a){localStorage.setItem('companyActions',JSON.stringify(a));try{companyActions=a}catch(e){};try{updateActionSelectOptions()}catch(e){};try{renderAdminSection()}catch(e){};try{renderPlanned()}catch(e){}}
+function user(){try{if(typeof currentUser!=='undefined'&&currentUser)return currentUser}catch(e){}try{return JSON.parse(localStorage.getItem('currentUser')||'null')}catch(e){return null}}
+function isAdmin(){var u=user();return !!(u&&u.role==='admin')}
+function hideAccessForLogged(){
+ var u=user(), b=document.getElementById('btn-zadost-role');
+ if(b)b.style.display=(u&&u.role==='admin')?'none':'none';
+ var t=document.getElementById('tab3');if(t&&u)t.style.display='none';
+}
+function tipShow(card,a){
+ if(!tip){tip=document.createElement('div');tip.className='cc-v10-tooltip';tip.id='cc-v10-tooltip';document.body.appendChild(tip)}
+ tip.innerHTML='<strong>'+E(a.name)+'</strong>'+E(a.description||'Popis akce nebyl zadán.').replace(/\n/g,'<br>');tip.style.display='block';tipTarget=card;tipPos(card)
+}
+function tipPos(card){if(!tip||!tipTarget)return;var r=card.getBoundingClientRect(),w=Math.min(340,window.innerWidth-24);tip.style.width=w+'px';var left=Math.max(12,Math.min(r.left,window.innerWidth-w-12));tip.style.left=left+'px';var h=tip.offsetHeight,top=r.bottom+9;if(top+h>window.innerHeight-12)top=r.top-h-9;if(top<12)top=12;tip.style.top=top+'px'}
+function tipHide(){if(tip)tip.style.display='none';tipTarget=null}
+function imageFor(a){return a.image||a.imageUrl||a.backgroundImage||''}
+function planned(){
+ var p=document.getElementById('cc-planned-tab');if(!p)return;
+ var grid=document.getElementById('cc-v10-planned-grid');
+ if(!grid){p.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><h2 style="margin-bottom:4px">Plánované akce</h2><p style="margin:0;color:#64748b;font-size:13px">Vyberte akci a rezervujte lístky.</p></div></div><div id="cc-v10-filters" style="display:flex;gap:7px;flex-wrap:wrap;margin:18px 0"></div><div id="cc-v10-planned-grid" class="cc-v10-action-grid"></div>';grid=document.getElementById('cc-v10-planned-grid')}
+ var cfg={};try{cfg=JSON.parse(localStorage.getItem('ccPortalConfigV3')||'{}')}catch(e){};
+ var filters=cfg.filters||[];var fb=document.getElementById('cc-v10-filters');if(fb){fb.innerHTML='';filters.filter(function(f){return f.active!==false}).forEach(function(f){var b=document.createElement('button');b.className='cc-v3-filter'+((window.__v10Filter||'all')===f.id?' active':'');b.textContent=f.name;b.onclick=function(){window.__v10Filter=f.id;planned()};fb.appendChild(b)})}
+ var af=window.__v10Filter||'all', list=A().filter(function(a){return (a.status||'Aktivní')!=='Skryto'&&(a.status||'Aktivní')!=='Zrušena'&&(af==='all'||(a.category||a.cat||'')===af)});
+ grid.innerHTML='';var rs=R();
+ if(!list.length){grid.innerHTML='<div style="grid-column:1/-1;padding:25px;color:#64748b;text-align:center">Zatím nebyla vytvořena žádná aktivní akce.</div>';return}
+ list.forEach(function(a){var approved=rs.filter(function(r){return r.action===a.name&&r.status1==='Schváleno'&&r.status2==='Schváleno'}).reduce(function(n,r){return n+(parseInt(r.tickets)||0)},0),cap=Number(a.capacity)||0,full=cap>0&&approved>=cap,status=a.portalStatus||'',img=imageFor(a),card=document.createElement('article');card.className='cc-v10-action-card';
+ var media=document.createElement('div');media.className=img?'cc-v10-action-image':'cc-v10-action-noimage';if(img)media.style.backgroundImage='url('+JSON.stringify(img)+')';
+ card.appendChild(media);var body=document.createElement('div');body.className='cc-v10-action-body';body.innerHTML='<h3>'+E(a.name)+'</h3><div class="cc-v10-meta">'+(a.date?'📅 '+E(a.date):'')+(a.time?' · '+E(a.time):'')+(a.place?'<br>📍 '+E(a.place):'')+'</div>'+(full?'<span class="cc-v10-status">Plno</span>':(status?'<span class="cc-v10-status">'+E(status)+'</span>':''))+'<div class="cc-v10-actions"><button class="cc-v10-btn primary" type="button" '+((full||status==='Zrušeno/Přesunuto')?'disabled':'')+'>Rezervovat</button></div>';card.appendChild(body);grid.appendChild(card);
+ card.addEventListener('mouseenter',function(){tipShow(card,a)});card.addEventListener('mouseleave',tipHide);card.addEventListener('click',function(e){if(e.target.tagName==='BUTTON')return;if(window.innerWidth<=800){if(tipTarget===card&&tip&&tip.style.display==='block')tipHide();else tipShow(card,a)}});var rb=body.querySelector('button');if(rb&&!rb.disabled)rb.onclick=function(){try{openReservation(a)}catch(e){alert('Rezervaci se nepodařilo otevřít.')}};
+ })
+}
+function fileToData(file,done){if(!file){done('');return}var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){var max=1200,s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*s));c.height=Math.max(1,Math.round(im.height*s));c.getContext('2d').drawImage(im,0,0,c.width,c.height);done(c.toDataURL('image/jpeg',.78))};im.onerror=function(){done(r.result)};im.src=r.result};r.readAsDataURL(file)}
+function editor(action){
+ var old=document.getElementById('cc-v10-editor-backdrop');if(old)old.remove();var b=document.createElement('div');b.id='cc-v10-editor-backdrop';b.className='cc-v10-editor-backdrop';var f=document.createElement('div');f.className='cc-v10-editor';
+ f.innerHTML='<h3>Upravit akci</h3><div class="cc-v10-form"><div><label>Název akce</label><input id="v10-name"></div><div><label>Kapacita</label><input id="v10-cap" type="number" min="1"></div><div><label>Datum</label><input id="v10-date" type="date"></div><div><label>Čas</label><input id="v10-time" type="time"></div><div><label>Místo</label><input id="v10-place"></div><div><label>Kategorie</label><select id="v10-cat"><option value="">-- Vyberte --</option><option>O2 Arena</option><option>Fotbal</option><option>SKS Slavia</option><option>Reprezentace</option></select></div><div><label>Typ akce</label><input id="v10-sub"></div><div class="full"><label>Popis / tooltip</label><textarea id="v10-desc" rows="4"></textarea></div><div class="full"><label>Obrázek</label><input id="v10-file" type="file" accept="image/*"><div id="v10-paste" class="cc-v10-paste" tabindex="0"><strong>Vložte obrázek pomocí Ctrl+V</strong>Zkopírujte obrázek a vložte ho sem.</div><img id="v10-preview" style="display:none;width:100%;max-height:190px;object-fit:cover;border-radius:10px;margin-top:8px"></div></div><div class="cc-v10-editor-actions"><button class="cc-v10-btn" id="v10-cancel">Zrušit</button><button class="cc-v10-btn primary" id="v10-save">Uložit změny</button></div>';
+ b.appendChild(f);document.body.appendChild(b);
+ document.getElementById('v10-name').value=action.name||'';document.getElementById('v10-cap').value=action.capacity||'';document.getElementById('v10-date').value=action.date||'';document.getElementById('v10-time').value=action.time||'';document.getElementById('v10-place').value=action.place||'';document.getElementById('v10-cat').value=action.category||'';document.getElementById('v10-sub').value=action.subcategory||'';document.getElementById('v10-desc').value=action.description||'';
+ var file=null,pasteData='';var prev=document.getElementById('v10-preview');function preview(data){prev.src=data;prev.style.display='block'}
+ document.getElementById('v10-file').onchange=function(){file=this.files&&this.files[0];if(file){var r=new FileReader();r.onload=function(){preview(r.result)};r.readAsDataURL(file)}};
+ var zone=document.getElementById('v10-paste');zone.onclick=function(){zone.focus()};zone.onpaste=function(e){var its=(e.clipboardData&&e.clipboardData.items)||[];for(var i=0;i<its.length;i++)if(its[i].type.indexOf('image/')===0){var ff=its[i].getAsFile();var rr=new FileReader();rr.onload=function(){pasteData=rr.result;preview(pasteData)};rr.readAsDataURL(ff);e.preventDefault();break}};
+ document.getElementById('v10-cancel').onclick=function(){b.remove()};b.onclick=function(e){if(e.target===b)b.remove()};
+ document.getElementById('v10-save').onclick=function(){var arr=A(),idx=arr.findIndex(function(x){return String(x.id)===String(action.id)});if(idx<0)return;arr[idx].name=document.getElementById('v10-name').value.trim();arr[idx].capacity=parseInt(document.getElementById('v10-cap').value)||0;arr[idx].date=document.getElementById('v10-date').value;arr[idx].time=document.getElementById('v10-time').value;arr[idx].place=document.getElementById('v10-place').value.trim();arr[idx].category=document.getElementById('v10-cat').value;arr[idx].subcategory=document.getElementById('v10-sub').value.trim();arr[idx].description=document.getElementById('v10-desc').value.trim();function done(data){if(data)arr[idx].image=data;saveActions(arr);b.remove()}if(file)fileToData(file,done);else if(pasteData)done(pasteData);else done(imageFor(arr[idx]))}
+}
+function actionManager(){if(!isAdmin())return;var panel=document.querySelector('#tab4 .cc-admin-subpanel[data-panel="events"]');if(!panel)return;var old=document.getElementById('cc-v10-action-manager');if(old)old.remove();var box=document.createElement('section');box.id='cc-v10-action-manager';box.className='box-section';box.innerHTML='<div class="cc-v10-admin-title"><div><h3 style="margin:0">Akce</h3><p>Každá akce má vlastní dlaždici. Zde ji můžete upravit, zrušit nebo smazat.</p></div></div><div id="cc-v10-action-grid" class="cc-v10-action-grid"></div>';panel.insertBefore(box,panel.firstChild);var grid=box.querySelector('#cc-v10-action-grid');A().forEach(function(a){var rs=R(),approved=rs.filter(function(r){return r.action===a.name&&r.status1==='Schváleno'&&r.status2==='Schváleno'}).reduce(function(n,r){return n+(parseInt(r.tickets)||0)},0),img=imageFor(a),c=document.createElement('article');c.className='cc-v10-action-card';var m=document.createElement('div');m.className=img?'cc-v10-action-image':'cc-v10-action-noimage';if(img)m.style.backgroundImage='url('+JSON.stringify(img)+')';c.appendChild(m);var body=document.createElement('div');body.className='cc-v10-action-body';body.innerHTML='<h3>'+E(a.name)+'</h3><div class="cc-v10-meta">'+(a.date?'📅 '+E(a.date):'')+(a.time?' · '+E(a.time):'')+(a.place?'<br>📍 '+E(a.place):'')+'<br>🎟️ '+approved+' / '+(Number(a.capacity)||0)+'</div><span class="cc-v10-status">'+E(a.portalStatus||a.status||'Aktivní')+'</span><div class="cc-v10-actions"><button class="cc-v10-btn primary">Upravit</button><button class="cc-v10-btn">'+((a.portalStatus==='Zrušeno/Přesunuto'||a.status==='Zrušena')?'Aktivovat':'Zrušit')+'</button><button class="cc-v10-btn danger">Smazat</button></div>';c.appendChild(body);grid.appendChild(c);var bs=body.querySelectorAll('button');bs[0].onclick=function(){editor(a)};bs[1].onclick=function(){var ar=A(),i=ar.findIndex(function(x){return String(x.id)===String(a.id)});if(i>=0){ar[i].portalStatus=(ar[i].portalStatus==='Zrušeno/Přesunuto'||ar[i].status==='Zrušena')?'':'Zrušeno/Přesunuto';saveActions(ar);actionManager()}};bs[2].onclick=function(){if(confirm('Opravdu chcete tuto akci smazat?')){saveActions(A().filter(function(x){return String(x.id)!==String(a.id)}));actionManager()}};});
+ var table=document.getElementById('adminActionsTableBody');if(table){var t=table.closest('table');if(t)t.style.display='none'}
+}
+function adminLayout(){if(!isAdmin())return;var tab=document.getElementById('tab4');if(!tab)return;var nav=tab.querySelector('.cc-admin-subtabs');if(nav){nav.querySelectorAll('.cc-admin-subtab').forEach(function(x){if(x.dataset.panel==='events')x.click()});}actionManager()}
+function responsive(){hideAccessForLogged();if(isAdmin())adminLayout()}
+var oldRender=window.renderPlanned;window.renderPlanned=planned;
+var oldSave=window.handleCreateActionSubmit;
+// Fix image paste for the existing create form by using a direct capture and rebuilding the action if needed.
+function installCreatePaste(){var z=document.getElementById('cc-paste-zone');if(!z||z.dataset.v10)return;z.dataset.v10='1';var input=document.getElementById('cc-action-image');if(!input)return;z.addEventListener('paste',function(e){var its=(e.clipboardData&&e.clipboardData.items)||[];for(var i=0;i<its.length;i++){if(its[i].type.indexOf('image/')===0){var f=its[i].getAsFile(),r=new FileReader();r.onload=function(){window.__v10PastedImage=r.result;z.innerHTML='<strong>✓ Obrázek vložen</strong><small>Obrázek bude uložen při vytvoření akce.</small>'};r.readAsDataURL(f);e.preventDefault();break}}});}
+function boot(){hideAccessForLogged();installCreatePaste();adminLayout();try{planned()}catch(e){}}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();setTimeout(boot,900);setInterval(function(){hideAccessForLogged();installCreatePaste();if(isAdmin())actionManager()},2500);window.addEventListener('resize',function(){if(tipTarget)tipPos(tipTarget)});window.addEventListener('scroll',function(){if(tipTarget)tipPos(tipTarget)},true);
+})();
+</script>
+
+
+<!-- V11 MANAGEMENT + SECURITY ENHANCEMENTS 2026-10-03 -->
+<style id="cc-v11-css">
+.cc-v11-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 18px}.cc-v11-kpi{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:15px 16px;box-shadow:0 5px 18px rgba(15,23,42,.06)}.cc-v11-kpi b{display:block;font-size:25px;color:#0f172a}.cc-v11-kpi span{font-size:12px;color:#64748b;font-weight:700}.cc-v11-kpi.red{border-left:4px solid #e41e26}.cc-v11-kpi.green{border-left:4px solid #10b981}.cc-v11-kpi.amber{border-left:4px solid #f59e0b}.cc-v11-kpi.blue{border-left:4px solid #3b82f6}
+.cc-v11-cap{background:#0f172a;color:#fff;border-radius:14px;padding:15px 17px;margin:0 0 18px;display:flex;justify-content:space-between;gap:18px;align-items:center;flex-wrap:wrap}.cc-v11-cap strong{font-size:22px}.cc-v11-cap small{color:#cbd5e1}.cc-v11-progress{height:8px;background:#334155;border-radius:99px;overflow:hidden;margin-top:8px;min-width:220px}.cc-v11-progress>i{display:block;height:100%;background:#e41e26;width:0}
+.cc-v11-modal{position:fixed;inset:0;background:rgba(15,23,42,.58);display:none;align-items:center;justify-content:center;padding:18px;z-index:2147483000}.cc-v11-modal.open{display:flex}.cc-v11-dialog{background:#fff;width:min(760px,100%);max-height:90vh;overflow:auto;border-radius:18px;box-shadow:0 30px 80px rgba(0,0,0,.28);padding:24px}.cc-v11-dialog h2{margin:0 0 5px}.cc-v11-close{float:right;border:0;background:#f1f5f9;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer}.cc-v11-timeline{position:relative;margin:22px 0 4px;padding-left:28px}.cc-v11-timeline:before{content:'';position:absolute;left:8px;top:7px;bottom:7px;width:2px;background:#e2e8f0}.cc-v11-step{position:relative;padding:0 0 22px}.cc-v11-dot{position:absolute;left:-27px;top:1px;width:18px;height:18px;border-radius:50%;background:#cbd5e1;border:3px solid #fff;box-shadow:0 0 0 2px #cbd5e1}.cc-v11-step.done .cc-v11-dot{background:#10b981;box-shadow:0 0 0 2px #10b981}.cc-v11-step.current .cc-v11-dot{background:#f59e0b;box-shadow:0 0 0 2px #f59e0b}.cc-v11-step.bad .cc-v11-dot{background:#ef4444;box-shadow:0 0 0 2px #ef4444}.cc-v11-step h4{margin:0 0 3px;font-size:14px}.cc-v11-step p{margin:0;color:#64748b;font-size:12px;line-height:1.5}.cc-v11-comment{margin-top:7px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:9px 11px;color:#334155;font-size:12px}.cc-v11-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}.cc-v11-toolbar input,.cc-v11-toolbar select{padding:9px 11px;border:1px solid #dbe3ec;border-radius:9px;background:#fff}.cc-v11-btn{border:0;border-radius:9px;padding:9px 13px;font-weight:800;cursor:pointer;background:#0f172a;color:#fff}.cc-v11-btn.red{background:#e41e26}.cc-v11-btn.light{background:#f1f5f9;color:#334155}
+.cc-v11-workspace{margin:0 0 20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:18px;padding:18px}.cc-v11-workspace-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}.cc-v11-workspace-head h3{margin:0}.cc-v11-workspace-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:13px}.cc-v11-admin-tile{background:#fff;border:1px solid #dbe3ec;border-radius:15px;padding:16px;min-height:100px;cursor:grab;box-shadow:0 4px 14px rgba(15,23,42,.05);position:relative;transition:.16s}.cc-v11-admin-tile:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(15,23,42,.10)}.cc-v11-admin-tile.dragover{border:2px dashed #e41e26;background:#fff8f8}.cc-v11-admin-tile .icon{font-size:24px}.cc-v11-admin-tile .title{display:block;font-weight:850;margin-top:8px}.cc-v11-admin-tile small{display:block;color:#64748b;margin-top:4px;line-height:1.35}.cc-v11-folder{border:2px solid #cbd5e1;background:#f8fafc}.cc-v11-folder-items{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}.cc-v11-folder-item{font-size:11px;background:#fff;border:1px solid #dbe3ec;border-radius:7px;padding:5px 7px}.cc-v11-mini{font-size:11px;padding:6px 8px;border:0;border-radius:7px;background:#f1f5f9;cursor:pointer;font-weight:700}.cc-v11-reset-box{margin-top:14px;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:12px;font-size:12px}.cc-v11-reset-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid #fed7aa;padding:9px 0}.cc-v11-reset-row:first-child{border-top:0}.cc-v11-manager{font-size:12px;color:#64748b;margin-top:8px}
+@media(max-width:850px){.cc-v11-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.cc-v11-dialog{padding:18px}.cc-v11-workspace-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.cc-v11-kpis{grid-template-columns:1fr 1fr}.cc-v11-workspace-grid{grid-template-columns:1fr}.cc-v11-cap{align-items:flex-start}.cc-v11-progress{min-width:180px}}
+</style>
+<script id="cc-v11-script">
+(function(){
+'use strict';
+var V11KEY='ccPortalConfigV3';
+function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+function ui(){try{return JSON.parse(localStorage.getItem(V11KEY))||{};}catch(e){return {};}}
+function saveUi(c){localStorage.setItem(V11KEY,JSON.stringify(c));}
+function state(){var c=ui();c.v11=c.v11||{};return c.v11;}
+function saveState(v){var c=ui();c.v11=v;saveUi(c);}
+function arr(k){try{return JSON.parse(localStorage.getItem(k))||[];}catch(e){return[];}}
+function users(){try{return JSON.parse(localStorage.getItem('customUsers'))||{};}catch(e){return{};}}
+function addHistory(r,step,status,actor,comment){r.history=Array.isArray(r.history)?r.history:[];r.history.push({step:step,status:status,actor:actor||'',at:new Date().toISOString(),comment:comment||''});r.updatedAt=new Date().toISOString();}
+function actionByName(name){var a=arr('companyActions').find(function(x){return x.name===name;});return a||null;}
+function approvedForAction(name,excludeId){return arr('ticketRequests').filter(function(r){return r.action===name&&String(r.id)!==String(excludeId)&&r.status2==='Schváleno';}).reduce(function(n,r){return n+(parseInt(r.tickets,10)||0);},0);}
+function ensureRequestMeta(r){if(!r.createdAt)r.createdAt=new Date(Number(r.id)||Date.now()).toISOString();if(!Array.isArray(r.history)){r.history=[];addHistory(r,'Odesláno','Odesláno',r.employee||'Žadatel','Žádost byla odeslána.');}return r;}
+function allReqs(){var rs=arr('ticketRequests');rs.forEach(ensureRequestMeta);return rs;}
+function persistReqs(rs){localStorage.setItem('ticketRequests',JSON.stringify(rs));}
+
+/* 1) Prevent duplicate access requests for the same email. */
+window.handleRoleRequestSubmit=function(e){
+ e.preventDefault();var email=(document.getElementById('reqEmail')?.value||'').trim().toLowerCase();var name=(document.getElementById('reqName')?.value||'').trim();var role=(document.getElementById('reqRole')?.value||'applicant');
+ if(!email||!name){alert('Vyplňte prosím jméno a e-mail.');return;}
+ var rs=JSON.parse(localStorage.getItem('roleRequests')||'[]'), us=users();
+ var alreadyReq=rs.some(function(r){return String(r.email||'').trim().toLowerCase()===email;});
+ var alreadyUser=Object.keys(us).some(function(k){return String(us[k]?.email||'').trim().toLowerCase()===email;});
+ if(alreadyReq){alert('Pro tento e-mail už žádost o přístup existuje. Další duplicitní žádost není potřeba.');return;}
+ if(alreadyUser){alert('Tento e-mail už má v portálu aktivní přístup. Pokud jste zapomněli kód, použijte „Zapomenutý kód“.');return;}
+ rs.push({id:Date.now(),name:name,email:email,role:role,createdAt:new Date().toISOString()});localStorage.setItem('roleRequests',JSON.stringify(rs));e.target.reset();alert('Žádost byla odeslána. Další žádost pro stejný e-mail už nebude možné vytvořit.');
+};
+
+/* 2) Forgot-code UX. It is deliberately non-enumerating. */
+function addForgot(){var box=document.querySelector('#welcomeGate .gate-login-box');if(!box||document.getElementById('cc-v11-forgot'))return;var b=document.createElement('button');b.id='cc-v11-forgot';b.type='button';b.textContent='Zapomenutý kód';b.style.cssText='width:100%;padding:9px;font-size:13px;font-weight:700;background:#f1f5f9;border:1px solid #dbe3ec;border-radius:8px;color:#334155;cursor:pointer;margin-top:9px';b.onclick=forgotDialog;box.appendChild(b);}
+function forgotDialog(){var old=document.getElementById('cc-v11-forgot-modal');if(old)old.remove();var m=document.createElement('div');m.id='cc-v11-forgot-modal';m.className='cc-v11-modal open';m.innerHTML='<div class="cc-v11-dialog" style="max-width:480px"><button class="cc-v11-close" onclick="document.getElementById(\'cc-v11-forgot-modal\').remove()">×</button><h2>Zapomenutý kód</h2><p style="color:#64748b;font-size:13px;line-height:1.5">Zadejte e-mail, který používáte v portálu. Z bezpečnostních důvodů nikdy nepotvrdíme, zda je e-mail v systému vedený.</p><input id="cc-v11-reset-email" type="email" placeholder="vas.email@firma.cz" style="width:100%;box-sizing:border-box;padding:11px;border:1px solid #dbe3ec;border-radius:9px"><button class="cc-v11-btn red" style="width:100%;margin-top:10px" onclick="ccV11RequestReset()">Požádat o obnovení kódu</button><div id="cc-v11-reset-result" style="margin-top:12px;font-size:12px;color:#64748b"></div></div>';document.body.appendChild(m);setTimeout(function(){document.getElementById('cc-v11-reset-email')?.focus();},50);}
+window.ccV11RequestReset=function(){var email=(document.getElementById('cc-v11-reset-email')?.value||'').trim().toLowerCase();var out=document.getElementById('cc-v11-reset-result');if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){if(out)out.textContent='Zadejte platný e-mail.';return;}var v=state(),now=Date.now();v.resetRequests=Array.isArray(v.resetRequests)?v.resetRequests:[];var recent=v.resetRequests.filter(function(x){return x.email===email&&now-(x.requestedAt||0)<15*60*1000;});if(recent.length>=2){if(out)out.textContent='Požadavek už byl nedávno odeslán. Zkuste to prosím později.';return;}var id=crypto&&crypto.randomUUID?crypto.randomUUID():String(now)+'-'+Math.random().toString(36).slice(2);v.resetRequests.push({id:id,email:email,requestedAt:now,status:'Čeká na zpracování'});saveState(v);if(out)out.innerHTML='<strong style="color:#0f172a">Požadavek byl přijat.</strong><br>Pokud je e-mail vedený v systému, obdržíte další instrukce. Tato zpráva je záměrně stejná pro všechny e-maily.';};
+
+/* 3) Reservation history + duplicate-submit protection. */
+var submitting=false;
+window.handleFormSubmit=function(e){
+ e.preventDefault();if(submitting)return;submitting=true;setTimeout(function(){submitting=false;},1800);
+ var act=(document.getElementById('actionSelect')?.value||'').trim(),emp=(document.getElementById('employeeName')?.value||'').trim(),mgr=(document.getElementById('managerEmail')?.value||'').trim().toLowerCase(),cust=(document.getElementById('customerName')?.value||'').trim(),tickets=parseInt(document.getElementById('ticketCount')?.value||'1',10),reason=(document.getElementById('reason')?.value||'').trim(),email=(window.currentUser&&currentUser.email)||'';
+ var rs=allReqs();var dup=rs.some(function(r){return r.action===act&&String(r.customer||'').trim().toLowerCase()===cust.toLowerCase()&&['Čeká','Schváleno'].indexOf(r.status2)>-1&&String(r.employee||'').trim().toLowerCase()===emp.toLowerCase();});if(dup){alert('Tato rezervace už pro stejného žadatele a zákazníka existuje.');submitting=false;return;}
+ if(!act||!emp||!mgr||!cust||!tickets||!reason){alert('Vyplňte prosím všechna povinná pole.');submitting=false;return;}
+ var r={id:Date.now(),action:act,employee:emp,manager:mgr,customer:cust,tickets:String(tickets),reason:reason,status1:'Čeká',status2:'Čeká',approvedBy1:'',approvedBy2:'',applicantEmail:email,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),history:[]};addHistory(r,'Odesláno','Odesláno',emp,'Žádost byla odeslána ke schválení.');rs.push(r);persistReqs(rs);if(document.getElementById('ticketForm'))document.getElementById('ticketForm').reset();alert('Žádost byla odeslána. Číslo žádosti: #'+r.id);renderTable();openTab(2);setTimeout(function(){openDetail(r.id);},250);
+};
+
+/* 4) Approval workflow with capacity only enforced at final approval (2nd approver). */
+window.setStatus1=function(id,s){var rs=allReqs(),r=rs.find(function(x){return String(x.id)===String(id);});if(!r)return;if(r.status1!=='Čeká'){alert('Tento krok už byl zpracován.');return;}var isAdmin=currentUser&&currentUser.role==='admin',isMgr=currentUser&&(currentUser.role==='manager'||String(currentUser.role).indexOf('1')>-1)&&String(currentUser.email||'').toLowerCase()===String(r.manager||'').toLowerCase();if(!isAdmin&&!isMgr){alert('Tuto žádost může zpracovat pouze její 1. schvalovatel.');return;}var comment='';if(s==='Zamítnuto'){comment=prompt('Důvod zamítnutí (povinné):','');if(comment===null||!comment.trim()){alert('Bez důvodu nelze žádost zamítnout.');return;}}var actor=(currentUser&&currentUser.name)||'Schvalovatel 1';r.status1=s;r.approvedBy1=actor;r.comment1=comment;addHistory(r,'Schvalovatel 1',s,actor,comment);persistReqs(rs);renderTable();};
+window.setStatus2=function(id,s){var rs=allReqs(),r=rs.find(function(x){return String(x.id)===String(id);});if(!r)return;if(r.status2!=='Čeká'){alert('Tento krok už byl zpracován.');return;}var isAdmin=currentUser&&currentUser.role==='admin',isRsm=currentUser&&(currentUser.role==='rsm_praha'||String(currentUser.role).indexOf('2')>-1);if(!isAdmin&&!isRsm){alert('Tuto žádost může zpracovat pouze 2. schvalovatel.');return;}if(r.status1!=='Schváleno'&&!isAdmin){alert('Nejdříve musí být žádost schválena 1. schvalovatelem.');return;}var comment='';if(s==='Zamítnuto'){comment=prompt('Důvod zamítnutí (povinné):','');if(comment===null||!comment.trim())return;}if(s==='Schváleno'){var a=actionByName(r.action),cap=a?parseInt(a.capacity,10)||0:0,used=approvedForAction(r.action,r.id),need=parseInt(r.tickets,10)||0;if(cap>0&&used+need>cap){alert('Nelze schválit.\n\nKapacita akce: '+cap+'\nJiž finálně schváleno: '+used+'\nPožadavek: '+need+'\n\nPo schválení by vzniklo '+(used+need)+' míst. Schvalovatel 2 musí zvolit prioritu tak, aby celková kapacita nebyla překročena.');return;}}var actor=(currentUser&&currentUser.name)||'Schvalovatel 2';r.status2=s;r.approvedBy2=actor;r.comment2=comment;addHistory(r,'Schvalovatel 2',s,actor,comment);if(s==='Schváleno'){r.finalApprovedAt=new Date().toISOString();addHistory(r,'Schváleno','Schváleno',actor,'Finální schválení dokončeno.');}else if(s==='Zamítnuto'){addHistory(r,'Zamítnuto','Zamítnuto',actor,comment);}persistReqs(rs);renderTable();};
+
+/* 5) Request detail + visual timeline. */
+function stepData(r,step,label,status,actor,comment,at){return {step:step,label:label,status:status,actor:actor,comment:comment,at:at};}
+function timelineHtml(r){r=ensureRequestMeta(r);var hist=r.history||[];var h0=hist.find(function(x){return x.step==='Odesláno';})||{status:'Odesláno',actor:r.employee,at:r.createdAt,comment:'Žádost byla odeslána ke schválení.'};var h1=hist.find(function(x){return x.step==='Schvalovatel 1';})||null;var h2=hist.find(function(x){return x.step==='Schvalovatel 2';})||null;var fin=r.status2==='Schváleno'?hist.slice().reverse().find(function(x){return x.step==='Schváleno';}):null;var steps=[];steps.push(stepData(r,'Odesláno','Odesláno','done',h0.actor,h0.comment,h0.at));if(r.status1==='Zamítnuto')steps.push(stepData(r,'Schvalovatel 1','Schvalovatel 1','bad',h1?.actor,h1?.comment,h1?.at));else steps.push(stepData(r,'Schvalovatel 1',r.status1==='Schváleno'?'Schvalovatel 1':'Schvalovatel 1',r.status1==='Schváleno'?'done':'current',h1?.actor||r.manager,h1?.comment,h1?.at));if(r.status1==='Zamítnuto'){}else if(r.status2==='Zamítnuto')steps.push(stepData(r,'Schvalovatel 2','Schvalovatel 2','bad',h2?.actor,h2?.comment,h2?.at));else steps.push(stepData(r,'Schvalovatel 2','Schvalovatel 2',r.status2==='Schváleno'?'done':'current',h2?.actor,'',h2?.at));if(r.status2==='Schváleno')steps.push(stepData(r,'Schváleno','Schváleno','done',fin?.actor||r.approvedBy2,fin?.comment,fin?.at));if(r.status2==='Zamítnuto'||r.status1==='Zamítnuto')steps.push(stepData(r,'Zamítnuto','Zamítnuto','bad',r.status1==='Zamítnuto'?r.approvedBy1:r.approvedBy2,r.status1==='Zamítnuto'?r.comment1:r.comment2,(hist.slice().reverse().find(function(x){return x.status==='Zamítnuto';})||{}).at));if(r.status2==='Schváleno'&&r.informationSentAt)steps.push(stepData(r,'Informace odeslána','Informace odeslána','done',r.informationSentBy||'',r.informationSentComment||'',r.informationSentAt));return steps.map(function(x){var dt=x.at?new Date(x.at).toLocaleString('cs-CZ'):'Čeká';return '<div class="cc-v11-step '+x.status+'"><i class="cc-v11-dot"></i><h4>'+esc(x.label)+'</h4><p>'+ (x.status==='current'?'Čeká na zpracování':x.status==='bad'?'Zamítnuto':'Dokončeno') +' · '+esc(x.actor||'')+(x.at?' · '+esc(dt):'')+'</p>'+(x.comment?'<div class="cc-v11-comment"><strong>Komentář:</strong> '+esc(x.comment)+'</div>':'')+'</div>';}).join('');}
+window.openDetail=function(id){var r=allReqs().find(function(x){return String(x.id)===String(id);});if(!r)return;var old=document.getElementById('cc-v11-detail-modal');if(old)old.remove();var a=actionByName(r.action),cap=a?parseInt(a.capacity,10)||0:0,used=approvedForAction(r.action,r.id)+(r.status2==='Schváleno'?parseInt(r.tickets,10)||0:0);var m=document.createElement('div');m.id='cc-v11-detail-modal';m.className='cc-v11-modal open';m.innerHTML='<div class="cc-v11-dialog"><button class="cc-v11-close" onclick="document.getElementById(\'cc-v11-detail-modal\').remove()">×</button><h2>Detail žádosti #'+esc(r.id)+'</h2><div style="color:#64748b;font-size:13px;margin-bottom:12px">'+esc(r.action)+' · '+esc(r.employee)+' · '+esc(r.customer)+'</div><div class="cc-v11-cap"><div><small>Kapacita akce</small><br><strong>'+used+(cap?' / '+cap:'')+'</strong><div class="cc-v11-progress"><i style="width:'+(cap?Math.min(100,used/cap*100):0)+'%"></i></div></div><div><small>Požadováno</small><br><strong>'+esc(r.tickets)+' ks</strong></div></div><div class="cc-v11-timeline">'+timelineHtml(r)+'</div><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:13px;font-size:12px"><strong>Důvod žádosti</strong><div style="margin-top:5px;white-space:pre-wrap">'+esc(r.reason)+'</div></div></div>';document.body.appendChild(m);};
+
+/* 6) Management overview and filters. */
+function addManagementBar(){var tab=document.getElementById('tab2');if(!tab||document.getElementById('cc-v11-management'))return;var box=document.createElement('div');box.id='cc-v11-management';box.innerHTML='<div class="cc-v11-kpis"><div class="cc-v11-kpi blue"><b id="cc-v11-all">0</b><span>Všechny žádosti</span></div><div class="cc-v11-kpi amber"><b id="cc-v11-pending">0</b><span>Čekající</span></div><div class="cc-v11-kpi green"><b id="cc-v11-approved">0</b><span>Schválené</span></div><div class="cc-v11-kpi red"><b id="cc-v11-rejected">0</b><span>Zamítnuté</span></div></div><div id="cc-v11-capacity-overview"></div><div class="cc-v11-toolbar"><input id="cc-v11-search" placeholder="Hledat žadatele, zákazníka nebo akci…"><select id="cc-v11-action-filter"><option value="">Všechny akce</option></select><select id="cc-v11-status-filter"><option value="">Všechny stavy</option><option value="Čeká">Čekající</option><option value="Schváleno">Schválené</option><option value="Zamítnuto">Zamítnuté</option></select></div>';tab.insertBefore(box,tab.querySelector('#excelBtnContainer')||tab.firstChild);box.querySelector('#cc-v11-search').oninput=renderTable;box.querySelector('#cc-v11-action-filter').onchange=renderTable;box.querySelector('#cc-v11-status-filter').onchange=renderTable;}
+function refreshManagement(){addManagementBar();var rs=allReqs();var a=document.getElementById('cc-v11-all'),p=document.getElementById('cc-v11-pending'),ok=document.getElementById('cc-v11-approved'),bad=document.getElementById('cc-v11-rejected');if(a)a.textContent=rs.length;if(p)p.textContent=rs.filter(function(r){return r.status1==='Čeká'||r.status2==='Čeká';}).length;if(ok)ok.textContent=rs.filter(function(r){return r.status2==='Schváleno';}).length;if(bad)bad.textContent=rs.filter(function(r){return r.status1==='Zamítnuto'||r.status2==='Zamítnuto';}).length;var sel=document.getElementById('cc-v11-action-filter');if(sel){var cur=sel.value;sel.innerHTML='<option value="">Všechny akce</option>'+Array.from(new Set(rs.map(function(r){return r.action;}))).sort().map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>';}).join('');sel.value=cur;}var by={};rs.forEach(function(r){var a=actionByName(r.action);if(a){by[r.action]=by[r.action]||{cap:parseInt(a.capacity,10)||0,used:0,pending:0};if(r.status2==='Schváleno')by[r.action].used+=parseInt(r.tickets,10)||0;else if(r.status2==='Čeká')by[r.action].pending+=parseInt(r.tickets,10)||0;}});var co=document.getElementById('cc-v11-capacity-overview');if(co){co.innerHTML=Object.keys(by).map(function(k){var x=by[k];return '<div class="cc-v11-cap"><div><small>'+esc(k)+'</small><br><strong>'+x.used+' / '+x.cap+' schváleno</strong><div class="cc-v11-progress"><i style="width:'+(x.cap?Math.min(100,x.used/x.cap*100):0)+'%"></i></div></div><div><small>Čeká na rozhodnutí</small><br><strong>'+x.pending+' ks</strong></div></div>';}).join('');}}
+
+var oldRender=window.renderTable;window.renderTable=function(){if(typeof oldRender==='function')oldRender();refreshManagement();var rs=allReqs();var rows=document.querySelectorAll('#requestsTableBody tr');var q=(document.getElementById('cc-v11-search')?.value||'').toLowerCase();var af=document.getElementById('cc-v11-action-filter')?.value||'';var sf=document.getElementById('cc-v11-status-filter')?.value||'';rows.forEach(function(row){var text=(row.innerText||'').toLowerCase();var okq=!q||text.indexOf(q)>-1;var oka=!af||text.indexOf(af.toLowerCase())>-1;var oks=!sf||text.indexOf(sf.toLowerCase())>-1;if(!(okq&&oka&&oks))row.style.display='none';var id=(row.querySelector('button[onclick*="deleteTicketRequest"]')?.getAttribute('onclick')||'').match(/\d+/);if(id&&!row.querySelector('.cc-v11-detail-btn')){var td=row.lastElementChild;if(td){var b=document.createElement('button');b.className='cc-v11-btn light cc-v11-detail-btn';b.textContent='Detail';b.style.margin='3px';b.onclick=function(){openDetail(id[0]);};td.appendChild(b);}}});};
+
+/* 7) Admin workspace: drag tile onto tile => folder, persistent in the existing V9 UI document. */
+var defaultTiles=[{id:'events',icon:'🎟️',title:'Akce a obsazenost',desc:'Akce, kapacita a aktuální rezervace',target:'events'},{id:'access',icon:'🔐',title:'Přístupy a uživatelé',desc:'Žádosti o přístup, role a kódy',target:'access'},{id:'settings',icon:'⚙️',title:'Globální nastavení',desc:'Vzhled, filtry, pomocník a portál',target:'settings'},{id:'stats',icon:'📊',title:'Statistiky',desc:'Rychlý manažerský přehled',target:'stats'},{id:'audit',icon:'🧾',title:'Auditní historie',desc:'Kdo co změnil a kdy',target:'audit'},{id:'reset',icon:'🔑',title:'Obnovení přístupu',desc:'Bezpečné požadavky na nový kód',target:'reset'}];
+function layout(){var v=state();if(!v.adminLayout)v.adminLayout={items:defaultTiles.map(function(x){return Object.assign({},x);})};return v.adminLayout;}
+function saveLayout(l){var v=state();v.adminLayout=l;saveState(v);}
+function adminWorkspace(){var tab=document.getElementById('tab4');if(!tab||document.getElementById('cc-v11-workspace'))return;var w=document.createElement('div');w.id='cc-v11-workspace';w.className='cc-v11-workspace';w.innerHTML='<div class="cc-v11-workspace-head"><div><h3>Moje administrativní plocha</h3><div style="font-size:12px;color:#64748b;margin-top:4px">Přetáhněte dlaždici na jinou dlaždici a vytvořte složku. Rozložení se ukládá do cloudu.</div></div><div><button class="cc-v11-btn light" id="cc-v11-reset-layout">Obnovit výchozí</button> <button class="cc-v11-btn" id="cc-v11-add-folder">+ Složka</button></div></div><div id="cc-v11-workspace-grid" class="cc-v11-workspace-grid"></div>';var anchor=tab.querySelector(':scope > .cc-admin-subtabs')||tab.firstElementChild;tab.insertBefore(w,anchor);w.querySelector('#cc-v11-reset-layout').onclick=function(){if(confirm('Obnovit výchozí rozložení administrace?')){var v=state();delete v.adminLayout;saveState(v);renderWorkspace();}};w.querySelector('#cc-v11-add-folder').onclick=function(){var name=prompt('Název nové složky:','Moje složka');if(!name)return;var l=layout();l.items.push({id:'folder-'+Date.now(),type:'folder',title:name,icon:'📁',items:[]});saveLayout(l);renderWorkspace();};renderWorkspace();}
+function renderWorkspace(){var grid=document.getElementById('cc-v11-workspace-grid');if(!grid)return;var l=layout();grid.innerHTML='';l.items.forEach(function(item){var el=document.createElement('div');el.className='cc-v11-admin-tile '+(item.type==='folder'?'cc-v11-folder':'');el.draggable=true;el.dataset.id=item.id;el.innerHTML='<div class="icon">'+esc(item.icon||'▦')+'</div><span class="title">'+esc(item.title)+'</span><small>'+esc(item.desc||((item.items||[]).length+' funkcí'))+'</small>'+(item.type==='folder'?'<div class="cc-v11-folder-items">'+(item.items||[]).map(function(id){var x=l.items.find(function(y){return y.id===id});return x?'<span class="cc-v11-folder-item">'+esc(x.icon||'')+' '+esc(x.title)+'</span>':'';}).join('')+'</div><button class="cc-v11-mini" style="margin-top:9px" onclick="event.stopPropagation();ccV11OpenFolder(\''+item.id+'\')">Otevřít složku</button>':'');el.onclick=function(){if(item.type==='folder'){ccV11OpenFolder(item.id);return;}var sub=document.querySelector('.cc-admin-subtab[data-panel="'+item.target+'"]');if(sub)sub.click();else if(item.target==='stats')ccV11Stats();else if(item.target==='audit')ccV11Audit();else if(item.target==='reset')ccV11ResetAdmin();};el.ondragstart=function(e){e.dataTransfer.setData('text/plain',item.id);};el.ondragover=function(e){e.preventDefault();el.classList.add('dragover');};el.ondragleave=function(){el.classList.remove('dragover');};el.ondrop=function(e){e.preventDefault();el.classList.remove('dragover');var id=e.dataTransfer.getData('text/plain');if(id&&id!==item.id)dropInto(item.id,id);};grid.appendChild(el);});}
+function dropInto(targetId,sourceId){var l=layout(),src=l.items.find(function(x){return x.id===sourceId}),target=l.items.find(function(x){return x.id===targetId});if(!src||!target)return;if(target.type!=='folder'){var folder={id:'folder-'+Date.now(),type:'folder',title:'Nová složka',icon:'📁',items:[target.id,src.id]};l.items=l.items.filter(function(x){return x.id!==target.id&&x.id!==src.id;});l.items.push(folder);saveLayout(l);var n=prompt('Vznikla nová složka. Jak ji chcete pojmenovat?','Moje složka');if(n){folder.title=n;saveLayout(l);}renderWorkspace();return;}target.items=Array.isArray(target.items)?target.items:[];if(target.items.indexOf(sourceId)<0)target.items.push(sourceId);l.items=l.items.filter(function(x){return x.id!==sourceId;});saveLayout(l);renderWorkspace();}
+window.ccV11OpenFolder=function(id){var l=layout(),f=l.items.find(function(x){return x.id===id});if(!f)return;var content=(f.items||[]).map(function(id){var x=l.items.find(function(y){return y.id===id});return x?'<li>'+esc(x.icon||'')+' '+esc(x.title)+'</li>':'';}).join('');var n=prompt('Složka „'+f.title+'“ obsahuje:\n'+(content.replace(/<[^>]+>/g,'')||'Nic')+'\n\nNapište NOVÝ název složky, nebo zrušte.',''+f.title);if(n){f.title=n;saveLayout(l);renderWorkspace();}};
+window.ccV11Stats=function(){var rs=allReqs(),a=arr('companyActions');alert('Manažerské statistiky\n\nŽádostí celkem: '+rs.length+'\nČekajících: '+rs.filter(function(r){return r.status1==='Čeká'||r.status2==='Čeká';}).length+'\nSchválených: '+rs.filter(function(r){return r.status2==='Schváleno';}).length+'\nZamítnutých: '+rs.filter(function(r){return r.status1==='Zamítnuto'||r.status2==='Zamítnuto';}).length+'\nAkcí: '+a.length);};
+window.ccV11Audit=function(){var rs=allReqs(),lines=[];rs.forEach(function(r){(r.history||[]).forEach(function(h){lines.push((h.at?new Date(h.at).toLocaleString('cs-CZ'):'')+' | '+r.action+' | '+r.employee+' | '+h.step+' | '+h.status+' | '+(h.actor||''));});});alert('Auditní historie\n\n'+(lines.slice(-30).reverse().join('\n')||'Zatím bez záznamů.'));};
+window.ccV11ResetAdmin=function(){var v=state(),rr=v.resetRequests||[];alert('Požadavků na obnovení přístupu: '+rr.filter(function(x){return x.status==='Čeká na zpracování';}).length);};
+function renderResetAdmin(){var tab=document.getElementById('tab4');if(!tab||document.getElementById('cc-v11-reset-admin'))return;var b=document.createElement('div');b.id='cc-v11-reset-admin';b.className='cc-v11-reset-box';b.innerHTML='<strong>🔑 Bezpečné obnovení kódů</strong><div style="margin-top:4px;color:#64748b">Požadavky jsou synchronizované přes stejný cloud jako portál. Systém úmyslně neprozrazuje, zda e-mail existuje.</div><div id="cc-v11-reset-list" style="margin-top:8px"></div>';tab.appendChild(b);renderResetList();}
+function renderResetList(){var box=document.getElementById('cc-v11-reset-list');if(!box)return;var rr=state().resetRequests||[];var pending=rr.filter(function(x){return x.status==='Čeká na zpracování';});if(!pending.length){box.innerHTML='<div style="color:#64748b;margin-top:8px">Žádné čekající požadavky.</div>';return;}var us=users();box.innerHTML=pending.map(function(x){var u=Object.keys(us).map(function(k){return {k:k,u:us[k]};}).find(function(z){return String(z.u.email||'').toLowerCase()===x.email;});return '<div class="cc-v11-reset-row"><div><strong>'+esc(x.email)+'</strong><div style="color:#94a3b8">'+new Date(x.requestedAt).toLocaleString('cs-CZ')+'</div></div><button class="cc-v11-btn red" onclick="ccV11IssueCode(\''+esc(x.id)+'\')">Vydat nový kód</button></div>';}).join('');}
+window.ccV11IssueCode=function(id){var v=state(),x=(v.resetRequests||[]).find(function(z){return z.id===id;});if(!x)return;var us=users(),oldKey=Object.keys(us).find(function(k){return String(us[k].email||'').toLowerCase()===x.email;});if(!oldKey){x.status='Neexistující účet';saveState(v);renderResetList();return;}var chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',tok='';for(var i=0;i<5;i++)tok+=chars[Math.floor(Math.random()*chars.length)];us[tok]=us[oldKey];delete us[oldKey];localStorage.setItem('customUsers',JSON.stringify(us));x.status='Vyřízeno';x.completedAt=Date.now();x.newCode=tok;saveState(v);renderResetList();alert('Nový přístupový kód pro '+x.email+': '+tok+'\n\nPředání kódu uživateli proveďte bezpečným firemním kanálem.');};
+
+function patchGate(){addForgot();}
+function patchAdmin(){if(currentUser&&currentUser.role==='admin'){adminWorkspace();renderResetAdmin();}}
+function boot(){patchGate();patchAdmin();addManagementBar();if(document.getElementById('tab2')?.classList.contains('active'))renderTable();}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();setInterval(function(){patchGate();patchAdmin();},1800);
+})();
+</script>
+</body>
 <script>
     // 🔍 POKROČILÁ MANAŽERSKÁ VYHLEDÁVACÍ LIŠTA (Coca-Cola HBC)
     (function() {
@@ -3923,131 +4108,3 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 setTimeout(setup,400);setTimeout(setup,1200);setInterval(setup,2500);
 })();
 </script>
-<!-- 🗂️ UNIVERSÁLNÍ DESIGN ADMINU: 1. ČÁST - KORPORÁTNÍ STYL A PÍSMO -->
-<style>
-    /* 💎 UNIVERZÁLNÍ STYL PRO ŠIROKÉ LIŠTY Z TVÝCH FOTEK */
-    div[onclick*="toggle"], 
-    .accordion, 
-    .collapse-header,
-    div[style*="cursor: pointer"] {
-        background: #ffffff !important;
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 8px !important;
-        padding: 12px 18px !important;
-        margin-bottom: 12px !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
-        transition: all 0.2s ease !important;
-        text-align: left !important;
-        box-sizing: border-box !important;
-    }
-
-    /* Vzhled lišty po najetí myší (značkový styl Coca-Cola) */
-    div[onclick*="toggle"]:hover, .accordion:hover {
-        border-color: #94a3b8 !important;
-        background: #f8fafc !important;
-        transform: translateY(-1px) !important;
-    }
-
-    /* Sjednocení textu uvnitř širokých panelů z fotek */
-    div[onclick*="toggle"] h3, 
-    div[onclick*="toggle"] h4,
-    .accordion h3 {
-        font-size: 13px !important;
-        font-weight: 800 !important;
-        color: #334155 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.02em !important;
-    }
-</style>
-
-<script>
-    (function() {
-        // V druhé navazující části ty lišty bleskově seřadíme do těch vytoužených složek
-        // 🗂️ UNIVERSÁLNÍ DESIGN ADMINU: 2. ČÁST - TEXTOVÉ PŘEPÍNÁNÍ SLOŽEK A UKONČENÍ
-        function ccSrovnejPruhyDoPodslozekZive() {
-            // Najdeme jakékoliv široké lišty s šipkou, které na obrazovce reálně vidíme
-            var vsechnyPruhy = document.querySelectorAll('div[onclick*="toggle"], .accordion, .collapse-header, div[style*="cursor: pointer"], h3');
-            if (vsechnyPruhy.length === 0) return;
-
-            // Najdeme nebo bezpečně vytvoříme horní lištu podsložek
-            var ranniPlocha = vsechnyPruhy[0].parentNode;
-            if (!ranniPlocha || document.getElementById('cc-text-tabs-bar-id')) return;
-
-            var tabsBar = document.createElement('div');
-            tabsBar.id = 'cc-text-tabs-bar-id';
-            tabsBar.style.cssText = 'display: flex !important; flex-wrap: wrap !important; gap: 8px !important; margin: 15px 0 25px 0 !important; border-bottom: 2px solid #cbd5e1 !important; padding-bottom: 12px !important; width: 100% !important; box-sizing: border-box !important;';
-            tabsBar.innerHTML = 
-                '<button id="cc-tbtn-1" class="cc-nav-tab-btn-final cc-active-sub-final" style="background:#e41e26!important; color:white!important; border:1px solid #e41e26!important; border-radius:6px!important; padding:6px 14px!important; font-size:11px!important; font-weight:700!important; cursor:pointer!important; text-transform:uppercase!important; height:32px!important;">🎪 Tvorba akcí</button>' +
-                '<button id="cc-tbtn-2" class="cc-nav-tab-btn-final" style="background:#f1f5f9!important; color:#475569!important; border:1px solid #cbd5e1!important; border-radius:6px!important; padding:6px 14px!important; font-size:11px!important; font-weight:700!important; cursor:pointer!important; text-transform:uppercase!important; height:32px!important; margin-left:6px!important;">🔧 Globální nastavení</button>' +
-                '<button id="cc-tbtn-3" class="cc-nav-tab-btn-final" style="background:#f1f5f9!important; color:#475569!important; border:1px solid #cbd5e1!important; border-radius:6px!important; padding:6px 14px!important; font-size:11px!important; font-weight:700!important; cursor:pointer!important; text-transform:uppercase!important; height:32px!important; margin-left:6px!important;">🔐 Registrace</button>' +
-                '<button id="cc-tbtn-4" class="cc-nav-tab-btn-final" style="background:#f1f5f9!important; color:#475569!important; border:1px solid #cbd5e1!important; border-radius:6px!important; padding:6px 14px!important; font-size:11px!important; font-weight:700!important; cursor:pointer!important; text-transform:uppercase!important; height:32px!important; margin-left:6px!important;">🔑 Schvalovatelé</button>';
-
-            ranniPlocha.insertBefore(tabsBar, ranniPlocha.firstChild);
-
-            var btns = [
-                document.getElementById('cc-tbtn-1'),
-                document.getElementById('cc-tbtn-2'),
-                document.getElementById('cc-tbtn-3'),
-                document.getElementById('cc-tbtn-4')
-            ];
-
-            // ⚡ TEXTOVÝ PŘEPÍNAČ: Rozřadí panely nekompromisně podle slov, která v nich svítí!
-            function prepniPodslozkuTextove(cisloSlozky) {
-                btns.forEach(function(b, idx) {
-                    if ((idx + 1) === cisloSlozky) {
-                        b.style.setProperty('background', '#e41e26', 'important');
-                        b.style.setProperty('color', 'white', 'important');
-                        b.style.setProperty('border-color', '#e41e26', 'important');
-                    } else {
-                        b.style.setProperty('background', '#f1f5f9', 'important');
-                        b.style.setProperty('color', '#475569', 'important');
-                        b.style.setProperty('border-color', '#cbd5e1', 'important');
-                    }
-                });
-
-                // Znovu načteme všechny široké pruhy a filtrujeme je podle textu
-                var aktualniPruhy = document.querySelectorAll('div[onclick*="toggle"], .accordion, .collapse-header, div[style*="cursor: pointer"], h3');
-                
-                aktualniPruhy.forEach(function(pruh) {
-                    if (pruhy.id === 'cc-text-tabs-bar-id' || pruh.tagName === 'SCRIPT' || pruh.tagName === 'STYLE') return;
-                    
-                    var textPruhu = (pruh.innerText || pruh.innerHTML || "").toLowerCase();
-                    var urcenaSlozka = 1; // Výchozí: Tvorba akcí
-
-                    if (textPruhu.indexOf('globální') > -1 || textTextu.indexOf('vzhled') > -1 || textPruhu.indexOf('pomocník') > -1) urcenaSlozka = 2;
-                    if (textPruhu.indexOf('registrace') > -1 || textPruhu.indexOf('přístup') > -1 || textPruhu.indexOf('žádost') > -1) urcenaSlozka = 3;
-                    if (textPruhu.indexOf('schvalovatel') > -1 || textPruhu.indexOf('aktivní') > -1 || textPruhu.indexOf('manažer') > -1) urcenaSlozka = 4;
-
-                    var vnitrniObsahFormulare = pruh.nextElementSibling;
-
-                    if (urcenaSlozka === cisloSlozky) {
-                        pruh.style.setProperty('display', 'block', 'important');
-                        if (vnitrniObsahFormulare && vnitrniObsahFormulare.style) {
-                            vnitrniObsahFormulare.style.setProperty('display', 'block', 'important');
-                        }
-                    } else {
-                        pruh.style.setProperty('display', 'none', 'important');
-                        if (vnitrniObsahFormulare && vnitrniObsahFormulare.style) {
-                            vnitrniObsahFormulare.style.setProperty('display', 'none', 'important');
-                        }
-                    }
-                });
-            }
-
-            btns[0].addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); prepniPodslozkuTextove(1); });
-            btns[1].addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); prepniPodslozkuTextove(2); });
-            btns[2].addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); prepniPodslozkuTextove(3); });
-            btns[3].addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); prepniPodslozkuTextove(4); });
-
-            // Ihned po otevření Administrace aktivujeme první podsložku
-            prepniPodslozkuTextove(1);
-        }
-
-        // Držíme textové podsložky plynule zapnuté na pozadí každých 350ms
-        setInterval(ccSrovnejPruhyDoPodslozekZive, 350);
-    })();
-</script>
-
-
