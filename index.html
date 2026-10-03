@@ -4529,3 +4529,213 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 setInterval(repair,700);
 })();
 </script>
+
+<!-- FINAL UX/O2/HELPER PATCH 2026-10-03 -->
+<style id="cc-final-ux-patch-css">
+/* Přehledná administrace: dlaždice nejsou namačkané do tří úzkých sloupců. */
+#cc-admin-shell .cc-admin-nav{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(260px,1fr))!important;
+  gap:16px!important;
+  align-items:stretch!important;
+}
+#cc-admin-shell .cc-admin-nav button.cc-admin-tile,
+#cc-admin-shell .cc-admin-nav button[data-page]{
+  min-height:118px!important;
+  height:auto!important;
+  padding:20px!important;
+  border:1px solid #dbe3ec!important;
+  border-radius:18px!important;
+  background:#fff!important;
+  box-shadow:0 5px 18px rgba(15,23,42,.06)!important;
+  text-align:left!important;
+}
+#cc-admin-shell .cc-admin-nav button[data-page]:hover{transform:translateY(-2px)!important}
+#cc-admin-shell .cc-admin-nav button[data-page].active{border:2px solid #e41e26!important;background:#fff!important;color:#0f172a!important}
+#cc-admin-shell .cc-tile-icon{font-size:30px!important;margin-bottom:12px!important}
+#cc-admin-shell .cc-tile-title{font-size:17px!important;line-height:1.2!important;margin-bottom:7px!important}
+#cc-admin-shell .cc-tile-desc{font-size:12.5px!important;line-height:1.45!important;color:#64748b!important}
+#cc-admin-shell .cc-admin-main{margin-top:18px!important}
+
+/* O2 import */
+#cc-o2-import{background:linear-gradient(135deg,#f8fbff,#eef6ff)!important;border:1px solid #bfdbfe!important}
+#cc-o2-import .cc-o2-note{margin:6px 0 12px;color:#475569;font-size:12px;line-height:1.5}
+#cc-o2-import .cc-o2-source{font-size:11px;color:#64748b;margin-top:7px}
+#cc-o2-import .cc-o2-source a{color:#1d4ed8;text-decoration:none}
+#cc-o2-import .cc-o2-source a:hover{text-decoration:underline}
+#cc-o2-preview{max-height:340px;overflow:auto}
+#cc-o2-preview table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden}
+#cc-o2-preview th,#cc-o2-preview td{border-bottom:1px solid #e5e7eb;padding:8px 9px;text-align:left;font-size:12px;vertical-align:top}
+#cc-o2-preview th{background:#f8fafc;color:#64748b;font-size:11px}
+
+/* Skutečný chytrý pomocník = plovoucí ? vpravo dole. */
+#cc-v3-help{z-index:2147483000!important}
+#cc-v3-help .cc-v3-helpbtn{width:54px!important;height:54px!important;font-size:21px!important;border:2px solid #fff!important}
+#cc-v3-help .cc-v3-helpbox{width:min(360px,calc(100vw - 28px))!important;padding:0!important;overflow:hidden!important}
+.cc-real-ai-head{padding:14px 16px;background:#111827;color:#fff;font-weight:800}
+.cc-real-ai-log{height:280px;overflow:auto;padding:12px;background:#f8fafc}
+.cc-real-ai-msg{max-width:86%;padding:9px 11px;border-radius:12px;margin:7px 0;font-size:13px;line-height:1.45;white-space:pre-wrap}
+.cc-real-ai-msg.bot{background:#e9eef5;color:#1e293b;border-bottom-left-radius:4px}
+.cc-real-ai-msg.user{margin-left:auto;background:#e41e26;color:#fff;border-bottom-right-radius:4px}
+.cc-real-ai-compose{display:flex;gap:7px;padding:10px;border-top:1px solid #e2e8f0;background:#fff}
+.cc-real-ai-compose input{flex:1;min-width:0;border:1px solid #cbd5e1;border-radius:8px;padding:9px 10px;font:inherit}
+.cc-real-ai-compose button{border:0;border-radius:8px;background:#e41e26;color:#fff;font-weight:800;padding:9px 12px;cursor:pointer}
+.cc-real-ai-quick{padding:8px 10px;background:#fff;border-top:1px solid #e2e8f0;display:flex;gap:6px;flex-wrap:wrap}
+.cc-real-ai-quick button{border:1px solid #dbe3ec;background:#fff;border-radius:999px;padding:6px 9px;font-size:11px;cursor:pointer}
+@media(max-width:900px){
+  #cc-admin-shell .cc-admin-nav{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:620px){
+  #cc-admin-shell .cc-admin-nav{grid-template-columns:1fr!important}
+  #cc-admin-shell .cc-admin-nav button[data-page]{min-height:100px!important}
+}
+</style>
+<script id="cc-final-ux-patch-js">
+(function(){
+'use strict';
+var O2_DIRECT='https://www.o2arena.cz/events/';
+var O2_PROXIES=[
+  function(){return 'https://r.jina.ai/'+O2_DIRECT;},
+  function(){return 'https://api.allorigins.win/raw?url='+encodeURIComponent(O2_DIRECT);}
+];
+
+function E(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]});}
+function acts(){try{return JSON.parse(localStorage.getItem('companyActions')||'[]')||[]}catch(e){return []}}
+function reqs(){try{return JSON.parse(localStorage.getItem('ticketRequests')||'[]')||[]}catch(e){return []}}
+function approved(n){return reqs().filter(function(r){return r.action===n&&r.status1==='Schváleno'&&r.status2==='Schváleno'}).reduce(function(s,r){return s+(parseInt(r.tickets)||0)},0)}
+function saveActs(a){try{window.companyActions=a;localStorage.setItem('companyActions',JSON.stringify(a));}catch(e){} try{if(typeof syncAll==='function')syncAll();}catch(e){}}
+
+/* Dlaždice pomocníka vede na skutečného plovoucího pomocníka. */
+function bindHelperTile(){
+  var shell=document.getElementById('cc-admin-shell'); if(!shell)return;
+  var b=shell.querySelector('button[data-page="helper"]'); if(!b)return;
+  if(b.dataset.realHelperBound==='1')return;
+  b.dataset.realHelperBound='1';
+  b.querySelector('.cc-tile-desc').textContent='Otevřete skutečného pomocníka vpravo dole a ptejte se běžnou větou.';
+  b.addEventListener('click',function(){
+    setTimeout(function(){
+      var help=document.getElementById('cc-v3-help');
+      var btn=help&&help.querySelector('.cc-v3-helpbtn');
+      if(btn)btn.click();
+    },80);
+  });
+}
+
+/* Přepíše obsah plovoucího pomocníka na jednoduchý konverzační chat. */
+function upgradeRealHelper(){
+  var wrap=document.getElementById('cc-v3-help'); if(!wrap)return;
+  var box=wrap.querySelector('.cc-v3-helpbox'); if(!box)return;
+  if(box.dataset.realChat==='1')return;
+  box.dataset.realChat='1';
+  box.innerHTML='<div class="cc-real-ai-head">🤖 Chytrý pomocník</div>'+
+    '<div class="cc-real-ai-log" id="cc-real-ai-log"></div>'+
+    '<div class="cc-real-ai-quick"><button data-q="Jaké jsou nejbližší akce?">Nejbližší akce</button><button data-q="Kolik je volných lístků?">Volné lístky</button><button data-q="Jak vytvořím rezervaci?">Jak rezervovat</button></div>'+
+    '<div class="cc-real-ai-compose"><input id="cc-real-ai-input" placeholder="Napište otázku…"><button id="cc-real-ai-send">Odeslat</button></div>';
+  var log=box.querySelector('#cc-real-ai-log'),input=box.querySelector('#cc-real-ai-input');
+  function add(who,msg){var d=document.createElement('div');d.className='cc-real-ai-msg '+who;d.textContent=msg;log.appendChild(d);log.scrollTop=log.scrollHeight;}
+  function answer(q){
+    var low=String(q||'').toLowerCase().trim(), list=acts().filter(function(a){return a.status!=='Skryto'&&a.portalStatus!=='Zrušeno/Přesunuto'}).sort(function(a,b){return ((a.date||'9999')+' '+(a.time||'')).localeCompare((b.date||'9999')+' '+(b.time||''));});
+    if(!low)return 'Napište prosím otázku. Můžete se zeptat na akce, kapacitu nebo rezervace.';
+    if(/nejbliž|akce|program|o2|co se děje/.test(low)){
+      if(!list.length)return 'V portálu zatím nejsou žádné aktivní akce.';
+      return 'Nejbližší akce:\n'+list.slice(0,7).map(function(a){return '• '+a.name+' — '+(a.date||'')+(a.time?' '+a.time:'')}).join('\n');
+    }
+    if(/voln|kapacit|obsazen|líst/.test(low)){
+      if(!list.length)return 'V portálu zatím nejsou žádné aktivní akce.';
+      return list.slice(0,7).map(function(a){var cap=Number(a.capacity)||0,used=approved(a.name);return '• '+a.name+': volno přibližně '+Math.max(0,cap-used)+' / '+cap+' lístků.'}).join('\n');
+    }
+    if(/rezerv|žádost|schvál|jak.*líst|ticket/.test(low))return 'Pro rezervaci otevřete „Plánované akce“, vyberte akci a klikněte na „Rezervovat“. Vyplňte požadované údaje a odešlete žádost ke schválení.';
+    if(/stav|moje žádost/.test(low)){
+      var r=reqs(); return r.length?'V systému je '+r.length+' žádostí. Jejich stav najdete v „Seznamu žádostí“.':'V systému zatím nejsou žádosti.';
+    }
+    if(/pomoc|kontakt|admin|administr/.test(low))return 'Jsem pomocník portálu. Poradím s akcemi, rezervacemi, kapacitou a základní obsluhou systému. Pro složitější problém použijte kontakt nastavený administrátorem.';
+    return 'Tomu zatím nerozumím úplně přesně. Zkuste například: „Jaké jsou nejbližší akce?“, „Kolik je volných lístků?“ nebo „Jak vytvořím rezervaci?“';
+  }
+  function send(q){q=String(q||'').trim();if(!q)return;add('user',q);input.value='';setTimeout(function(){add('bot',answer(q))},80)}
+  box.querySelector('#cc-real-ai-send').onclick=function(){send(input.value)};
+  input.addEventListener('keydown',function(e){if(e.key==='Enter')send(input.value)});
+  box.querySelectorAll('[data-q]').forEach(function(b){b.onclick=function(){send(b.dataset.q)}});
+  add('bot','Dobrý den! Jsem Chytrý pomocník. Ptejte se mě běžnou větou na akce, rezervace nebo kapacitu.');
+}
+
+/* Parser funguje pro HTML i pro text, který vrátí proxy. */
+function parseO2Any(raw){
+  var text=String(raw||'');
+  var doc=new DOMParser().parseFromString(text,'text/html');
+  var out=[],seen={};
+  function iso(d){var p=d.split('.');return p[2]+'-'+String(p[1]).padStart(2,'0')+'-'+String(p[0]).padStart(2,'0')}
+  function add(name,date,time,desc){name=String(name||'').replace(/\s+/g,' ').trim();if(!name||seen[name])return;var m=String(date||'').match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);if(!m)return;seen[name]=1;out.push({id:Date.now()+out.length,name:name,date:iso(m[0]),time:time||'',place:'O2 arena',capacity:100,status:'Aktivní',category:'O2 Arena',subcategory:/hokej|sparta|kometa|třinec|olomouc|švéd|švýc|česko/i.test(name)?'Hokej':'Koncert',description:desc||'',image:'',sourceUrl:O2_DIRECT,importedFrom:'O2 arena'});}
+  doc.querySelectorAll('h3').forEach(function(h){
+    var name=(h.textContent||'').replace(/\s+/g,' ').trim(), node=h.parentElement, chunk='';
+    for(var i=0;i<5&&node;i++,node=node.parentElement){chunk=(node.textContent||'').replace(/\s+/g,' ').trim();if(/\d{1,2}\.\d{1,2}\.\d{4}/.test(chunk))break;}
+    var m=chunk.match(/(\d{1,2}\.\d{1,2}\.\d{4})(?:\s*[-–]\s*(\d{1,2}\.\d{1,2}\.\d{4}))?\s+(\d{1,2}:\d{2})/);
+    if(m){var desc=chunk.replace(name,'').replace(m[0],'').trim();add(name,m[1],m[3],desc)}
+  });
+  /* Fallback pro plain text / Markdown z Reader proxy. */
+  if(!out.length){
+    var lines=text.replace(/<[^>]+>/g,'\n').split(/\n+/).map(function(x){return x.replace(/\s+/g,' ').trim()}).filter(Boolean);
+    for(var i=0;i<lines.length;i++){
+      if(/^#{1,6}\s+/.test(lines[i])){
+        var n=lines[i].replace(/^#{1,6}\s+/,'').trim(), dateLine='', time='';
+        for(var j=i-1;j>=Math.max(0,i-5);j--){
+          var dm=lines[j].match(/^(\d{1,2}\.\d{1,2}\.\d{4})(?:\s*[-–]\s*(\d{1,2}\.\d{1,2}\.\d{4}))?\s+(\d{1,2}:\d{2})$/);
+          if(dm){dateLine=dm[1];time=dm[3];break;}
+        }
+        if(dateLine)add(n,dateLine,time,lines[i+1]||'');
+      }
+    }
+    if(!out.length){
+      for(var k=0;k<lines.length;k++){
+        var m=lines[k].match(/^(\d{1,2}\.\d{1,2}\.\d{4})(?:\s*[-–]\s*(\d{1,2}\.\d{1,2}\.\d{4}))?\s+(\d{1,2}:\d{2})$/);
+        if(m){
+          var n2=lines[k+1], n3=lines[k+2];
+          if(n2 && !/^\d{1,2}\.\d{1,2}\.\d{4}/.test(n2) && !/^#{1,6}\s+Program/i.test(n2))add(n2,m[1],m[3],n3||'');
+        }
+      }
+    }
+  }
+  return out;
+}
+function renderO2(box,data,label){
+  var p=box.querySelector('#cc-o2-preview'),s=box.querySelector('#cc-o2-status');
+  if(!data.length){p.innerHTML='<div class="cc-adm-muted">Web se načetl, ale nepodařilo se rozpoznat akce. Zkuste jiný zdroj.</div>';s.textContent='0 akcí';return}
+  p.innerHTML='<div style="margin:10px 0 7px"><b>Nalezeno '+data.length+' akcí</b> ze '+E(label)+'. Vyberte, které chcete importovat.</div><table><thead><tr><th></th><th>Datum</th><th>Čas</th><th>Akce</th><th>Typ</th></tr></thead><tbody>'+data.map(function(a,i){return '<tr><td><input type="checkbox" data-o2x="'+i+'" checked style="width:auto"></td><td>'+E(a.date)+'</td><td>'+E(a.time)+'</td><td>'+E(a.name)+'</td><td>'+E(a.subcategory||'Koncert')+'</td></tr>'}).join('')+'</tbody></table><button type="button" class="cc-adm-btn primary" id="cc-o2-save2" style="margin-top:10px">Přidat vybrané akce</button>';
+  s.textContent='Načteno '+data.length+' akcí.';
+  p.querySelector('#cc-o2-save2').onclick=function(){
+    var list=acts(),names={};list.forEach(function(a){names[String(a.name||'').toLowerCase()]=1});var add=0;
+    p.querySelectorAll('[data-o2x]:checked').forEach(function(c){var a=data[Number(c.dataset.o2x)],k=String(a.name).toLowerCase();if(!names[k]){a.id=Date.now()+add;list.push(a);names[k]=1;add++}});
+    saveActs(list);s.textContent='Import dokončen: přidáno '+add+' nových akcí.';p.querySelectorAll('input').forEach(function(x){x.disabled=true});
+    try{if(typeof actionManager==='function')actionManager()}catch(e){}
+  };
+}
+async function tryUrl(url,timeout){
+  var ctrl=window.AbortController?new AbortController():null,timer=ctrl?setTimeout(function(){ctrl.abort()},timeout):null;
+  try{var r=await fetch(url,{method:'GET',mode:'cors',cache:'no-store',signal:ctrl?ctrl.signal:undefined});if(!r.ok)throw new Error('HTTP '+r.status);return await r.text()}finally{if(timer)clearTimeout(timer)}
+}
+function patchO2Box(){
+  var box=document.getElementById('cc-o2-import');if(!box)return;
+  var old=box.querySelector('#cc-o2-fetch');if(!old||old.dataset.v2==='1')return;
+  old.dataset.v2='1';old.textContent='Načíst akce z O2 arena';
+  var fallback=box.querySelector('#cc-o2-fallback');
+  if(fallback){fallback.style.display='none';}
+  var paste=box.querySelector('#cc-o2-paste');
+  if(!paste&&fallback){
+    fallback.innerHTML='<label>Ruční záloha: pokud budou všechny automatické zdroje blokované, vložte sem zkopírovaný obsah stránky O2 arena.</label><textarea id="cc-o2-paste" rows="6" style="width:100%;box-sizing:border-box"></textarea><button type="button" class="cc-adm-btn primary" id="cc-o2-parse2" style="margin-top:7px">Zpracovat vložený obsah</button>';
+  }
+  old.onclick=async function(){
+    var s=box.querySelector('#cc-o2-status'),fb=box.querySelector('#cc-o2-fallback');s.textContent='Zkouším načíst O2 arena…';
+    var sources=[{name:'O2 arena',url:O2_DIRECT}].concat(O2_PROXIES.map(function(fn,i){return{name:'automatická záloha '+(i+1),url:fn()}}));
+    for(var i=0;i<sources.length;i++){
+      try{var raw=await tryUrl(sources[i].url,9000),data=parseO2Any(raw);if(data.length){renderO2(box,data,sources[i].name);return}}catch(e){}
+    }
+    s.textContent='Automatické načtení je blokované.';if(fb)fb.style.display='block';
+    if(!box.dataset.alerted){box.dataset.alerted='1';alert('O2 arena nepovolila přímé načtení. Zkusil jsem i automatické záložní zdroje. Pokud jsou blokované také, použijte ruční pole níže – stačí zkopírovat obsah stránky O2 arena.');}
+  };
+  var parse=box.querySelector('#cc-o2-parse2');if(parse)parse.onclick=function(){renderO2(box,parseO2Any(box.querySelector('#cc-o2-paste').value||''),'vloženého obsahu')};
+  var src=document.createElement('div');src.className='cc-o2-source';src.innerHTML='Zdroj: <a href="'+O2_DIRECT+'" target="_blank" rel="noopener">O2 arena – Program</a>. Automatické načtení používá nejprve oficiální stránku a poté bezpečné čtecí zálohy.';box.appendChild(src);
+}
+function polish(){bindHelperTile();upgradeRealHelper();patchO2Box();}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(polish,250)});else setTimeout(polish,250);
+setInterval(polish,900);
+})();
+</script>
