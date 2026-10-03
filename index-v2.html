@@ -1,0 +1,1595 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CC Ticket Booking Portal</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <style>
+    :root {
+      --cc-red: #e41e26;
+      --cc-red-dark: #b01117;
+      --cc-dark: #0f172a;
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --border: #dfe7f1;
+      --muted: #64748b;
+      --text: #1e293b;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --info: #3b82f6;
+      --shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; font-family: "Segoe UI", Arial, sans-serif; background: var(--bg); color: var(--text); }
+    body::before {
+      content: ""; display: block; width: 100%; height: 6px; background: linear-gradient(90deg, var(--cc-red) 0%, #fb7185 100%);
+    }
+
+    .container {
+      max-width: 1280px; margin: 0 auto; padding: 24px 28px 60px; background: #fff; min-height: 100vh;
+      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.02);
+    }
+
+    .welcome-gate {
+      max-width: 700px; margin: 70px auto; background: #fff; border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow); padding: 36px 32px;
+    }
+    .brand-emoji { font-size: 42px; margin-bottom: 10px; }
+    .welcome-title { font-size: 30px; margin: 0 0 8px; font-weight: 800; }
+    .brand-badge {
+      display: inline-block; background: var(--cc-red); color: #fff; border-radius: 999px; padding: 6px 12px;
+      font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 800; margin-bottom: 24px;
+    }
+    .guide-box {
+      border: 1px solid var(--border); background: #f8fbff; border-left: 4px solid var(--info); border-radius: 12px; padding: 18px 18px 12px; margin-bottom: 22px;
+    }
+    .guide-box h3 { margin: 0 0 12px; }
+    .guide-box ol { margin: 0; padding-left: 20px; color: var(--muted); line-height: 1.6; }
+
+    .gate-login-box {
+      background: #fafbfc; border: 1px solid var(--border); border-radius: 12px; padding: 22px 18px;
+    }
+    .label { display: block; font-weight: 700; margin-bottom: 10px; }
+    input, select, textarea, button {
+      font: inherit;
+    }
+    .field, .input, .select, .textarea {
+      width: 100%; border: 1px solid #cbd5e1; background: #fff; border-radius: 10px; padding: 12px 14px; font-size: 15px; color: var(--text); outline: none;
+    }
+    .field:focus, .input:focus, .select:focus, .textarea:focus { border-color: var(--cc-red); box-shadow: 0 0 0 4px rgba(228, 30, 38, 0.08); }
+    .textarea { min-height: 110px; resize: vertical; }
+    .button-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    button {
+      border: none; border-radius: 10px; padding: 12px 18px; font-weight: 700; cursor: pointer; transition: 0.2s ease; }
+    button:hover { transform: translateY(-1px); }
+    .primary-btn { background: var(--cc-red); color: #fff; }
+    .primary-btn:hover { background: var(--cc-red-dark); }
+    .secondary-btn { background: #0ea5e9; color: #fff; }
+    .secondary-btn:hover { background: #0284c7; }
+    .success-btn { background: var(--success); color: #fff; }
+    .success-btn:hover { background: #059669; }
+    .danger-btn { background: var(--danger); color: #fff; }
+    .danger-btn:hover { background: #dc2626; }
+    .btn-muted { background: #e2e8f0; color: var(--text); }
+    .btn-muted:hover { background: #cbd5e1; }
+
+    .login-bar {
+      display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 28px; padding: 14px 18px; border: 1px solid var(--border); background: #fafafa; border-radius: 12px;
+    }
+    .login-bar .user-box { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .refresh-btn {
+      width: 42px; height: 42px; border-radius: 50%; background: #fff; border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer;
+    }
+    .refresh-btn:hover { border-color: var(--cc-red); color: var(--cc-red); }
+
+    .brand-title { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); padding-bottom: 14px; margin-bottom: 18px; }
+    h1 { margin: 0; font-size: 32px; font-weight: 800; }
+
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+    .tab-btn {
+      background: #f1f5f9; color: var(--muted); border: 1px solid transparent; border-bottom: 3px solid transparent; padding: 12px 18px; font-weight: 700; border-radius: 10px 10px 0 0;
+    }
+    .tab-btn.active { background: #fff; color: var(--cc-red); border-color: var(--border); border-bottom-color: var(--cc-red); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .tiles {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin: 8px 0 24px;
+    }
+    .tile {
+      background: linear-gradient(135deg, #fff 0%, #f8fafc 100%); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04); cursor: pointer; transition: 0.2s ease;
+    }
+    .tile:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08); }
+    .tile[data-tone="red"] { border-left: 5px solid var(--cc-red); }
+    .tile[data-tone="amber"] { border-left: 5px solid var(--warning); }
+    .tile[data-tone="green"] { border-left: 5px solid var(--success); }
+    .tile[data-tone="blue"] { border-left: 5px solid var(--info); }
+    .tile[data-tone="gray"] { border-left: 5px solid #475569; }
+    .tile-label { font-size: 12px; color: var(--muted); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+    .tile-value { font-size: 30px; font-weight: 800; margin-top: 8px; }
+    .tile-sub { margin-top: 6px; color: var(--muted); font-size: 12px; }
+
+    .section-box { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 22px; }
+    h2 { margin: 0 0 16px; font-size: 24px; }
+    h3 { margin: 0 0 12px; }
+
+    .form-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px;
+    }
+    .full { grid-column: 1 / -1; }
+    .field-group { margin-bottom: 18px; }
+    .inline-check {
+      display: flex; align-items: flex-start; gap: 10px; background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin: 10px 0 20px;
+    }
+    .inline-check input { width: auto; margin-top: 4px; }
+    .inline-check label { color: var(--muted); font-weight: 600; line-height: 1.5; }
+    .empty-state { padding: 18px; border: 1px dashed var(--border); border-radius: 12px; color: var(--muted); background: #fafafa; text-align: center; }
+
+    table {
+      width: 100%; border-collapse: collapse;
+      border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #fff;
+      margin-top: 8px;
+    }
+    th, td {
+      border-bottom: 1px solid var(--border); padding: 12px 10px; text-align: left; vertical-align: top; font-size: 14px;
+    }
+    th { background: #f8fafc; color: var(--muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+    tr:last-child td { border-bottom: none; }
+    .status-pill {
+      display: inline-block; padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap;
+    }
+    .status-cekajici { background: #fef3c7; color: #92400e; }
+    .status-schvaleno { background: #d1fae5; color: #065f46; }
+    .status-zamitnuto { background: #fee2e2; color: #991b1b; }
+    .status-nahradnik { background: #dbeafe; color: #1d4ed8; }
+
+    .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+    .small-btn {
+      padding: 7px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;
+    }
+    .small-btn.primary { background: var(--cc-red); color: #fff; }
+    .small-btn.success { background: var(--success); color: #fff; }
+    .small-btn.danger { background: var(--danger); color: #fff; }
+    .small-btn.info { background: #0ea5e9; color: #fff; }
+
+    .planner-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 14px;
+    }
+    .event-card {
+      position: relative; min-height: 260px; border-radius: 16px; overflow: hidden; background: #fff; border: 1px solid var(--border); box-shadow: var(--shadow); transition: 0.2s ease;
+    }
+    .event-card:hover { transform: translateY(-2px); box-shadow: 0 18px 30px rgba(15, 23, 42, 0.12); }
+    .event-image {
+      position: absolute; inset: 0; background-size: cover; background-position: center; filter: saturate(1.1) contrast(1.05);
+    }
+    .event-image::after {
+      content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(15,23,42,0.08) 0%, rgba(15,23,42,0.75) 100%);
+    }
+    .event-body {
+      position: absolute; inset: auto 0 0 0; padding: 16px 16px 14px; color: white; z-index: 1;
+    }
+    .event-category {
+      display: inline-block; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 999px; padding: 5px 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .event-title { font-size: 22px; font-weight: 800; margin: 10px 0 6px; }
+    .event-meta { font-size: 13px; opacity: 0.95; }
+    .reserve-button {
+      margin-top: 12px; display: inline-block; background: var(--cc-red); color: #fff; border-radius: 10px; padding: 10px 14px; font-weight: 700; cursor: pointer;
+    }
+    .event-badge {
+      position: absolute; left: 0; top: 14px; background: rgba(228,30,38,.95); color: #fff; padding: 7px 12px; font-weight: 800; font-size: 11px; border-radius: 0 8px 8px 0; z-index: 2;
+    }
+
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.52); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 1000;
+    }
+    .modal-box {
+      width: min(700px, 100%); background: #fff; border-radius: 18px; padding: 22px 20px; border: 1px solid var(--border); box-shadow: 0 30px 80px rgba(15, 23, 42, 0.22);
+      max-height: 90vh; overflow: auto;
+    }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .modal-close { border: none; background: #eef2f7; width: 32px; height: 32px; border-radius: 50%; font-size: 24px; cursor: pointer; }
+
+    .assistant-config-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 22px; }
+    .assistant-preview {
+      background: linear-gradient(135deg, #fff 0%, #fff7f8 100%); border: 1px solid var(--border); border-radius: 14px; padding: 22px; text-align: center;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 180px;
+    }
+    .assistant-preview-icon {
+      width: 76px; height: 76px; border-radius: 18px; background: #fff; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 34px; margin-bottom: 10px;
+    }
+    .assistant-preview-name { font-size: 25px; font-weight: 800; }
+
+    .link-inline { color: var(--cc-red); text-decoration: none; font-weight: 700; }
+
+    .tooltip {
+      position: fixed; display: none; max-width: 330px; background: rgba(15,23,42,.95); color: #fff; border-radius: 12px; padding: 12px 14px; font-size: 12px; line-height: 1.6; z-index: 1100; box-shadow: 0 18px 40px rgba(15,23,42,.22);
+    }
+    .tooltip strong { display: block; margin-bottom: 4px; }
+
+    @media (max-width: 800px) {
+      .container { padding: 12px 12px 40px; }
+      .welcome-gate { margin-top: 24px; padding: 24px 18px; }
+      .login-bar { flex-direction: column; align-items: flex-start; }
+      .brand-title { align-items: flex-start; flex-direction: column; }
+      .assistant-config-grid { grid-template-columns: 1fr; }
+      .tabs { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div id="welcomeGate" class="welcome-gate" style="display:block;">
+    <div class="brand-emoji" id="welcomeEmoji">🔴</div>
+    <h1 class="welcome-title" id="welcomeTitle">Tickets booking app</h1>
+    <div class="brand-badge" id="welcomeBadge">Coca-Cola HBC Česko a Slovensko</div>
+
+    <div class="guide-box">
+      <h3>📖 Návod k použití portálu</h3>
+      <ol>
+        <li><strong>Žádost o přístup:</strong> Vyberte „Požádat o přístup“, vyplňte údaje a počkejte na schválení.</li>
+        <li><strong>Přihlášení:</strong> Zadejte unikátní přístupový kód.</li>
+        <li><strong>Nová rezervace:</strong> Vyberte akci a vyplňte všechny povinné údaje.</li>
+        <li><strong>Sledování stavu:</strong> V záložce „Seznam žádostí“ sledujte stav rezervace.</li>
+        <li><strong>Schvalovací proces:</strong> Žádost prochází 1. a 2. stupněm schválení dle role.</li>
+      </ol>
+    </div>
+
+    <div class="gate-login-box">
+      <label class="label" for="gateUserToken">Vstupte zadáním vašeho kódu:</label>
+      <input id="gateUserToken" class="field" type="password" placeholder="Zadejte svůj unikátní kód" />
+      <div class="button-row" style="margin-top:16px;">
+        <button class="primary-btn" style="width:100%;" onclick="loginUserFromGate()">Vstoupit do systému</button>
+      </div>
+      <div class="button-row" style="margin-top:12px;">
+        <button class="secondary-btn" style="width:100%;" onclick="openAccessRequestFromGate()">Požádat o přístup</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="mainSystem" class="container" style="display:none;">
+    <div class="login-bar">
+      <div class="user-box">
+        <span>Přihlášen jako: <strong id="loggedName">--</strong> (<span id="loggedRole">--</span>)</span>
+        <button class="danger-btn" onclick="logoutUser()">Odhlásit se</button>
+      </div>
+      <button class="refresh-btn" onclick="location.reload(true)" title="Obnovit stránku">↻</button>
+    </div>
+
+    <div class="brand-title">
+      <h1 id="portalTitle">Systém rezervace lístků</h1>
+      <div class="brand-badge" id="portalBadge">Coca-Cola HBC Česko a Slovensko</div>
+    </div>
+
+    <div id="smartTiles" class="tiles"></div>
+
+    <div class="tabs">
+      <button class="tab-btn active" id="btn-platany" onclick="openTab('new')">Nová rezervace</button>
+      <button class="tab-btn" id="btn-planned" onclick="openTab('planned')">Plánované akce</button>
+      <button class="tab-btn" id="btn-list" onclick="openTab('list')">Seznam žádostí</button>
+      <button class="tab-btn" id="btn-access" onclick="openTab('access')">Požádat o přístup</button>
+      <button class="tab-btn" id="btn-admin" onclick="openTab('admin')" style="display:none;">⚙️ Administrace</button>
+    </div>
+
+    <div class="tab-content active" id="tab-new">
+      <div class="section-box">
+        <h2>Žádost o lístky na akci</h2>
+        <form id="ticketForm" onsubmit="handleFormSubmit(event)">
+          <div class="form-grid">
+            <div class="field-group">
+              <label class="label" for="actionSelect">Vyberte akci (povinné):</label>
+              <select id="actionSelect" class="select" required></select>
+            </div>
+            <div class="field-group">
+              <label class="label" for="eventDateSelect">Vyberte datum (povinné):</label>
+              <select id="eventDateSelect" class="select" required></select>
+            </div>
+            <div class="field-group">
+              <label class="label" for="employeeName">Žadatel (povinné):</label>
+              <input id="employeeName" class="field" type="text" placeholder="Jméno zaměstnance" required />
+            </div>
+            <div class="field-group">
+              <label class="label" for="managerEmail">E-mail nadřízeného (1. schvalovatel) (povinné):</label>
+              <input id="managerEmail" class="field" type="email" placeholder="jmeno@firma.cz" required />
+            </div>
+            <div class="field-group">
+              <label class="label" for="customerName">Jméno zákazníka (povinné):</label>
+              <input id="customerName" class="field" type="text" placeholder="Jméno zákazníka" required />
+            </div>
+            <div class="field-group">
+              <label class="label" for="ticketCount">Počet lístků (povinné):</label>
+              <input id="ticketCount" class="field" type="number" min="1" max="10" placeholder="1" required />
+            </div>
+            <div class="field-group full">
+              <label class="label" for="reasonSelect">Důvod žádosti (povinné):</label>
+              <select id="reasonSelect" class="select"></select>
+            </div>
+            <div class="field-group full" id="customReasonWrap" style="display:none;">
+              <label class="label" for="customReason">Vlastní popis důvodu žádosti:</label>
+              <textarea id="customReason" class="textarea" placeholder="Uveďte prosím doplňující informace..."></textarea>
+            </div>
+          </div>
+
+          <div class="inline-check">
+            <input id="complianceCheck" type="checkbox" onchange="toggleSubmitButtonByCompliance()" />
+            <label for="complianceCheck">Potvrzuji, že jsem se seznámil(a) s Kodexem chování a Pravidly chování pro zákazníky a jsem si vědom(a) povinnosti je dodržovat.</label>
+          </div>
+
+          <button id="mainFormSubmitBtn" class="primary-btn" type="submit" disabled>Odeslat žádost</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-planned">
+      <div class="section-box">
+        <h2>Plánované akce</h2>
+        <div id="plannedFilters" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px;"></div>
+        <div id="plannedGrid" class="planner-grid"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-list">
+      <div class="section-box">
+        <h2>Seznam žádostí</h2>
+        <div class="button-row" style="margin-bottom: 14px;">
+          <button class="success-btn" onclick="exportCurrentTable()">📥 Export do Excel</button>
+        </div>
+        <div style="overflow:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Akce</th>
+                <th>Datum</th>
+                <th>Žadatel</th>
+                <th>Zákazník</th>
+                <th>Počet</th>
+                <th>1. schvalovatel</th>
+                <th>2. schvalovatel</th>
+                <th>Stav rezervace</th>
+                <th>Akce</th>
+              </tr>
+            </thead>
+            <tbody id="requestsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-access">
+      <div class="section-box">
+        <h2>Žádost o vytvoření účtu schvalovatele</h2>
+        <p style="color:var(--muted); margin-top:0;">Jste žadatel nebo schvalovatel? Vyplňte formulář. Žádost podléhá schválení administrora.</p>
+        <form onsubmit="handleRoleRequestSubmit(event)">
+          <div class="form-grid">
+            <div class="field-group">
+              <label class="label" for="reqName">Vaše celé jméno:</label>
+              <input id="reqName" class="field" type="text" required />
+            </div>
+            <div class="field-group">
+              <label class="label" for="reqEmail">Váš pracovní e-mail:</label>
+              <input id="reqEmail" class="field" type="email" required />
+            </div>
+            <div class="field-group">
+              <label class="label" for="reqRole">Požadovaná role:</label>
+              <select id="reqRole" class="select" required>
+                <option value="applicant">0 - žadatel</option>
+                <option value="manager">1. stupeň ASM / RSM</option>
+                <option value="rsm_praha">2. stupeň RSM Praha Central</option>
+                <option value="admin">3. stupeň Admin</option>
+              </select>
+            </div>
+          </div>
+          <button class="secondary-btn" type="submit" style="margin-top:8px;">Odeslat žádost ke schválení</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-admin">
+      <div class="section-box">
+        <h2>Administrace</h2>
+
+        <div class="assistant-config-grid">
+          <div>
+            <div class="section-box" style="padding:18px; margin:0 0 16px;">
+              <h3>⚙️ Nastavení asistenta</h3>
+              <div class="form-grid">
+                <div class="field-group">
+                  <label class="label" for="assistantNameInput">Jméno asistenta:</label>
+                  <input id="assistantNameInput" class="field" type="text" placeholder="Např. Petra" />
+                </div>
+                <div class="field-group">
+                  <label class="label" for="assistantIconInput">Ikona / emoji:</label>
+                  <input id="assistantIconInput" class="field" type="text" placeholder="🧠 / 🤖 / ✨" />
+                </div>
+                <div class="field-group full">
+                  <label class="label" for="assistantImageInput">Vlastní obrázek / ikona (URL nebo Data URL):</label>
+                  <input id="assistantImageInput" class="field" type="text" placeholder="https://... / data:image/..." />
+                </div>
+              </div>
+              <button class="primary-btn" onclick="saveAssistantConfig()">Uložit nastavení asistenta</button>
+            </div>
+
+            <div class="section-box" style="padding:18px; margin:0 0 16px;">
+              <h3>🗂️ Správa filtrů akcí</h3>
+              <div class="form-grid">
+                <div class="field-group">
+                  <label class="label" for="newFilterInput">Nový filtr:</label>
+                  <input id="newFilterInput" class="field" type="text" placeholder="Např. O2 Arena" />
+                </div>
+              </div>
+              <button class="success-btn" onclick="addFilter()">Přidat filtr</button>
+              <div id="filterList" style="margin-top:14px;"></div>
+            </div>
+
+            <div class="section-box" style="padding:18px; margin:0 0 16px;">
+              <h3>📝 Správa důvodů žádostí</h3>
+              <div class="form-grid">
+                <div class="field-group">
+                  <label class="label" for="newReasonInput">Nový důvod:</label>
+                  <input id="newReasonInput" class="field" type="text" placeholder="Např. Obchodní schůzka s klíčovým zákazníkem" />
+                </div>
+              </div>
+              <button class="success-btn" onclick="addReason()">Přidat důvod</button>
+              <div id="reasonList" style="margin-top:14px;"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="assistant-preview">
+              <div class="assistant-preview-icon" id="assistantPreviewIcon">🤖</div>
+              <div class="assistant-preview-name" id="assistantPreviewName">Asistent</div>
+              <small style="color:var(--muted); margin-top:8px;">Nápověda, filtry a návrhy pro uživatele</small>
+            </div>
+
+            <div class="section-box" style="padding:18px; margin-top:16px;">
+              <h3>📤 Export dat</h3>
+              <div class="field-group">
+                <label class="label" for="exportNameInput">Jméno žadatele nebo přístupový kód:</label>
+                <input id="exportNameInput" class="field" type="text" placeholder="Např. Jana Novák / H7R4K" />
+              </div>
+              <button class="primary-btn" onclick="exportFilteredRequests()">Exportovat vyfiltrované žádosti</button>
+            </div>
+
+            <div class="section-box" style="padding:18px; margin-top:16px;">
+              <h3>🧩 Vytvoření akce</h3>
+              <form onsubmit="handleCreateActionSubmit(event)">
+                <div class="field-group">
+                  <label class="label">Název akce:</label>
+                  <input id="actNewName" class="field" type="text" required />
+                </div>
+                <div class="field-group">
+                  <label class="label">Filtr / kategorie:</label>
+                  <select id="actNewCategory" class="select"></select>
+                </div>
+                <div class="field-group">
+                  <label class="label">Datum:</label>
+                  <input id="actNewDate" class="field" type="date" required />
+                </div>
+                <div class="field-group">
+                  <label class="label">Čas:</label>
+                  <input id="actNewTime" class="field" type="time" required />
+                </div>
+                <div class="field-group">
+                  <label class="label">Místo konání:</label>
+                  <input id="actNewPlace" class="field" type="text" required />
+                </div>
+                <div class="field-group">
+                  <label class="label">Kapacita lístků:</label>
+                  <input id="actNewCapacity" class="field" type="number" min="1" required />
+                </div>
+                <div class="field-group">
+                  <label class="label">URL obrázku nebo Data URL:</label>
+                  <input id="actNewImage" class="field" type="text" placeholder="https://..." />
+                </div>
+                <div class="field-group">
+                  <label class="label">Popis akce:</label>
+                  <textarea id="actNewDescription" class="textarea" placeholder="Krátký popis pro tooltip a informace akce"></textarea>
+                </div>
+                <button class="success-btn" type="submit">Uložit novou akci</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-box">
+        <h3>Aktuální seznam akcí</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Akce</th>
+              <th>Kategorie</th>
+              <th>Datum / čas</th>
+              <th>Kapacita</th>
+              <th>Akce</th>
+            </tr>
+          </thead>
+          <tbody id="adminActionsTableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="section-box">
+        <h3>Čekající žádosti o přístup</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Jméno</th>
+              <th>E-mail</th>
+              <th>Role</th>
+              <th>Akce</th>
+            </tr>
+          </thead>
+          <tbody id="roleRequestsTableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="section-box">
+        <h3>Aktivní schvalovatelé</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Jméno</th>
+              <th>E-mail</th>
+              <th>Role</th>
+              <th>Přístupový kód</th>
+              <th>Akce</th>
+            </tr>
+          </thead>
+          <tbody id="activeUsersTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="tooltip" class="tooltip"></div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPSV3AauKHMPfnkACjbfvEDbb6RFJMiJA",
+      authDomain: "cc-tickets-booking-app.firebaseapp.com",
+      projectId: "cc-tickets-booking-app",
+      storageBucket: "cc-tickets-booking-app.firebasestorage.app",
+      messagingSenderId: "998442761726",
+      appId: "1:998442761726:web:e5bbe201f68c9594ea54af",
+      measurementId: "G-GKKE8GCN0T"
+    };
+
+    const masterAdminToken = "Magnolie27";
+    const FIREBASE_DOC = "cocaColaDatabase";
+
+    const state = {
+      customUsers: {},
+      roleRequests: [],
+      requests: [],
+      companyActions: [],
+      filters: [
+        { id: "all", name: "Vše", active: true },
+        { id: "O2 Arena", name: "O2 Arena", active: true },
+        { id: "Fotbal", name: "Fotbal", active: true },
+        { id: "Hokej", name: "Hokej", active: true },
+        { id: "Koncert", name: "Koncert", active: true }
+      ],
+      reasons: [
+        "Obchodní schůzka s klíčovým klientem",
+        "VIP klient – podpora vztahů",
+        "Team building / incentive",
+        "Networking / obchodní setkání",
+        "Jiný důvod – dle specifikace"
+      ],
+      assistant: {
+        name: "Asistent",
+        icon: "🤖",
+        image: ""
+      },
+      lastSelectedAction: null,
+      currentUser: null,
+      activeTab: "new",
+      filterSelection: "all"
+    };
+
+    function safeJsonParse(value, fallback) {
+      try {
+        return value ? JSON.parse(value) : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function loadStateFromLocalStorage() {
+      state.customUsers = safeJsonParse(localStorage.getItem("customUsers"), {});
+      state.roleRequests = safeJsonParse(localStorage.getItem("roleRequests"), []);
+      state.requests = safeJsonParse(localStorage.getItem("ticketRequests"), []);
+      state.companyActions = safeJsonParse(localStorage.getItem("companyActions"), []);
+      state.filters = safeJsonParse(localStorage.getItem("ccFilters"), state.filters);
+      state.reasons = safeJsonParse(localStorage.getItem("ccReasons"), state.reasons);
+      state.assistant = safeJsonParse(localStorage.getItem("ccAssistant"), state.assistant);
+      const savedUser = localStorage.getItem("currentUser");
+      state.currentUser = savedUser ? JSON.parse(savedUser) : null;
+    }
+
+    function persistStateToLocalStorage() {
+      localStorage.setItem("customUsers", JSON.stringify(state.customUsers));
+      localStorage.setItem("roleRequests", JSON.stringify(state.roleRequests));
+      localStorage.setItem("ticketRequests", JSON.stringify(state.requests));
+      localStorage.setItem("companyActions", JSON.stringify(state.companyActions));
+      localStorage.setItem("ccFilters", JSON.stringify(state.filters));
+      localStorage.setItem("ccReasons", JSON.stringify(state.reasons));
+      localStorage.setItem("ccAssistant", JSON.stringify(state.assistant));
+      if (state.currentUser) {
+        localStorage.setItem("currentUser", JSON.stringify(state.currentUser));
+      } else {
+        localStorage.removeItem("currentUser");
+      }
+    }
+
+    function getFirebaseDb() {
+      if (typeof firebase !== "undefined" && firebase.apps && firebase.apps.length) {
+        return firebase.firestore();
+      }
+      return null;
+    }
+
+    function syncToFirebase() {
+      const db = getFirebaseDb();
+      if (!db) return;
+      const payload = {
+        customUsers: state.customUsers,
+        roleRequests: state.roleRequests,
+        ticketRequests: state.requests,
+        companyActions: state.companyActions,
+        ccFilters: state.filters,
+        ccReasons: state.reasons,
+        ccAssistant: state.assistant
+      };
+      db.collection("portalData").doc(FIREBASE_DOC).set(payload, { merge: true }).catch((err) => {
+        console.error("Firebase sync error:", err);
+      });
+    }
+
+    function loadFromFirebase() {
+      const db = getFirebaseDb();
+      if (!db) return;
+      db.collection("portalData").doc(FIREBASE_DOC).get().then((doc) => {
+        if (!doc.exists) return;
+        const data = doc.data() || {};
+        state.customUsers = data.customUsers || state.customUsers;
+        state.roleRequests = data.roleRequests || state.roleRequests;
+        state.requests = data.ticketRequests || state.requests;
+        state.companyActions = data.companyActions || state.companyActions;
+        state.filters = data.ccFilters || state.filters;
+        state.reasons = data.ccReasons || state.reasons;
+        state.assistant = data.ccAssistant || state.assistant;
+        persistStateToLocalStorage();
+        renderAll();
+      }).catch((err) => {
+        console.error("Firebase load error:", err);
+      });
+    }
+
+    function formatDate(dateString) {
+      if (!dateString) return "-";
+      const d = new Date(dateString + "T00:00:00");
+      if (Number.isNaN(d.getTime())) return dateString;
+      return d.toLocaleDateString("cs-CZ", { day: "2-digit", month: "2-digit", year: "numeric" });
+    }
+
+    function getRoleLabel(role) {
+      if (!role) return "Žadatel";
+      if (role === "manager") return "1. stupeň ASM / RSM";
+      if (role === "rsm_praha") return "2. stupeň RSM Praha Central";
+      if (role === "admin") return "Administrátor";
+      return "Žadatel";
+    }
+
+    function updateLoginBar() {
+      const nameEl = document.getElementById("loggedName");
+      const roleEl = document.getElementById("loggedRole");
+      const adminBtn = document.getElementById("btn-admin");
+      if (!state.currentUser) {
+        nameEl.textContent = "--";
+        roleEl.textContent = "--";
+        if (adminBtn) adminBtn.style.display = "none";
+        return;
+      }
+      nameEl.textContent = state.currentUser.name || "--";
+      roleEl.textContent = getRoleLabel(state.currentUser.role);
+      if (adminBtn) adminBtn.style.display = (state.currentUser.role === "admin") ? "inline-block" : "none";
+    }
+
+    function openAccessRequestFromGate() {
+      document.getElementById("welcomeGate").style.display = "none";
+      document.getElementById("mainSystem").style.display = "block";
+      state.currentUser = { name: "Anonymní žadatel", role: "guest", email: "" };
+      localStorage.setItem("currentUser", JSON.stringify(state.currentUser));
+      openTab("access");
+    }
+
+    function openTab(tabName) {
+      state.activeTab = tabName;
+      document.querySelectorAll(".tab-btn").forEach((btn) => btn.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach((el) => el.classList.remove("active"));
+      const targetBtn = document.getElementById(tabName === "new" ? "btn-platany" : tabName === "planned" ? "btn-planned" : tabName === "list" ? "btn-list" : tabName === "access" ? "btn-access" : "btn-admin");
+      if (targetBtn) targetBtn.classList.add("active");
+      const targetTab = document.getElementById(tabName === "new" ? "tab-new" : tabName === "planned" ? "tab-planned" : tabName === "list" ? "tab-list" : tabName === "access" ? "tab-access" : "tab-admin");
+      if (targetTab) targetTab.classList.add("active");
+
+      if (tabName === "planned") renderPlannedActions();
+      if (tabName === "list") renderRequestsTable();
+      if (tabName === "admin") renderAdminSections();
+      if (tabName === "new") syncActionSelect();
+    }
+
+    function logoutUser() {
+      state.currentUser = null;
+      localStorage.removeItem("currentUser");
+      document.getElementById("welcomeGate").style.display = "block";
+      document.getElementById("mainSystem").style.display = "none";
+      document.getElementById("gateUserToken").value = "";
+      updateLoginBar();
+    }
+
+    async function loginUserFromGate() {
+      const token = document.getElementById("gateUserToken").value.trim();
+      if (!token) {
+        alert("Zadejte přístupový kód.");
+        return;
+      }
+      if (token === masterAdminToken) {
+        state.currentUser = { name: "Hlavní Správce", role: "admin", email: "admin@firma.cz" };
+        persistStateToLocalStorage();
+        document.getElementById("welcomeGate").style.display = "none";
+        document.getElementById("mainSystem").style.display = "block";
+        updateLoginBar();
+        openTab("list");
+        return;
+      }
+      if (state.customUsers[token]) {
+        state.currentUser = state.customUsers[token];
+        persistStateToLocalStorage();
+        document.getElementById("welcomeGate").style.display = "none";
+        document.getElementById("mainSystem").style.display = "block";
+        updateLoginBar();
+        openTab((state.currentUser.role === "admin") ? "list" : "new");
+        return;
+      }
+      const db = getFirebaseDb();
+      if (db) {
+        try {
+          const doc = await db.collection("portalData").doc(FIREBASE_DOC).get();
+          if (doc.exists) {
+            const data = doc.data() || {};
+            const cloudUsers = data.customUsers || {};
+            state.customUsers = cloudUsers;
+            persistStateToLocalStorage();
+            if (cloudUsers[token]) {
+              state.currentUser = cloudUsers[token];
+              persistStateToLocalStorage();
+              document.getElementById("welcomeGate").style.display = "none";
+              document.getElementById("mainSystem").style.display = "block";
+              updateLoginBar();
+              openTab((state.currentUser.role === "admin") ? "list" : "new");
+              return;
+            }
+          }
+        } catch (error) {
+          console.error("Firebase login error:", error);
+        }
+      }
+      alert("Neplatný přístupový kód.");
+    }
+
+    function getVisibleFilters() {
+      return state.filters.filter((filter) => filter.active !== false && filter.id !== "all");
+    }
+
+    function renderPlannedFilters() {
+      const filtersEl = document.getElementById("plannedFilters");
+      if (!filtersEl) return;
+      const choices = [
+        { id: "all", name: "Vše" },
+        ...state.filters.filter((filter) => filter.id !== "all")
+      ];
+      filtersEl.innerHTML = "";
+      choices.forEach((filter) => {
+        const btn = document.createElement("button");
+        btn.className = `small-btn ${(state.filterSelection === filter.id) ? "primary" : "btn-muted"}`;
+        btn.textContent = filter.name;
+        btn.onclick = () => { state.filterSelection = filter.id; renderPlannedActions(); };
+        filtersEl.appendChild(btn);
+      });
+    }
+
+    function renderPlannedActions() {
+      const grid = document.getElementById("plannedGrid");
+      if (!grid) return;
+      const visibleActions = state.companyActions.filter((action) => {
+        if (state.filterSelection !== "all" && action.category !== state.filterSelection) return false;
+        return true;
+      });
+      grid.innerHTML = "";
+      if (!visibleActions.length) {
+        grid.innerHTML = '<div class="empty-state">Žádné aktivní akce pro aktuální filtr.</div>';
+        renderPlannedFilters();
+        return;
+      }
+      renderPlannedFilters();
+      visibleActions.forEach((action) => {
+        const resolvedDates = Array.isArray(action.dates) && action.dates.length ? action.dates : [{ date: action.date, time: action.time }];
+        const dateText = resolvedDates.map((d) => `${formatDate(d.date)} ${d.time || ""}`.trim()).join(" • ");
+        const card = document.createElement("div");
+        card.className = "event-card";
+        const img = action.image || "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80";
+        const categoryText = action.category || "Akce";
+        card.innerHTML = `
+          <div class="event-badge">${categoryText}</div>
+          <div class="event-image" style="background-image:url('${img.replace(/'/g, "\\'")}');"></div>
+          <div class="event-body">
+            <span class="event-category">${categoryText}</span>
+            <div class="event-title">${action.name}</div>
+            <div class="event-meta">📍 ${action.place || "-"}</div>
+            <div class="event-meta">🗓️ ${dateText}</div>
+            <div class="event-meta">🎟️ Kapacita: ${action.capacity || 0}</div>
+            <span class="reserve-button" onclick="openReservationModal(${action.id})">Rezervovat</span>
+          </div>
+        `;
+        card.onmouseenter = (event) => showTooltip(event, action);
+        card.onmouseleave = hideTooltip;
+        grid.appendChild(card);
+      });
+    }
+
+    function showTooltip(event, action) {
+      const tooltip = document.getElementById("tooltip");
+      tooltip.innerHTML = `<strong>${action.name}</strong>${(action.description || "Popis akce nebyl uveden.").replace(/\n/g, "<br>")}`;
+      tooltip.style.display = "block";
+      const x = event.clientX + 18;
+      const y = event.clientY + 18;
+      tooltip.style.left = `${Math.min(x, window.innerWidth - 360)}px`;
+      tooltip.style.top = `${Math.min(y, window.innerHeight - 160)}px`;
+    }
+
+    function hideTooltip() {
+      document.getElementById("tooltip").style.display = "none";
+    }
+
+    function openReservationModal(actionId) {
+      const action = state.companyActions.find((a) => String(a.id) === String(actionId));
+      if (!action) return;
+      const dates = Array.isArray(action.dates) && action.dates.length ? action.dates : [{ date: action.date, time: action.time }];
+      const modal = document.createElement("div");
+      modal.className = "modal-backdrop";
+      modal.innerHTML = `
+        <div class="modal-box">
+          <div class="modal-header">
+            <h2 style="margin:0;">Nová rezervace</h2>
+            <button class="modal-close" type="button" onclick="this.closest('.modal-backdrop').remove()">×</button>
+          </div>
+          <p><strong>${action.name}</strong> • ${action.place || "-"}</p>
+          <div class="field-group">
+            <label class="label" for="reservationDate">Vyberte datum:</label>
+            <select id="reservationDate" class="select">
+              ${dates.map((entry) => `<option value="${entry.date}">${formatDate(entry.date)} ${entry.time ? `• ${entry.time}` : ""}</option>`).join("")}
+            </select>
+          </div>
+          <div class="form-grid">
+            <div class="field-group">
+              <label class="label" for="reservationCustomer">Jméno zákazníka:</label>
+              <input id="reservationCustomer" class="field" type="text" />
+            </div>
+            <div class="field-group">
+              <label class="label" for="reservationTickets">Počet lístků:</label>
+              <input id="reservationTickets" class="field" type="number" min="1" value="1" />
+            </div>
+            <div class="field-group full">
+              <label class="label" for="reservationReason">Důvod žádosti:</label>
+              <textarea id="reservationReason" class="textarea"></textarea>
+            </div>
+          </div>
+          <div class="button-row" style="margin-top:18px; justify-content:flex-end;">
+            <button type="button" class="btn-muted" onclick="this.closest('.modal-backdrop').remove()">Zrušit</button>
+            <button type="button" class="primary-btn" onclick="submitReservationFromModal(${action.id})">Odeslat rezervaci</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    function submitReservationFromModal(actionId) {
+      const action = state.companyActions.find((a) => String(a.id) === String(actionId));
+      if (!action) return;
+      const date = document.getElementById("reservationDate").value;
+      const customer = document.getElementById("reservationCustomer").value.trim();
+      const tickets = Number(document.getElementById("reservationTickets").value || 0);
+      const reason = document.getElementById("reservationReason").value.trim();
+      if (!customer || !tickets || !reason) {
+        alert("Vyplňte všechna pole pro rezervaci.");
+        return;
+      }
+      const request = {
+        id: Date.now(),
+        action: action.name,
+        eventDate: date,
+        employee: state.currentUser ? state.currentUser.name : "Neznámý",
+        manager: state.currentUser && state.currentUser.email ? state.currentUser.email : "",
+        customer,
+        tickets: String(tickets),
+        reason,
+        status1: "Čeká",
+        status2: "Čeká",
+        approvedBy1: "",
+        approvedBy2: "",
+        applicantEmail: state.currentUser ? state.currentUser.email || "" : "",
+        createdAt: new Date().toISOString()
+      };
+      state.requests.push(request);
+      persistStateToLocalStorage();
+      syncToFirebase();
+      document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
+      openTab("list");
+      alert("Žádost o rezervaci byla úspěšně odeslána.");
+    }
+
+    function renderRequestsTable() {
+      const tbody = document.getElementById("requestsTableBody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+      if (!state.requests.length) {
+        tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state">Žádné žádosti.</div></td></tr>';
+        return;
+      }
+      const filtered = state.requests.filter((request) => {
+        if (!state.currentUser) return true;
+        if (state.currentUser.role === "applicant") {
+          return request.employee && state.currentUser.name && request.employee.toLowerCase() === state.currentUser.name.toLowerCase();
+        }
+        if (state.currentUser.role === "manager") {
+          return (request.manager || "").toLowerCase() === (state.currentUser.email || "").toLowerCase();
+        }
+        if (state.currentUser.role === "rsm_praha" || state.currentUser.role === "admin") {
+          return true;
+        }
+        return true;
+      });
+
+      if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state">Žádné žádosti pro aktuálního uživatele.</div></td></tr>';
+        return;
+      }
+
+      filtered.forEach((request) => {
+        const s1 = request.status1 || "Čeká";
+        const s2 = request.status2 || "Čeká";
+        const status1Class = s1 === "Schváleno" ? "status-schvaleno" : s1 === "Zamítnuto" ? "status-zamitnuto" : "status-cekajici";
+        const status2Class = s2 === "Schváleno" ? "status-schvaleno" : s2 === "Zamítnuto" ? "status-zamitnuto" : s2 === "Náhradník" ? "status-nahradnik" : "status-cekajici";
+        const isFirstApprover = state.currentUser && (state.currentUser.role === "manager" || state.currentUser.role === "admin") && (request.manager || "").toLowerCase() === (state.currentUser.email || "").toLowerCase();
+        const isSecondApprover = state.currentUser && (state.currentUser.role === "rsm_praha" || state.currentUser.role === "admin");
+        let actionsHtml = "";
+        if (state.currentUser && state.currentUser.role !== "applicant") {
+          if (isFirstApprover || isSecondApprover) {
+            actionsHtml += `<div class="action-buttons">`;
+            if (isFirstApprover) {
+              actionsHtml += `<button class="small-btn success" onclick="setStatus1(${request.id}, 'Schváleno')">Ano</button><button class="small-btn danger" onclick="setStatus1(${request.id}, 'Zamítnuto')">Ne</button>`;
+            }
+            if (isSecondApprover) {
+              actionsHtml += `<button class="small-btn success" onclick="setStatus2(${request.id}, 'Schváleno')">2x Ano</button><button class="small-btn danger" onclick="setStatus2(${request.id}, 'Zamítnuto')">2x Ne</button>`;
+            }
+            actionsHtml += `</div>`;
+          }
+        }
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td><strong>${request.action || "-"}</strong></td>
+          <td>${formatDate(request.eventDate || request.date || "")}</td>
+          <td>${request.employee || "-"}</td>
+          <td>${request.customer || "-"}</td>
+          <td>${request.tickets || 0}</td>
+          <td><span class="status-pill ${status1Class}">${s1}</span></td>
+          <td><span class="status-pill ${status2Class}">${s2}</span></td>
+          <td>${request.reason || "-"}</td>
+          <td>${actionsHtml || "-"}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function setStatus1(id, status) {
+      state.requests = state.requests.map((req) => {
+        if (String(req.id) === String(id)) {
+          return { ...req, status1: status, approvedBy1: state.currentUser ? state.currentUser.name : "" };
+        }
+        return req;
+      });
+      persistStateToLocalStorage();
+      syncToFirebase();
+      renderRequestsTable();
+      renderSmartTiles();
+    }
+
+    function setStatus2(id, status) {
+      state.requests = state.requests.map((req) => {
+        if (String(req.id) === String(id)) {
+          return { ...req, status2: status, approvedBy2: state.currentUser ? state.currentUser.name : "" };
+        }
+        return req;
+      });
+      persistStateToLocalStorage();
+      syncToFirebase();
+      renderRequestsTable();
+      renderSmartTiles();
+    }
+
+    function exportCurrentTable() {
+      const rows = state.requests.map((req) => ({
+        "Akce": req.action || "",
+        "Datum": req.eventDate || req.date || "",
+        "Žadatel": req.employee || "",
+        "Zákazník": req.customer || "",
+        "Počet lístků": req.tickets || "",
+        "Důvod": req.reason || "",
+        "1. schválení": req.status1 || "",
+        "2. schválení": req.status2 || "",
+        "Přístupový kód": req.applicantEmail || ""
+      }));
+      const csv = [
+        Object.keys(rows[0] || { "Akce": "", "Datum": "", "Žadatel": "", "Zákazník": "", "Počet lístků": "", "Důvod": "", "1. schválení": "", "2. schválení": "", "Přístupový kód": "" }),
+        ...rows.map((row) => Object.values(row))
+      ].map((values) => values.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(",")).join("\n");
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "export_zadosti.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportFilteredRequests() {
+      const query = document.getElementById("exportNameInput").value.trim().toLowerCase();
+      const targetRows = state.requests.filter((req) => {
+        if (!query) return true;
+        return (
+          (req.employee || "").toLowerCase().includes(query) ||
+          (req.customer || "").toLowerCase().includes(query) ||
+          (req.action || "").toLowerCase().includes(query) ||
+          (req.manager || "").toLowerCase().includes(query) ||
+          (req.applicantEmail || "").toLowerCase().includes(query)
+        );
+      });
+      const csv = [
+        ["Akce", "Datum", "Žadatel", "Zákazník", "Počet", "Důvod", "1. schválení", "2. schválení"],
+        ...targetRows.map((req) => [
+          req.action || "",
+          req.eventDate || req.date || "",
+          req.employee || "",
+          req.customer || "",
+          String(req.tickets || ""),
+          req.reason || "",
+          req.status1 || "",
+          req.status2 || ""
+        ])
+      ].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `export_${query || "vsechny"}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function renderSmartTiles() {
+      const box = document.getElementById("smartTiles");
+      if (!box) return;
+      const total = state.requests.length;
+      const waiting = state.requests.filter((r) => (r.status1 || "Čeká") === "Čeká").length;
+      const approved = state.requests.filter((r) => (r.status1 || "Čeká") === "Schváleno" && (r.status2 || "Čeká") === "Schváleno").length;
+      const rejected = state.requests.filter((r) => (r.status1 || "Čeká") === "Zamítnuto" || (r.status2 || "Čeká") === "Zamítnuto").length;
+      const tiles = [
+        { label: "Vytvořené žádosti", value: total, tone: "red", note: "Celkem v systému" },
+        { label: "Čeká na schválení", value: waiting, tone: "amber", note: "K zpracování" },
+        { label: "Schválené", value: approved, tone: "green", note: "Ke dni akce" },
+        { label: "Zamítnuté", value: rejected, tone: "blue", note: "Nesouhlas" }
+      ];
+      box.innerHTML = tiles.map((tile) => `
+        <div class="tile" data-tone="${tile.tone}" onclick="filterRequestsByTile('${tile.label}')">
+          <div class="tile-label">${tile.label}</div>
+          <div class="tile-value">${tile.value}</div>
+          <div class="tile-sub">${tile.note}</div>
+        </div>
+      `).join("");
+    }
+
+    function filterRequestsByTile(label) {
+      const filtered = state.requests.filter((req) => {
+        if (label === "Vytvořené žádosti") return true;
+        if (label === "Čeká na schválení") return (req.status1 || "Čeká") === "Čeká" || (req.status2 || "Čeká") === "Čeká";
+        if (label === "Schválené") return (req.status1 || "Čeká") === "Schváleno" && (req.status2 || "Čeká") === "Schváleno";
+        if (label === "Zamítnuté") return (req.status1 || "Čeká") === "Zamítnuto" || (req.status2 || "Čeká") === "Zamítnuto";
+        return true;
+      });
+      const tbody = document.getElementById("requestsTableBody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+      if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state">Žádné žádosti pro tento filtr.</div></td></tr>';
+        return;
+      }
+      filtered.forEach((request) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td><strong>${request.action || "-"}</strong></td>
+          <td>${formatDate(request.eventDate || request.date || "")}</td>
+          <td>${request.employee || "-"}</td>
+          <td>${request.customer || "-"}</td>
+          <td>${request.tickets || 0}</td>
+          <td><span class="status-pill ${(request.status1 || "Čeká") === "Schváleno" ? "status-schvaleno" : (request.status1 || "Čeká") === "Zamítnuto" ? "status-zamitnuto" : "status-cekajici"}">${request.status1 || "Čeká"}</span></td>
+          <td><span class="status-pill ${(request.status2 || "Čeká") === "Schváleno" ? "status-schvaleno" : (request.status2 || "Čeká") === "Zamítnuto" ? "status-zamitnuto" : "status-cekajici"}">${request.status2 || "Čeká"}</span></td>
+          <td>${request.reason || "-"}</td>
+          <td>—</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function handleFormSubmit(event) {
+      event.preventDefault();
+      const selectedAction = document.getElementById("actionSelect").value;
+      const selectedDate = document.getElementById("eventDateSelect").value;
+      const employee = document.getElementById("employeeName").value.trim();
+      const managerEmail = document.getElementById("managerEmail").value.trim().toLowerCase();
+      const customer = document.getElementById("customerName").value.trim();
+      const tickets = Number(document.getElementById("ticketCount").value || 0);
+      const reason = document.getElementById("reasonSelect").value;
+      const customReason = document.getElementById("customReason").value.trim();
+      if (!selectedAction || !selectedDate || !employee || !managerEmail || !customer || !tickets || !reason) {
+        alert("Vyplňte všechna povinná pole.");
+        return;
+      }
+      const finalReason = reason === "Jiný důvod – dle specifikace" && customReason ? customReason : reason;
+      const request = {
+        id: Date.now(),
+        action: selectedAction,
+        date: selectedDate,
+        eventDate: selectedDate,
+        employee,
+        manager: managerEmail,
+        customer,
+        tickets: String(tickets),
+        reason: finalReason,
+        status1: "Čeká",
+        status2: "Čeká",
+        approvedBy1: "",
+        approvedBy2: "",
+        applicantEmail: state.currentUser ? state.currentUser.email || "" : "",
+        createdAt: new Date().toISOString()
+      };
+      state.requests.push(request);
+      persistStateToLocalStorage();
+      syncToFirebase();
+      document.getElementById("ticketForm").reset();
+      syncActionSelect();
+      renderSmartTiles();
+      openTab("list");
+      alert("Žádost o rezervaci byla úspěšně odeslána!");
+    }
+
+    function toggleSubmitButtonByCompliance() {
+      const checkbox = document.getElementById("complianceCheck");
+      const button = document.getElementById("mainFormSubmitBtn");
+      if (!checkbox || !button) return;
+      button.disabled = !checkbox.checked;
+    }
+
+    function syncActionSelect() {
+      const actionSelect = document.getElementById("actionSelect");
+      const eventDateSelect = document.getElementById("eventDateSelect");
+      if (!actionSelect) return;
+      actionSelect.innerHTML = '<option value="">-- Vyberte akci --</option>' + state.companyActions.map((action) => `<option value="${action.name}">${action.name}</option>`).join("");
+      actionSelect.onchange = () => {
+        const selectedAction = state.companyActions.find((a) => a.name === actionSelect.value);
+        const dates = selectedAction ? (Array.isArray(selectedAction.dates) && selectedAction.dates.length ? selectedAction.dates : [{ date: selectedAction.date, time: selectedAction.time }]) : [];
+        eventDateSelect.innerHTML = dates.map((entry) => `<option value="${entry.date}">${formatDate(entry.date)}${entry.time ? ` • ${entry.time}` : ""}</option>`).join("");
+      };
+      if (state.companyActions.length) {
+        actionSelect.value = (state.companyActions[0] || {}).name || "";
+        actionSelect.onchange();
+      } else {
+        eventDateSelect.innerHTML = "<option value=\"\">-- Nejprve vytvořte akci --</option>";
+      }
+    }
+
+    function renderReasonSelect() {
+      const select = document.getElementById("reasonSelect");
+      if (!select) return;
+      const options = state.reasons.map((reason) => `<option value="${reason}">${reason}</option>`).join("");
+      select.innerHTML = options + `<option value="Jiný důvod – dle specifikace">Jiný důvod – dle specifikace</option>`;
+      select.onchange = () => {
+        const wrap = document.getElementById("customReasonWrap");
+        if (wrap) wrap.style.display = select.value === "Jiný důvod – dle specifikace" ? "block" : "none";
+      };
+    }
+
+    function handleRoleRequestSubmit(event) {
+      event.preventDefault();
+      const name = document.getElementById("reqName").value.trim();
+      const email = document.getElementById("reqEmail").value.trim().toLowerCase();
+      const role = document.getElementById("reqRole").value;
+      if (!name || !email || !role) {
+        alert("Vyplňte všechna pole.");
+        return;
+      }
+      state.roleRequests.push({ id: Date.now(), name, email, role });
+      persistStateToLocalStorage();
+      syncToFirebase();
+      event.target.reset();
+      renderAdminSections();
+      alert("Žádost byla odeslána ke schválení.");
+    }
+
+    function approveRoleRequest(id) {
+      const target = state.roleRequests.find((r) => String(r.id) === String(id));
+      if (!target) return;
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      let token = "";
+      for (let i = 0; i < 5; i++) token += chars[Math.floor(Math.random() * chars.length)];
+      state.customUsers[token] = { name: target.name, email: target.email, role: target.role };
+      state.roleRequests = state.roleRequests.filter((r) => String(r.id) !== String(id));
+      persistStateToLocalStorage();
+      syncToFirebase();
+      renderAdminSections();
+      alert(`Přístup povolen. Vygenerovaný přístupový kód: ${token}`);
+    }
+
+    function rejectRoleRequest(id) {
+      state.roleRequests = state.roleRequests.filter((r) => String(r.id) !== String(id));
+      persistStateToLocalStorage();
+      syncToFirebase();
+      renderAdminSections();
+    }
+
+    function deleteActiveUser(token) {
+      delete state.customUsers[token];
+      persistStateToLocalStorage();
+      syncToFirebase();
+      renderAdminSections();
+    }
+
+    function handleCreateActionSubmit(event) {
+      event.preventDefault();
+      const name = document.getElementById("actNewName").value.trim();
+      const category = document.getElementById("actNewCategory").value;
+      const date = document.getElementById("actNewDate").value;
+      const time = document.getElementById("actNewTime").value;
+      const place = document.getElementById("actNewPlace").value.trim();
+      const capacity = Number(document.getElementById("actNewCapacity").value || 0);
+      const image = document.getElementById("actNewImage").value.trim();
+      const description = document.getElementById("actNewDescription").value.trim();
+      if (!name || !category || !date || !time || !place || !capacity) {
+        alert("Vyplňte všechna pole pro vytvoření akce.");
+        return;
+      }
+      state.companyActions.push({
+        id: Date.now(),
+        name,
+        category,
+        date,
+        time,
+        place,
+        capacity,
+        image,
+        description,
+        status: "Aktivní",
+        dates: [{ date, time }]
+      });
+      persistStateToLocalStorage();
+      syncToFirebase();
+      event.target.reset();
+      renderAdminSections();
+      renderPlannedActions();
+      syncActionSelect();
+      alert("Akce byla vytvořena.");
+    }
+
+    function renderAdminSections() {
+      renderFilterList();
+      renderReasonList();
+      renderAssistantPreview();
+      renderRoleRequestsTable();
+      renderUsersTable();
+      renderActionTable();
+      populateCategorySelect();
+    }
+
+    function populateCategorySelect() {
+      const target = document.getElementById("actNewCategory");
+      if (!target) return;
+      const categories = state.filters.filter((f) => f.id !== "all");
+      target.innerHTML = categories.map((f) => `<option value="${f.id}">${f.name}</option>`).join("") || '<option value="">Bez kategorie</option>';
+    }
+
+    function renderFilterList() {
+      const list = document.getElementById("filterList");
+      if (!list) return;
+      list.innerHTML = "";
+      state.filters.filter((f) => f.id !== "all").forEach((filter) => {
+        const row = document.createElement("div");
+        row.style.display = "flex";
+        row.style.alignItems = "center";
+        row.style.justifyContent = "space-between";
+        row.style.gap = "8px";
+        row.style.marginBottom = "8px";
+        row.style.padding = "10px 12px";
+        row.style.border = "1px solid var(--border)";
+        row.style.borderRadius = "10px";
+        row.innerHTML = `
+          <span>${filter.name}</span>
+          <div class="action-buttons">
+            <button class="small-btn ${filter.active === false ? "btn-muted" : "success"}" onclick="toggleFilter('${filter.id}')">${filter.active === false ? "Skryt" : "Zobrazit"}</button>
+            <button class="small-btn danger" onclick="deleteFilter('${filter.id}')">Smazat</button>
+          </div>
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    function addFilter() {
+      const input = document.getElementById("newFilterInput");
+      const name = input.value.trim();
+      if (!name) return;
+      if (!state.filters.some((f) => f.name.toLowerCase() === name.toLowerCase())) {
+        state.filters.push({ id: name, name, active: true });
+        persistStateToLocalStorage();
+        syncToFirebase();
+        input.value = "";
+        renderAdminSections();
+        renderPlannedActions();
+      }
+    }
+
+    function toggleFilter(filterId) {
+      state.filters = state.filters.map((filter) => {
+        if (filter.id === filterId) return { ...filter, active: !(filter.active === false) };
+        return filter;
+      });
+      persistStateToLocalStorage();
+      syncToFirebase();
+      renderAdminSections();
+      renderPlannedActions();
+    }
+
+    function deleteFilter(filterId) {
+      state.filters = state.filters.filter((filter) => filter.id !== filterId && filter.id !== "all");
+      state.companyActions = state.companyActions.map((action) => ({ ...action, category: action.category === filterId ? "Ostatní" : action.category }));
+      persistStateToLocalStorage();
+      syncToFirebase();
+      renderAdminSections();
+      renderPlannedActions();
+    }
+
+    function renderReasonList() {
+      const list = document.getElementById("reasonList");
+      if (!list) return;
+      list.innerHTML = "";
+      state.reasons.forEach((reason) => {
+        const row = document.createElement("div");
+        row.style.display = "flex";
+        row.style.alignItems = "center";
+        row.style.justifyContent = "space-between";
+        row.style.gap = "8px";
+        row.style.marginBottom = "8px";
+        row.style.padding = "10px 12px";
+        row.style.border = "1px solid var(--border)";
+        row.style.borderRadius = "10px";
+        row.innerHTML = `
+          <span>${reason}</span>
+          <button class="small-btn danger" onclick="deleteReason('${reason.replace(/'/g, "\\'") }')">Smazat</button>
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    function addReason() {
+      const input = document.getElementById("newReasonInput");
+      const value = input.value.trim();
+      if (!value) return;
+      if (!state.reasons.includes(value)) {
+        state.reasons.push(value);
+        persistStateToLocalStorage();
+        syncToFirebase();
+        input.value = "";
+        renderReasonList();
+        renderReasonSelect();
+      }
+    }
+
+    function deleteReason(reason) {
+      state.reasons = state.reasons.filter((item) => item !== reason);
+      persistStateToLocalStorage();
+      syncToFirebase();
+      renderReasonList();
+      renderReasonSelect();
+    }
+
+    function saveAssistantConfig() {
+      const name = document.getElementById("assistantNameInput").value.trim() || "Asistent";
+      const icon = document.getElementById("assistantIconInput").value.trim() || "🤖";
+      const image = document.getElementById("assistantImageInput").value.trim();
+      state.assistant = { name, icon, image };
+      persistStateToLocalStorage();
+      syncToFirebase();
+      renderAssistantPreview();
+      updateWelcomeGate();
+      alert("Nastavení asistenta bylo uloženo.");
+    }
+
+    function renderAssistantPreview() {
+      const nameEl = document.getElementById("assistantPreviewName");
+      const iconEl = document.getElementById("assistantPreviewIcon");
+      if (nameEl) nameEl.textContent = state.assistant.name || "Asistent";
+      if (iconEl) {
+        iconEl.textContent = state.assistant.image ? "🖼️" : (state.assistant.icon || "🤖");
+      }
+      if (document.getElementById("assistantNameInput")) document.getElementById("assistantNameInput").value = state.assistant.name || "Asistent";
+      if (document.getElementById("assistantIconInput")) document.getElementById("assistantIconInput").value = state.assistant.icon || "🤖";
+      if (document.getElementById("assistantImageInput")) document.getElementById("assistantImageInput").value = state.assistant.image || "";
+    }
+
+    function updateWelcomeGate() {
+      const title = document.getElementById("welcomeTitle");
+      const badge = document.getElementById("welcomeBadge");
+      const emoji = document.getElementById("welcomeEmoji");
+      const portalTitle = document.getElementById("portalTitle");
+      const portalBadge = document.getElementById("portalBadge");
+      if (state.assistant.image) {
+        emoji.innerHTML = `<img src="${state.assistant.image}" style="width:60px;height:60px;border-radius:18px;object-fit:cover;" />`;
+      } else {
+        emoji.textContent = state.assistant.icon || "🤖";
+      }
+      const name = state.assistant.name || "Asistent";
+      if (title) title.textContent = name;
+      if (portalTitle) portalTitle.textContent = name;
+      if (badge) badge.textContent = "Coca-Cola HBC Česko a Slovensko";
+      if (portalBadge) portalBadge.textContent = "Coca-Cola HBC Česko a Slovensko";
+    }
+
+    function renderActionTable() {
+      const tbody = document.getElementById("adminActionsTableBody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+      if (!state.companyActions.length) {
+        tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">Žádné akce zatím neexistují.</div></td></tr>';
+        return;
+      }
+      state.companyActions.forEach((action) => {
+        const row = document.createElement("tr");
+        const dates = Array.isArray(action.dates) && action.dates.length ? action.dates : [{ date: action.date, time: action.time }];
+        const dateText = dates.map((d) => `${formatDate(d.date)} ${d.time || ""}`.trim()).join("<br>");
+        row.innerHTML = `
+          <td><strong>${action.name}</strong><br><small>${action.place || "-"}</small></td>
+          <td>${action.category || "-"}</td>
+          <td>${dateText}</td>
+          <td>${action.capacity || 0}</td>
+          <td>
+            <div class="action-buttons">
+              <button class="small-btn danger" onclick="deleteAction(${action.id})">Smazat</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function deleteAction(id) {
+      state.companyActions = state.companyActions.filter((action) => String(action.id) !== String(id));
+      persistStateToLocalStorage();
+      syncToFirebase();
+      renderAdminSections();
+      renderPlannedActions();
+      syncActionSelect();
+    }
+
+    function renderRoleRequestsTable() {
+      const tbody = document.getElementById("roleRequestsTableBody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+      if (!state.roleRequests.length) {
+        tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state">Žádné čekající žádosti.</div></td></tr>';
+        return;
+      }
+      state.roleRequests.forEach((request) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${request.name}</td>
+          <td>${request.email}</td>
+          <td>${getRoleLabel(request.role)}</td>
+          <td>
+            <div class="action-buttons">
+              <button class="small-btn success" onclick="approveRoleRequest(${request.id})">Povolit</button>
+              <button class="small-btn danger" onclick="rejectRoleRequest(${request.id})">Zamítnout</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function renderUsersTable() {
+      const tbody = document.getElementById("activeUsersTableBody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+      const entries = Object.entries(state.customUsers);
+      if (!entries.length) {
+        tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">Zatím nebyl vydán žádný kód.</div></td></tr>';
+        return;
+      }
+      entries.forEach(([token, user]) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${user.name || "-"}</td>
+          <td>${user.email || "-"}</td>
+          <td>${getRoleLabel(user.role)}</td>
+          <td>${token}</td>
+          <td><button class="small-btn danger" onclick="deleteActiveUser('${token}')">Deaktivovat</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function renderAll() {
+      updateLoginBar();
+      updateWelcomeGate();
+      renderAssistantPreview();
+      renderReasonSelect();
+      syncActionSelect();
+      renderSmartTiles();
+      renderPlannedActions();
+      renderRequestsTable();
+      renderAdminSections();
+      toggleSubmitButtonByCompliance();
+    }
+
+    function init() {
+      firebase.initializeApp(firebaseConfig);
+      loadStateFromLocalStorage();
+      renderAll();
+      loadFromFirebase();
+      if (state.currentUser) {
+        document.getElementById("welcomeGate").style.display = "none";
+        document.getElementById("mainSystem").style.display = "block";
+        updateLoginBar();
+        openTab(state.currentUser.role === "admin" ? "list" : "new");
+      }
+    }
+
+    window.handleFormSubmit = handleFormSubmit;
+    window.loginUserFromGate = loginUserFromGate;
+    window.openAccessRequestFromGate = openAccessRequestFromGate;
+    window.logoutUser = logoutUser;
+    window.openTab = openTab;
+    window.toggleSubmitButtonByCompliance = toggleSubmitButtonByCompliance;
+    window.handleRoleRequestSubmit = handleRoleRequestSubmit;
+    window.approveRoleRequest = approveRoleRequest;
+    window.rejectRoleRequest = rejectRoleRequest;
+    window.deleteActiveUser = deleteActiveUser;
+    window.handleCreateActionSubmit = handleCreateActionSubmit;
+    window.saveAssistantConfig = saveAssistantConfig;
+    window.addFilter = addFilter;
+    window.toggleFilter = toggleFilter;
+    window.deleteFilter = deleteFilter;
+    window.addReason = addReason;
+    window.deleteReason = deleteReason;
+    window.deleteAction = deleteAction;
+    window.setStatus1 = setStatus1;
+    window.setStatus2 = setStatus2;
+    window.filterRequestsByTile = filterRequestsByTile;
+    window.openReservationModal = openReservationModal;
+    window.submitReservationFromModal = submitReservationFromModal;
+    window.exportCurrentTable = exportCurrentTable;
+    window.exportFilteredRequests = exportFilteredRequests;
+
+    document.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>
