@@ -4915,3 +4915,459 @@ setInterval(function(){
 },900);
 })();
 </script>
+
+<!-- =====================================================================
+     POLISH PATCH 2026-10-03: importované akce (obrázky z webu + tooltipy),
+     jednotný elegantní tooltip, vlastní obrázek pomocníka se sezónními ikonami
+     ===================================================================== -->
+<style id="cc-polish-css">
+/* ---------- Karty akcí ---------- */
+#cc-planned-grid{gap:22px!important}
+#cc-planned-grid .cc-event-card{transition:transform .25s cubic-bezier(.2,.7,.2,1),filter .25s ease!important}
+#cc-planned-grid .cc-event-card:hover{transform:translateY(-4px)!important;filter:drop-shadow(0 16px 24px rgba(15,23,42,.16))!important}
+#cc-planned-grid .cc-event-image{isolation:isolate;border-radius:18px!important}
+.cc-pimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:0;transition:opacity .45s ease,transform .7s cubic-bezier(.2,.7,.2,1);pointer-events:none;user-select:none}
+.cc-pimg.is-loaded{opacity:1}
+.cc-event-card:hover .cc-pimg{transform:scale(1.045)}
+.cc-has-img{background-image:none!important}
+.cc-noimg{background:linear-gradient(135deg,#1f2937 0%,#374151 58%,#7f1d1d 130%)!important}
+.cc-noimg::before{content:"🎟️";position:absolute;right:18px;top:14px;font-size:46px;line-height:1;opacity:.2;z-index:0}
+
+/* ---------- Jednotný tooltip ---------- */
+.cc-v6-tooltip,#cc-planned-grid .cc-event-info{display:none!important}
+#cc-tip{position:fixed;z-index:2147483200;width:min(340px,calc(100vw - 24px));box-sizing:border-box;background:rgba(15,23,42,.97);color:#e2e8f0;border-radius:14px;padding:15px 17px 14px;box-shadow:0 18px 44px rgba(2,6,23,.34);font:400 12.5px/1.55 'Segoe UI',system-ui,sans-serif;opacity:0;visibility:hidden;transform:translateY(6px);transition:opacity .16s ease,transform .16s ease,visibility .16s;pointer-events:none}
+#cc-tip.show{opacity:1;visibility:visible;transform:none}
+#cc-tip h4{margin:0 0 3px;font-size:14.5px;font-weight:700;line-height:1.3;color:#fff}
+#cc-tip .cc-tip-cat{display:block;margin-bottom:7px;font-size:11px;color:#fda4af}
+#cc-tip .cc-tip-desc{max-height:12em;overflow:auto;white-space:normal}
+#cc-tip .cc-tip-desc.is-empty{color:#94a3b8;font-style:italic}
+#cc-tip .cc-tip-facts{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.12);color:#cbd5e1;font-size:11.5px}
+#cc-tip .cc-tip-low{color:#fbbf24;font-weight:600}
+#cc-tip .cc-tip-full{color:#fca5a5;font-weight:600}
+#cc-tip.cc-sheet{left:12px!important;right:12px;bottom:12px;top:auto!important;width:auto;pointer-events:auto;transform:translateY(14px)}
+#cc-tip.cc-sheet.show{transform:none}
+.cc-info-btn{position:absolute;top:12px;right:12px;z-index:5;width:30px;height:30px;padding:0;border:0;border-radius:50%;background:rgba(15,23,42,.58);color:#fff;font:italic 700 16px/30px Georgia,serif;text-align:center;cursor:pointer;backdrop-filter:blur(4px);opacity:0;transition:opacity .15s}
+.cc-info-btn:focus-visible{opacity:1;outline:2px solid #fff;outline-offset:2px}
+@media (hover:none),(max-width:800px){.cc-info-btn{opacity:1}}
+
+/* ---------- Vlastní obrázek pomocníka ---------- */
+#cc-v3-help .cc-v3-helpbtn{position:relative}
+#cc-v3-help .cc-v3-helpbtn .cc-helper-custom-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;pointer-events:none}
+#cc-v3-help.cc-has-helper-img .cc-real-ai-head::before{content:"";display:inline-block;width:28px;height:28px;margin-right:9px;vertical-align:middle;border-radius:50%;background:var(--cc-helper-img) center/cover no-repeat;box-shadow:0 0 0 2px rgba(255,255,255,.35)}
+.cc-hp2 h3{margin:0 0 4px}
+.cc-hp2 .cc-hp2-row{display:grid;grid-template-columns:76px minmax(0,1fr);gap:14px;align-items:start}
+.cc-hp2 .cc-hp2-prev{width:76px;height:76px;border-radius:50%;background:#111827 center/cover no-repeat;color:#fff;display:flex;align-items:center;justify-content:center;font-size:34px;box-shadow:0 7px 20px rgba(15,23,42,.16);overflow:hidden}
+.cc-hp2 .cc-hp2-prev.sm{width:44px;height:44px;font-size:20px;box-shadow:none}
+.cc-hp2 .cc-hp2-ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.cc-hp2 .cc-hp2-ctl input[type=text]{flex:1 1 150px;min-width:0}
+.cc-hp2 .cc-hp2-emoji{flex:0 0 74px!important;text-align:center}
+.cc-hp2 .cc-hp2-mini{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:7px 11px;font:inherit;font-size:12px;cursor:pointer}
+.cc-hp2 .cc-hp2-mini:hover{border-color:#94a3b8}
+.cc-hp2 .cc-hp2-seasons{margin-top:14px;border-top:1px solid #e2e8f0;padding-top:14px}
+.cc-hp2 .cc-hp2-s{display:grid;grid-template-columns:44px 96px minmax(0,1fr);gap:10px;align-items:center;padding:8px 0}
+.cc-hp2 .cc-hp2-s+.cc-hp2-s{border-top:1px dashed #e2e8f0}
+.cc-hp2 .cc-hp2-s b{font-size:12.5px;color:#0f172a}
+.cc-hp2 .cc-hp2-now{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;background:#fee2e2;color:#b91c1c;font-size:10px;font-weight:700}
+.cc-hp2 .cc-hp2-hint,.cc-hp2 .cc-hp2-msg{font-size:11.5px;color:#64748b;margin-top:6px}
+.cc-hp2 .cc-hp2-msg.err{color:#b91c1c}
+.cc-hp2 .cc-hp2-chk{display:flex;gap:8px;align-items:center;font-size:12.5px;font-weight:600;color:#334155;margin:0 0 6px}
+.cc-hp2 .cc-hp2-chk input{width:auto;margin:0}
+@media(max-width:620px){.cc-hp2 .cc-hp2-s{grid-template-columns:44px minmax(0,1fr)}.cc-hp2 .cc-hp2-s .cc-hp2-ctl{grid-column:1/-1}}
+@media (prefers-reduced-motion:reduce){.cc-pimg,#cc-tip,#cc-planned-grid .cc-event-card{transition:none!important}}
+</style>
+
+<script id="cc-polish-js">
+(function(){
+'use strict';
+if(window.__ccPolish)return;window.__ccPolish=true;
+
+/* =====================================================================
+   1) NORMALIZACE IMPORTOVANÝCH AKCÍ
+   Importy (Excel/CSV/JSON) mívají jiné názvy sloupců i odkazy, které prohlížeč
+   nezobrazí. Normalizace probíhá při čtení – uložená data zůstávají beze změny,
+   dokud akci znovu neuložíte.
+   ===================================================================== */
+function deacc(s){return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');}
+
+function cleanImageUrl(raw){
+  if(raw==null||typeof raw==='object')return '';
+  var s=String(raw).trim(),m;
+  if(!s)return '';
+  if((m=s.match(/^=\s*(?:IMAGE|OBRAZEK|OBRÁZEK|HYPERLINK|ODKAZ)\s*\(\s*"([^"]+)"/i)))s=m[1];
+  else if((m=s.match(/<img[^>]+src\s*=\s*["']([^"']+)["']/i)))s=m[1];
+  else if((m=s.match(/^url\(\s*["']?([^"')]+)["']?\s*\)$/i)))s=m[1];
+  else if((m=s.match(/!\[[^\]]*\]\(([^)\s]+)\)/)))s=m[1];
+  s=s.replace(/^["'<\s]+|["'>\s]+$/g,'');
+  if(/^data:image\//i.test(s))return s;
+  if(/\shttps?:\/\//i.test(s)&&(m=s.match(/https?:\/\/[^\s,;|"'<>]+/)))s=m[0];
+  if(s.indexOf('//')===0)s='https:'+s;
+  else if(!/^[a-z][a-z0-9+.-]*:/i.test(s)&&/^(www\.|[a-z0-9-]+(\.[a-z0-9-]+)+\/)/i.test(s))s='https://'+s;
+  if(!/^https?:\/\//i.test(s))return '';
+  s=s.replace(/^http:\/\//i,'https://').replace(/ /g,'%20');
+  /* Google Disk: sdílený odkaz -> přímá miniatura */
+  if((m=s.match(/drive\.google\.com\/file\/d\/([^\/?#]+)/))||(m=s.match(/drive\.google\.com\/(?:open|uc)\?(?:[^#]*&)?id=([^&#]+)/)))
+    return 'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w1600';
+  /* Dropbox: sdílený odkaz -> přímý odkaz */
+  if(/^https:\/\/(www\.)?dropbox\.com\//i.test(s))return s.replace(/^https:\/\/(www\.)?dropbox\.com/i,'https://dl.dropboxusercontent.com');
+  /* Imgur: stránka -> soubor */
+  if((m=s.match(/^https:\/\/imgur\.com\/([A-Za-z0-9]+)\/?$/)))return 'https://i.imgur.com/'+m[1]+'.jpg';
+  return s;
+}
+
+var IMG_KEY=/(obraz|image|img|foto|photo|picture|^pic|cover|thumb|banner|poster)/;
+var DESC_KEY=/(popis|descr|detail|tooltip|anotac|info|poznam|notes?$|obsah)/;
+var PLACE_KEY=/(misto|place|location|venue|lokal|kde)/;
+
+function pad2(n){return (n<10?'0':'')+n;}
+function normDate(v){
+  if(typeof v==='number'&&v>20000&&v<80000){var d=new Date(Math.round((v-25569)*86400000));return d.getUTCFullYear()+'-'+pad2(d.getUTCMonth()+1)+'-'+pad2(d.getUTCDate());}
+  if(typeof v!=='string')return v;
+  var m=v.trim().match(/^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})$/);
+  return m?m[3]+'-'+pad2(+m[2])+'-'+pad2(+m[1]):v;
+}
+function normTime(v){
+  if(typeof v==='number'&&v>=0&&v<1){var mins=Math.round(v*1440);return pad2(Math.floor(mins/60))+':'+pad2(mins%60);}
+  if(typeof v!=='string')return v;
+  var m=v.trim().match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  return m?pad2(+m[1])+':'+m[2]:v;
+}
+
+function normAction(a){
+  if(!a||typeof a!=='object')return a;
+  var c=Object.assign({},a),k,u;
+  /* obrázek */
+  var img=cleanImageUrl(c.image)||cleanImageUrl(c.imageUrl)||cleanImageUrl(c.backgroundImage);
+  if(!img){for(k in c){if(IMG_KEY.test(deacc(k))){u=cleanImageUrl(c[k]);if(u){img=u;break;}}}}
+  if(img){c.image=img;}
+  /* popis -> text tooltipu */
+  var desc=String(c.description||'').trim()||String(c.tooltip||'').trim();
+  if(!desc){for(k in c){var dk=deacc(k);if(typeof c[k]==='string'&&c[k].trim()&&DESC_KEY.test(dk)&&!/(image|img|url|link|obraz)/.test(dk)){desc=c[k].trim();break;}}}
+  if(desc){c.description=desc;if(!c.tooltip)c.tooltip=desc;}
+  /* místo, datum, čas */
+  if(!c.place){for(k in c){if(typeof c[k]==='string'&&c[k].trim()&&PLACE_KEY.test(deacc(k))){c.place=c[k].trim();break;}}}
+  c.date=normDate(c.date);c.time=normTime(c.time);
+  return c;
+}
+
+var nativeGet=Storage.prototype.getItem,lastRaw=null,lastOut=null;
+Storage.prototype.getItem=function(key){
+  var v=nativeGet.call(this,key);
+  if(key!=='companyActions'||v==null)return v;
+  if(v===lastRaw)return lastOut;
+  try{
+    var arr=JSON.parse(v);
+    if(!Array.isArray(arr))return v;
+    lastOut=JSON.stringify(arr.map(normAction));lastRaw=v;return lastOut;
+  }catch(e){return v;}
+};
+try{companyActions=JSON.parse(localStorage.getItem('companyActions')||'[]');}catch(e){}
+
+function actionList(){try{return JSON.parse(localStorage.getItem('companyActions')||'[]')||[];}catch(e){return [];}}
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+
+/* =====================================================================
+   2) OBRÁZKY NA KARTÁCH – skutečný <img> bez odesílání referreru,
+      jemný náběh, a elegantní náhrada, když se obrázek nenačte
+   ===================================================================== */
+var loaded={},failed={};
+function bgUrl(el){
+  var m=(el.style.backgroundImage||'').match(/url\(\s*["']?(.*?)["']?\s*\)$/);
+  return m?m[1]:'';
+}
+function decorateImages(){
+  var list=document.querySelectorAll('.cc-event-image,.cc-v10-action-image,.fe-img');
+  for(var i=0;i<list.length;i++){
+    var el=list[i],url=el.getAttribute('data-ccsrc')||bgUrl(el);
+    if(!url){if(!el.classList.contains('cc-noimg'))el.classList.add('cc-noimg');continue;}
+    if(el.getAttribute('data-ccsrc')===url&&(el.querySelector(':scope > .cc-pimg')||el.classList.contains('cc-noimg')))continue;
+    el.setAttribute('data-ccsrc',url);
+    var old=el.querySelector(':scope > .cc-pimg');if(old)old.remove();
+    if(failed[url]){el.classList.remove('cc-has-img');el.classList.add('cc-noimg');continue;}
+    if(getComputedStyle(el).position==='static')el.style.position='relative';
+    el.classList.remove('cc-noimg');el.classList.add('cc-has-img');
+    (function(el,url){
+      var im=new Image();
+      im.className='cc-pimg';im.alt='';im.decoding='async';im.referrerPolicy='no-referrer';
+      im.onload=function(){loaded[url]=1;im.classList.add('is-loaded');};
+      im.onerror=function(){failed[url]=1;im.remove();el.classList.remove('cc-has-img');el.classList.add('cc-noimg');};
+      el.insertBefore(im,el.firstChild);
+      im.src=url;
+      if(im.complete&&im.naturalWidth){loaded[url]=1;im.classList.add('is-loaded');}
+    })(el,url);
+  }
+}
+
+/* =====================================================================
+   3) JEDNOTNÝ TOOLTIP (PC: najetí myší, mobil: tlačítko „i“ → spodní panel)
+   ===================================================================== */
+var tip=null,tipCard=null,pinned=false;
+function isTouch(){return window.matchMedia&&window.matchMedia('(hover:none), (max-width:800px)').matches;}
+function ensureTip(){
+  if(tip)return tip;
+  tip=document.createElement('div');tip.id='cc-tip';tip.setAttribute('role','tooltip');
+  document.body.appendChild(tip);return tip;
+}
+function actionFor(card){
+  var h=card.querySelector('h3'),name=h?h.textContent.trim():'';
+  var all=actionList();
+  for(var i=0;i<all.length;i++)if(String(all[i].name||'').trim()===name)return all[i];
+  return null;
+}
+function approvedFor(a){
+  var rs=[];try{rs=JSON.parse(localStorage.getItem('ticketRequests')||'[]')||[];}catch(e){}
+  return rs.filter(function(r){return r.action===a.name&&r.status1==='Schváleno'&&r.status2==='Schváleno';}).reduce(function(n,r){return n+(parseInt(r.tickets)||0);},0);
+}
+function placeWord(n){return n===1?'místo':(n>=2&&n<=4?'místa':'míst');}
+function fmtD(v){var p=String(v||'').split('-');return p.length===3?(+p[2])+'. '+(+p[1])+'. '+p[0]:String(v||'');}
+function tipHtml(a){
+  var cat=(a.category||a.cat||'')+(a.subcategory?' · '+a.subcategory:'');
+  var facts=[];
+  if(a.date)facts.push('<span>📅 '+esc(fmtD(a.date))+'</span>');
+  if(a.time)facts.push('<span>⏰ '+esc(a.time)+'</span>');
+  if(a.place)facts.push('<span>📍 '+esc(a.place)+'</span>');
+  var cap=Number(a.capacity)||0;
+  if(cap>0){
+    var left=cap-approvedFor(a);
+    facts.push(left<=0?'<span class="cc-tip-full">🎟️ Vyprodáno</span>':'<span class="'+(left<=Math.max(5,cap*.1)?'cc-tip-low':'')+'">🎟️ Zbývá '+left+' '+placeWord(left)+'</span>');
+  }
+  var d=String(a.description||a.tooltip||'').trim();
+  return '<h4>'+esc(a.name)+'</h4>'+(cat?'<span class="cc-tip-cat">'+esc(cat)+'</span>':'')+
+    '<div class="cc-tip-desc'+(d?'':' is-empty')+'">'+(d?esc(d).replace(/\n/g,'<br>'):'K této akci zatím nebyl přidán popis.')+'</div>'+
+    (facts.length?'<div class="cc-tip-facts">'+facts.join('')+'</div>':'');
+}
+function showTip(card,asSheet){
+  var a=actionFor(card);if(!a)return;
+  var t=ensureTip();
+  t.innerHTML=tipHtml(a);
+  t.classList.toggle('cc-sheet',!!asSheet);
+  t.style.left='';t.style.top='';
+  t.classList.add('show');tipCard=card;
+  if(asSheet)return;
+  var r=card.getBoundingClientRect(),w=t.offsetWidth,h=t.offsetHeight;
+  var left=Math.max(12,Math.min(r.left+r.width/2-w/2,window.innerWidth-w-12));
+  var top=r.bottom+10;
+  if(top+h>window.innerHeight-12)top=Math.max(12,r.top-h-10);
+  t.style.left=left+'px';t.style.top=top+'px';
+}
+function hideTip(){pinned=false;tipCard=null;if(tip)tip.classList.remove('show');}
+
+document.addEventListener('mouseover',function(e){
+  if(isTouch()||pinned)return;
+  var card=e.target.closest?e.target.closest('#cc-planned-grid .cc-event-card'):null;
+  if(card){if(card!==tipCard)showTip(card,false);}
+  else if(tipCard)hideTip();
+},true);
+document.addEventListener('mouseout',function(e){if(!e.relatedTarget&&!pinned)hideTip();},true);
+document.addEventListener('focusin',function(e){
+  var b=e.target.closest?e.target.closest('.cc-info-btn'):null;
+  if(b&&!isTouch()){var c=b.closest('.cc-event-card');if(c)showTip(c,false);}
+});
+document.addEventListener('focusout',function(e){if(e.target.closest&&e.target.closest('.cc-info-btn')&&!pinned)hideTip();});
+document.addEventListener('click',function(e){
+  var b=e.target.closest?e.target.closest('.cc-info-btn'):null;
+  if(b){
+    e.preventDefault();e.stopPropagation();
+    var c=b.closest('.cc-event-card');
+    if(pinned&&tipCard===c){hideTip();return;}
+    showTip(c,isTouch());pinned=true;return;
+  }
+  if(pinned&&!(e.target.closest&&e.target.closest('#cc-tip')))hideTip();
+},true);
+window.addEventListener('scroll',function(){if(tip&&tip.classList.contains('show')&&!tip.classList.contains('cc-sheet'))hideTip();},{passive:true});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')hideTip();});
+
+function addInfoButtons(){
+  var imgs=document.querySelectorAll('#cc-planned-grid .cc-event-card .cc-event-image');
+  for(var i=0;i<imgs.length;i++){
+    if(imgs[i].querySelector(':scope > .cc-info-btn'))continue;
+    var b=document.createElement('button');
+    b.type='button';b.className='cc-info-btn';b.textContent='i';b.setAttribute('aria-label','Zobrazit podrobnosti akce');
+    imgs[i].appendChild(b);
+  }
+}
+
+/* =====================================================================
+   4) VLASTNÍ OBRÁZEK POMOCNÍKA + SEZÓNNÍ IKONY
+   Ukládá se do ccPortalConfigV3.helperProfile (to se synchronizuje do cloudu,
+   takže ikonu uvidí všichni uživatelé, ne jen zařízení administrátora).
+   ===================================================================== */
+var CFG_KEY='ccPortalConfigV3',LEGACY='ccHelperProfile';
+var DEF_GREETING='Dobrý den! Jsem váš pomocník portálu. Ptejte se mě běžnou větou na akce, rezervace nebo kapacitu.';
+var SEASONS=[['autumn','Podzim','🍁'],['winter','Zima','❄️'],['spring','Jaro','🌷'],['summer','Léto','🏖️'],['normal','Běžný mód','☁️']];
+
+function readCfg(){try{return JSON.parse(localStorage.getItem(CFG_KEY)||'{}')||{};}catch(e){return {};}}
+function getProfile(){
+  var p=readCfg().helperProfile,legacy={};
+  try{legacy=JSON.parse(localStorage.getItem(LEGACY)||'{}')||{};}catch(e){}
+  p=p||{};
+  return {
+    name:p.name||legacy.name||'Chytrý pomocník',
+    greeting:p.greeting||legacy.greeting||DEF_GREETING,
+    emoji:p.emoji||(p.image?'':legacy.icon)||'🤖',
+    image:p.image||'',
+    auto:p.auto!==false,
+    seasons:p.seasons||{}
+  };
+}
+function effective(p){
+  var mode=localStorage.getItem('ccSeasonMode')||'autumn';
+  var s=(p.auto&&p.seasons&&p.seasons[mode])||{};
+  if(s.image)return {image:s.image,emoji:s.emoji||p.emoji,mode:mode};
+  if(s.emoji)return {image:'',emoji:s.emoji,mode:mode};
+  return {image:p.image||'',emoji:p.emoji||'🤖',mode:mode};
+}
+function saveProfile(p){
+  var c=readCfg();c.helperProfile=p;
+  localStorage.setItem(CFG_KEY,JSON.stringify(c));
+  syncHelper();
+}
+/* původní kód pomocníka čte ccHelperProfile – držíme ho v souladu (při obrázku prázdná ikona-emoji) */
+function mirror(){
+  var p=getProfile(),e=effective(p);
+  var want=JSON.stringify({name:p.name,greeting:p.greeting,icon:e.image?'':e.emoji});
+  if(localStorage.getItem(LEGACY)!==want)localStorage.setItem(LEGACY,want);
+}
+function renderHelperImage(){
+  var wrap=document.getElementById('cc-v3-help');if(!wrap)return;
+  var e=effective(getProfile());
+  var btn=wrap.querySelector('.cc-v3-helpbtn');
+  if(btn){
+    var im=btn.querySelector('.cc-helper-custom-img');
+    if(e.image){
+      btn.setAttribute('data-ccimg','1');
+      if(!im){im=document.createElement('img');im.className='cc-helper-custom-img';im.alt='';im.draggable=false;im.referrerPolicy='no-referrer';btn.appendChild(im);}
+      if(im.getAttribute('src')!==e.image)im.setAttribute('src',e.image);
+    }else{btn.removeAttribute('data-ccimg');if(im)im.remove();}
+  }
+  if(e.image){
+    if(wrap.getAttribute('data-ccimgsrc')!==e.image){
+      wrap.style.setProperty('--cc-helper-img','url("'+e.image.replace(/"/g,'%22')+'")');
+      wrap.setAttribute('data-ccimgsrc',e.image);
+    }
+    wrap.classList.add('cc-has-helper-img');
+  }else{wrap.classList.remove('cc-has-helper-img');wrap.removeAttribute('data-ccimgsrc');}
+}
+function syncHelper(){mirror();renderHelperImage();}
+
+/* ---- zmenšení nahraného obrázku na 192×192 (do cloudu se vejde i pět ikon) ---- */
+function fileToIcon(file,done,fail){
+  if(!file||!/^image\//.test(file.type||'')){fail('Vyberte prosím obrázek (PNG, JPG, WebP nebo SVG).');return;}
+  var rd=new FileReader();
+  rd.onerror=function(){fail('Soubor se nepodařilo přečíst.');};
+  rd.onload=function(){
+    var im=new Image();
+    im.onerror=function(){fail('Obrázek se nepodařilo otevřít.');};
+    im.onload=function(){
+      var S=192,cv=document.createElement('canvas');cv.width=cv.height=S;
+      var ctx=cv.getContext('2d'),w=im.naturalWidth||im.width,h=im.naturalHeight||im.height,side=Math.min(w,h);
+      ctx.drawImage(im,(w-side)/2,(h-side)/2,side,side,0,0,S,S);
+      var out=cv.toDataURL('image/webp',.88);
+      if(out.indexOf('data:image/webp')!==0)out=cv.toDataURL('image/png');
+      done(out);
+    };
+    im.src=rd.result;
+  };
+  rd.readAsDataURL(file);
+}
+function testUrl(url,ok,bad){
+  var im=new Image();im.referrerPolicy='no-referrer';
+  im.onload=function(){ok();};im.onerror=function(){bad();};im.src=url;
+}
+
+/* ---- editor v administraci (nahrazuje původní jednoduchý) ---- */
+function buildEditor(c){
+  var p=getProfile(),draft={name:p.name,greeting:p.greeting,emoji:p.emoji,image:p.image,auto:p.auto,seasons:JSON.parse(JSON.stringify(p.seasons||{}))};
+  var cur=effective(p).mode;
+  var host=document.createElement('div');
+  host.id='cc-helper-profile-editor';host.className='cc-helper-profile cc-hp2';host.setAttribute('data-v2','1');
+  function prevStyle(img,emoji){return img?'background-image:url(&quot;'+esc(img)+'&quot;)':'';}
+  function seasonRow(s){
+    var d=draft.seasons[s[0]]||{};
+    return '<div class="cc-hp2-s" data-s="'+s[0]+'"><div class="cc-hp2-prev sm" data-prev style="'+prevStyle(d.image)+'">'+(d.image?'':esc(d.emoji||s[2]))+'</div>'+
+      '<b>'+s[1]+(cur===s[0]?'<span class="cc-hp2-now">právě aktivní</span>':'')+'</b>'+
+      '<div class="cc-hp2-ctl"><button type="button" class="cc-hp2-mini" data-up>Nahrát obrázek</button><input type="file" accept="image/*" hidden>'+
+      '<input type="text" class="cc-hp2-emoji" maxlength="8" data-emoji placeholder="'+s[2]+'" value="'+esc(d.emoji||'')+'">'+
+      '<button type="button" class="cc-hp2-mini" data-clr>Vymazat</button></div></div>';
+  }
+  host.innerHTML=
+    '<h3>✨ Personifikace pomocníka</h3>'+
+    '<p class="cc-adm-muted" style="margin:0 0 13px">Nahrajte vlastní obrázek nebo zvolte emoji. Změna se projeví u všech uživatelů v tlačítku pomocníka vpravo dole.</p>'+
+    '<div class="cc-hp2-row"><div class="cc-hp2-prev" id="hp2-prev" style="'+prevStyle(draft.image)+'">'+(draft.image?'':esc(draft.emoji))+'</div>'+
+    '<div><label>Výchozí vzhled</label><div class="cc-hp2-ctl" id="hp2-main">'+
+    '<button type="button" class="cc-hp2-mini" data-up>Nahrát obrázek</button><input type="file" accept="image/*" hidden>'+
+    '<input type="text" class="cc-hp2-emoji" maxlength="8" data-emoji placeholder="🤖" value="'+esc(draft.emoji)+'">'+
+    '<button type="button" class="cc-hp2-mini" data-clr>Odebrat obrázek</button></div>'+
+    '<div class="cc-hp2-ctl" style="margin-top:8px"><input type="text" id="hp2-url" placeholder="…nebo vložte odkaz na obrázek (https://…)" value="'+(draft.image&&draft.image.indexOf('data:')!==0?esc(draft.image):'')+'"><button type="button" class="cc-hp2-mini" id="hp2-useurl">Použít odkaz</button></div>'+
+    '<div class="cc-hp2-hint">Nejlépe čtvercový obrázek (od 200×200 px). Nahraný soubor se automaticky ořízne a zmenší. Odkaz z cizího webu může časem přestat fungovat – pro sezónní ikony je jistější nahrání souboru.</div></div></div>'+
+    '<div class="cc-hp2-seasons"><label class="cc-hp2-chk"><input type="checkbox" id="hp2-auto"'+(draft.auto?' checked':'')+'> Přepínat ikonu automaticky podle sezónního režimu portálu</label>'+
+    '<div class="cc-hp2-hint" style="margin:0 0 6px">Sezóna bez vlastní ikony používá výchozí vzhled výše.</div><div id="hp2-seasons">'+SEASONS.map(seasonRow).join('')+'</div></div>'+
+    '<div style="margin-top:14px"><label>Jméno pomocníka</label><input id="hp2-name" maxlength="40" placeholder="např. Bára, Alex, Ticket Buddy…" value="'+esc(draft.name)+'"></div>'+
+    '<div style="margin-top:11px"><label>Úvodní pozdrav</label><textarea id="hp2-greet">'+esc(draft.greeting)+'</textarea></div>'+
+    '<div style="margin-top:14px"><button type="button" class="cc-adm-btn primary" id="hp2-save">Uložit personifikaci</button><span class="cc-hp2-msg" id="hp2-msg"></span></div>';
+  c.insertBefore(host,c.firstChild);
+
+  var msg=host.querySelector('#hp2-msg');
+  function say(t,err){msg.textContent=' '+t;msg.className='cc-hp2-msg'+(err?' err':'');}
+  function paintMain(){var el=host.querySelector('#hp2-prev');el.style.backgroundImage=draft.image?'url("'+draft.image.replace(/"/g,'%22')+'")':'';el.textContent=draft.image?'':draft.emoji||'🤖';}
+  function paintSeason(row){
+    var s=row.getAttribute('data-s'),d=draft.seasons[s]||{},pv=row.querySelector('[data-prev]');
+    var def=SEASONS.filter(function(x){return x[0]===s;})[0][2];
+    pv.style.backgroundImage=d.image?'url("'+d.image.replace(/"/g,'%22')+'")':'';pv.textContent=d.image?'':(d.emoji||def);
+  }
+  function wire(scope,get,set,repaint){
+    var file=scope.querySelector('input[type=file]'),emo=scope.querySelector('[data-emoji]');
+    scope.querySelector('[data-up]').onclick=function(){file.click();};
+    file.onchange=function(){
+      fileToIcon(file.files[0],function(url){set({image:url});repaint();say('Obrázek je připraven – nezapomeňte uložit.');},function(m){say(m,true);});
+      file.value='';
+    };
+    emo.oninput=function(){set({emoji:emo.value.trim()});repaint();};
+    scope.querySelector('[data-clr]').onclick=function(){set({image:'',emoji:''});emo.value='';repaint();};
+  }
+  wire(host.querySelector('#hp2-main'),null,function(o){
+    if('image'in o){draft.image=o.image;if(!o.image)host.querySelector('#hp2-url').value='';}
+    if('emoji'in o)draft.emoji=o.emoji;
+  },paintMain);
+  host.querySelectorAll('.cc-hp2-s').forEach(function(row){
+    var s=row.getAttribute('data-s');
+    wire(row,null,function(o){draft.seasons[s]=Object.assign({},draft.seasons[s]||{},o);},function(){paintSeason(row);});
+  });
+  host.querySelector('#hp2-useurl').onclick=function(){
+    var u=cleanImageUrl(host.querySelector('#hp2-url').value);
+    if(!u){say('Zadejte platný odkaz na obrázek (začíná https://).',true);return;}
+    say('Ověřuji odkaz…');
+    testUrl(u,function(){draft.image=u;paintMain();say('Odkaz funguje – nezapomeňte uložit.');},function(){say('Obrázek z tohoto odkazu se nepodařilo načíst. Odkaz musí vést přímo na obrázek.',true);});
+  };
+  host.querySelector('#hp2-save').onclick=function(){
+    var seasons={};
+    Object.keys(draft.seasons).forEach(function(k){var d=draft.seasons[k];if(d&&(d.image||d.emoji))seasons[k]={image:d.image||'',emoji:d.emoji||''};});
+    var out={name:host.querySelector('#hp2-name').value.trim()||'Chytrý pomocník',greeting:host.querySelector('#hp2-greet').value.trim()||DEF_GREETING,emoji:draft.emoji||'🤖',image:draft.image||'',auto:host.querySelector('#hp2-auto').checked,seasons:seasons};
+    try{saveProfile(out);say('Uloženo ✓');setTimeout(function(){say('');},2200);}
+    catch(err){say('Uložení se nepodařilo: '+err.message,true);}
+  };
+}
+function ensureEditor(){
+  if(window.__ccAdminCurrentPage!=='helper')return;
+  var c=document.getElementById('cc-admin-content');if(!c)return;
+  var h=c.querySelector('#cc-helper-profile-editor');
+  if(h&&h.getAttribute('data-v2')==='1')return;
+  if(h)h.remove();
+  buildEditor(c);
+}
+
+/* =====================================================================
+   5) SMYČKA
+   ===================================================================== */
+var raf=0;
+function pass(){raf=0;try{decorateImages();addInfoButtons();}catch(e){console.error('polish pass',e);}}
+function schedule(){if(!raf)raf=requestAnimationFrame(pass);}
+function start(){
+  new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});
+  schedule();
+  setInterval(function(){try{syncHelper();ensureEditor();}catch(e){}},700);
+  syncHelper();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+window.__ccPolishApi={cleanImageUrl:cleanImageUrl,normAction:normAction};
+})();
+</script>
