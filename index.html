@@ -94,8 +94,8 @@
             100% { transform: translateY(105vh) rotate(360deg) translateX(-30px); opacity: 0; }
         }
     </style>
-<style id="cc-early-no-flicker">body:not(.cc-app-ready){visibility:hidden!important} #tab4:not(.cc-admin-visible){display:none!important}</style></head>
-<body><script id="cc-mark-app-ready">(function(){function r(){document.body.classList.add("cc-app-ready")}if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",function(){setTimeout(r,40)});else setTimeout(r,40)})();</script>
+</head>
+<body>
 <!-- Kontejner pro detailní podzimní lístky (Javor a Dub) -->
 <div class="leaves-container">
 <!-- 1. Javorový list (Sytě oranžový) -->
@@ -4017,7 +4017,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 setTimeout(setup,400);setTimeout(setup,1200);setInterval(setup,2500);
 })();
 </script>
-<script id="cc-admin-rebuild-core">(function(){
+(function(){
 'use strict';
 
 function A(){ try{return Array.isArray(companyActions)?companyActions:JSON.parse(localStorage.getItem('companyActions')||'[]')}catch(e){return []} }
@@ -4072,18 +4072,8 @@ function makeShell(){
   var tab=document.getElementById('tab4');if(!tab)return null;hideOldAdmin();
   var shell=document.getElementById('cc-admin-shell');if(shell)return shell;
   shell=document.createElement('div');shell.id='cc-admin-shell';shell.className='cc-admin-shell';
-  shell.innerHTML=`<aside class="cc-admin-side"><div class="cc-admin-brand"><strong>Administrace portálu</strong><span>Vyberte část systému, kterou chcete upravit.</span></div><div class="cc-admin-nav">
-  <button data-page="home" class="active"><span class="cc-tile-icon">📊</span><span class="cc-tile-title">Přehled</span><span class="cc-tile-desc">Stav akcí, žádostí, kapacit a uživatelů.</span></button>
-  <button data-page="events"><span class="cc-tile-icon">🎟️</span><span class="cc-tile-title">Akce a kapacita</span><span class="cc-tile-desc">Vytváření, úprava, skrytí a obsazenost akcí.</span></button>
-  <button data-page="requests"><span class="cc-tile-icon">📋</span><span class="cc-tile-title">Žádosti o rezervace</span><span class="cc-tile-desc">Přehled žádostí a jejich schvalování.</span></button>
-  <button data-page="users"><span class="cc-tile-icon">👥</span><span class="cc-tile-title">Uživatelé a role</span><span class="cc-tile-desc">Přístupy, role, žádosti a vydané kódy.</span></button>
-  <button data-page="appearance"><span class="cc-tile-icon">🎨</span><span class="cc-tile-title">Vzhled a vstupní strana</span><span class="cc-tile-desc">Texty, úvodní informace a vzhled portálu.</span></button>
-  <button data-page="helper"><span class="cc-tile-icon">💡</span><span class="cc-tile-title">Chytrý pomocník</span><span class="cc-tile-desc">Otázky, odpovědi a kontakt pro pomocníka.</span></button>
-  <button data-page="filters"><span class="cc-tile-icon">🏷️</span><span class="cc-tile-title">Kategorie a důvody</span><span class="cc-tile-desc">Kategorie akcí, filtry a důvody rezervací.</span></button>
-  <button data-page="approvers"><span class="cc-tile-icon">🔑</span><span class="cc-tile-title">Schvalovatelé</span><span class="cc-tile-desc">Profily a vazby schvalovatelů.</span></button>
-  <button data-page="system"><span class="cc-tile-icon">🛠️</span><span class="cc-tile-title">Systém a záloha</span><span class="cc-tile-desc">Záloha, obnova a bezpečné nastavení.</span></button>
-  <button data-page="import"><span class="cc-tile-icon">🌐</span><span class="cc-tile-title">Import akcí z webu</span><span class="cc-tile-desc">Načtení programu O2 areny a bezpečný výběr akcí k importu.</span></button>
-</div></aside><main class="cc-admin-main"><div class="cc-admin-head"><div><h2 id="cc-admin-title">Přehled</h2><p id="cc-admin-subtitle">Rychlý přehled portálu a nejdůležitější administrativní úkony.</p></div><div class="cc-admin-actions"><button class="cc-adm-btn" id="cc-admin-refresh">Obnovit</button><button class="cc-adm-btn primary" id="cc-admin-new-event">+ Nová akce</button></div></div><div id="cc-admin-content"></div><div class="cc-admin-footer">Administrativní změny se ukládají do stejného cloudového úložiště jako zbytek portálu.</div></main></div>`;
+  shell.innerHTML=`<aside class="cc-admin-side"><div class="cc-admin-brand"><strong>Administrace portálu</strong><span>Úpravy celého systému na jednom místě</span></div><div class="cc-admin-nav">
+  <button data-page="home" class="active">Přehled</button><button data-page="events">Akce a kapacita</button><button data-page="requests">Žádosti o rezervace</button><button data-page="users">Uživatelé a role</button><div class="admin-sep"></div><button data-page="appearance">Vzhled a vstupní strana</button><button data-page="helper">Chytrý pomocník</button><button data-page="filters">Kategorie a důvody</button><button data-page="approvers">Schvalovatelé</button><div class="admin-sep"></div><button data-page="system">Systém a záloha</button></div></aside><main class="cc-admin-main"><div class="cc-admin-head"><div><h2 id="cc-admin-title">Přehled</h2><p id="cc-admin-subtitle">Rychlý přehled portálu a nejdůležitější administrativní úkony.</p></div><div class="cc-admin-actions"><button class="cc-adm-btn" id="cc-admin-refresh">Obnovit</button><button class="cc-adm-btn primary" id="cc-admin-new-event">+ Nová akce</button></div></div><div id="cc-admin-content"></div><div class="cc-admin-footer">Administrativní změny se ukládají do stejného cloudového úložiště jako zbytek portálu.</div></main></div>`;
   tab.appendChild(shell);
   shell.querySelectorAll('.cc-admin-nav button[data-page]').forEach(function(b){b.onclick=function(){showPage(b.dataset.page)}});
   document.getElementById('cc-admin-refresh').onclick=function(){renderPage(currentPage)};
@@ -4091,9 +4081,9 @@ function makeShell(){
   return shell;
 }
 var currentPage='home';
-var titles={home:['Přehled','Rychlý přehled portálu a nejdůležitější administrativní úkony.'],events:['Akce a kapacita','Vytváření, úprava, skrytí, archivace a kontrola obsazenosti akcí.'],requests:['Žádosti o rezervace','Přehled všech žádostí a jejich stavů.'],users:['Uživatelé a role','Přístupy, role, žádosti o přístup a vydané kódy.'],appearance:['Vzhled a vstupní strana','Upravte texty, kategorie, dlaždice a informace před přihlášením.'],helper:['Chytrý pomocník','Obsah odpovědí a kontakt pro případy, kdy pomocník nepomůže.'],filters:['Kategorie a důvody','Kategorie akcí, filtry a nabídka důvodů rezervace.'],approvers:['Schvalovatelé','Správa profilů nadřízených a schvalovacích vazeb.'],system:['Systém a záloha','Export, import nastavení a bezpečné obnovení výchozího vzhledu.'],import:['Import akcí z webu','Načtěte program O2 areny a vyberte akce, které chcete přidat do portálu.']};
+var titles={home:['Přehled','Rychlý přehled portálu a nejdůležitější administrativní úkony.'],events:['Akce a kapacita','Vytváření, úprava, skrytí, archivace a kontrola obsazenosti akcí.'],requests:['Žádosti o rezervace','Přehled všech žádostí a jejich stavů.'],users:['Uživatelé a role','Přístupy, role, žádosti o přístup a vydané kódy.'],appearance:['Vzhled a vstupní strana','Upravte texty, kategorie, dlaždice a informace před přihlášením.'],helper:['Chytrý pomocník','Obsah odpovědí a kontakt pro případy, kdy pomocník nepomůže.'],filters:['Kategorie a důvody','Kategorie akcí, filtry a nabídka důvodů rezervace.'],approvers:['Schvalovatelé','Správa profilů nadřízených a schvalovacích vazeb.'],system:['Systém a záloha','Export, import nastavení a bezpečné obnovení výchozího vzhledu.']};
 function showPage(page){currentPage=page;var shell=makeShell();if(!shell)return;shell.querySelectorAll('.cc-admin-nav button').forEach(function(b){b.classList.toggle('active',b.dataset.page===page)});document.getElementById('cc-admin-title').textContent=titles[page][0];document.getElementById('cc-admin-subtitle').textContent=titles[page][1];renderPage(page)}
-function renderPage(page){var c=document.getElementById('cc-admin-content');if(!c)return;c.innerHTML='';({home:pageHome,events:pageEvents,requests:pageRequests,users:pageUsers,appearance:pageAppearance,helper:pageHelper,filters:pageFilters,approvers:pageApprovers,system:pageSystem,import:pageImport}[page]||pageHome)(c)}
+function renderPage(page){var c=document.getElementById('cc-admin-content');if(!c)return;c.innerHTML='';({home:pageHome,events:pageEvents,requests:pageRequests,users:pageUsers,appearance:pageAppearance,helper:pageHelper,filters:pageFilters,approvers:pageApprovers,system:pageSystem}[page]||pageHome)(c)}
 
 function pageHome(c){var acts=A(), req=R(), users=Object.keys(U()).length, pending=req.filter(function(r){return r.status1==='Čeká'||r.status2==='Čeká'}).length, approved=req.filter(function(r){return r.status2==='Schváleno'}).length;
  c.innerHTML='<div class="cc-adm-grid"><div class="cc-adm-stat"><div class="n">'+acts.length+'</div><div class="l">Akcí celkem</div></div><div class="cc-adm-stat"><div class="n">'+req.length+'</div><div class="l">Žádostí celkem</div></div><div class="cc-adm-stat"><div class="n">'+pending+'</div><div class="l">Čeká na zpracování</div></div><div class="cc-adm-stat"><div class="n">'+users+'</div><div class="l">Aktivních uživatelů</div></div></div>';
@@ -4179,7 +4169,6 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 setTimeout(function(){try{patchLoginAndAdminTab()}catch(e){}},500);
 setTimeout(function(){try{if(isAdmin()&&document.getElementById('tab4').classList.contains('active'))showAdmin()}catch(e){}},1000);
 })();
-</script>
 <script id="cc-admin-rebuild-visibility-patch">
 (function(){
   function patch(){
@@ -4214,163 +4203,36 @@ setTimeout(function(){try{if(isAdmin()&&document.getElementById('tab4').classLis
 })();
 </script>
 
-<style id="cc-admin-tiles-final-css">
-#tab4.cc-admin-rebuilt{padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
-#cc-admin-legacy{display:none!important}
-#cc-admin-shell{display:block!important;width:100%!important}
-#cc-admin-shell .cc-admin-side{position:static!important;width:100%!important;box-sizing:border-box!important;background:transparent!important;border:0!important;border-radius:0!important;padding:0!important;box-shadow:none!important}
-#cc-admin-shell .cc-admin-brand{background:#fff!important;border:1px solid #dce3eb!important;border-radius:16px!important;padding:18px 20px!important;margin:0 0 14px!important;box-shadow:0 6px 22px rgba(15,23,42,.05)!important}
-#cc-admin-shell .cc-admin-brand strong{font-size:20px!important;color:#0f172a!important}
-#cc-admin-shell .cc-admin-brand span{font-size:12px!important;color:#64748b!important}
-#cc-admin-shell .cc-admin-nav{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px!important;background:transparent!important}
-#cc-admin-shell .cc-admin-nav .admin-sep{display:none!important}
-#cc-admin-shell .cc-admin-nav button{min-height:132px!important;box-sizing:border-box!important;border:1px solid #dce3eb!important;background:#fff!important;border-radius:16px!important;padding:17px!important;text-align:left!important;color:#0f172a!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:flex-start!important;gap:0!important;box-shadow:0 6px 22px rgba(15,23,42,.05)!important;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease!important}
-#cc-admin-shell .cc-admin-nav button:hover{transform:translateY(-2px)!important;box-shadow:0 10px 28px rgba(15,23,42,.09)!important;border-color:#c7d1dc!important;background:#fff!important}
-#cc-admin-shell .cc-admin-nav button.active{border:2px solid #e41e26!important;color:#0f172a!important;background:#fff!important;box-shadow:0 10px 28px rgba(228,30,38,.10)!important}
-#cc-admin-shell .cc-tile-icon{font-size:27px!important;line-height:1!important;margin-bottom:14px!important}
-#cc-admin-shell .cc-tile-title{font-size:15px!important;font-weight:850!important;line-height:1.25!important;margin-bottom:6px!important}
-#cc-admin-shell .cc-tile-desc{font-size:11.5px!important;line-height:1.4!important;color:#64748b!important;font-weight:500!important}
-#cc-admin-shell .cc-admin-main{margin-top:18px!important}
-@media(max-width:900px){#cc-admin-shell .cc-admin-nav{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
-@media(max-width:600px){#cc-admin-shell .cc-admin-nav{grid-template-columns:1fr!important}}
+<!-- CLEAN ROLE DASHBOARD + ADMIN WEB IMPORT (single patch, no polling) -->
+<style id="cc-clean-enhancements-css">
+.cc-role-dashboard{margin:0 0 22px}.cc-role-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0 0 18px}.cc-role-stat{border:1px solid #dce3eb;background:#fff;border-radius:16px;padding:18px 20px;cursor:pointer;box-shadow:0 6px 22px rgba(15,23,42,.05);transition:.15s}.cc-role-stat:hover{transform:translateY(-2px);border-color:#c7d1dc}.cc-role-stat .num{font-size:30px;font-weight:850;line-height:1;color:#0f172a}.cc-role-stat .lab{margin-top:8px;font-size:13px;font-weight:750;color:#334155}.cc-role-stat .hint{margin-top:4px;font-size:11px;color:#64748b}.cc-role-list{border:1px solid #dce3eb;background:#fff;border-radius:16px;padding:16px}.cc-role-list-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.cc-role-list-head h3{margin:0;font-size:17px}.cc-role-table-wrap{overflow:auto}.cc-role-table{width:100%;border-collapse:collapse;font-size:12px}.cc-role-table th,.cc-role-table td{padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:left;vertical-align:top}.cc-role-table th{font-size:11px;color:#64748b;text-transform:uppercase}.cc-import-box{border:1px solid #dce3eb;background:#fff;border-radius:16px;padding:18px}.cc-import-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.cc-import-toolbar input{flex:1;min-width:280px}.cc-import-preview{margin-top:16px;overflow:auto}.cc-import-row{display:grid;grid-template-columns:36px 1.7fr 120px 75px 110px;gap:8px;align-items:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px}.cc-import-head{font-weight:800;background:#f8fafc;border-radius:8px}.cc-import-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.cc-import-note{font-size:12px;color:#64748b;line-height:1.5}.cc-import-status{font-size:11px;color:#64748b}@media(max-width:760px){.cc-role-stats{grid-template-columns:1fr}.cc-import-row{grid-template-columns:28px 1fr 90px 65px 90px}}
 </style>
-<script id="cc-admin-tiles-final-js">
-(function(){
-  'use strict';
-  function clean(){
-    var tab=document.getElementById('tab4');
-    if(!tab)return;
-    var shell=document.getElementById('cc-admin-shell');
-    if(!shell && typeof makeShell==='function'){
-      try{shell=makeShell();}catch(e){return;}
-    }
-    if(!shell)return;
-    var nav=shell.querySelector('.cc-admin-nav');
-    if(nav){
-      nav.querySelectorAll('button[data-page]').forEach(function(b){
-        b.classList.add('cc-admin-tile');
-      });
-    }
-    var legacy=document.getElementById('cc-admin-legacy');
-    if(legacy)legacy.style.display='none';
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',clean);else clean();
-  setTimeout(clean,300);setTimeout(clean,1000);
-})();
-</script>
-
-\n<style id="cc-final-admin-fix2-css">
-#tab4 #cc-final-admin-settings{display:none!important}
-#tab4 #cc-admin-legacy{display:none!important}
-#tab4.cc-admin-rebuilt>h2,#tab4.cc-admin-rebuilt>.box-section,#tab4.cc-admin-rebuilt>table,#tab4.cc-admin-rebuilt>form,#tab4.cc-admin-rebuilt>h3{display:none!important}
-#cc-role-dashboard{margin:0 0 22px}
-.cc-role-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0 0 18px}
-.cc-role-stat{border:1px solid #dce3eb;background:#fff;border-radius:16px;padding:18px 20px;cursor:pointer;box-shadow:0 6px 22px rgba(15,23,42,.05);transition:.15s}
-.cc-role-stat:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(15,23,42,.09);border-color:#c7d1dc}
-.cc-role-stat .num{font-size:30px;font-weight:850;line-height:1;color:#0f172a}.cc-role-stat .lab{margin-top:8px;font-size:13px;font-weight:750;color:#334155}.cc-role-stat .hint{margin-top:4px;font-size:11px;color:#64748b}
-.cc-role-list{border:1px solid #dce3eb;background:#fff;border-radius:16px;padding:16px;box-shadow:0 6px 22px rgba(15,23,42,.04)}
-.cc-role-list-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.cc-role-list-head h3{margin:0;font-size:17px}.cc-role-list-actions{display:flex;gap:8px;flex-wrap:wrap}
-.cc-role-table-wrap{overflow:auto}.cc-role-table{width:100%;border-collapse:collapse;font-size:12px}.cc-role-table th,.cc-role-table td{padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:left;vertical-align:top}.cc-role-table th{font-size:11px;color:#64748b;text-transform:uppercase}.cc-role-empty{padding:18px;color:#64748b}
-.cc-import-box{border:1px solid #dce3eb;background:#fff;border-radius:16px;padding:18px;box-shadow:0 6px 22px rgba(15,23,42,.04)}
-.cc-import-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.cc-import-toolbar input{flex:1;min-width:280px}.cc-import-preview{margin-top:16px;overflow:auto}.cc-import-row{display:grid;grid-template-columns:36px 1.7fr 130px 80px 130px;gap:8px;align-items:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px}.cc-import-head{font-weight:800;background:#f8fafc;border-radius:8px}.cc-import-status{font-size:11px;color:#64748b}.cc-import-note{font-size:12px;color:#64748b;line-height:1.5;margin:8px 0 0}.cc-import-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-@media(max-width:760px){.cc-role-stats{grid-template-columns:1fr}.cc-import-row{grid-template-columns:28px 1fr 95px 65px 95px}}
-</style>
-<script id="cc-final-admin-fix2-js">
+<script id="cc-clean-enhancements-js">
 (function(){
 'use strict';
 var O2URL='https://www.o2arena.cz/events/';
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-function me(){try{return window.currentUser||JSON.parse(localStorage.getItem('currentUser')||'null')}catch(e){return null}}
-function reqs(){try{return JSON.parse(localStorage.getItem('ticketRequests'))||[]}catch(e){return []}}
-function acts(){try{return JSON.parse(localStorage.getItem('companyActions'))||[]}catch(e){return []}}
-function saveActs(a){localStorage.setItem('companyActions',JSON.stringify(a));if(typeof syncAll==='function')syncAll()}
-function roleDashboard(){
- var tab=document.getElementById('cc-planned-tab');if(!tab)return;
- var old=document.getElementById('cc-role-dashboard');if(old)old.remove();
- var u=me();if(!u)return;
- var role=u.role||'applicant',all=reqs(),mine=all.filter(function(r){return String(r.applicantEmail||'').toLowerCase()===String(u.email||'').toLowerCase() || String(r.employee||'').toLowerCase()===String(u.name||'').toLowerCase()});
- var data;
- if(role==='manager'){var em=String(u.email||'').toLowerCase();data={title:'Moje schvalování',items:[['pending','Čeká na schválení',all.filter(function(r){return String(r.manager||'').toLowerCase()===em&&r.status1==='Čeká'}).length],['approved','Schváleno',all.filter(function(r){return String(r.manager||'').toLowerCase()===em&&r.status1==='Schváleno'}).length],['rejected','Zamítnuto',all.filter(function(r){return String(r.manager||'').toLowerCase()===em&&(r.status1==='Zamítnuto'||r.status2==='Zamítnuto')}).length]]};}
- else if(role==='rsm_praha'||role==='admin'){data={title:'Moje schvalování',items:[['pending','Čeká na schválení',all.filter(function(r){return r.status1==='Schváleno'&&r.status2==='Čeká'}).length],['approved','Schváleno',all.filter(function(r){return r.status2==='Schváleno'}).length],['rejected','Zamítnuto',all.filter(function(r){return r.status2==='Zamítnuto'}).length]]};}
- else {data={title:'Moje žádosti',items:[['sent','Odeslané žádosti',mine.length],['approved','Schválené žádosti',mine.filter(function(r){return r.status2==='Schváleno'}).length],['rejected','Zamítnuté žádosti',mine.filter(function(r){return r.status1==='Zamítnuto'||r.status2==='Zamítnuto'}).length]]};}
- var box=document.createElement('section');box.id='cc-role-dashboard';
- box.innerHTML='<div class="cc-role-stats">'+data.items.map(function(x){return '<div class="cc-role-stat" data-role-filter="'+x[0]+'"><div class="num">'+x[2]+'</div><div class="lab">'+esc(x[1])+'</div><div class="hint">Kliknutím zobrazit seznam</div></div>'}).join('')+'</div><div id="cc-role-list"></div>';
- var h=tab.querySelector('h2');if(h)h.insertAdjacentElement('afterend',box);else tab.insertBefore(box,tab.firstChild);
- box.querySelectorAll('.cc-role-stat').forEach(function(card){card.onclick=function(){renderRoleList(card.dataset.roleFilter,data.title,all,mine,role,u)}});
+function user(){try{return window.currentUser||JSON.parse(localStorage.getItem('currentUser')||'null')}catch(e){return null}}
+function reqs(){try{return JSON.parse(localStorage.getItem('ticketRequests')||'[]')}catch(e){return []}}
+function acts(){try{return JSON.parse(localStorage.getItem('companyActions')||'[]')}catch(e){return []}}
+function roleName(r){return r==='manager'?'1. stupeň schválení':r==='rsm_praha'?'2. stupeň schválení':'Žadatel'}
+function myLists(u){var all=reqs(),role=u.role,em=String(u.email||'').toLowerCase(),name=String(u.name||'').toLowerCase();
+ if(role==='manager')return {title:'Moje schvalování',items:[['pending','Čeká na schválení',all.filter(function(r){return String(r.manager||'').toLowerCase()===em&&r.status1==='Čeká'})],['approved','Schváleno',all.filter(function(r){return String(r.manager||'').toLowerCase()===em&&r.status1==='Schváleno'})],['rejected','Zamítnuto',all.filter(function(r){return String(r.manager||'').toLowerCase()===em&&(r.status1==='Zamítnuto'||r.status2==='Zamítnuto')})] ]};
+ if(role==='rsm_praha')return {title:'Moje schvalování',items:[['pending','Čeká na schválení',all.filter(function(r){return r.status1==='Schváleno'&&r.status2==='Čeká'})],['approved','Schváleno',all.filter(function(r){return r.status2==='Schváleno'})],['rejected','Zamítnuto',all.filter(function(r){return r.status2==='Zamítnuto'})] ]};
+ var mine=all.filter(function(r){return String(r.applicantEmail||'').toLowerCase()===em || String(r.employee||'').toLowerCase()===name});
+ return {title:'Moje žádosti',items:[['sent','Odeslané žádosti',mine],['approved','Schválené žádosti',mine.filter(function(r){return r.status2==='Schváleno'})],['rejected','Zamítnuté žádosti',mine.filter(function(r){return r.status1==='Zamítnuto'||r.status2==='Zamítnuto'})] ]};
 }
-function filtered(roleFilter,all,mine,role,u){
- if(role==='manager'){var em=String(u.email||'').toLowerCase();if(roleFilter==='pending')return all.filter(function(r){return String(r.manager||'').toLowerCase()===em&&r.status1==='Čeká'});if(roleFilter==='approved')return all.filter(function(r){return String(r.manager||'').toLowerCase()===em&&r.status1==='Schváleno'});return all.filter(function(r){return String(r.manager||'').toLowerCase()===em&&(r.status1==='Zamítnuto'||r.status2==='Zamítnuto')});}
- if(role==='rsm_praha'||role==='admin'){if(roleFilter==='pending')return all.filter(function(r){return r.status1==='Schváleno'&&r.status2==='Čeká'});if(roleFilter==='approved')return all.filter(function(r){return r.status2==='Schváleno'});return all.filter(function(r){return r.status2==='Zamítnuto'});}
- if(roleFilter==='sent')return mine;if(roleFilter==='approved')return mine.filter(function(r){return r.status2==='Schváleno'});return mine.filter(function(r){return r.status1==='Zamítnuto'||r.status2==='Zamítnuto'});
-}
-function renderRoleList(filter,title,all,mine,role,u){var box=document.getElementById('cc-role-list');if(!box)return;var list=filtered(filter,all,mine,role,u);var labels={pending:'Čeká na schválení',approved:'Schváleno',rejected:'Zamítnuto',sent:'Odeslané žádosti'};
- var rows=list.map(function(r){return '<tr><td>'+esc(r.action)+'</td><td>'+esc(r.employee)+'</td><td>'+esc(r.customer)+'</td><td>'+esc(r.tickets)+'</td><td>'+esc(r.status1)+'</td><td>'+esc(r.status2)+'</td><td>'+esc(r.applicantEmail||'')+'</td></tr>'}).join('');
- box.innerHTML='<div class="cc-role-list"><div class="cc-role-list-head"><h3>'+esc(labels[filter]||title)+'</h3><div class="cc-role-list-actions"><button class="cc-adm-btn" id="cc-role-export">📥 Export do Excelu</button><button class="cc-adm-btn" id="cc-role-close">Skrýt seznam</button></div></div><div class="cc-role-table-wrap">'+(list.length?'<table class="cc-role-table"><thead><tr><th>Akce</th><th>Žadatel</th><th>Zákazník</th><th>Lístky</th><th>1. schválení</th><th>2. schválení</th><th>E-mail</th></tr></thead><tbody>'+rows+'</tbody></table>':'<div class="cc-role-empty">V této kategorii zatím není žádná žádost.</div>')+'</div></div>';
- document.getElementById('cc-role-close').onclick=function(){box.innerHTML=''};document.getElementById('cc-role-export').onclick=function(){exportRoleXls(list,(labels[filter]||title))};
-}
-function exportRoleXls(list,title){
- var rows=[['Akce','Žadatel','Zákazník','Počet lístků','1. schválení','2. schválení','E-mail','Důvod']].concat(list.map(function(r){return [r.action||'',r.employee||'',r.customer||'',r.tickets||'',r.status1||'',r.status2||'',r.applicantEmail||'',r.reason||'']}));
- var html='<html><head><meta charset="utf-8"></head><body><table border="1">'+rows.map(function(row,i){return '<tr>'+row.map(function(v){return '<'+(i===0?'th':'td')+'>'+esc(v)+'</'+(i===0?'th':'td')+'>'}).join('')+'</tr>'}).join('')+'</table></body></html>';
- var blob=new Blob(['\\ufeff',html],{type:'application/vnd.ms-excel'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='rezervace_'+String(title).toLowerCase().replace(/[^a-z0-9]+/gi,'_')+'.xls';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1000);
-}
-window.renderRoleDashboard=roleDashboard;window.exportRoleXls=exportRoleXls;
-
-function categoryGuess(name,place){var n=String(name||'').toLowerCase();if(/sparta|kometa|vítkovice|vítkovice|třinec|olomouc|litvínov|česko – švédsko|hokej/.test(n))return 'Hokej';if(/slavia|fotbal|sparta praha/.test(n)&&!/hc sparta/.test(n))return 'Fotbal';return 'Koncert'}
-function parseO2(text){
- var clean=String(text||'').replace(/\\r/g,'');var out=[];
- try{var doc=new DOMParser().parseFromString(clean,'text/html');var hs=[].slice.call(doc.querySelectorAll('h3'));if(hs.length){hs.forEach(function(h){var title=(h.textContent||'').trim();if(!title)return;var parent=h.parentElement||h;var block=(parent.innerText||'');var m=block.match(/(\\d{1,2}\\.\\d{1,2}\\.\\d{4})(?:\\s*(?:-|–|—)\\s*(\\d{1,2}\\.\\d{1,2}\\.\\d{4}))?(?:\\s+(\\d{1,2}:\\d{2}))?/);var d=m?m[1].split('.').reverse().join('-'):'';var time=m&&m[3]?m[3]:'';var desc='';var p=h.nextElementSibling;if(p)desc=(p.textContent||'').trim();out.push({name:title,date:d,time:time,place:'O2 arena',category:categoryGuess(title,''),description:desc,sourceUrl:O2URL,portalStatus:'',status:'Aktivní',visible:true,capacity:0});});return out;}}catch(e){}
- var lines=clean.split(/\n+/).map(function(x){return x.trim()}).filter(Boolean),curDates=[];for(var i=0;i<lines.length;i++){var dm=lines[i].match(/^(\\d{1,2})\\.(\\d{1,2})\\.(\\d{4})(?:\\s+(\\d{1,2}:\\d{2}))?$/);if(dm){curDates=[{date:dm[3]+'-'+('0'+dm[2]).slice(-2)+'-'+('0'+dm[1]).slice(-2),time:dm[4]||''}];continue}var tm=lines[i].match(/^#{2,3}\\s+(.+)$/);if(tm){var title=tm[1].trim(),dt=curDates[0]||{date:'',time:''};out.push({name:title,date:dt.date,time:dt.time,place:'O2 arena',category:categoryGuess(title,''),description:'',sourceUrl:O2URL,portalStatus:'',status:'Aktivní',visible:true,capacity:0});}}return out;
-}
-function pageImport(c){c.innerHTML='<div class="cc-import-box"><h3>🌐 Import akcí z O2 areny</h3><p class="cc-import-note">Zdroj: <a href="'+O2URL+'" target="_blank" rel="noopener">O2 arena – Program</a>. Import pouze připraví návrh; interní kapacitu, kategorii a další údaje může administrátor před uložením upravit.</p><div class="cc-import-toolbar"><input id="cc-o2-url" value="'+O2URL+'"><button class="cc-adm-btn primary" id="cc-o2-load">Načíst program</button></div><div id="cc-o2-status" class="cc-import-status"></div><div id="cc-o2-preview" class="cc-import-preview"></div><div class="cc-import-actions" id="cc-o2-actions"></div><details style="margin-top:14px"><summary>Když web nepůjde načíst</summary><p class="cc-import-note">Vlož sem HTML nebo text stránky a aplikace ho zpracuje lokálně.</p><textarea id="cc-o2-paste" rows="7" style="width:100%;box-sizing:border-box"></textarea><button class="cc-adm-btn" id="cc-o2-parse">Zpracovat vložený obsah</button></details></div>';
- c.querySelector('#cc-o2-load').onclick=function(){loadO2(c)};c.querySelector('#cc-o2-parse').onclick=function(){var list=parseO2(c.querySelector('#cc-o2-paste').value);renderImportPreview(c,list)};
-}
-function renderImportPreview(c,list){var p=c.querySelector('#cc-o2-preview'),a=c.querySelector('#cc-o2-actions');if(!list.length){p.innerHTML='<div class="cc-role-empty">Nepodařilo se rozpoznat žádné akce.</div>';a.innerHTML='';return}var existing=acts().map(function(x){return String(x.name||'').toLowerCase()+'|'+String(x.date||'')});p.innerHTML='<div class="cc-import-row cc-import-head"><span>✓</span><span>Akce</span><span>Datum</span><span>Čas</span><span>Stav</span></div>'+list.map(function(x,i){var dup=existing.indexOf(String(x.name).toLowerCase()+'|'+String(x.date))>=0;return '<div class="cc-import-row"><input type="checkbox" data-i="'+i+'" '+(dup?'':'checked')+'><span><b>'+esc(x.name)+'</b><br><small>'+esc(x.description||'')+'</small></span><span>'+esc(x.date)+'</span><span>'+esc(x.time)+'</span><span class="cc-import-status">'+(dup?'Již existuje':'Nová')+'</span></div>'}).join('');a.innerHTML='<button class="cc-adm-btn primary" id="cc-o2-save">Přidat vybrané akce do portálu</button>';c.querySelector('#cc-o2-save').onclick=function(){var chosen=[].slice.call(p.querySelectorAll('input[data-i]:checked')).map(function(ch){return list[Number(ch.dataset.i)]});var current=acts(),keys=current.map(function(x){return String(x.name).toLowerCase()+'|'+String(x.date)});chosen=chosen.filter(function(x){return keys.indexOf(String(x.name).toLowerCase()+'|'+String(x.date))<0});if(!chosen.length){alert('Není vybrána žádná nová akce.');return}saveActs(current.concat(chosen));alert('Přidáno '+chosen.length+' nových akcí. Kapacita je nastavena na 0, aby ji administrátor před zveřejněním doplnil.');renderPage('events');};}
-function loadO2(c){var status=c.querySelector('#cc-o2-status');status.textContent='Načítám program…';var url=c.querySelector('#cc-o2-url').value.trim()||O2URL;fetch('https://r.jina.ai/'+url,{headers:{Accept:'text/plain'}}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text()}).then(function(t){var list=parseO2(t);status.textContent='Načteno. Nalezeno '+list.length+' akcí.';renderImportPreview(c,list)}).catch(function(e){status.innerHTML='Web se z prohlížeče nepodařilo načíst. Použijte odkaz na zdroj nebo vložte obsah ručně níže.';});}
-
-function addImportTile(){if(typeof titles==='undefined'||typeof makeShell!=='function')return;var shell=document.getElementById('cc-admin-shell');if(!shell)return;var nav=shell.querySelector('.cc-admin-nav');if(!nav||nav.querySelector('[data-page="import"]'))return;var b=document.createElement('button');b.setAttribute('data-page','import');b.innerHTML='<span class="cc-tile-icon">🌐</span><span class="cc-tile-title">Import akcí z webu</span><span class="cc-tile-desc">Načtení programu O2 arena a bezpečný výběr akcí k importu.</span>';b.onclick=function(){showPage('import')};nav.appendChild(b);titles.import=['Import akcí z webu','Načtěte program O2 areny a vyberte akce, které chcete přidat do portálu.'];}
-function patchAdmin(){
- var tab=document.getElementById('tab4');if(!tab)return;
- var old=document.getElementById('cc-final-admin-settings');if(old)old.remove();
- var legacy=document.getElementById('cc-admin-legacy');if(legacy)legacy.style.display='none';
- var dup=document.getElementById('cc-admin-nav-btn');if(dup)dup.style.display='none';
- var dup2=document.getElementById('cc-final-admin-btn');if(dup2)dup2.style.display='none';
- var btn=document.getElementById('btn-admin');
- var u=null;try{u=(typeof currentUser!=='undefined'&&currentUser)?currentUser:JSON.parse(localStorage.getItem('currentUser')||'null')}catch(e){}
- if(btn){
-   btn.textContent='⚙️ Administrace';
-   btn.style.display=(u&&u.role==='admin')?'inline-flex':'none';
-   btn.onclick=function(e){if(e)e.preventDefault();showAdminStable()};
- }
- var shell=document.getElementById('cc-admin-shell');
- if(shell)shell.style.display='block';
- if(!(u&&u.role==='admin')){tab.classList.remove('cc-admin-visible','active');}
-}
-function patchNav(){patchAdmin()}
-function showAdminStable(){
- var u=null;try{u=(typeof currentUser!=='undefined'&&currentUser)?currentUser:JSON.parse(localStorage.getItem('currentUser')||'null')}catch(e){}
- if(!u||u.role!=='admin')return;
- var tab=document.getElementById('tab4');if(!tab)return;
- var shell=document.getElementById('cc-admin-shell');
- if(!shell){try{shell=makeShell()}catch(e){} }
- if(!shell)return;
- document.querySelectorAll('.tab-content').forEach(function(x){x.classList.remove('active')});
- var p=document.getElementById('cc-planned-tab');if(p)p.classList.remove('active');
- tab.classList.add('active','cc-admin-visible');
- document.querySelectorAll('.tabs .tab-btn').forEach(function(x){x.classList.remove('active')});
- var btn=document.getElementById('btn-admin');if(btn)btn.classList.add('active');
- try{showPage(window.__ccAdminCurrentPage||'home')}catch(e){var home=shell.querySelector('[data-page="home"]');if(home)home.click()}
-}
-window.ccOpenAdminStable=showAdminStable;
-function refreshDashboard(){if(typeof renderRoleDashboard==='function')renderRoleDashboard()}
-function boot(){
- if(!document.getElementById('tab4'))return;
- patchAdmin();
- refreshDashboard();
- var u=null;try{u=(typeof currentUser!=='undefined'&&currentUser)?currentUser:JSON.parse(localStorage.getItem('currentUser')||'null')}catch(e){}
- if(!(u&&u.role==='admin')){var tab=document.getElementById('tab4');if(tab)tab.classList.remove('cc-admin-visible','active')}
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+function exportXls(list,title){var rows=[['Akce','Žadatel','Zákazník','Lístky','1. schválení','2. schválení','E-mail','Důvod']].concat(list.map(function(r){return [r.action||'',r.employee||'',r.customer||'',r.tickets||'',r.status1||'',r.status2||'',r.applicantEmail||'',r.reason||'']}));var html='<html><meta charset="utf-8"><table border="1">'+rows.map(function(row,i){return '<tr>'+row.map(function(v){return '<'+(i?'td':'th')+'>'+esc(v)+'</'+(i?'td':'th')+'>'}).join('')+'</tr>'}).join('')+'</table></html>';var blob=new Blob(['\ufeff',html],{type:'application/vnd.ms-excel'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='rezervace_'+String(title).replace(/[^a-z0-9]+/gi,'_')+'.xls';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url);a.remove()},500)}
+function renderRoleDashboard(){var tab=document.getElementById('cc-planned-tab'),u=user();if(!tab||!u||u.role==='admin')return;var old=document.getElementById('cc-role-dashboard');if(old)old.remove();var d=myLists(u),box=document.createElement('section');box.id='cc-role-dashboard';box.className='cc-role-dashboard';box.innerHTML='<div class="cc-role-stats">'+d.items.map(function(x){return '<div class="cc-role-stat" data-k="'+x[0]+'"><div class="num">'+x[1].length+'</div><div class="lab">'+esc(x[1]&&x[0]==='pending'?'Čeká na schválení':x[0]==='approved'?'Schváleno':x[0]==='rejected'?'Zamítnuto':'Odeslané žádosti')+'</div><div class="hint">Kliknutím zobrazit seznam</div></div>'}).join('')+'</div><div id="cc-role-list"></div>';var anchor=tab.querySelector('h2');if(anchor)anchor.insertAdjacentElement('afterend',box);else tab.insertBefore(box,tab.firstChild);box.querySelectorAll('.cc-role-stat').forEach(function(card){card.onclick=function(){var x=d.items.find(function(z){return z[0]===card.dataset.k});var list=x?x[1]:[];var listbox=box.querySelector('#cc-role-list');var label=x[0]==='pending'?'Čeká na schválení':x[0]==='approved'?'Schváleno':x[0]==='rejected'?'Zamítnuto':'Odeslané žádosti';listbox.innerHTML='<div class="cc-role-list"><div class="cc-role-list-head"><h3>'+esc(label)+'</h3><div><button class="cc-adm-btn" id="cc-role-export">📥 Export do Excelu</button> <button class="cc-adm-btn" id="cc-role-close">Skrýt seznam</button></div></div><div class="cc-role-table-wrap">'+(list.length?'<table class="cc-role-table"><thead><tr><th>Akce</th><th>Žadatel</th><th>Zákazník</th><th>Lístky</th><th>1. schválení</th><th>2. schválení</th></tr></thead><tbody>'+list.map(function(r){return '<tr><td>'+esc(r.action)+'</td><td>'+esc(r.employee)+'</td><td>'+esc(r.customer)+'</td><td>'+esc(r.tickets)+'</td><td>'+esc(r.status1)+'</td><td>'+esc(r.status2)+'</td></tr>'}).join('')+'</tbody></table>':'<div style="padding:18px;color:#64748b">Žádné žádosti.</div>')+'</div></div>';listbox.querySelector('#cc-role-close').onclick=function(){listbox.innerHTML=''};listbox.querySelector('#cc-role-export').onclick=function(){exportXls(list,label)};}})}
+function categoryGuess(n){var s=String(n||'').toLowerCase();if(/hokej|sparta|kometa|třinec|vítkovice|litvínov|olomouc/.test(s))return 'Hokej';if(/slavia|fotbal/.test(s))return 'Fotbal';return 'Koncert'}
+function parseO2(text){var out=[],lines=String(text||'').replace(/\r/g,'').split(/\n+/).map(function(x){return x.trim()}).filter(Boolean);for(var i=0;i<lines.length;i++){var m=lines[i].match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s+(\d{1,2}:\d{2}))?$/);if(m){var title=lines[i+1]||'';if(title&&!/^\d/.test(title))out.push({name:title.replace(/^[-–—•]+\s*/,''),date:m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2),time:m[4]||'',place:'O2 arena',category:categoryGuess(title),description:'',sourceUrl:O2URL,status:'Aktivní',visible:true,capacity:0})}}return out}
+function renderImport(c,list,status){var p=c.querySelector('#cc-o2-preview'),a=c.querySelector('#cc-o2-actions');if(status)c.querySelector('#cc-o2-status').textContent=status;if(!list||!list.length){p.innerHTML='<div style="padding:16px;color:#64748b">Nepodařilo se rozpoznat žádné akce. Pokud načtení selže, použijte ruční vložení obsahu stránky.</div>';a.innerHTML='';return}var existing=acts().map(function(x){return String(x.name||'').toLowerCase()+'|'+String(x.date||'')});p.innerHTML='<div class="cc-import-row cc-import-head"><span>✓</span><span>Akce</span><span>Datum</span><span>Čas</span><span>Stav</span></div>'+list.map(function(x,i){var dup=existing.indexOf(String(x.name).toLowerCase()+'|'+String(x.date))>=0;return '<div class="cc-import-row"><input type="checkbox" data-i="'+i+'" '+(dup?'':'checked')+'><span><b>'+esc(x.name)+'</b></span><span>'+esc(x.date)+'</span><span>'+esc(x.time)+'</span><span class="cc-import-status">'+(dup?'Již existuje':'Nová')+'</span></div>'}).join('');a.innerHTML='<button class="cc-adm-btn primary" id="cc-o2-save">Přidat vybrané akce</button>';a.querySelector('#cc-o2-save').onclick=function(){var chosen=[].slice.call(p.querySelectorAll('input[data-i]:checked')).map(function(ch){return list[Number(ch.dataset.i)]});var cur=acts(),keys=cur.map(function(x){return String(x.name||'').toLowerCase()+'|'+String(x.date||'')});chosen=chosen.filter(function(x){return keys.indexOf(String(x.name).toLowerCase()+'|'+String(x.date))<0});if(!chosen.length){alert('Není vybrána žádná nová akce.');return}localStorage.setItem('companyActions',JSON.stringify(cur.concat(chosen)));if(typeof companyActions!=='undefined')companyActions=cur.concat(chosen);if(typeof syncAll==='function')syncAll();alert('Přidáno '+chosen.length+' akcí. Kapacita je 0, dokud ji admin nenastaví.');if(typeof showPage==='function')showPage('events')}}
+function pageImport(c){c.innerHTML='<div class="cc-import-box"><h3>🌐 Import akcí z O2 areny</h3><p class="cc-import-note">Import je dostupný pouze administrátorovi. Zdroj: <a href="'+O2URL+'" target="_blank" rel="noopener">O2 arena – Program</a>.</p><div class="cc-import-toolbar"><input id="cc-o2-url" value="'+O2URL+'"><button class="cc-adm-btn primary" id="cc-o2-load">Načíst program</button></div><div id="cc-o2-status" class="cc-import-status"></div><div id="cc-o2-preview" class="cc-import-preview"></div><div class="cc-import-actions" id="cc-o2-actions"></div><details style="margin-top:14px"><summary>Ruční vložení obsahu stránky</summary><textarea id="cc-o2-paste" rows="8" style="width:100%;box-sizing:border-box;margin-top:8px"></textarea><button class="cc-adm-btn" id="cc-o2-parse" style="margin-top:8px">Zpracovat vložený obsah</button></details></div>';c.querySelector('#cc-o2-load').onclick=function(){var st=c.querySelector('#cc-o2-status');st.textContent='Načítám program…';var url=c.querySelector('#cc-o2-url').value.trim()||O2URL;fetch('https://r.jina.ai/'+url).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.text()}).then(function(t){var l=parseO2(t);renderImport(c,l,'Načteno. Nalezeno '+l.length+' akcí.')}).catch(function(){st.textContent='Přímé načtení webu se nepodařilo. Použijte ruční vložení obsahu.'})};c.querySelector('#cc-o2-parse').onclick=function(){renderImport(c,parseO2(c.querySelector('#cc-o2-paste').value),'Obsah zpracován.')}}
+function installImport(){if(typeof makeShell!=='function'||typeof showPage!=='function'||typeof titles!=='object')return;var shell=document.getElementById('cc-admin-shell');if(!shell)return;if(!titles.import)titles.import=['Import akcí z webu','Načtení programu O2 areny a výběr akcí k importu.'];var nav=shell.querySelector('.cc-admin-nav');if(nav&&!nav.querySelector('[data-page="import"]')){var b=document.createElement('button');b.type='button';b.dataset.page='import';b.innerHTML='<span class="cc-tile-icon">🌐</span><span class="cc-tile-title">Import akcí z webu</span><span class="cc-tile-desc">Načíst program O2 areny.</span>';b.onclick=function(){showPage('import')};nav.appendChild(b)}}
+function installRole(){var u=user();if(!u||u.role==='admin')return;renderRoleDashboard()}
+function patchAdmin(){var u=user();if(!u||u.role!=='admin')return;try{var shell=makeShell();installImport();if(shell){var legacy=document.getElementById('cc-admin-legacy');if(legacy)legacy.style.display='none'}}catch(e){console.error(e)}}
+function once(){patchAdmin();installRole();var oldOpen=window.openTab;if(typeof oldOpen==='function'&&!window.__ccCleanOpenWrapped){window.__ccCleanOpenWrapped=true;window.openTab=function(n){oldOpen.apply(this,arguments);if(Number(n)===1)setTimeout(installRole,0);if(Number(n)===4)setTimeout(patchAdmin,0)}}}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',once);else setTimeout(once,0);
+window.addEventListener('load',function(){patchAdmin();installRole()});
 })();
 </script>
-<style id="cc-admin-stability-final-css">#tab4:not(.cc-admin-visible){display:none!important}#tab4.cc-admin-visible{display:block!important}#cc-admin-nav-btn,#cc-final-admin-btn{display:none!important}#tab4 #cc-admin-legacy{display:none!important}</style>
-<script id="cc-admin-stability-final-js">(function(){function u(){try{return(typeof currentUser!=="undefined"&&currentUser)?currentUser:JSON.parse(localStorage.getItem("currentUser")||"null")}catch(e){return null}}function sync(){var b=document.getElementById("btn-admin"),x=u();if(b){b.textContent="⚙️ Administrace";b.style.display=x&&x.role==="admin"?"inline-flex":"none";b.onclick=function(e){if(e)e.preventDefault();if(window.ccOpenAdminStable)window.ccOpenAdminStable()}}if(!(x&&x.role==="admin")){var t=document.getElementById("tab4");if(t)t.classList.remove("cc-admin-visible","active")}}try{if(typeof saveAndStyleSession==="function"&&!window.__ccSessionWrap){var old=saveAndStyleSession;window.saveAndStyleSession=function(){old.apply(this,arguments);setTimeout(sync,0)};window.__ccSessionWrap=true}}catch(e){}try{if(typeof logoutUser==="function"&&!window.__ccLogoutWrap){var lo=logoutUser;window.logoutUser=function(){lo.apply(this,arguments);setTimeout(sync,0)};window.__ccLogoutWrap=true}}catch(e){}if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",sync);else setTimeout(sync,0);})();</script>
