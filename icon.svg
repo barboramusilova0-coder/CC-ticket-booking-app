@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">CC Ticket Booking</title>
+  <rect width="256" height="256" rx="48" fill="#e41e26"/>
+  <path d="M82 62h92c17 0 30 13 30 30v72c0 17-13 30-30 30H82c-17 0-30-13-30-30V92c0-17 13-30 30-30zm18 28h56v20H100V90zm0 42h56v20H100v-20zm0 42h38v20H100v-20z" fill="#fff"/>
+  <circle cx="179" cy="176" r="16" fill="#ffd6d8"/>
+</svg>
