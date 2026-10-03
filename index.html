@@ -4739,3 +4739,179 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 setInterval(polish,900);
 })();
 </script>
+
+<!-- FINAL STABLE ADMIN / HELPER PERSONALIZATION PATCH 2026-10-03 -->
+<style id="cc-final-stable-admin-css">
+/* Staré tři administrativní podzáložky už nejsou zdrojem navigace. */
+#tab4 > .cc-admin-subtabs,
+#tab4 > .cc-admin-subpanel,
+#tab4 > h2:not(:has(+ #cc-admin-shell)),
+#tab4 > #cc-v3-global,
+#tab4 > #cc-final-admin-settings{display:none!important}
+#cc-admin-shell{display:block!important;width:100%!important;visibility:visible!important;opacity:1!important}
+#cc-admin-shell .cc-admin-nav{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important}
+#cc-admin-shell .cc-admin-nav button[data-page]{display:flex!important;visibility:visible!important;opacity:1!important;min-height:126px!important;height:auto!important;cursor:pointer!important;pointer-events:auto!important}
+#cc-admin-shell .cc-admin-main{display:block!important;visibility:visible!important;opacity:1!important}
+#cc-admin-shell #cc-admin-content{display:block!important;min-height:180px!important}
+#cc-admin-shell .cc-tile-title{font-size:17px!important;font-weight:850!important;line-height:1.25!important}
+#cc-admin-shell .cc-tile-desc{font-size:12.5px!important;line-height:1.45!important}
+.cc-helper-profile{border:1px solid #dbe3ec;border-radius:14px;padding:16px;background:#f8fafc;margin-bottom:15px}
+.cc-helper-profile-grid{display:grid;grid-template-columns:120px minmax(0,1fr);gap:12px}
+.cc-helper-profile label{display:block;font-size:12px;font-weight:750;color:#334155;margin-bottom:5px}
+.cc-helper-profile input,.cc-helper-profile textarea{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:8px;padding:9px 10px;background:#fff;font:inherit}
+.cc-helper-profile textarea{min-height:70px;resize:vertical}
+.cc-helper-icon-preview{width:78px;height:78px;border-radius:18px;background:#111827;color:#fff;display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:0 7px 20px rgba(15,23,42,.16);margin-bottom:7px}
+.cc-helper-presets{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.cc-helper-presets button{border:1px solid #dbe3ec;background:#fff;border-radius:999px;padding:6px 9px;cursor:pointer;font-size:16px}
+.cc-helper-live-note{font-size:11px;color:#64748b;margin-top:8px}
+#cc-v3-help .cc-v3-helpbtn{overflow:hidden;display:flex;align-items:center;justify-content:center}
+#cc-v3-help .cc-v3-helpbtn .cc-helper-float-icon{display:block;line-height:1}
+@media(max-width:900px){#cc-admin-shell .cc-admin-nav{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:620px){#cc-admin-shell .cc-admin-nav{grid-template-columns:1fr!important}.cc-helper-profile-grid{grid-template-columns:1fr}.cc-helper-icon-preview{margin:auto}}
+</style>
+<script id="cc-final-stable-admin-js">
+(function(){
+'use strict';
+
+var PROFILE_KEY='ccHelperProfile';
+var profileDefaults={name:'Chytrý pomocník',icon:'🤖',greeting:'Dobrý den! Jsem váš pomocník portálu. Ptejte se mě běžnou větou na akce, rezervace nebo kapacitu.'};
+function profile(){try{return Object.assign({},profileDefaults,JSON.parse(localStorage.getItem(PROFILE_KEY)||'{}'))}catch(e){return Object.assign({},profileDefaults)}}
+function saveProfile(p){localStorage.setItem(PROFILE_KEY,JSON.stringify(Object.assign({},profileDefaults,p||{})))}
+function esc2(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+
+/* Důležité: administrativní vstup vede přímo na tab4 + nový shell.
+   Tím obejdeme starší vrstvy openTab(), které si v minulosti přepisovaly čísla záložek. */
+function activateAdmin(){
+  var tab=document.getElementById('tab4');
+  if(!tab)return;
+  ensureShell();
+  document.querySelectorAll('.tab-content').forEach(function(x){x.classList.remove('active')});
+  var planned=document.getElementById('cc-planned-tab');if(planned)planned.classList.remove('active');
+  tab.classList.add('active');
+  document.querySelectorAll('.tabs .tab-btn').forEach(function(x){x.classList.remove('active')});
+  var adminBtn=document.getElementById('cc-admin-nav-btn')||document.getElementById('btn-admin');
+  if(adminBtn)adminBtn.classList.add('active');
+  showPageSafe('home');
+}
+function ensureShell(){
+  var tab=document.getElementById('tab4');if(!tab)return null;
+  var shell=document.getElementById('cc-admin-shell');
+  if(!shell && typeof makeShell==='function'){
+    try{shell=makeShell()}catch(e){shell=null}
+  }
+  if(!shell)return null;
+  shell.style.display='block';
+  shell.style.visibility='visible';
+  shell.style.opacity='1';
+  /* Staré navigace nikdy nesmí překrývat nový shell. */
+  tab.querySelectorAll(':scope > .cc-admin-subtabs,:scope > .cc-admin-subpanel,:scope > #cc-v3-global,:scope > #cc-final-admin-settings').forEach(function(x){x.style.display='none'});
+  var nav=shell.querySelector('.cc-admin-nav');
+  if(nav){
+    nav.querySelectorAll('button[data-page]').forEach(function(b){
+      b.style.display='flex';
+      b.style.pointerEvents='auto';
+      if(!b.__ccOriginalAdminClick && typeof b.onclick==='function') b.__ccOriginalAdminClick=b.onclick;
+      b.onclick=function(e){e.preventDefault();e.stopPropagation();showPageSafe(b.dataset.page)};
+    });
+  }
+  var refresh=shell.querySelector('#cc-admin-refresh');if(refresh)refresh.onclick=function(){var p=window.__ccAdminCurrentPage||'home';showPageSafe(p)};
+  var newEv=shell.querySelector('#cc-admin-new-event');if(newEv)newEv.onclick=function(){if(typeof eventModal==='function')eventModal()};
+  return shell;
+}
+function showPageSafe(page){
+  var shell=ensureShell();if(!shell)return;
+  var titlesMap={home:['Přehled','Rychlý přehled portálu a nejdůležitější administrativní úkony.'],events:['Akce a kapacita','Vytváření, úprava, skrytí, archivace a kontrola obsazenosti akcí.'],requests:['Žádosti o rezervace','Přehled všech žádostí a jejich stavů.'],users:['Uživatelé a role','Přístupy, role, žádosti o přístup a vydané kódy.'],appearance:['Vzhled a vstupní strana','Upravte texty, vzhled portálu a nastavení pomocníka.'],helper:['Chytrý pomocník','Nastavení personifikace pomocníka a jeho odpovědí.'],filters:['Kategorie a důvody','Kategorie akcí, filtry a nabídka důvodů rezervace.'],approvers:['Schvalovatelé','Správa profilů nadřízených a schvalovacích vazeb.'],system:['Systém a záloha','Export, import nastavení a bezpečné obnovení výchozího vzhledu.']};
+  if(!titlesMap[page])page='home';
+  window.__ccAdminCurrentPage=page;
+  shell.querySelectorAll('.cc-admin-nav button[data-page]').forEach(function(b){b.classList.toggle('active',b.dataset.page===page)});
+  var title=shell.querySelector('#cc-admin-title'),sub=shell.querySelector('#cc-admin-subtitle');
+  if(title)title.textContent=titlesMap[page][0];if(sub)sub.textContent=titlesMap[page][1];
+  var c=shell.querySelector('#cc-admin-content');if(!c)return;
+  c.innerHTML='';
+  var target=shell.querySelector('.cc-admin-nav button[data-page=\"'+page+'\"]');
+  /* Zavoláme původní closure handler uložený při prvním vytvoření shellu. Ten má přístup
+     k interní funkci showPage(), která není globální. */
+  try{
+    if(target && typeof target.__ccOriginalAdminClick==='function'){
+      target.__ccOriginalAdminClick.call(target,{preventDefault:function(){},stopPropagation:function(){}});
+    } else if(typeof window.showPage==='function'){
+      window.showPage(page);
+    }
+  }catch(e){}
+  setTimeout(function(){ensureShell();if(page==='helper')installProfileEditor();if(page==='events'&&typeof patchO2Box==='function')patchO2Box()},60);
+}
+
+/* Vynutíme nový administrativní vstup, aby žádná starší oprava nepřesměrovávala na tab3. */
+function bindAdminEntry(){
+  var old=document.getElementById('btn-admin');
+  if(old){
+    if(!old.__ccStableOriginalClick && typeof old.onclick==='function')old.__ccStableOriginalClick=old.onclick;
+    old.textContent='⚙️ Administrativa';old.onclick=function(e){e.preventDefault();activateAdmin()};old.style.display=(window.currentUser&&window.currentUser.role==='admin')?'inline-flex':'none'
+  }
+  var dup=document.getElementById('cc-admin-nav-btn');
+  if(dup){
+    if(!dup.__ccStableOriginalClick && typeof dup.onclick==='function')dup.__ccStableOriginalClick=dup.onclick;
+    /* Pokud shell ještě neexistuje, jednou zavoláme původní showAdmin() closure,
+       která ho vytvoří. Pak už navigaci řídí tato finální vrstva. */
+    if(!document.getElementById('cc-admin-shell') && dup.__ccStableOriginalClick && !dup.__ccStableBooted){
+      dup.__ccStableBooted=true;
+      try{dup.__ccStableOriginalClick.call(dup,{preventDefault:function(){},stopPropagation:function(){}})}catch(e){}
+    }
+    dup.textContent='⚙️ Administrativa';dup.onclick=function(e){e.preventDefault();activateAdmin()};dup.style.display=(window.currentUser&&window.currentUser.role==='admin')?'inline-flex':'none'
+  }
+  document.querySelectorAll('.tabs .tab-btn').forEach(function(b){if(b!==old&&b!==dup&&/Administrativní\s+(správa|přístup)/i.test(b.textContent||''))b.style.display='none'});
+}
+
+/* Editor personifikace */
+function installProfileEditor(){
+  var c=document.getElementById('cc-admin-content');if(!c)return;
+  var host=c.querySelector('#cc-helper-profile-editor');if(host)return;
+  var p=profile();
+  host=document.createElement('div');host.id='cc-helper-profile-editor';host.className='cc-helper-profile';
+  host.innerHTML='<h3 style="margin:0 0 5px">✨ Personifikace pomocníka</h3><p class="cc-adm-muted" style="margin:0 0 13px">Zvolte jméno, ikonku a úvodní pozdrav. Změna se okamžitě projeví v pomocníkovi vpravo dole.</p><div class="cc-helper-profile-grid"><div><div class="cc-helper-icon-preview" id="cc-helper-preview">'+esc2(p.icon)+'</div><label>Ikona pomocníka</label><input id="cc-helper-icon" maxlength="8" value="'+esc2(p.icon)+'"><div class="cc-helper-presets"><button type="button" data-icon="🤖">🤖</button><button type="button" data-icon="🧑‍💼">🧑‍💼</button><button type="button" data-icon="👩‍💼">👩‍💼</button><button type="button" data-icon="🧑‍🎓">🧑‍🎓</button><button type="button" data-icon="🦉">🦉</button><button type="button" data-icon="💡">💡</button></div></div><div><div style="margin-bottom:11px"><label>Jméno pomocníka</label><input id="cc-helper-name" maxlength="40" value="'+esc2(p.name)+'" placeholder="např. Bára, Alex, Ticket Buddy…"></div><div><label>Úvodní pozdrav</label><textarea id="cc-helper-greeting">'+esc2(p.greeting)+'</textarea></div></div></div><div style="margin-top:12px"><button type="button" class="cc-adm-btn primary" id="cc-helper-save-profile">Uložit personifikaci</button><span id="cc-helper-save-status" class="cc-helper-live-note"></span></div>';
+  c.insertBefore(host,c.firstChild);
+  var icon=host.querySelector('#cc-helper-icon'),preview=host.querySelector('#cc-helper-preview');
+  icon.oninput=function(){preview.textContent=icon.value||'🤖'};
+  host.querySelectorAll('[data-icon]').forEach(function(b){b.onclick=function(){icon.value=b.dataset.icon;preview.textContent=b.dataset.icon}});
+  host.querySelector('#cc-helper-save-profile').onclick=function(){
+    var np={name:host.querySelector('#cc-helper-name').value.trim()||profileDefaults.name,icon:host.querySelector('#cc-helper-icon').value.trim()||profileDefaults.icon,greeting:host.querySelector('#cc-helper-greeting').value.trim()||profileDefaults.greeting};
+    saveProfile(np);applyProfile();host.querySelector('#cc-helper-save-status').textContent=' Uloženo ✓';setTimeout(function(){var s=host.querySelector('#cc-helper-save-status');if(s)s.textContent=''},1800);
+  };
+}
+function applyProfile(){
+  var p=profile();
+  var wrap=document.getElementById('cc-v3-help');if(!wrap)return;
+  var btn=wrap.querySelector('.cc-v3-helpbtn');
+  if(btn){btn.setAttribute('title',p.name);btn.setAttribute('aria-label',p.name);var old=btn.querySelector('.cc-helper-float-icon');if(old)old.textContent=p.icon;else btn.innerHTML='<span class="cc-helper-float-icon">'+esc2(p.icon)+'</span>'}
+  var head=wrap.querySelector('.cc-real-ai-head');if(head)head.textContent=p.icon+' '+p.name;
+  var log=wrap.querySelector('#cc-real-ai-log');if(log&&!log.dataset.profileGreeting){log.dataset.profileGreeting='1';var d=document.createElement('div');d.className='cc-real-ai-msg bot';d.textContent=p.greeting;log.insertBefore(d,log.firstChild)}
+  var legacy=wrap.querySelector('.cc-v3-helpbox > strong');if(legacy)legacy.textContent=p.name;
+}
+
+/* Znovu přizpůsobíme existujícího pomocníka po každém renderHelp(). */
+function patchHelperRenderer(){
+  if(typeof window.renderHelp==='function' && !window.__ccProfileRenderPatched){
+    var old=window.renderHelp;
+    window.renderHelp=function(){var r=old.apply(this,arguments);setTimeout(applyProfile,30);return r};
+    window.__ccProfileRenderPatched=true;
+  }
+  applyProfile();
+}
+
+function boot(){
+  bindAdminEntry();
+  ensureShell();
+  patchHelperRenderer();
+  if(document.getElementById('tab4')&&document.getElementById('tab4').classList.contains('active')){
+    setTimeout(function(){activateAdmin()},30);
+  }
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+setInterval(function(){
+  bindAdminEntry();
+  var tab=document.getElementById('tab4');
+  if(tab&&tab.classList.contains('active')){ensureShell();var page=window.__ccAdminCurrentPage||'';if(page==='helper')installProfileEditor();}
+  patchHelperRenderer();
+},900);
+})();
+</script>
