@@ -4017,7 +4017,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 setTimeout(setup,400);setTimeout(setup,1200);setInterval(setup,2500);
 })();
 </script>
-<script id="cc-admin-rebuild-script">(function(){
+<script id="cc-admin-rebuild-core">(function(){
 'use strict';
 
 function A(){ try{return Array.isArray(companyActions)?companyActions:JSON.parse(localStorage.getItem('companyActions')||'[]')}catch(e){return []} }
@@ -4072,8 +4072,17 @@ function makeShell(){
   var tab=document.getElementById('tab4');if(!tab)return null;hideOldAdmin();
   var shell=document.getElementById('cc-admin-shell');if(shell)return shell;
   shell=document.createElement('div');shell.id='cc-admin-shell';shell.className='cc-admin-shell';
-  shell.innerHTML=`<aside class="cc-admin-side"><div class="cc-admin-brand"><strong>Administrace portálu</strong><span>Úpravy celého systému na jednom místě</span></div><div class="cc-admin-nav">
-  <button data-page="home" class="active">Přehled</button><button data-page="events">Akce a kapacita</button><button data-page="requests">Žádosti o rezervace</button><button data-page="users">Uživatelé a role</button><div class="admin-sep"></div><button data-page="appearance">Vzhled a vstupní strana</button><button data-page="helper">Chytrý pomocník</button><button data-page="filters">Kategorie a důvody</button><button data-page="approvers">Schvalovatelé</button><div class="admin-sep"></div><button data-page="system">Systém a záloha</button></div></aside><main class="cc-admin-main"><div class="cc-admin-head"><div><h2 id="cc-admin-title">Přehled</h2><p id="cc-admin-subtitle">Rychlý přehled portálu a nejdůležitější administrativní úkony.</p></div><div class="cc-admin-actions"><button class="cc-adm-btn" id="cc-admin-refresh">Obnovit</button><button class="cc-adm-btn primary" id="cc-admin-new-event">+ Nová akce</button></div></div><div id="cc-admin-content"></div><div class="cc-admin-footer">Administrativní změny se ukládají do stejného cloudového úložiště jako zbytek portálu.</div></main></div>`;
+  shell.innerHTML=`<aside class="cc-admin-side"><div class="cc-admin-brand"><strong>Administrace portálu</strong><span>Vyberte část systému, kterou chcete upravit.</span></div><div class="cc-admin-nav">
+  <button data-page="home" class="active"><span class="cc-tile-icon">📊</span><span class="cc-tile-title">Přehled</span><span class="cc-tile-desc">Stav akcí, žádostí, kapacit a uživatelů.</span></button>
+  <button data-page="events"><span class="cc-tile-icon">🎟️</span><span class="cc-tile-title">Akce a kapacita</span><span class="cc-tile-desc">Vytváření, úprava, skrytí a obsazenost akcí.</span></button>
+  <button data-page="requests"><span class="cc-tile-icon">📋</span><span class="cc-tile-title">Žádosti o rezervace</span><span class="cc-tile-desc">Přehled žádostí a jejich schvalování.</span></button>
+  <button data-page="users"><span class="cc-tile-icon">👥</span><span class="cc-tile-title">Uživatelé a role</span><span class="cc-tile-desc">Přístupy, role, žádosti a vydané kódy.</span></button>
+  <button data-page="appearance"><span class="cc-tile-icon">🎨</span><span class="cc-tile-title">Vzhled a vstupní strana</span><span class="cc-tile-desc">Texty, úvodní informace a vzhled portálu.</span></button>
+  <button data-page="helper"><span class="cc-tile-icon">💡</span><span class="cc-tile-title">Chytrý pomocník</span><span class="cc-tile-desc">Otázky, odpovědi a kontakt pro pomocníka.</span></button>
+  <button data-page="filters"><span class="cc-tile-icon">🏷️</span><span class="cc-tile-title">Kategorie a důvody</span><span class="cc-tile-desc">Kategorie akcí, filtry a důvody rezervací.</span></button>
+  <button data-page="approvers"><span class="cc-tile-icon">🔑</span><span class="cc-tile-title">Schvalovatelé</span><span class="cc-tile-desc">Profily a vazby schvalovatelů.</span></button>
+  <button data-page="system"><span class="cc-tile-icon">🛠️</span><span class="cc-tile-title">Systém a záloha</span><span class="cc-tile-desc">Záloha, obnova a bezpečné nastavení.</span></button>
+</div></aside><main class="cc-admin-main"><div class="cc-admin-head"><div><h2 id="cc-admin-title">Přehled</h2><p id="cc-admin-subtitle">Rychlý přehled portálu a nejdůležitější administrativní úkony.</p></div><div class="cc-admin-actions"><button class="cc-adm-btn" id="cc-admin-refresh">Obnovit</button><button class="cc-adm-btn primary" id="cc-admin-new-event">+ Nová akce</button></div></div><div id="cc-admin-content"></div><div class="cc-admin-footer">Administrativní změny se ukládají do stejného cloudového úložiště jako zbytek portálu.</div></main></div>`;
   tab.appendChild(shell);
   shell.querySelectorAll('.cc-admin-nav button[data-page]').forEach(function(b){b.onclick=function(){showPage(b.dataset.page)}});
   document.getElementById('cc-admin-refresh').onclick=function(){renderPage(currentPage)};
@@ -4169,6 +4178,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 setTimeout(function(){try{patchLoginAndAdminTab()}catch(e){}},500);
 setTimeout(function(){try{if(isAdmin()&&document.getElementById('tab4').classList.contains('active'))showAdmin()}catch(e){}},1000);
 })();
+</script>
 <script id="cc-admin-rebuild-visibility-patch">
 (function(){
   function patch(){
@@ -4203,37 +4213,47 @@ setTimeout(function(){try{if(isAdmin()&&document.getElementById('tab4').classLis
 })();
 </script>
 
-</script>
-<script id="cc-admin-rebuild-visibility-patch">
+<style id="cc-admin-tiles-final-css">
+#tab4.cc-admin-rebuilt{padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+#cc-admin-legacy{display:none!important}
+#cc-admin-shell{display:block!important;width:100%!important}
+#cc-admin-shell .cc-admin-side{position:static!important;width:100%!important;box-sizing:border-box!important;background:transparent!important;border:0!important;border-radius:0!important;padding:0!important;box-shadow:none!important}
+#cc-admin-shell .cc-admin-brand{background:#fff!important;border:1px solid #dce3eb!important;border-radius:16px!important;padding:18px 20px!important;margin:0 0 14px!important;box-shadow:0 6px 22px rgba(15,23,42,.05)!important}
+#cc-admin-shell .cc-admin-brand strong{font-size:20px!important;color:#0f172a!important}
+#cc-admin-shell .cc-admin-brand span{font-size:12px!important;color:#64748b!important}
+#cc-admin-shell .cc-admin-nav{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px!important;background:transparent!important}
+#cc-admin-shell .cc-admin-nav .admin-sep{display:none!important}
+#cc-admin-shell .cc-admin-nav button{min-height:132px!important;box-sizing:border-box!important;border:1px solid #dce3eb!important;background:#fff!important;border-radius:16px!important;padding:17px!important;text-align:left!important;color:#0f172a!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:flex-start!important;gap:0!important;box-shadow:0 6px 22px rgba(15,23,42,.05)!important;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease!important}
+#cc-admin-shell .cc-admin-nav button:hover{transform:translateY(-2px)!important;box-shadow:0 10px 28px rgba(15,23,42,.09)!important;border-color:#c7d1dc!important;background:#fff!important}
+#cc-admin-shell .cc-admin-nav button.active{border:2px solid #e41e26!important;color:#0f172a!important;background:#fff!important;box-shadow:0 10px 28px rgba(228,30,38,.10)!important}
+#cc-admin-shell .cc-tile-icon{font-size:27px!important;line-height:1!important;margin-bottom:14px!important}
+#cc-admin-shell .cc-tile-title{font-size:15px!important;font-weight:850!important;line-height:1.25!important;margin-bottom:6px!important}
+#cc-admin-shell .cc-tile-desc{font-size:11.5px!important;line-height:1.4!important;color:#64748b!important;font-weight:500!important}
+#cc-admin-shell .cc-admin-main{margin-top:18px!important}
+@media(max-width:900px){#cc-admin-shell .cc-admin-nav{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:600px){#cc-admin-shell .cc-admin-nav{grid-template-columns:1fr!important}}
+</style>
+<script id="cc-admin-tiles-final-js">
 (function(){
-  function patch(){
-    try{
-      if(typeof renderCards==='function' && !window.__ccAdminVisibilityPatched){
-        var old=renderCards;
-        window.renderCards=function(filter){
-          var g=document.getElementById('cc-v3-eventgrid');
-          if(!g){return old(filter)}
-          var list=(typeof actions==='function'?actions():[]).filter(function(a){return a.visible!==false && (a.status||'Aktivní')!=='Skryto' && (filter==='all'||(a.category||a.cat||'')===filter)});
-          list.sort(function(a,b){return ((a.date||'9999')+' '+(a.time||'')).localeCompare((b.date||'9999')+' '+(b.time||''));});
-          g.innerHTML='';
-          if(!list.length){g.innerHTML='<div style="grid-column:1/-1;color:#64748b">Pro tento filtr zatím není žádná akce.</div>';return;}
-          var rs=typeof requests==='function'?requests():[];
-          list.forEach(function(a){
-            var approved=rs.filter(function(r){return r.action===a.name&&r.status1==='Schváleno'&&r.status2==='Schváleno';}).reduce(function(n,r){return n+(parseInt(r.tickets)||0)},0);
-            var cap=Number(a.capacity)||0,status=a.portalStatus||'',full=cap>0&&approved>=cap;
-            var card=document.createElement('div');card.className='cc-v3-card';
-            var bg=document.createElement('div');bg.className='cc-v3-bg';if(a.image)bg.style.backgroundImage='url("'+String(a.image).replace(/"/g,'%22')+'")';card.appendChild(bg);
-            if(status==='Zrušeno/Přesunuto'||status==='Plno'||full){var badge=document.createElement('div');badge.className='cc-v3-badge';badge.textContent=full?'Plno':status;card.appendChild(badge)}
-            var body=document.createElement('div');body.className='cc-v3-body';body.innerHTML='<h3>'+esc(a.name)+'</h3><div class="cc-v3-time">'+(a.date?esc(fmtDate(a.date))+' · ':'')+esc(a.time||'')+'</div>';card.appendChild(body);
-            var tip=document.createElement('div');tip.className='cc-v3-tip';tip.innerHTML='<strong>'+esc(a.name)+'</strong><br>'+esc(a.tooltip||a.description||'Popis akce nebyl zadán.').replace(/\n/g,'<br>');card.appendChild(tip);
-            card.onclick=function(){if(status==='Zrušeno/Přesunuto'||full){alert(status==='Zrušeno/Přesunuto'?'Tato akce je zrušena nebo přesunuta.':'Kapacita akce je naplněna.');return}openReservation(a)};g.appendChild(card)
-          });
-        };
-        window.__ccAdminVisibilityPatched=true;
-      }
-    }catch(e){console.error('Admin visibility patch',e)}
+  'use strict';
+  function clean(){
+    var tab=document.getElementById('tab4');
+    if(!tab)return;
+    var shell=document.getElementById('cc-admin-shell');
+    if(!shell && typeof makeShell==='function'){
+      try{shell=makeShell();}catch(e){return;}
+    }
+    if(!shell)return;
+    var nav=shell.querySelector('.cc-admin-nav');
+    if(nav){
+      nav.querySelectorAll('button[data-page]').forEach(function(b){
+        b.classList.add('cc-admin-tile');
+      });
+    }
+    var legacy=document.getElementById('cc-admin-legacy');
+    if(legacy)legacy.style.display='none';
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',patch);else patch();
-  setTimeout(patch,1200);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',clean);else clean();
+  setTimeout(clean,300);setTimeout(clean,1000);
 })();
 </script>
