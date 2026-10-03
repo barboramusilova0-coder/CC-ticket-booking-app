@@ -1,0 +1,17 @@
+{
+  "name": "CC Ticket Booking App",
+  "short_name": "CC Tickets",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#e41e26",
+  "description": "Rezervace lístků a schvalování v rámci Coca-Cola HBC.",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
