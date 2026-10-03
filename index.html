@@ -94,8 +94,8 @@
             100% { transform: translateY(105vh) rotate(360deg) translateX(-30px); opacity: 0; }
         }
     </style>
-</head>
-<body>
+<style id="cc-early-no-flicker">body:not(.cc-app-ready){visibility:hidden!important} #tab4:not(.cc-admin-visible){display:none!important}</style></head>
+<body><script id="cc-mark-app-ready">(function(){function r(){document.body.classList.add("cc-app-ready")}if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",function(){setTimeout(r,40)});else setTimeout(r,40)})();</script>
 <!-- Kontejner pro detailní podzimní lístky (Javor a Dub) -->
 <div class="leaves-container">
 <!-- 1. Javorový list (Sytě oranžový) -->
@@ -4328,12 +4328,49 @@ function renderImportPreview(c,list){var p=c.querySelector('#cc-o2-preview'),a=c
 function loadO2(c){var status=c.querySelector('#cc-o2-status');status.textContent='Načítám program…';var url=c.querySelector('#cc-o2-url').value.trim()||O2URL;fetch('https://r.jina.ai/'+url,{headers:{Accept:'text/plain'}}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text()}).then(function(t){var list=parseO2(t);status.textContent='Načteno. Nalezeno '+list.length+' akcí.';renderImportPreview(c,list)}).catch(function(e){status.innerHTML='Web se z prohlížeče nepodařilo načíst. Použijte odkaz na zdroj nebo vložte obsah ručně níže.';});}
 
 function addImportTile(){if(typeof titles==='undefined'||typeof makeShell!=='function')return;var shell=document.getElementById('cc-admin-shell');if(!shell)return;var nav=shell.querySelector('.cc-admin-nav');if(!nav||nav.querySelector('[data-page="import"]'))return;var b=document.createElement('button');b.setAttribute('data-page','import');b.innerHTML='<span class="cc-tile-icon">🌐</span><span class="cc-tile-title">Import akcí z webu</span><span class="cc-tile-desc">Načtení programu O2 arena a bezpečný výběr akcí k importu.</span>';b.onclick=function(){showPage('import')};nav.appendChild(b);titles.import=['Import akcí z webu','Načtěte program O2 areny a vyberte akce, které chcete přidat do portálu.'];}
-function patchAdmin(){var tab=document.getElementById('tab4');if(!tab)return;var old=document.getElementById('cc-final-admin-settings');if(old)old.remove();var legacy=document.getElementById('cc-admin-legacy');if(legacy)legacy.style.display='none';var duplicate=document.getElementById('cc-admin-nav-btn');if(duplicate)duplicate.style.display='none';var duplicate2=document.getElementById('cc-final-admin-btn');if(duplicate2)duplicate2.style.display='none';var btn=document.getElementById('btn-admin'),u=null;try{u=JSON.parse(localStorage.getItem('currentUser')||'null')}catch(e){}if(btn){btn.style.display=(u&&u.role==='admin')?'inline-flex':'none';btn.textContent='⚙️ Administrace';btn.onclick=function(){var x=document.getElementById('cc-admin-nav-btn');if(x)x.click()};}var shell=document.getElementById('cc-admin-shell');var direct=[].slice.call(tab.children);direct.forEach(function(el){if(el.id!=='cc-admin-shell')el.style.display='none'});if(shell)shell.style.display='block';}
-function patchNav(){var b=document.getElementById('cc-admin-nav-btn');if(b)b.style.display='none';var b2=document.getElementById('cc-final-admin-btn');if(b2)b2.style.display='none';var old=document.getElementById('btn-admin'),u=null;try{u=JSON.parse(localStorage.getItem('currentUser')||'null')}catch(e){}if(old){old.textContent='⚙️ Administrace';old.onclick=function(){var x=document.getElementById('cc-admin-nav-btn');if(x)x.click()};old.style.display=(u&&u.role==='admin')?'inline-flex':'none';}}
+function patchAdmin(){
+ var tab=document.getElementById('tab4');if(!tab)return;
+ var old=document.getElementById('cc-final-admin-settings');if(old)old.remove();
+ var legacy=document.getElementById('cc-admin-legacy');if(legacy)legacy.style.display='none';
+ var dup=document.getElementById('cc-admin-nav-btn');if(dup)dup.style.display='none';
+ var dup2=document.getElementById('cc-final-admin-btn');if(dup2)dup2.style.display='none';
+ var btn=document.getElementById('btn-admin');
+ var u=null;try{u=(typeof currentUser!=='undefined'&&currentUser)?currentUser:JSON.parse(localStorage.getItem('currentUser')||'null')}catch(e){}
+ if(btn){
+   btn.textContent='⚙️ Administrace';
+   btn.style.display=(u&&u.role==='admin')?'inline-flex':'none';
+   btn.onclick=function(e){if(e)e.preventDefault();showAdminStable()};
+ }
+ var shell=document.getElementById('cc-admin-shell');
+ if(shell)shell.style.display='block';
+ if(!(u&&u.role==='admin')){tab.classList.remove('cc-admin-visible','active');}
+}
+function patchNav(){patchAdmin()}
+function showAdminStable(){
+ var u=null;try{u=(typeof currentUser!=='undefined'&&currentUser)?currentUser:JSON.parse(localStorage.getItem('currentUser')||'null')}catch(e){}
+ if(!u||u.role!=='admin')return;
+ var tab=document.getElementById('tab4');if(!tab)return;
+ var shell=document.getElementById('cc-admin-shell');
+ if(!shell){try{shell=makeShell()}catch(e){} }
+ if(!shell)return;
+ document.querySelectorAll('.tab-content').forEach(function(x){x.classList.remove('active')});
+ var p=document.getElementById('cc-planned-tab');if(p)p.classList.remove('active');
+ tab.classList.add('active','cc-admin-visible');
+ document.querySelectorAll('.tabs .tab-btn').forEach(function(x){x.classList.remove('active')});
+ var btn=document.getElementById('btn-admin');if(btn)btn.classList.add('active');
+ try{showPage(window.__ccAdminCurrentPage||'home')}catch(e){var home=shell.querySelector('[data-page="home"]');if(home)home.click()}
+}
+window.ccOpenAdminStable=showAdminStable;
 function refreshDashboard(){if(typeof renderRoleDashboard==='function')renderRoleDashboard()}
-var oldRender=window.renderPlannedEvents;if(typeof oldRender==='function'&&!window.__ccRoleDashboardPatched){window.renderPlannedEvents=function(){oldRender.apply(this,arguments);refreshDashboard()};window.__ccRoleDashboardPatched=true;}var oldRender2=window.renderPlanned;if(typeof oldRender2==='function'&&!window.__ccRoleDashboardPatched2){window.renderPlanned=function(){oldRender2.apply(this,arguments);refreshDashboard()};window.__ccRoleDashboardPatched2=true;}
-function boot(){patchNav();patchAdmin();refreshDashboard();setTimeout(function(){patchNav();patchAdmin();refreshDashboard()},700);setTimeout(function(){patchNav();patchAdmin();refreshDashboard()},1600)}
+function boot(){
+ if(!document.getElementById('tab4'))return;
+ patchAdmin();
+ refreshDashboard();
+ var u=null;try{u=(typeof currentUser!=='undefined'&&currentUser)?currentUser:JSON.parse(localStorage.getItem('currentUser')||'null')}catch(e){}
+ if(!(u&&u.role==='admin')){var tab=document.getElementById('tab4');if(tab)tab.classList.remove('cc-admin-visible','active')}
+}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
-setInterval(function(){try{patchNav();patchAdmin();}catch(e){}},2000);
 })();
 </script>
+<style id="cc-admin-stability-final-css">#tab4:not(.cc-admin-visible){display:none!important}#tab4.cc-admin-visible{display:block!important}#cc-admin-nav-btn,#cc-final-admin-btn{display:none!important}#tab4 #cc-admin-legacy{display:none!important}</style>
+<script id="cc-admin-stability-final-js">(function(){function u(){try{return(typeof currentUser!=="undefined"&&currentUser)?currentUser:JSON.parse(localStorage.getItem("currentUser")||"null")}catch(e){return null}}function sync(){var b=document.getElementById("btn-admin"),x=u();if(b){b.textContent="⚙️ Administrace";b.style.display=x&&x.role==="admin"?"inline-flex":"none";b.onclick=function(e){if(e)e.preventDefault();if(window.ccOpenAdminStable)window.ccOpenAdminStable()}}if(!(x&&x.role==="admin")){var t=document.getElementById("tab4");if(t)t.classList.remove("cc-admin-visible","active")}}try{if(typeof saveAndStyleSession==="function"&&!window.__ccSessionWrap){var old=saveAndStyleSession;window.saveAndStyleSession=function(){old.apply(this,arguments);setTimeout(sync,0)};window.__ccSessionWrap=true}}catch(e){}try{if(typeof logoutUser==="function"&&!window.__ccLogoutWrap){var lo=logoutUser;window.logoutUser=function(){lo.apply(this,arguments);setTimeout(sync,0)};window.__ccLogoutWrap=true}}catch(e){}if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",sync);else setTimeout(sync,0);})();</script>
