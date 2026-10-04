@@ -936,7 +936,7 @@
       o2ProxyUrl: "https://api.allorigins.win/raw?url="
     };
     let pendingO2Events = [];
-    const O2_DIRECT = "https://www.o2arena.cz/program/";
+    const O2_DIRECT = "https://www.o2arena.cz/events/";
     const O2_PROXIES = [
       () => `https://r.jina.ai/${O2_DIRECT}`,
       () => `https://api.allorigins.win/raw?url=${encodeURIComponent(O2_DIRECT)}`
@@ -1191,43 +1191,58 @@
     }
 
     function o2EventsFromJson(value, sourceUrl) {
-      const data = value && value.data;
-      const events = Array.isArray(value) ? value : value.events || value.items
-        || (Array.isArray(data) ? data : data && (data.events || data.items))
-        || (value && (value.name || value.title || value.eventName) ? [value] : []);
-      return Array.isArray(events) ? mergeO2Events(events.map((event) => normalizeO2Event(event, sourceUrl)).filter(Boolean)) : [];
+      const events = [];
+      const visit = (item) => {
+        if (!item || typeof item !== "object") return;
+        if (Array.isArray(item)) {
+          item.forEach(visit);
+          return;
+        }
+        const name = item.name || item.title || item.eventName || item.event_title || item.eventTitle;
+        const date = item.dates || item.date || item.startDate || item.start_date || item.datetime || item.eventDate || item.event_date;
+        if (name && date) {
+          const normalized = normalizeO2Event({
+            ...item,
+            name: typeof name === "object" ? name.rendered || name.text || "" : name,
+            dates: item.dates || item.occurrences || item.sessions,
+            date: item.date || item.eventDate || item.event_date,
+            startDate: item.startDate || item.start_date,
+            description: item.description || item.summary || item.excerpt && (item.excerpt.rendered || item.excerpt),
+            image: item.image || item.imageUrl || item.thumbnail || item.featuredImage || item.featured_image,
+            url: item.url || item.link || item.permalink || item.detailUrl
+          }, sourceUrl);
+          if (normalized) events.push(normalized);
+        }
+        Object.values(item).forEach(visit);
+      };
+      visit(value);
+      return mergeO2Events(events);
     }
 
-    function parseO2Events(input) {
+    function parseO2Events(input, diagnostics = {}) {
+      diagnostics.length = String(input || "").length;
+      diagnostics.jsonScripts = 0;
+      diagnostics.cards = 0;
+      diagnostics.dateCandidates = 0;
+      diagnostics.jsonParsed = false;
       const sourceUrl = O2_DIRECT;
       try {
         const data = JSON.parse(input);
+        diagnostics.jsonParsed = true;
         const events = o2EventsFromJson(data, sourceUrl);
         if (events.length) return events;
       } catch (error) {}
 
       const documentHtml = new DOMParser().parseFromString(input, "text/html");
+      diagnostics.title = documentHtml.title || "";
       const pageImage = safeImageUrl(documentHtml.querySelector('meta[property="og:image"], meta[name="twitter:image"]')?.content || "");
       const pageDescription = documentHtml.querySelector('meta[property="og:description"], meta[name="description"]')?.content || "";
       const structuredEvents = [];
-      documentHtml.querySelectorAll("script[type='application/ld+json']").forEach((script) => {
+      const dataScripts = documentHtml.querySelectorAll("script[type='application/ld+json'], script[type='application/json'], script#__NEXT_DATA__, script#__NUXT_DATA__");
+      dataScripts.forEach((script) => {
+        diagnostics.jsonScripts++;
         try {
-          const collect = (item) => {
-            if (!item || typeof item !== "object") return;
-            if (Array.isArray(item)) {
-              item.forEach(collect);
-              return;
-            }
-            const type = Array.isArray(item["@type"]) ? item["@type"].join(" ") : item["@type"] || "";
-            if (/event/i.test(type) && item.name) {
-              const event = normalizeO2Event(item, sourceUrl);
-              if (event) structuredEvents.push(event);
-            }
-            Object.values(item).forEach((value) => {
-              if (value && typeof value === "object") collect(value);
-            });
-          };
-          collect(JSON.parse(script.textContent));
+          structuredEvents.push(...o2EventsFromJson(JSON.parse(script.textContent), sourceUrl));
         } catch (error) {}
       });
       if (structuredEvents.length) {
@@ -1237,21 +1252,22 @@
         }
         return mergeO2Events(structuredEvents);
       }
-      const candidates = [...documentHtml.querySelectorAll("article, [class*='event-card'], [class*='event-item'], [class*='event-tile']")];
+      const candidates = [...documentHtml.querySelectorAll("article, [itemtype*='Event'], [data-event-id], [data-event], [class*='event-card'], [class*='event-item'], [class*='event-tile'], [class*='program-card'], [class*='program-item']")];
+      diagnostics.cards = candidates.length;
       if (!candidates.length) {
         documentHtml.querySelectorAll("a[href]").forEach((link) => {
-          if (/\/events?\//i.test(link.getAttribute("href") || "") && (link.querySelector("img") || link.textContent.trim())) candidates.push(link);
+          if (/\/(?:events?|program)\/[^/?#]+/i.test(link.getAttribute("href") || "") && (link.querySelector("img") || link.textContent.trim())) candidates.push(link);
         });
       }
       const imported = [];
       const seenLinks = new Set();
-      candidates.forEach((card) => {
+      const addCardEvent = (card, fallbackImage = "") => {
         const link = card.matches("a[href]") ? card : card.querySelector("a[href*='/event'], a[href]");
         const title = card.querySelector("h1, h2, h3, h4, [class*='title']") || link;
         const name = title && title.textContent.trim();
-        if (!name) return;
+        if (!name) return false;
         const detailUrl = safeHttpUrl(link && link.getAttribute("href") || sourceUrl) || sourceUrl;
-        if (detailUrl !== sourceUrl && seenLinks.has(detailUrl)) return;
+        if (detailUrl !== sourceUrl && seenLinks.has(detailUrl)) return false;
         if (detailUrl !== sourceUrl) seenLinks.add(detailUrl);
         const image = card.querySelector("img");
         const dateNodes = [...card.querySelectorAll("time, [datetime], [data-date]")];
@@ -1259,30 +1275,43 @@
           const text = `${node.getAttribute("datetime") || ""} ${node.getAttribute("data-date") || ""} ${node.textContent || ""}`;
           return o2DatesInText(text).map((date) => ({ date, time: normalizeO2Time(`${text} ${node.getAttribute("content") || ""}`) }));
         }).flat();
+        diagnostics.dateCandidates += dates.length;
         if (!dates.length) {
           const text = card.textContent || "";
           const datePattern = /\b(?:20\d{2}-\d{1,2}-\d{1,2}(?!\d)|\d{1,2}\s*[./]\s*\d{1,2}\s*[./]\s*20\d{2}\b)/;
           const rangePattern = new RegExp(`${datePattern.source}\\s*[-–—]\\s*${datePattern.source}`);
           if (rangePattern.test(text)) {
-            o2DatesInText(text).forEach((date) => dates.push({ date, time: normalizeO2Time(text) }));
+            const foundDates = o2DatesInText(text);
+            diagnostics.dateCandidates += foundDates.length;
+            foundDates.forEach((date) => dates.push({ date, time: normalizeO2Time(text) }));
           } else {
             const matches = text.match(/\b(?:20\d{2}-\d{1,2}-\d{1,2}(?!\d)|\d{1,2}\s*[./]\s*\d{1,2}\s*[./]\s*20\d{2}\b)(?:\s*(?:od|•|,)?\s*[0-2]?\d[:.][0-5]\d)?/g) || [];
+            diagnostics.dateCandidates += matches.length;
             matches.forEach((match) => o2DatesInText(match).forEach((date) => dates.push({ date, time: normalizeO2Time(match) })));
           }
         }
         const descriptionNode = card.querySelector("[itemprop='description'], [class*='description'], [class*='excerpt'], p");
-        const imageUrl = image && (image.getAttribute("src") || image.getAttribute("data-src") || image.getAttribute("data-lazy-src") || (image.getAttribute("srcset") || "").split(",")[0].trim().split(/\s+/)[0]);
+        const imageUrl = image && (image.getAttribute("src") || image.getAttribute("data-src") || image.getAttribute("data-lazy-src") || image.getAttribute("data-original") || (image.getAttribute("srcset") || image.getAttribute("data-srcset") || "").split(",")[0].trim().split(/\s+/)[0]);
         const event = normalizeO2Event({
           name,
           category: card.getAttribute("data-category") || "",
           dates,
           description: descriptionNode ? descriptionNode.textContent.trim() : card.getAttribute("data-description") || "",
-          image: imageUrl || (candidates.length === 1 ? pageImage : ""),
+          image: imageUrl || fallbackImage || (candidates.length === 1 ? pageImage : ""),
           url: detailUrl,
           place: "O2 arena"
         }, sourceUrl);
         if (event) imported.push(event);
-      });
+        return Boolean(event);
+      };
+      candidates.forEach((card) => addCardEvent(card));
+      if (!imported.length) {
+        documentHtml.querySelectorAll("a[href]").forEach((link) => {
+          if (!/\/(?:events?|program)\/[^/?#]+/i.test(link.getAttribute("href") || "")) return;
+          const card = link.closest("article, li, [class*='card'], [class*='event'], [class*='program']") || link.parentElement;
+          if (card) addCardEvent(card, link.querySelector("img")?.getAttribute("src") || "");
+        });
+      }
       if (!imported.length) {
         const lines = String(input || "").replace(/<[^>]+>/g, "\n").split(/\n+/).map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
         for (let index = 0; index < lines.length; index++) {
@@ -1333,8 +1362,9 @@
       button.disabled = false;
       button.style.display = events.length ? "inline-flex" : "none";
       if (!events.length) {
-        preview.innerHTML = '<div class="empty-state">Web se načetl, ale nepodařilo se rozpoznat akce. Zkuste vložit obsah ručně.</div>';
-        message.textContent = "0 akcí";
+        preview.innerHTML = '<div class="empty-state">Nepodařilo se rozpoznat žádnou akci. Zkontrolujte diagnostiku výše nebo vložte obsah stránky ručně.</div>';
+        if (label) message.textContent = label;
+        else message.textContent = "0 akcí";
         return;
       }
       const heading = document.createElement("div");
@@ -1395,8 +1425,8 @@
       }
     }
 
-    function parseO2Any(raw) {
-      return parseO2Events(raw);
+    function parseO2Any(raw, diagnostics) {
+      return parseO2Events(raw, diagnostics);
     }
 
     async function importO2Events() {
@@ -1412,21 +1442,35 @@
         .filter((source, index, all) => all.findIndex((item) => item.url === source.url) === index);
       const status = document.getElementById("cc-o2-status");
       status.textContent = "Zkouším načíst O2 arena…";
+      const attempts = [];
       for (const source of sources) {
         try {
-          const events = parseO2Any(await tryUrl(source.url, 9000));
+          const content = await tryUrl(source.url, 9000);
+          const diagnostics = {};
+          const events = parseO2Any(content, diagnostics);
+          attempts.push(`${source.name}: HTTP OK, ${diagnostics.length} znaků (${diagnostics.jsonParsed ? "JSON" : "HTML/text"}), ${diagnostics.cards} karet, ${diagnostics.jsonScripts} JSON skriptů, ${diagnostics.dateCandidates} termínů.`);
           if (events.length) {
             renderO2(document.getElementById("cc-o2-import"), events, source.name);
             return;
           }
-        } catch (error) {}
+        } catch (error) {
+          const reason = error.name === "AbortError" ? "vypršel časový limit" : error.message || "chyba načtení (pravděpodobně CORS)";
+          attempts.push(`${source.name}: ${reason}.`);
+        }
       }
-      status.textContent = "Automatické načtení je blokované nebo nebyly rozpoznány žádné akce. Použijte ruční pole níže.";
+      renderO2(document.getElementById("cc-o2-import"), [], "", "");
+      status.textContent = `Import selhal. Zkusil jsem ${attempts.join(" ") || "žádný zdroj" } Zkontrolujte dostupnost proxy nebo vložte HTML/JSON stránky ručně.`;
     }
 
     function parseManualO2Events() {
-      const events = parseO2Any(document.getElementById("cc-o2-paste").value.trim());
-      renderO2(document.getElementById("cc-o2-import"), events, "vloženého obsahu");
+      const content = document.getElementById("cc-o2-paste").value.trim();
+      const diagnostics = {};
+      const events = parseO2Any(content, diagnostics);
+      const box = document.getElementById("cc-o2-import");
+      renderO2(box, events, "vloženého obsahu");
+      if (!events.length) {
+        box.querySelector("#cc-o2-status").textContent = `Vložený obsah (${diagnostics.jsonParsed ? "JSON" : "HTML/text"}): ${diagnostics.length} znaků, stránka „${diagnostics.title || "bez názvu"}“, ${diagnostics.cards} karet, ${diagnostics.jsonScripts} JSON skriptů a ${diagnostics.dateCandidates} rozpoznaných termínů; chybí rozpoznatelný název i termín akce.`;
+      }
     }
 
     function importSelectedO2Events() {
