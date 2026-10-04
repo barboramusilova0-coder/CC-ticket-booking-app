@@ -444,6 +444,17 @@
     </div>
   </div>
 
+  <div class="panel">
+    <h3>Notifikace (příprava integrace)</h3>
+    <p style="color: var(--muted); margin-bottom: 0;">
+      Nová rezervace a žádost o přístup předávají událost backendu pro soukromý Teams kanál;
+      změna stavu předává e-mail žadateli a e-mail ke schválení nadřízenému.
+      Veřejné oznámení nové akce míří do obecného kanálu. Endpoint zatím není nastaven.
+      Webhooky Teams ani přihlašovací údaje Outlook/Office 365 nevkládejte do prohlížeče;
+      patří do zabezpečené serverové konfigurace.
+    </p>
+  </div>
+
   <div id="mainSystem" class="app-shell" style="display: none;">
     <div class="topbar">
       <div class="user-meta">
@@ -820,8 +831,16 @@
       ticketRequests: 'ccPortalTicketRequests',
       actions: 'ccPortalActions',
       currentUser: 'ccPortalCurrentUser',
-      chatProfiles: 'ccPortalChatProfiles'
+      chatProfiles: 'ccPortalChatProfiles',
+      categories: 'ccPortalActionCategories',
+      reasons: 'ccPortalRequestReasons'
     };
+
+    // Configure a trusted server-side notification endpoint here. Keep Teams webhook URLs
+    // and Office 365 SMTP credentials on that server; browser code must not contain secrets.
+    const NOTIFICATION_ENDPOINT = '';
+    const PROBLEM_NOTIFICATION_EMAIL = 'barbora.musilova@cchellenic.com';
+    const DEFAULT_REQUEST_REASONS = ['Obchodní schůzka se zákazníkem', 'Péče o zákazníka', 'Jiný důvod – dle specifikace'];
 
     const DEFAULT_ADMIN = {
       id: 'admin-default',
@@ -846,7 +865,9 @@
         { id: 3, name: 'Team building', date: '2026-12-02', time: '17:00', place: 'Outdoor arena', capacity: 30 }
       ]),
       currentUser: loadJson(STORAGE_KEYS.currentUser, null),
-      chatProfiles: loadJson(STORAGE_KEYS.chatProfiles, DEFAULT_CHAT_PROFILES)
+      chatProfiles: loadJson(STORAGE_KEYS.chatProfiles, DEFAULT_CHAT_PROFILES),
+      categories: loadJson(STORAGE_KEYS.categories, ['Nezařazeno']),
+      reasons: loadJson(STORAGE_KEYS.reasons, [...DEFAULT_REQUEST_REASONS])
     };
 
     let deferredInstallPrompt = null;
@@ -860,12 +881,27 @@
       }
     }
 
+    function readChatbotImage(file) {
+      if (!file) return Promise.resolve('');
+      if (!file.type.startsWith('image/') || file.size > 1024 * 1024) {
+        return Promise.reject(new Error('Obrázek musí být menší než 1 MB.'));
+      }
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error('Obrázek se nepodařilo načíst.'));
+        reader.readAsDataURL(file);
+      });
+    }
+
     function persist() {
       localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(state.users));
       localStorage.setItem(STORAGE_KEYS.roleRequests, JSON.stringify(state.roleRequests));
       localStorage.setItem(STORAGE_KEYS.ticketRequests, JSON.stringify(state.ticketRequests));
       localStorage.setItem(STORAGE_KEYS.actions, JSON.stringify(state.actions));
       localStorage.setItem(STORAGE_KEYS.chatProfiles, JSON.stringify(state.chatProfiles));
+      localStorage.setItem(STORAGE_KEYS.categories, JSON.stringify(state.categories));
+      localStorage.setItem(STORAGE_KEYS.reasons, JSON.stringify(state.reasons));
 
       if (state.currentUser) {
         localStorage.setItem(STORAGE_KEYS.currentUser, JSON.stringify(state.currentUser));
@@ -883,6 +919,44 @@
 
     function getInitials(name) {
       return (name || 'U').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
+    }
+
+    function getActionDates(action) {
+      const dates = Array.isArray(action.dates) && action.dates.length
+        ? action.dates
+        : [{ date: action.date, time: action.time }];
+      return dates.filter((slot) => slot && slot.date).map((slot) => ({
+        date: String(slot.date),
+        time: String(slot.time || action.time || '')
+      }));
+    }
+
+    function safeHttpUrl(value) {
+      try {
+        const url = new URL(value);
+        return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+      } catch (error) {
+        return '';
+      }
+    }
+
+    function sendNotification(type, details) {
+      if (!NOTIFICATION_ENDPOINT) return;
+      const endpoint = safeHttpUrl(NOTIFICATION_ENDPOINT);
+      if (!endpoint) return;
+      fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, details, problemNotificationEmail: PROBLEM_NOTIFICATION_EMAIL })
+      }).catch((error) => console.error('Notification service is unavailable.', error));
+    }
+
+    function reportProblemNotification(details) {
+      sendNotification('problem_reported', {
+        ...details,
+        notifyEmail: PROBLEM_NOTIFICATION_EMAIL,
+        teamsChannel: 'admin-private'
+      });
     }
 
     function openTab(tabNumber) {
@@ -924,8 +998,17 @@
       const avatar = document.getElementById('chatAvatar');
       if (selectedProfile) {
         chatName.textContent = selectedProfile.name;
-        avatar.textContent = selectedProfile.icon || selectedProfile.name.slice(0, 1).toUpperCase();
+        avatar.replaceChildren();
+        if (selectedProfile.image) {
+          const image = document.createElement('img');
+          image.src = selectedProfile.image;
+          image.alt = '';
+          avatar.appendChild(image);
+        } else {
+          avatar.textContent = selectedProfile.icon || selectedProfile.name.slice(0, 1).toUpperCase();
+        }
       }
+      renderSmartTiles();
     }
 
     function handleRegister(event) {
@@ -1008,7 +1091,7 @@
 
       container.innerHTML = state.chatProfiles.map((profile) => `
         <div class="profile-choice ${state.currentUser && state.currentUser.chatbotId === profile.id ? 'selected' : ''}" data-id="${profile.id}" onclick="selectWelcomeChatbot('${profile.id}')">
-          <div class="profile-visual">${escapeHtml(profile.icon || profile.name.slice(0, 1).toUpperCase())}</div>
+          <div class="profile-visual">${profile.image ? `<img src="${escapeHtml(profile.image)}" alt="">` : escapeHtml(profile.icon || profile.name.slice(0, 1).toUpperCase())}</div>
           <strong>${escapeHtml(profile.name)}</strong>
           <small>${profile.gender === 'female' ? 'Žena' : 'Muž'}</small>
         </div>
@@ -1029,27 +1112,183 @@
       modal.setAttribute('aria-hidden', 'true');
     }
 
+    function renderCategoryControls() {
+      const filter = document.getElementById('actionCategoryFilter');
+      const actionCategory = document.getElementById('actNewCategory');
+      if (filter) {
+        const selected = filter.value || 'all';
+        filter.innerHTML = ['<option value="all">Všechny kategorie</option>'].concat(
+          state.categories.map((category) => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`)
+        ).join('');
+        filter.value = state.categories.includes(selected) ? selected : 'all';
+      }
+      if (actionCategory) {
+        const selected = actionCategory.value;
+        actionCategory.innerHTML = state.categories.map((category) =>
+          `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`
+        ).join('');
+        actionCategory.value = state.categories.includes(selected) ? selected : (state.categories[0] || '');
+      }
+      const list = document.getElementById('categoryManagementList');
+      if (list) list.innerHTML = state.categories.map((category) =>
+        `<div class="action-stack" style="margin-top:6px;"><span>${escapeHtml(category)}</span><button class="chip-btn danger" type="button" onclick="removeCategory(decodeURIComponent('${encodeURIComponent(category).replace(/'/g, '%27')}'))">Smazat</button></div>`
+      ).join('');
+    }
+
+    function addCategory() {
+      const input = document.getElementById('newCategoryInput');
+      const category = input.value.trim();
+      if (!category) return;
+      if (!state.categories.includes(category)) state.categories.push(category);
+      input.value = '';
+      persist();
+      renderCategoryControls();
+      renderActions();
+    }
+
+    function removeCategory(category) {
+      if (category === 'Nezařazeno') {
+        alert('Výchozí kategorii nelze odebrat.');
+        return;
+      }
+      if (!confirm(`Odebrat kategorii „${category}“? Akce zůstanou zachované v kategorii Nezařazeno.`)) return;
+      state.categories = state.categories.filter((item) => item !== category);
+      state.actions.forEach((action) => {
+        if ((action.category || 'Nezařazeno') === category) action.category = 'Nezařazeno';
+      });
+      persist();
+      renderCategoryControls();
+      renderActions();
+      renderActionTableAdmin();
+    }
+
+    function populateReasonSelect() {
+      const select = document.getElementById('reservationReason');
+      select.innerHTML = state.reasons.map((reason) =>
+        `<option value="${escapeHtml(reason)}">${escapeHtml(reason)}</option>`
+      ).join('');
+    }
+
+    function renderReasonManagement() {
+      const list = document.getElementById('reasonManagementList');
+      if (list) list.innerHTML = state.reasons.map((reason) =>
+        `<div class="action-stack" style="margin-top:6px;"><span>${escapeHtml(reason)}</span>${reason === 'Jiný důvod – dle specifikace' ? '' : `<button class="chip-btn danger" type="button" onclick="removeReason(decodeURIComponent('${encodeURIComponent(reason).replace(/'/g, '%27')}'))">Smazat</button>`}</div>`
+      ).join('');
+    }
+
+    function addReason() {
+      const input = document.getElementById('newReasonInput');
+      const reason = input.value.trim();
+      if (!reason) return;
+      if (!state.reasons.includes(reason)) state.reasons.unshift(reason);
+      input.value = '';
+      persist();
+      renderReasonManagement();
+    }
+
+    function removeReason(reason) {
+      state.reasons = state.reasons.filter((item) => item !== reason);
+      persist();
+      renderReasonManagement();
+    }
+
+    async function importActionDetails() {
+      const url = safeHttpUrl(document.getElementById('actImportUrl').value.trim());
+      if (!url) {
+        alert('Zadejte platnou HTTP/HTTPS URL.');
+        return;
+      }
+      try {
+        const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
+        if (!response.ok) throw new Error('Web nevrátil stránku.');
+        const source = await response.text();
+        const parsed = new DOMParser().parseFromString(source, 'text/html');
+        const meta = (property) => parsed.querySelector(`meta[property="${property}"], meta[name="${property}"]`)?.content || '';
+        const description = meta('og:description') || meta('description');
+        const image = meta('og:image');
+        if (description) document.getElementById('actNewDescription').value = description;
+        if (image) document.getElementById('actNewImageUrl').value = safeHttpUrl(new URL(image, url).href);
+        if (!description && !image) throw new Error('Stránka neobsahuje podporovaný popis ani obrázek.');
+        alert('Údaje načteny. Před uložením je prosím zkontrolujte.');
+      } catch (error) {
+        alert(`Import se nepodařil. Web mohl blokovat přístup z prohlížeče (CORS). Údaje můžete vyplnit ručně. ${error.message}`);
+      }
+    }
+
+    function applyRequestQuickFilter(status) {
+      document.getElementById('requestStatusFilter').value = status;
+      openTab(2);
+    }
+
+    function renderSmartTiles() {
+      const panel = document.getElementById('smartTilesPanel');
+      const container = document.getElementById('smartTiles');
+      if (!panel || !container || !state.currentUser) {
+        if (panel) panel.classList.add('hidden');
+        return;
+      }
+      panel.classList.remove('hidden');
+      const email = state.currentUser.email.toLowerCase();
+      let requests = state.ticketRequests;
+      if (state.currentUser.role === 'applicant') {
+        requests = requests.filter((request) => String(request.requestedBy || '').toLowerCase() === email);
+      } else if (state.currentUser.role !== 'admin') {
+        requests = requests.filter((request) => String(request.managerEmail || '').toLowerCase() === email);
+      }
+      const pending = requests.filter((request) => (request.reservationStatus || 'čeká') === 'čeká').length;
+      const approved = requests.filter((request) => request.reservationStatus === 'schváleno').length;
+      const rejected = requests.filter((request) => request.reservationStatus === 'zamítnuto').length;
+      const items = state.currentUser.role === 'admin'
+        ? [
+            { label: 'Všechny žádosti', value: requests.length, status: 'all', tone: 'blue' },
+            { label: 'Nové / čekající', value: pending, status: 'čeká', tone: 'amber' },
+            { label: 'Schválené', value: approved, status: 'schváleno', tone: 'green' },
+            { label: 'Zamítnuté', value: rejected, status: 'zamítnuto', tone: 'red' }
+          ]
+        : [
+            { label: state.currentUser.role === 'applicant' ? 'Moje žádosti' : 'Čeká na mě', value: requests.length, status: 'all', tone: 'blue' },
+            { label: 'Čekající', value: pending, status: 'čeká', tone: 'amber' },
+            { label: 'Schválené', value: approved, status: 'schváleno', tone: 'green' },
+            { label: 'Zamítnuté', value: rejected, status: 'zamítnuto', tone: 'red' }
+          ];
+      container.innerHTML = items.map((item) => `
+        <button class="tile tile-button" data-tone="${item.tone}" type="button" onclick="applyRequestQuickFilter('${item.status}')">
+          <div class="tile-label">${item.label}</div><div class="tile-value">${item.value}</div>
+        </button>
+      `).join('');
+    }
+
     function renderActions() {
       const grid = document.getElementById('actionGrid');
       if (!grid) return;
 
-      if (!state.actions.length) {
+      renderCategoryControls();
+      const selectedCategory = document.getElementById('actionCategoryFilter').value;
+      const actions = state.actions.filter((action) =>
+        selectedCategory === 'all' || (action.category || 'Nezařazeno') === selectedCategory
+      );
+      if (!actions.length) {
         grid.innerHTML = '<div class="empty-box">Žádné akce nebyly vytvořeny.</div>';
         return;
       }
 
-      grid.innerHTML = state.actions.map((action) => `
-        <div class="action-card">
+      grid.innerHTML = actions.map((action) => {
+        const dates = getActionDates(action);
+        const imageUrl = safeHttpUrl(action.imageUrl || '');
+        return `
+        <div class="action-card" title="${escapeHtml(action.description || action.name)}">
+          ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:12px;">` : ''}
           <h3>${escapeHtml(action.name)}</h3>
           <div class="meta-line">
-            <div>📅 ${escapeHtml(action.date)}</div>
-            <div>🕒 ${escapeHtml(action.time)}</div>
+            <div>📅 ${dates.map((slot) => `${escapeHtml(slot.date)} ${escapeHtml(slot.time)}`).join('<br>')}</div>
             <div>📍 ${escapeHtml(action.place)}</div>
             <div>🎟️ Kapacita: ${escapeHtml(action.capacity)}</div>
+            <div>🏷️ ${escapeHtml(action.category || 'Nezařazeno')}</div>
+            ${action.description ? `<div>${escapeHtml(action.description)}</div>` : ''}
           </div>
           <button class="btn primary" type="button" onclick="openReservationModal(${action.id})">Rezervovat</button>
         </div>
-      `).join('');
+      `;}).join('');
     }
 
     function openReservationModal(actionId) {
@@ -1058,11 +1297,17 @@
 
       document.getElementById('reservationActionId').value = action.id;
       document.getElementById('reservationActionName').value = action.name;
+      document.getElementById('reservationDate').innerHTML = getActionDates(action).map((slot) =>
+        `<option value="${escapeHtml(slot.date)}|${escapeHtml(slot.time)}">${escapeHtml(slot.date)} ${escapeHtml(slot.time)}</option>`
+      ).join('');
       document.getElementById('reservationApplicantName').value = state.currentUser ? state.currentUser.name : '';
       document.getElementById('reservationManagerEmail').value = state.currentUser?.manager || '';
       document.getElementById('reservationCustomerName').value = '';
       document.getElementById('reservationTicketCount').value = '1';
-      document.getElementById('reservationReason').value = '';
+      populateReasonSelect();
+      document.getElementById('reservationReason').value = state.reasons[0] || '';
+      document.getElementById('reservationCustomReason').value = '';
+      toggleCustomReason();
       document.getElementById('reservationCompliance').checked = false;
       document.getElementById('reservationSubmitBtn').disabled = true;
 
@@ -1075,6 +1320,13 @@
       };
     }
 
+    function toggleCustomReason() {
+      const isOther = document.getElementById('reservationReason').value === 'Jiný důvod – dle specifikace';
+      const customReason = document.getElementById('reservationCustomReason');
+      customReason.classList.toggle('hidden', !isOther);
+      customReason.required = isOther;
+    }
+
     function closeReservationModal() {
       const modal = document.getElementById('reservationModal');
       modal.classList.add('hidden');
@@ -1085,15 +1337,26 @@
     function handleReservationSubmit(event) {
       event.preventDefault();
       if (!state.currentUser) return;
+      if (!document.getElementById('reservationCompliance').checked) {
+        alert('Před odesláním potvrďte seznámení s pravidly.');
+        return;
+      }
+
+      const [requestedEventDate, requestedEventTime] = document.getElementById('reservationDate').value.split('|');
+      const selectedReason = document.getElementById('reservationReason').value;
+      const customReason = document.getElementById('reservationCustomReason').value.trim();
 
       const request = {
         id: Date.now(),
         action: document.getElementById('reservationActionName').value,
+        category: state.actions.find((item) => String(item.id) === document.getElementById('reservationActionId').value)?.category || 'Nezařazeno',
+        requestedEventDate,
+        requestedEventTime,
         applicantName: document.getElementById('reservationApplicantName').value.trim(),
         managerEmail: document.getElementById('reservationManagerEmail').value.trim().toLowerCase(),
         customerName: document.getElementById('reservationCustomerName').value.trim(),
         count: Number(document.getElementById('reservationTicketCount').value),
-        reason: document.getElementById('reservationReason').value.trim(),
+        reason: selectedReason === 'Jiný důvod – dle specifikace' ? customReason : selectedReason,
         requestedBy: state.currentUser.email,
         status1: 'čeká',
         status2: 'čeká',
@@ -1108,6 +1371,7 @@
 
       state.ticketRequests.unshift(request);
       persist();
+      sendNotification('new_reservation', { ...request, approvalEmail: request.managerEmail, teamsChannel: 'admin-private' });
       closeReservationModal();
       renderRequestsTable();
       renderAdminSection();
@@ -1118,14 +1382,18 @@
       const tbody = document.getElementById('requestsTableBody');
       if (!tbody) return;
 
-      if (!state.ticketRequests.length) {
+      const filter = document.getElementById('requestStatusFilter')?.value || 'all';
+      const requests = state.ticketRequests.filter((request) =>
+        filter === 'all' || (request.reservationStatus || 'čeká') === filter
+      );
+      if (!requests.length) {
         tbody.innerHTML = '<tr><td colspan="8"><div class="empty-box">Žádné žádosti nebyly odeslány.</div></td></tr>';
         return;
       }
 
-      tbody.innerHTML = state.ticketRequests.map((request) => `
+      tbody.innerHTML = requests.map((request) => `
         <tr>
-          <td>${escapeHtml(request.action || '-')}</td>
+          <td>${escapeHtml(request.action || '-')}${request.requestedEventDate ? `<br>${escapeHtml(request.requestedEventDate)} ${escapeHtml(request.requestedEventTime || '')}` : ''}</td>
           <td>${escapeHtml(request.applicantName || '-')}</td>
           <td>${escapeHtml(request.customerName || '-')}</td>
           <td>${escapeHtml(request.count || '0')}</td>
@@ -1169,6 +1437,13 @@
       else request.reservationStatus = 'čeká';
 
       persist();
+      sendNotification('request_status_changed', {
+        ...request,
+        applicantEmail: request.requestedBy,
+        approverEmail: request.managerEmail,
+        notifyApplicant: true,
+        teamsChannel: 'admin-private'
+      });
       renderRequestsTable();
       renderAdminSection();
     }
@@ -1187,6 +1462,7 @@
 
       state.roleRequests.push(request);
       persist();
+      sendNotification('access_request', { ...request, teamsChannel: 'admin-private' });
       event.target.reset();
       renderAdminSection();
       alert('Žádost o přístup byla odeslána ke schválení.');
@@ -1198,6 +1474,9 @@
       renderRoleRequestsTable();
       renderUsersTable();
       renderChatbotConfig();
+      renderCategoryControls();
+      renderReasonManagement();
+      renderSmartTiles();
     }
 
     function renderAdminTiles() {
@@ -1227,14 +1506,21 @@
       const time = document.getElementById('actNewTime').value;
       const place = document.getElementById('actNewPlace').value.trim();
       const capacity = Number(document.getElementById('actNewCapacity').value);
+      const dates = [date, ...document.getElementById('actAdditionalDates').value.split(/[,\s]+/).filter(Boolean)]
+        .filter((value, index, all) => /^\d{4}-\d{2}-\d{2}$/.test(value) && all.indexOf(value) === index)
+        .map((value) => ({ date: value, time }));
+      const category = document.getElementById('actNewCategory').value || 'Nezařazeno';
+      const description = document.getElementById('actNewDescription').value.trim();
+      const imageUrl = safeHttpUrl(document.getElementById('actNewImageUrl').value.trim());
 
       if (!name || !date || !time || !place || !capacity) {
         alert('Vyplňte všechny údaje o akci.');
         return;
       }
 
-      state.actions.push({ id: Date.now(), name, date, time, place, capacity });
+      state.actions.push({ id: Date.now(), name, date, time, dates, place, capacity, category, description, imageUrl });
       persist();
+      sendNotification('new_event', { name, date, time, place, category, description, teamsChannel: 'general' });
       event.target.reset();
       renderActions();
       renderAdminSection();
@@ -1252,7 +1538,7 @@
 
       tbody.innerHTML = state.actions.map((action) => `
         <tr>
-          <td><strong>${escapeHtml(action.name)}</strong><br>${escapeHtml(action.date)} ${escapeHtml(action.time)}<br>${escapeHtml(action.place)}</td>
+          <td><strong>${escapeHtml(action.name)}</strong><br>${getActionDates(action).map((slot) => `${escapeHtml(slot.date)} ${escapeHtml(slot.time)}`).join('<br>')}<br>${escapeHtml(action.place)}<br>${escapeHtml(action.category || 'Nezařazeno')}</td>
           <td>${escapeHtml(action.capacity)}</td>
           <td><span class="status-pill status-schvaleno">Aktivní</span></td>
           <td>
@@ -1279,16 +1565,34 @@
       if (place === null) return;
       const capacity = prompt('Kapacita lístků:', action.capacity);
       if (capacity === null) return;
+      const additionalDates = prompt('Další termíny (YYYY-MM-DD oddělené čárkou):', getActionDates(action).slice(1).map((slot) => slot.date).join(', '));
+      if (additionalDates === null) return;
+      const description = prompt('Popis akce:', action.description || '');
+      if (description === null) return;
+      const category = prompt(`Kategorie (${state.categories.join(', ')}):`, action.category || 'Nezařazeno');
+      if (category === null) return;
 
+      const normalizedDates = [date.trim(), ...additionalDates.split(/[,\s]+/).filter(Boolean)]
+        .filter((value, index, all) => /^\d{4}-\d{2}-\d{2}$/.test(value) && all.indexOf(value) === index)
+        .map((value) => ({ date: value, time: time.trim() }));
       Object.assign(action, {
         name: name.trim(),
-        date: date.trim(),
+        date: normalizedDates[0]?.date || date.trim(),
         time: time.trim(),
+        dates: normalizedDates,
         place: place.trim(),
+        description: description.trim(),
+        category: state.categories.includes(category.trim()) ? category.trim() : 'Nezařazeno',
         capacity: Number(capacity) || action.capacity
       });
 
       persist();
+      sendNotification('event_updated', {
+        name: action.name,
+        dates: getActionDates(action),
+        category: action.category,
+        teamsChannel: 'general'
+      });
       renderActions();
       renderAdminSection();
       alert('Akce byla upravena.');
@@ -1405,7 +1709,7 @@
 
       container.innerHTML = state.chatProfiles.map((profile) => `
         <div class="profile-choice selected" style="margin-bottom: 12px;" data-id="${profile.id}">
-          <div class="profile-visual" style="margin-bottom: 6px;">${escapeHtml(profile.icon || (profile.name || 'A').slice(0, 1).toUpperCase())}</div>
+          <div class="profile-visual" style="margin-bottom: 6px;">${profile.image ? `<img src="${escapeHtml(profile.image)}" alt="">` : escapeHtml(profile.icon || (profile.name || 'A').slice(0, 1).toUpperCase())}</div>
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 6px;">
             <div>
               <strong>${escapeHtml(profile.name)}</strong><br>
@@ -1416,33 +1720,54 @@
               <button class="chip-btn danger" type="button" onclick="deleteChatbotProfile('${profile.id}')">Smazat</button>
             </div>
           </div>
+          <label class="chip-btn muted" style="display:inline-block;margin-top:8px;">Změnit obrázek<input type="file" accept="image/*" onchange="changeChatbotImage('${profile.id}', this)" hidden></label>
         </div>
       `).join('');
     }
 
-    function handleAddChatbot(event) {
+    async function changeChatbotImage(profileId, input) {
+      const profile = state.chatProfiles.find((item) => item.id === profileId);
+      if (!profile || !input.files[0]) return;
+      try {
+        profile.image = await readChatbotImage(input.files[0]);
+        persist();
+        renderChatbotConfig();
+        updateUserHeader();
+        if (document.getElementById('welcomeChatbotModal').getAttribute('aria-hidden') === 'false') openWelcomeChatbotModal();
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    async function handleAddChatbot(event) {
       event.preventDefault();
       const name = document.getElementById('chatbotNameInput').value.trim();
       const icon = document.getElementById('chatbotIconInput').value.trim();
       const gender = document.getElementById('chatbotGenderInput').value;
+      const imageFile = document.getElementById('chatbotImageInput').files[0];
 
       if (!name || !icon) {
         alert('Vyplňte jméno a ikonu chatbota.');
         return;
       }
 
-      state.chatProfiles.push({
-        id: 'chatbot-' + Date.now(),
-        name,
-        icon: icon.slice(0, 2).toUpperCase(),
-        gender
-      });
+      try {
+        state.chatProfiles.push({
+          id: 'chatbot-' + Date.now(),
+          name,
+          icon: icon.slice(0, 8),
+          image: await readChatbotImage(imageFile),
+          gender
+        });
 
-      persist();
-      renderChatbotConfig();
-      populateChatbotSelect();
-      event.target.reset();
-      alert('Chatbot byl přidán.');
+        persist();
+        renderChatbotConfig();
+        populateChatbotSelect();
+        event.target.reset();
+        alert('Chatbot byl přidán.');
+      } catch (error) {
+        alert(error.message);
+      }
     }
 
     function editChatbotProfile(profileId) {
@@ -1457,7 +1782,7 @@
       if (gender === null) return;
 
       profile.name = name.trim() || profile.name;
-      profile.icon = icon.trim().slice(0, 2).toUpperCase() || profile.icon;
+      profile.icon = icon.trim().slice(0, 8) || profile.icon;
       profile.gender = (gender === 'male' ? 'male' : 'female');
 
       persist();
@@ -1542,16 +1867,24 @@
     }
 
     function exportToCsv() {
-      if (!state.ticketRequests.length) {
+      const filter = document.getElementById('requestStatusFilter')?.value || 'all';
+      const requests = state.ticketRequests.filter((request) =>
+        filter === 'all' || (request.reservationStatus || 'čeká') === filter
+      );
+      if (!requests.length) {
         alert('Nejsou žádné žádosti ke stažení.');
         return;
       }
 
       const rows = [
-        ['Akce', 'Žadatel', 'Zákazník', 'Počet lístků', 'Nadřízený', 'Důvod', 'Status 1', 'Status 2', 'Stav'],
-        ...state.ticketRequests.map((request) => [
+        ['Akce', 'Kategorie', 'Termín', 'Čas', 'Žadatel', 'E-mail žadatele', 'Zákazník', 'Počet lístků', 'Nadřízený', 'Důvod', 'Status 1', 'Status 2', 'Stav'],
+        ...requests.map((request) => [
           request.action,
+          request.category || 'Nezařazeno',
+          request.requestedEventDate || '',
+          request.requestedEventTime || '',
           request.applicantName,
+          request.requestedBy || '',
           request.customerName,
           request.count,
           request.managerEmail || '',
@@ -1562,7 +1895,10 @@
         ])
       ];
 
-      const csv = rows.map((row) => row.map((cell) => '"' + String(cell).replace(/"/g, '""') + '"').join(',')).join('\n');
+      const csv = '\uFEFF' + rows.map((row) => row.map((cell) => {
+        const value = String(cell ?? '').replace(/^([=+\-@])/, "'$1");
+        return '"' + value.replace(/"/g, '""') + '"';
+      }).join(';')).join('\r\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -1664,6 +2000,9 @@
       if (!state.users.length) state.users = [DEFAULT_ADMIN];
 
       if (!state.chatProfiles || !state.chatProfiles.length) state.chatProfiles = DEFAULT_CHAT_PROFILES;
+      if (!Array.isArray(state.categories)) state.categories = ['Nezařazeno'];
+      if (!state.categories.includes('Nezařazeno')) state.categories.unshift('Nezařazeno');
+      if (!Array.isArray(state.reasons) || !state.reasons.length) state.reasons = [...DEFAULT_REQUEST_REASONS];
 
       if (state.currentUser) {
         const current = state.users.find((user) => user.email.toLowerCase() === state.currentUser.email.toLowerCase());
