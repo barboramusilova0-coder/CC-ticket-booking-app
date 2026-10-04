@@ -19,6 +19,67 @@
 
         firebase.initializeApp(firebaseConfig);
     </script>
+
+    <script id="cc-teams-notifications">
+    (function(){
+      'use strict';
+      var URL_KEY='teamsWebhookUrl';
+      var TYPES={
+        new_registration:{title:'Nová žádost o přístup',color:'0078D4'},
+        approval:{title:'Žádost o přístup schválena',color:'28A745'},
+        rejection:{title:'Žádost o přístup zamítnuta',color:'DC2626'},
+        new_reservation:{title:'Nová žádost o rezervaci',color:'00A4EF'},
+        test:{title:'Testovací zpráva',color:'64748B'}
+      };
+      function safeText(value){
+        return String(value==null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\|/g,'\\|').slice(0,500);
+      }
+      window.saveTeamsWebhookUrl=function(value){
+        var url=String(value||'').trim();
+        if(url){
+          try{
+            var parsed=new URL(url),host=parsed.hostname.toLowerCase();
+            var teamsHost=host==='outlook.office.com'||host==='webhook.office.com'||host.endsWith('.webhook.office.com')||host.endsWith('.logic.azure.com');
+            if(parsed.protocol!=='https:'||!teamsHost||parsed.username||parsed.password||(parsed.port&&parsed.port!=='443'))return {ok:false,message:'Zadejte platnou HTTPS URL Teams webhooku.'};
+          }catch(e){return {ok:false,message:'Zadejte platnou HTTPS URL Teams webhooku.'};}
+        }
+        try{localStorage.setItem(URL_KEY,url);return {ok:true};}
+        catch(e){return {ok:false,message:'URL se nepodařilo uložit.'};}
+      };
+      window.sendTeamsNotification=async function(type,data){
+        var config=TYPES[type],url='';
+        if(!config)return false;
+        try{url=String(localStorage.getItem(URL_KEY)||'').trim();}catch(e){return false;}
+        if(!url)return false;
+        data=data||{};
+        var who=data.name||data.employee||data.email||data.applicantEmail||'Neuvedeno';
+        var facts=[
+          {name:'Kdo',value:safeText(who)},
+          {name:'Kdy',value:new Date().toLocaleString('cs-CZ')}
+        ];
+        if(data.email&&data.name)facts.push({name:'E-mail',value:safeText(data.email)});
+        if(data.role)facts.push({name:'Role',value:safeText(data.role)});
+        if(data.action)facts.push({name:'Akce',value:safeText(data.action)});
+        if(data.customer)facts.push({name:'Zákazník',value:safeText(data.customer)});
+        if(data.tickets)facts.push({name:'Počet lístků',value:safeText(data.tickets)});
+        var card={
+          '@type':'MessageCard',
+          '@context':'http://schema.org/extensions',
+          themeColor:config.color,
+          summary:config.title,
+          title:config.title,
+          sections:[{activityTitle:safeText(config.title),facts:facts,markdown:true}]
+        };
+        if(type!=='test'&&window.location&&window.location.origin){
+          card.potentialAction=[{'@type':'OpenUri',name:'Otevřít aplikaci',targets:[{os:'default',uri:window.location.origin+window.location.pathname}]}];
+        }
+        try{
+          var response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(card)});
+          return response.ok;
+        }catch(e){return false;}
+      };
+    })();
+    </script>
 <title>Rezervační portál lístků | Coca-Cola HBC</title>
 <style>
         :root {
@@ -463,6 +524,7 @@
         if (list.some(r => ccNormEmail(r.email) === email)) { alert('Žádost pro tento e-mail už čeká na schválení administrátorem.'); return; }
         list.push({ id: Date.now(), name: name, email: email, role: role, passwordHash: ccHashPassword(email, pw), createdAt: new Date().toISOString() });
         ccSaveRoleRequests(list);
+        if (window.sendTeamsNotification) window.sendTeamsNotification('new_registration', { name: name, email: email, role: role });
         ['regName', 'regEmail', 'regPassword', 'regPassword2'].forEach(id => { document.getElementById(id).value = ''; });
         alert('Žádost byla odeslána. Po schválení administrátorem se můžete přihlásit e-mailem a heslem.');
         toggleGateRegistration();
@@ -580,12 +642,18 @@
     function handleRoleRequestSubmit(e) {
         e.preventDefault();
         roleRequests.push({ id: Date.now(), name: document.getElementById('reqName').value.trim(), email: document.getElementById('reqEmail').value.toLowerCase().trim(), role: document.getElementById('reqRole').value });
-        localStorage.setItem('roleRequests', JSON.stringify(roleRequests)); e.target.reset(); alert('Odesláno!');
+        localStorage.setItem('roleRequests', JSON.stringify(roleRequests));
+        if (window.sendTeamsNotification) window.sendTeamsNotification('new_registration', roleRequests[roleRequests.length - 1]);
+        e.target.reset(); alert('Odesláno!');
     }
     function approveRoleRequest(id) {
-        if (ccApproveRoleRequest(id)) { alert('Uživatel byl schválen a může se přihlásit e-mailem a heslem.'); renderAdminSection(); }
+        const request = ccGetRoleRequests().find(r => String(r.id) === String(id));
+        if (ccApproveRoleRequest(id)) {
+            if (window.sendTeamsNotification) window.sendTeamsNotification('approval', request);
+            alert('Uživatel byl schválen a může se přihlásit e-mailem a heslem.'); renderAdminSection();
+        }
     }
-    function rejectRoleRequest(id) { if(confirm('Opravdu chcete smazat svou žádost?')) { roleRequests = roleRequests.filter(r => r.id !== id); localStorage.setItem('roleRequests', JSON.stringify(roleRequests)); renderAdminSection(); } }
+    function rejectRoleRequest(id) { if(confirm('Opravdu chcete smazat svou žádost?')) { const request = ccGetRoleRequests().find(r => String(r.id) === String(id)); roleRequests = roleRequests.filter(r => String(r.id) !== String(id)); localStorage.setItem('roleRequests', JSON.stringify(roleRequests)); if (window.sendTeamsNotification) window.sendTeamsNotification('rejection', request); renderAdminSection(); } }
     function editRoleRequest(id) { const r = ccGetRoleRequests().find(x => x.id === id); if (!r) return; const n = prompt('Nová role (applicant, manager, rsm_praha, admin):', r.role); if (n && ccValidRoles.indexOf(n.trim()) > -1) { ccSetRequestRole(id, n.trim()); renderAdminSection(); } else if (n) alert('Neplatná role.'); }
     function deleteActiveUser(tok) { if(confirm('Deaktivovat uživatele?')) { const all = ccGetUsers(); delete all[tok]; ccSaveUsers(all); renderAdminSection(); } }
     function handleCreateActionSubmit(e) {
@@ -676,6 +744,7 @@
         });
         
         localStorage.setItem('ticketRequests', JSON.stringify(requests)); 
+        if (window.sendTeamsNotification) window.sendTeamsNotification('new_reservation', requests[requests.length - 1]);
         if (document.getElementById('ticketForm')) document.getElementById('ticketForm').reset(); 
         
         alert('Žádost o rezervaci lístků byla úspěšně odeslána!'); 
@@ -927,7 +996,7 @@ function openReservation(a){var u=window.currentUser||{};var m=getManager();var 
  var close=function(){back.remove()};back.querySelector('#cc-v3-x').onclick=close;back.querySelector('#v3-cancel').onclick=close;
  function checkDup(){var cust=back.querySelector('#v3-customer').value.trim().toLowerCase();var d=rs.some(function(r){return String(r.action).toLowerCase()===String(a.name).toLowerCase()&&String(r.customer||'').trim().toLowerCase()===cust&&String(r.employee||'').toLowerCase()===String(u.name||'').toLowerCase()&&String(r.status1||'').toLowerCase()!=='zamítnuto'&&String(r.status2||'').toLowerCase()!=='zamítnuto';});var box=back.querySelector('#v3-dup');box.style.display=d?'block':'none';if(d)box.textContent='Pozor: na tohoto zákazníka už existuje žádost na stejnou akci. Zkontrolujte, zda opravdu chcete poslat další žádost.';return d;}
  back.querySelector('#v3-customer').oninput=checkDup;
- back.querySelector('#v3-submit').onclick=function(){var mgrn=back.querySelector('#v3-mgrname').value.trim(),mgre=back.querySelector('#v3-mgrmail').value.trim().toLowerCase(),cust=back.querySelector('#v3-customer').value.trim(),tickets=back.querySelector('#v3-tickets').value,reason=back.querySelector('#v3-reason').value.trim();if(!mgrn||!mgre||!cust||!tickets||!reason||!back.querySelector('#v3-compliance').checked){alert('Vyplňte prosím všechna povinná pole a potvrďte Kodex chování.');return;}setManager({name:mgrn,email:mgre});if(checkDup()&&!confirm('Existuje podobná žádost. Opravdu chcete pokračovat?'))return;var arr=requests();arr.push({id:Date.now(),action:a.name,employee:u.name||'',applicantEmail:u.email||'',manager:mgre,managerName:mgrn,customer:cust,turnover:back.querySelector('#v3-turnover').value||'',tickets:tickets,reason:reason,status1:'Čeká',status2:'Čeká',approvedBy1:'',approvedBy2:''});localStorage.setItem('ticketRequests',JSON.stringify(arr));close();alert('Žádost o rezervaci byla odeslána.');if(typeof renderTable==='function')renderTable();};
+ back.querySelector('#v3-submit').onclick=function(){var mgrn=back.querySelector('#v3-mgrname').value.trim(),mgre=back.querySelector('#v3-mgrmail').value.trim().toLowerCase(),cust=back.querySelector('#v3-customer').value.trim(),tickets=back.querySelector('#v3-tickets').value,reason=back.querySelector('#v3-reason').value.trim();if(!mgrn||!mgre||!cust||!tickets||!reason||!back.querySelector('#v3-compliance').checked){alert('Vyplňte prosím všechna povinná pole a potvrďte Kodex chování.');return;}setManager({name:mgrn,email:mgre});if(checkDup()&&!confirm('Existuje podobná žádost. Opravdu chcete pokračovat?'))return;var arr=requests();arr.push({id:Date.now(),action:a.name,employee:u.name||'',applicantEmail:u.email||'',manager:mgre,managerName:mgrn,customer:cust,turnover:back.querySelector('#v3-turnover').value||'',tickets:tickets,reason:reason,status1:'Čeká',status2:'Čeká',approvedBy1:'',approvedBy2:''});localStorage.setItem('ticketRequests',JSON.stringify(arr));if(window.sendTeamsNotification)window.sendTeamsNotification('new_reservation',arr[arr.length-1]);close();alert('Žádost o rezervaci byla odeslána.');if(typeof renderTable==='function')renderTable();};
 }
 
 function installManagerButton(){if(document.getElementById('cc-v3-manager-btn'))return;var bar=document.querySelector('.login-bar>div:first-child');if(!bar)return;var b=document.createElement('button');b.id='cc-v3-manager-btn';b.textContent='Nastavit nadřízeného';b.style.cssText='margin-left:8px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#334155;cursor:pointer;font-weight:700;font-size:12px';b.onclick=function(){var m=getManager(),x=openModal('<button class="cc-v3-close" id="mx">×</button><h2>Nastavit nadřízeného</h2><p style="color:#64748b">Údaj se uloží pro váš účet a automaticky se předvyplní do dalších rezervací.</p><div class="cc-v3-field"><label>Jméno nadřízeného</label><input id="mn" value="'+esc(m.name)+'"></div><div class="cc-v3-field"><label>E-mail nadřízeného</label><input id="me" type="email" value="'+esc(m.email)+'"></div><div class="cc-v3-actions"><button class="cc-v3-secondary" id="mc">Zrušit</button><button class="cc-v3-primary" id="ms">Uložit</button></div>');x.querySelector('#mx').onclick=function(){x.remove()};x.querySelector('#mc').onclick=function(){x.remove()};x.querySelector('#ms').onclick=function(){var n=x.querySelector('#mn').value.trim(),e=x.querySelector('#me').value.trim().toLowerCase();if(!n||!e){alert('Vyplňte jméno i e-mail.');return;}setManager({name:n,email:e});x.remove();alert('Nadřízený byl uložen.');};};bar.appendChild(b);}
@@ -1089,7 +1158,7 @@ window.addEventListener('scroll',function(){if(tipCard)positionTip(tipCard);},tr
   var DOC_KEY='cocaColaDatabase';
   var UI_KEY='ccPortalConfigV3';
   var PROFILE_PREFIX='ccManager_';
-  var SYNC_KEYS=['companyActions','ticketRequests','customUsers','users','roleRequests','ccSeasonMode','cc_dynamic_reasons',UI_KEY];
+  var SYNC_KEYS=['companyActions','ticketRequests','customUsers','users','roleRequests','ccSeasonMode','cc_dynamic_reasons','teamsWebhookUrl',UI_KEY];
   var busy=false, timer=null, ready=false;
   var nativeSet=Storage.prototype.setItem;
   var nativeRemove=Storage.prototype.removeItem;
@@ -1114,6 +1183,7 @@ window.addEventListener('scroll',function(){if(tipCard)positionTip(tipCard);},tr
       customUsers:json('customUsers',{}),
       users:json('users',{}),
       roleRequests:json('roleRequests',[]),
+      teamsWebhookUrl:getLocal('teamsWebhookUrl')||'',
       ccPortalConfigV3:json(UI_KEY,{}),
       ccManagerProfiles:collectProfiles(),
       ccSeasonMode:getLocal('ccSeasonMode')||'autumn'
@@ -1148,6 +1218,7 @@ window.addEventListener('scroll',function(){if(tipCard)positionTip(tipCard);},tr
       if(d.customUsers!==undefined){setLocal('customUsers',JSON.stringify(d.customUsers||{}));try{customUsers=d.customUsers||{};}catch(e){} window.customUsers=d.customUsers||{};}
       if(d.users!==undefined){setLocal('users',JSON.stringify(d.users||{}));window.users=d.users||{};}
       if(d.roleRequests!==undefined){setLocal('roleRequests',JSON.stringify(d.roleRequests||[]));try{roleRequests=d.roleRequests||[];}catch(e){}}
+      if(d.teamsWebhookUrl!==undefined)setLocal('teamsWebhookUrl',d.teamsWebhookUrl||'');
       if(d.ccPortalConfigV3!==undefined)setLocal(UI_KEY,JSON.stringify(d.ccPortalConfigV3||{}));
       if(d.ccManagerProfiles!==undefined){
         setLocal('ccManagerProfilesCloud',JSON.stringify(d.ccManagerProfiles||{}));
@@ -3713,7 +3784,7 @@ function openReservation(a){var u=window.currentUser||{};var m=getManager();var 
  var close=function(){back.remove()};back.querySelector('#cc-v3-x').onclick=close;back.querySelector('#v3-cancel').onclick=close;
  function checkDup(){var cust=back.querySelector('#v3-customer').value.trim().toLowerCase();var d=rs.some(function(r){return String(r.action).toLowerCase()===String(a.name).toLowerCase()&&String(r.customer||'').trim().toLowerCase()===cust&&String(r.employee||'').toLowerCase()===String(u.name||'').toLowerCase()&&String(r.status1||'').toLowerCase()!=='zamítnuto'&&String(r.status2||'').toLowerCase()!=='zamítnuto';});var box=back.querySelector('#v3-dup');box.style.display=d?'block':'none';if(d)box.textContent='Pozor: na tohoto zákazníka už existuje žádost na stejnou akci. Zkontrolujte, zda opravdu chcete poslat další žádost.';return d;}
  back.querySelector('#v3-customer').oninput=checkDup;
- back.querySelector('#v3-submit').onclick=function(){var mgrn=back.querySelector('#v3-mgrname').value.trim(),mgre=back.querySelector('#v3-mgrmail').value.trim().toLowerCase(),cust=back.querySelector('#v3-customer').value.trim(),tickets=back.querySelector('#v3-tickets').value,reason=back.querySelector('#v3-reason').value.trim();if(!mgrn||!mgre||!cust||!tickets||!reason||!back.querySelector('#v3-compliance').checked){alert('Vyplňte prosím všechna povinná pole a potvrďte Kodex chování.');return;}setManager({name:mgrn,email:mgre});if(checkDup()&&!confirm('Existuje podobná žádost. Opravdu chcete pokračovat?'))return;var arr=requests();arr.push({id:Date.now(),action:a.name,employee:u.name||'',applicantEmail:u.email||'',manager:mgre,managerName:mgrn,customer:cust,turnover:back.querySelector('#v3-turnover').value||'',tickets:tickets,reason:reason,status1:'Čeká',status2:'Čeká',approvedBy1:'',approvedBy2:''});localStorage.setItem('ticketRequests',JSON.stringify(arr));close();alert('Žádost o rezervaci byla odeslána.');if(typeof renderTable==='function')renderTable();};
+ back.querySelector('#v3-submit').onclick=function(){var mgrn=back.querySelector('#v3-mgrname').value.trim(),mgre=back.querySelector('#v3-mgrmail').value.trim().toLowerCase(),cust=back.querySelector('#v3-customer').value.trim(),tickets=back.querySelector('#v3-tickets').value,reason=back.querySelector('#v3-reason').value.trim();if(!mgrn||!mgre||!cust||!tickets||!reason||!back.querySelector('#v3-compliance').checked){alert('Vyplňte prosím všechna povinná pole a potvrďte Kodex chování.');return;}setManager({name:mgrn,email:mgre});if(checkDup()&&!confirm('Existuje podobná žádost. Opravdu chcete pokračovat?'))return;var arr=requests();arr.push({id:Date.now(),action:a.name,employee:u.name||'',applicantEmail:u.email||'',manager:mgre,managerName:mgrn,customer:cust,turnover:back.querySelector('#v3-turnover').value||'',tickets:tickets,reason:reason,status1:'Čeká',status2:'Čeká',approvedBy1:'',approvedBy2:''});localStorage.setItem('ticketRequests',JSON.stringify(arr));if(window.sendTeamsNotification)window.sendTeamsNotification('new_reservation',arr[arr.length-1]);close();alert('Žádost o rezervaci byla odeslána.');if(typeof renderTable==='function')renderTable();};
 }
 
 function installManagerButton(){if(document.getElementById('cc-v3-manager-btn'))return;var bar=document.querySelector('.login-bar>div:first-child');if(!bar)return;var b=document.createElement('button');b.id='cc-v3-manager-btn';b.textContent='Nastavit nadřízeného';b.style.cssText='margin-left:8px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#334155;cursor:pointer;font-weight:700;font-size:12px';b.onclick=function(){var m=getManager(),x=openModal('<button class="cc-v3-close" id="mx">×</button><h2>Nastavit nadřízeného</h2><p style="color:#64748b">Údaj se uloží pro váš účet a automaticky se předvyplní do dalších rezervací.</p><div class="cc-v3-field"><label>Jméno nadřízeného</label><input id="mn" value="'+esc(m.name)+'"></div><div class="cc-v3-field"><label>E-mail nadřízeného</label><input id="me" type="email" value="'+esc(m.email)+'"></div><div class="cc-v3-actions"><button class="cc-v3-secondary" id="mc">Zrušit</button><button class="cc-v3-primary" id="ms">Uložit</button></div>');x.querySelector('#mx').onclick=function(){x.remove()};x.querySelector('#mc').onclick=function(){x.remove()};x.querySelector('#ms').onclick=function(){var n=x.querySelector('#mn').value.trim(),e=x.querySelector('#me').value.trim().toLowerCase();if(!n||!e){alert('Vyplňte jméno i e-mail.');return;}setManager({name:n,email:e});x.remove();alert('Nadřízený byl uložen.');};};bar.appendChild(b);}
@@ -4130,6 +4201,7 @@ function makeShell(){
   <button data-page="filters"><span class="cc-tile-icon">🏷️</span><span class="cc-tile-title">Kategorie a důvody</span><span class="cc-tile-desc">Kategorie akcí, filtry a důvody rezervací.</span></button>
   <button data-page="approvers"><span class="cc-tile-icon">🔑</span><span class="cc-tile-title">Schvalovatelé</span><span class="cc-tile-desc">Profily a vazby schvalovatelů.</span></button>
   <button data-page="system"><span class="cc-tile-icon">🛠️</span><span class="cc-tile-title">Systém a záloha</span><span class="cc-tile-desc">Záloha, obnova a bezpečné nastavení.</span></button>
+  <button data-page="teams"><span class="cc-tile-icon">💬</span><span class="cc-tile-title">Teams notifikace</span><span class="cc-tile-desc">Nastavení webhooku a testovací zpráva.</span></button>
 </div></aside><main class="cc-admin-main"><div class="cc-admin-head"><div><h2 id="cc-admin-title">Přehled</h2><p id="cc-admin-subtitle">Rychlý přehled portálu a nejdůležitější administrativní úkony.</p></div><div class="cc-admin-actions"><button class="cc-adm-btn" id="cc-admin-refresh">Obnovit</button><button class="cc-adm-btn primary" id="cc-admin-new-event">+ Nová akce</button></div></div><div id="cc-admin-content"></div><div class="cc-admin-footer">Administrativní změny se ukládají do stejného cloudového úložiště jako zbytek portálu.</div></main></div>`;
   tab.appendChild(shell);
   shell.querySelectorAll('.cc-admin-nav button[data-page]').forEach(function(b){b.onclick=function(){showPage(b.dataset.page)}});
@@ -4138,9 +4210,9 @@ function makeShell(){
   return shell;
 }
 var currentPage='home';
-var titles={home:['Přehled','Rychlý přehled portálu a nejdůležitější administrativní úkony.'],events:['Akce a kapacita','Vytváření, úprava, skrytí, archivace a kontrola obsazenosti akcí.'],requests:['Žádosti o rezervace','Přehled všech žádostí a jejich stavů.'],users:['Uživatelé a role','Přístupy, role, žádosti o přístup a vydané kódy.'],appearance:['Vzhled a vstupní strana','Upravte texty, kategorie, dlaždice a informace před přihlášením.'],helper:['Chytrý pomocník','Obsah odpovědí a kontakt pro případy, kdy pomocník nepomůže.'],filters:['Kategorie a důvody','Kategorie akcí, filtry a nabídka důvodů rezervace.'],approvers:['Schvalovatelé','Správa profilů nadřízených a schvalovacích vazeb.'],system:['Systém a záloha','Export, import nastavení a bezpečné obnovení výchozího vzhledu.']};
+var titles={home:['Přehled','Rychlý přehled portálu a nejdůležitější administrativní úkony.'],events:['Akce a kapacita','Vytváření, úprava, skrytí, archivace a kontrola obsazenosti akcí.'],requests:['Žádosti o rezervace','Přehled všech žádostí a jejich stavů.'],users:['Uživatelé a role','Přístupy, role, žádosti o přístup a vydané kódy.'],appearance:['Vzhled a vstupní strana','Upravte texty, kategorie, dlaždice a informace před přihlášením.'],helper:['Chytrý pomocník','Obsah odpovědí a kontakt pro případy, kdy pomocník nepomůže.'],filters:['Kategorie a důvody','Kategorie akcí, filtry a nabídka důvodů rezervace.'],approvers:['Schvalovatelé','Správa profilů nadřízených a schvalovacích vazeb.'],system:['Systém a záloha','Export, import nastavení a bezpečné obnovení výchozího vzhledu.'],teams:['Teams notifikace','Nastavení webhooku a testovací zpráva.']};
 function showPage(page){currentPage=page;var shell=makeShell();if(!shell)return;shell.querySelectorAll('.cc-admin-nav button').forEach(function(b){b.classList.toggle('active',b.dataset.page===page)});document.getElementById('cc-admin-title').textContent=titles[page][0];document.getElementById('cc-admin-subtitle').textContent=titles[page][1];renderPage(page)}
-function renderPage(page){var c=document.getElementById('cc-admin-content');if(!c)return;c.innerHTML='';({home:pageHome,events:pageEvents,requests:pageRequests,users:pageUsers,appearance:pageAppearance,helper:pageHelper,filters:pageFilters,approvers:pageApprovers,system:pageSystem}[page]||pageHome)(c)}
+function renderPage(page){var c=document.getElementById('cc-admin-content');if(!c)return;c.innerHTML='';({home:pageHome,events:pageEvents,requests:pageRequests,users:pageUsers,appearance:pageAppearance,helper:pageHelper,filters:pageFilters,approvers:pageApprovers,system:pageSystem,teams:pageTeams}[page]||pageHome)(c)}
 
 function pageHome(c){var acts=A(), req=R(), users=Object.keys(U()).length, pending=req.filter(function(r){return r.status1==='Čeká'||r.status2==='Čeká'}).length, approved=req.filter(function(r){return r.status2==='Schváleno'}).length;
  c.innerHTML='<div class="cc-adm-grid"><div class="cc-adm-stat"><div class="n">'+acts.length+'</div><div class="l">Akcí celkem</div></div><div class="cc-adm-stat"><div class="n">'+req.length+'</div><div class="l">Žádostí celkem</div></div><div class="cc-adm-stat"><div class="n">'+pending+'</div><div class="l">Čeká na zpracování</div></div><div class="cc-adm-stat"><div class="n">'+users+'</div><div class="l">Aktivních uživatelů</div></div></div>';
@@ -4166,11 +4238,11 @@ function pageUsers(c){var users=U(), rr=RR();
  c.innerHTML='<div class="cc-adm-section"><h3>Čekající žádosti o přístup</h3><div class="cc-adm-tablewrap"><table class="cc-adm-table"><thead><tr><th>Jméno</th><th>E-mail</th><th>Role</th><th>Akce</th></tr></thead><tbody id="rrt"></tbody></table></div></div><div class="cc-adm-section"><h3>Aktivní uživatelé</h3><div class="cc-adm-tablewrap"><table class="cc-adm-table"><thead><tr><th>Jméno</th><th>E-mail</th><th>Role</th><th>Akce</th></tr></thead><tbody id="uut"></tbody></table></div></div>';
  var rtb=c.querySelector('#rrt');rtb.innerHTML=rr.length?rr.map(function(r){return '<tr><td>'+escA(r.name)+'</td><td>'+escA(r.email)+'</td><td><select data-rrole="'+escA(r.id)+'">'+roleOpts(r.role)+'</select></td><td><button class="cc-adm-btn small primary" data-approve="'+escA(r.id)+'">Schválit</button> <button class="cc-adm-btn small danger" data-reject="'+escA(r.id)+'">Zamítnout</button></td></tr>'}).join(''):'<tr><td colspan="4">Žádné čekající žádosti.</td></tr>';
  rtb.querySelectorAll('[data-rrole]').forEach(function(sel){sel.onchange=function(){ccSetRequestRole(sel.dataset.rrole,sel.value);syncAll()}});
- rtb.querySelectorAll('[data-approve]').forEach(function(b){b.onclick=function(){approveAccess(b.dataset.approve)}});rtb.querySelectorAll('[data-reject]').forEach(function(b){b.onclick=function(){if(confirm('Žádost zamítnout a smazat?')){ccSaveRoleRequests(RR().filter(function(x){return String(x.id)!==String(b.dataset.reject)}));syncAll();pageUsers(c)}}});
+ rtb.querySelectorAll('[data-approve]').forEach(function(b){b.onclick=function(){approveAccess(b.dataset.approve)}});rtb.querySelectorAll('[data-reject]').forEach(function(b){b.onclick=function(){if(confirm('Žádost zamítnout a smazat?')){var rejected=RR().find(function(x){return String(x.id)===String(b.dataset.reject)});ccSaveRoleRequests(RR().filter(function(x){return String(x.id)!==String(b.dataset.reject)}));if(window.sendTeamsNotification)window.sendTeamsNotification('rejection',rejected);syncAll();pageUsers(c)}}});
  var utb=c.querySelector('#uut'), keys=Object.keys(users);utb.innerHTML=keys.length?keys.map(function(k){var u=users[k];return '<tr><td>'+escA(u.name)+'</td><td>'+escA(u.email)+'</td><td><select data-role="'+escA(k)+'">'+roleOpts(u.role)+'</select></td><td><button class="cc-adm-btn small danger" data-del="'+escA(k)+'">Deaktivovat</button></td></tr>'}).join(''):'<tr><td colspan="4">Žádní aktivní uživatelé.</td></tr>';
  utb.querySelectorAll('[data-role]').forEach(function(s){s.onchange=function(){ccSetUserRole(s.dataset.role,s.value);syncAll()}});utb.querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){if(confirm('Uživatele deaktivovat?')){var all=U();delete all[b.dataset.del];ccSaveUsers(all);syncAll();pageUsers(c)}}});
 }
-function approveAccess(id){var r=RR().find(function(x){return String(x.id)===String(id)});if(!r)return;if(ccApproveRoleRequest(id)){syncAll();alert('Uživatel '+r.name+' byl schválen a může se přihlásit e-mailem a heslem.');renderPage('users')}}
+function approveAccess(id){var r=RR().find(function(x){return String(x.id)===String(id)});if(!r)return;if(ccApproveRoleRequest(id)){if(window.sendTeamsNotification)window.sendTeamsNotification('approval',r);syncAll();alert('Uživatel '+r.name+' byl schválen a může se přihlásit e-mailem a heslem.');renderPage('users')}}
 
 function pageAppearance(c){var cfgx=typeof cfg==='function'?cfg():{};var land=Object.assign({title:'Nadcházející akce',text:'',enabled:true},cfgx.landing||{});var uic=typeof uiCfg==='function'?uiCfg():{};var fl=Object.assign({floatingEnabled:true,floatingTitle:'',floatingText:'',floatingActionId:''},uic.landing||{});var acts=A();
  c.innerHTML='<div class="cc-adm-section"><h3>Vstupní strana a texty</h3><div class="cc-adm-form"><div class="cc-adm-field"><label>Nadpis</label><input id="landtitle" value="'+escA(land.title||'')+'"></div><div class="cc-adm-field"><label>Zapnout úvodní informace</label><label class="cc-adm-check"><input id="landenabled" type="checkbox" '+(land.enabled!==false?'checked':'')+'> Zobrazovat</label></div><div class="cc-adm-field full"><label>Text</label><textarea id="landtext">'+escA(land.text||'')+'</textarea></div></div><button class="cc-adm-btn primary" id="landsave">Uložit vstupní stranu</button></div>';
@@ -4194,6 +4266,7 @@ function pageApprovers(c){var profiles={};try{profiles=JSON.parse(localStorage.g
  var list=c.querySelector('#applist');list.innerHTML=managers.length?managers.map(function(m,i){return '<div class="cc-adm-listrow"><div class="cc-adm-form"><div class="cc-adm-field"><label>Jméno</label><input data-n="'+i+'" value="'+escA(m.name||'')+'"></div><div class="cc-adm-field"><label>E-mail</label><input data-e="'+i+'" value="'+escA(m.email||'')+'"></div></div><span class="cc-adm-pill">'+roleName(m.role)+'</span></div>'}).join(''):'<div class="cc-adm-muted">Žádní aktivní schvalovatelé.</div>';
  c.querySelector('#saveapps').onclick=function(){list.querySelectorAll('[data-n]').forEach(function(i){managers[Number(i.dataset.n)].name=i.value});list.querySelectorAll('[data-e]').forEach(function(i){managers[Number(i.dataset.e)].email=i.value.toLowerCase().trim()});managers.forEach(function(m){localStorage.setItem('ccManager_'+String(m.email).toLowerCase(),JSON.stringify({name:m.name,email:m.email}))});alert('Profily schvalovatelů uloženy.')};
 }
+function pageTeams(c){var url=localStorage.getItem('teamsWebhookUrl')||'';c.innerHTML='<div class="cc-adm-section"><h3>Microsoft Teams</h3><p class="cc-adm-muted">Webhook URL se ukládá v tomto prohlížeči a synchronizuje se do Firebase. Pole je skryté, aby se URL nezobrazovala při běžné správě.</p><div class="cc-adm-form"><div class="cc-adm-field full"><label for="teamsWebhookUrlInput">Teams Webhook URL</label><input id="teamsWebhookUrlInput" type="password" autocomplete="off" placeholder="https://…" value="'+escA(url)+'"></div></div><div class="cc-adm-inline" style="margin-top:12px"><button class="cc-adm-btn primary" id="teamsSave">Uložit URL</button><button class="cc-adm-btn" id="teamsTest">Testovat</button><button class="cc-adm-btn danger" id="teamsClear">Smazat URL</button><span class="cc-adm-muted" id="teamsStatus" role="status"></span></div></div>';var input=c.querySelector('#teamsWebhookUrlInput'),status=c.querySelector('#teamsStatus');c.querySelector('#teamsSave').onclick=function(){var result=window.saveTeamsWebhookUrl(input.value);status.textContent=result.ok?'Webhook URL uložena.':result.message};c.querySelector('#teamsTest').onclick=async function(){var result=window.saveTeamsWebhookUrl(input.value);if(!result.ok){status.textContent=result.message;return}status.textContent='Odesílám testovací zprávu…';var ok=await window.sendTeamsNotification('test',{name:currentUser&&currentUser.name||'Administrátor'});status.textContent=ok?'Testovací zpráva byla odeslána.':'Odeslání se nezdařilo. Zkontrolujte URL a připojení.'};c.querySelector('#teamsClear').onclick=function(){var result=window.saveTeamsWebhookUrl('');input.value='';status.textContent=result.ok?'Webhook URL byla smazána.':result.message}}
 function pageSystem(c){c.innerHTML='<div class="cc-adm-section"><h3>Záloha dat</h3><p class="cc-adm-muted">Stáhne aktuální administrativní data do JSON souboru. Hodí se před většími úpravami nebo importem Excelu.</p><button class="cc-adm-btn primary" id="exportjson">Stáhnout zálohu</button><button class="cc-adm-btn" id="importjson">Obnovit ze zálohy</button><input id="jsonfile" type="file" accept="application/json" style="display:none"></div><div class="cc-adm-section"><h3>Obnovení výchozího vzhledu</h3><p class="cc-adm-muted">Obnoví pouze konfiguraci vzhledu a kategorií. Akce, žádosti a uživatelé se nemažou.</p><button class="cc-adm-btn danger" id="resetcfg">Obnovit výchozí nastavení</button></div>';
  c.querySelector('#exportjson').onclick=function(){var data={companyActions:A(),ticketRequests:R(),customUsers:JSON.parse(localStorage.getItem('customUsers')||'{}'),users:U(),roleRequests:RR(),ccPortalConfigV3:typeof cfg==='function'?cfg():{},cc_dynamic_reasons:localStorage.getItem('cc_dynamic_reasons')||'',ccSeasonMode:localStorage.getItem('ccSeasonMode')||'autumn'};var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='CC-ticket-portal-backup.json';a.click();setTimeout(function(){URL.revokeObjectURL(url)},500)};
  c.querySelector('#importjson').onclick=function(){c.querySelector('#jsonfile').click()};c.querySelector('#jsonfile').onchange=function(e){var f=e.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{var d=JSON.parse(rd.result);if(!confirm('Import nahradí aktuální data akcí, žádostí, uživatelů a nastavení. Pokračovat?'))return;companyActions=d.companyActions||[];requests=d.ticketRequests||[];customUsers=d.customUsers||{};roleRequests=d.roleRequests||[];saveK('companyActions',companyActions);saveK('ticketRequests',requests);saveK('customUsers',customUsers);if(d.users)ccSaveUsers(d.users);saveK('roleRequests',roleRequests);if(d.ccPortalConfigV3)localStorage.setItem('ccPortalConfigV3',JSON.stringify(d.ccPortalConfigV3));if(d.cc_dynamic_reasons!==undefined)localStorage.setItem('cc_dynamic_reasons',d.cc_dynamic_reasons);if(d.ccSeasonMode)localStorage.setItem('ccSeasonMode',d.ccSeasonMode);syncAll();alert('Záloha obnovena.')}catch(err){alert('Soubor se nepodařilo načíst: '+err.message)}};rd.readAsText(f)};
