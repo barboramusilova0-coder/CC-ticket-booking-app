@@ -1088,7 +1088,7 @@
       const raw = String(value || "").trim();
       const iso = raw.match(/\b(20\d{2})-(\d{2})-(\d{2})(?!\d)/);
       if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
-      const czech = raw.match(/\b(\d{1,2})[./](\d{1,2})[./](20\d{2})\b/);
+      const czech = raw.match(/\b(\d{1,2})\s*[./]\s*(\d{1,2})\s*[./]\s*(20\d{2})\b/);
       if (!czech) return "";
       return `${czech[3]}-${czech[2].padStart(2, "0")}-${czech[1].padStart(2, "0")}`;
     }
@@ -1207,7 +1207,7 @@
         }).filter(Boolean);
         if (!dates.length) {
           const text = card.textContent || "";
-          const matches = text.match(/\b(?:20\d{2}-\d{1,2}-\d{1,2}|\d{1,2}[./]\d{1,2}[./]20\d{2})(?:\s*(?:od|•|,)?\s*[0-2]?\d[:.][0-5]\d)?/g) || [];
+          const matches = text.match(/\b(?:20\d{2}-\d{1,2}-\d{1,2}|\d{1,2}\s*[./]\s*\d{1,2}\s*[./]\s*20\d{2})(?:\s*(?:od|•|,)?\s*[0-2]?\d[:.][0-5]\d)?/g) || [];
           matches.forEach((match) => {
             const date = normalizeO2Date(match);
             if (date) dates.push({ date, time: normalizeO2Time(match) });
