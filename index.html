@@ -621,7 +621,8 @@
             document.getElementById('loggedRole').innerText = roleTxt;
             if (currentUser.role === 'admin' && btn) btn.style.display = 'block'; else if(btn) btn.style.display = 'none';
         }
-        function openTab(num) {
+    }
+    function openTab(num) {
         // Uložíme si číslo aktuální záložky do paměti prohlížeče, aby po F5 nezmizela
         localStorage.setItem('activeCcTab', num);
 
@@ -636,8 +637,6 @@
         if (num === 2) { if(document.getElementById('btn-seznam')) document.getElementById('btn-seznam').classList.add('active'); renderTable(); }
         if (num === 3 && document.getElementById('btn-zadost-role')) document.getElementById('btn-zadost-role').classList.add('active');
         if (num === 4) { if(document.getElementById('btn-admin')) document.getElementById('btn-admin').classList.add('active'); renderAdminSection(); }
-    }
-
     }
     function handleRoleRequestSubmit(e) {
         e.preventDefault();
@@ -3318,16 +3317,17 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
             var vsechnyDivy = adminTab.querySelectorAll('div');
             var filtrBox = null;
             vsechnyDivy.forEach(function(d) {
+                if (d.closest('#cc-admin-shell, #cc-admin-legacy')) return;
                 if (d.innerText.indexOf('Rychlý filtr obsazenosti') > -1 && !d.closest('.cc-accordion-content')) {
                     // Pokud má v sobě select, je to náš hledaný filtr
-                    if (d.querySelector('select')) filtrBox = d;
+                    if (d.querySelector('select') && !d.querySelector('.cc-accordion-content')) filtrBox = d;
                 }
             });
 
             // Najdeme obsahový vnitřek první harmoniky, kam filtr chceme schovat
             var vnitrekSpravyAkci = document.querySelector('#cc-acc-box-akce .cc-accordion-content');
             
-            if (filtrBox && vnitrekSpravyAkci) {
+            if (filtrBox && vnitrekSpravyAkci && !filtrBox.contains(vnitrekSpravyAkci) && filtrBox.parentNode !== vnitrekSpravyAkci) {
                 // Přesuneme celý filtr na úplný začátek vnitřku první záložky (nad formulář)
                 vnitrekSpravyAkci.insertBefore(filtrBox, vnitrekSpravyAkci.firstChild);
                 // Jemně mu upravíme okraje, ať uvnitř záložky krásně lícuje
@@ -3350,15 +3350,11 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
                 var boxNastaveni = document.getElementById('cc-acc-box-nastaveni');
 
                 // Pokud jsou venku pod hlavním rámem, vtáhneme je dovnitř do jedné řady
-                if (boxRegistrace && boxRegistrace.parentNode !== hlavniBilyRam) {
-                    hlavniBilyRam.appendChild(boxRegistrace);
-                }
-                if (boxKody && boxKody.parentNode !== hlavniBilyRam) {
-                    hlavniBilyRam.appendChild(boxKody);
-                }
-                if (boxNastaveni && boxNastaveni.parentNode !== hlavniBilyRam) {
-                    hlavniBilyRam.appendChild(boxNastaveni);
-                }
+                [boxRegistrace, boxKody, boxNastaveni].forEach(function(box) {
+                    if (box && box.parentNode !== hlavniBilyRam && !box.contains(hlavniBilyRam)) {
+                        hlavniBilyRam.appendChild(box);
+                    }
+                });
             }
         }
 
