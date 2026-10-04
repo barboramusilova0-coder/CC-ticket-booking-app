@@ -471,6 +471,7 @@
       box-shadow: 0 18px 38px rgba(15, 23, 42, 0.2);
       line-height: 1.6;
       font-size: 12px;
+      white-space: pre-line;
     }
     .tooltip strong { display: block; margin-bottom: 4px; }
 
@@ -672,7 +673,7 @@
             <thead>
               <tr>
                 <th>Akce</th>
-                <th>Datum</th>
+                <th>Termín</th>
                 <th>Žadatel</th>
                 <th>Zákazník</th>
                 <th>Počet</th>
@@ -763,6 +764,22 @@
               </div>
               <button class="btn success" onclick="addReason()">Přidat důvod</button>
               <div id="reasonList" style="margin-top:14px;"></div>
+            </div>
+            <div class="section-box" style="padding:18px; margin:0 0 16px;">
+              <h3>🌐 Import akcí z O2 areny</h3>
+              <div class="field-group">
+                <label class="label" for="o2ProxyUrl">URL CORS proxy:</label>
+                <input id="o2ProxyUrl" class="field" type="url" placeholder="https://api.allorigins.win/raw?url=" />
+              </div>
+              <button class="btn primary" type="button" onclick="importO2Events()">Importovat akce z O2 areny</button>
+              <div class="field-group" style="margin-top:14px;">
+                <label class="label" for="o2ManualInput">Náhradní vstup HTML nebo JSON:</label>
+                <textarea id="o2ManualInput" class="textarea" placeholder="Vložte HTML stránky nebo JSON s akcemi"></textarea>
+              </div>
+              <button class="btn muted" type="button" onclick="parseManualO2Events()">Načíst vložený HTML/JSON</button>
+              <div id="o2ImportMessage" role="status" style="margin-top:10px;"></div>
+              <div id="o2ImportPreview" style="margin-top:14px;"></div>
+              <button id="o2ImportSelectedBtn" class="btn success" type="button" onclick="importSelectedO2Events()" style="display:none; margin-top:12px;">Importovat vybrané</button>
             </div>
           </div>
 
@@ -915,8 +932,10 @@
       assistant: { name: "Asistent", icon: "🤖", image: "" },
       currentUser: null,
       filterSelection: "all",
-      installPrompt: null
+      installPrompt: null,
+      o2ProxyUrl: "https://api.allorigins.win/raw?url="
     };
+    let pendingO2Events = [];
 
     function safeJsonParse(value, fallback) {
       try { return value ? JSON.parse(value) : fallback; } catch (e) { return fallback; }
@@ -930,6 +949,7 @@
       state.filters = safeJsonParse(localStorage.getItem("ccFilters"), state.filters);
       state.reasons = safeJsonParse(localStorage.getItem("ccReasons"), state.reasons);
       state.assistant = safeJsonParse(localStorage.getItem("ccAssistant"), state.assistant);
+      state.o2ProxyUrl = localStorage.getItem("o2CorsProxyUrl") || state.o2ProxyUrl;
       const savedUser = localStorage.getItem("currentUser");
       state.currentUser = savedUser ? JSON.parse(savedUser) : null;
     }
@@ -942,6 +962,7 @@
       localStorage.setItem("ccFilters", JSON.stringify(state.filters));
       localStorage.setItem("ccReasons", JSON.stringify(state.reasons));
       localStorage.setItem("ccAssistant", JSON.stringify(state.assistant));
+      localStorage.setItem("o2CorsProxyUrl", state.o2ProxyUrl);
       if (state.currentUser) {
         localStorage.setItem("currentUser", JSON.stringify(state.currentUser));
       } else {
@@ -1004,6 +1025,289 @@
         month: "2-digit",
         year: "numeric"
       });
+    }
+
+    function escapeHtml(value) {
+      return String(value || "").replace(/[&<>"']/g, (character) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[character]);
+    }
+
+    function safeHttpUrl(value) {
+      try {
+        const url = new URL(value, "https://www.o2arena.cz");
+        return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+      } catch (error) {
+        return "";
+      }
+    }
+
+    function safeImageUrl(value) {
+      const image = String(value || "");
+      if (/^data:image\/(?:png|jpe?g|gif|webp|avif|svg\+xml);base64,/i.test(image)) return image;
+      return safeHttpUrl(image);
+    }
+
+    function getActionDates(action) {
+      return Array.isArray(action.dates) && action.dates.length
+        ? action.dates
+        : action.date ? [{ date: action.date, time: action.time || "", capacity: action.capacity }] : [];
+    }
+
+    function dateEntryKey(entry) {
+      return `${entry.date || ""}|${entry.time || ""}`;
+    }
+
+    function formatRequestTerm(request) {
+      return `${formatDate(request.eventDate || request.date || "")}${request.eventTime ? ` • ${request.eventTime}` : ""}`;
+    }
+
+    function getBookedTickets(actionName, entry) {
+      const sameDateEntries = state.companyActions.filter((action) => action.name === actionName)
+        .flatMap(getActionDates).filter((date) => date.date === entry.date);
+      return state.requests.reduce((total, request) => {
+        const requestDate = request.eventDate || request.date;
+        const rejected = request.status1 === "Zamítnuto" || request.status2 === "Zamítnuto";
+        if (request.action !== actionName || requestDate !== entry.date || rejected) return total;
+        if (request.eventTime && request.eventTime !== (entry.time || "")) return total;
+        if (!request.eventTime && sameDateEntries.length > 1) return total;
+        return total + Number(request.tickets || 0);
+      }, 0);
+    }
+
+    function updateTicketLimit(actionName, entry, input) {
+      if (!input || !entry) return;
+      const action = state.companyActions.find((item) => item.name === actionName);
+      const capacity = Number(entry.capacity || action && action.capacity || 0);
+      const available = capacity ? Math.max(0, capacity - getBookedTickets(actionName, entry)) : 10;
+      input.max = String(Math.min(10, available));
+      if (Number(input.value) > available) input.value = String(available || 1);
+    }
+
+    function normalizeO2Date(value) {
+      const raw = String(value || "").trim();
+      const iso = raw.match(/\b(20\d{2})-(\d{2})-(\d{2})(?!\d)/);
+      if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+      const czech = raw.match(/\b(\d{1,2})[./](\d{1,2})[./](20\d{2})\b/);
+      if (!czech) return "";
+      return `${czech[3]}-${czech[2].padStart(2, "0")}-${czech[1].padStart(2, "0")}`;
+    }
+
+    function normalizeO2Time(value) {
+      const match = String(value || "").match(/(?:^|\D)([01]?\d|2[0-3])[:.]([0-5]\d)(?!\d)/);
+      return match ? `${match[1].padStart(2, "0")}:${match[2]}` : "";
+    }
+
+    function categoryForO2Event(value) {
+      const text = String(value || "").toLocaleLowerCase("cs-CZ");
+      if (/hokej|hockey/.test(text)) return "Hokej";
+      if (/fotbal|football|soccer/.test(text)) return "Fotbal";
+      if (/koncert|concert|hudb|music|show|festival/.test(text)) return "Koncert";
+      return "O2 Arena";
+    }
+
+    function ensureActionCategory(category) {
+      if (!state.filters.some((filter) => filter.id === category)) {
+        state.filters.push({ id: category, name: category, active: true });
+      }
+      return category;
+    }
+
+    function normalizeO2Event(event, sourceUrl) {
+      const name = String(event.name || event.title || event.eventName || "").trim();
+      if (!name) return null;
+      const detailUrl = safeHttpUrl(event.url || event.link || event.detailUrl || sourceUrl) || "https://www.o2arena.cz/events/";
+      const rawDates = Array.isArray(event.dates) ? event.dates : [event.dates || event.date || event.startDate || event.datetime || "", event.endDate || ""];
+      const dates = rawDates.map((value) => {
+        const dateValue = typeof value === "object" && value ? value.date || value.datetime || value.startDate : value;
+        const timeValue = typeof value === "object" && value ? value.time || value.startTime : event.time || event.startTime;
+        const date = normalizeO2Date(dateValue);
+        return date ? { date, time: normalizeO2Time(timeValue || dateValue), capacity: Number(value && value.capacity || event.capacity || 10) } : null;
+      }).filter(Boolean);
+      const uniqueDates = dates.filter((entry, index) => dates.findIndex((other) => dateEntryKey(other) === dateEntryKey(entry)) === index);
+      if (!uniqueDates.length) return null;
+      const category = ensureActionCategory(categoryForO2Event(event.category || event.genre || `${name} ${event.description || ""}`));
+      return {
+        id: Date.now() + Math.floor(Math.random() * 1000000),
+        name,
+        category,
+        date: uniqueDates[0].date,
+        time: uniqueDates[0].time,
+        dates: uniqueDates,
+        place: String(event.place || event.venue || event.location && (event.location.name || event.location.address) || "O2 arena"),
+        capacity: uniqueDates[0].capacity || 10,
+        image: safeImageUrl(Array.isArray(event.image) ? event.image[0] : event.image || event.imageUrl || event.thumbnail || "") || "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80",
+        description: String(event.description || event.summary || "").trim(),
+        sourceUrl: detailUrl,
+        status: "Aktivní"
+      };
+    }
+
+    function o2EventsFromJson(value, sourceUrl) {
+      const data = value && value.data;
+      const events = Array.isArray(value) ? value : value.events || value.items
+        || (Array.isArray(data) ? data : data && (data.events || data.items))
+        || (value && (value.name || value.title || value.eventName) ? [value] : []);
+      return Array.isArray(events) ? events.map((event) => normalizeO2Event(event, sourceUrl)).filter(Boolean) : [];
+    }
+
+    function parseO2Events(input) {
+      const sourceUrl = "https://www.o2arena.cz/events/";
+      try {
+        const data = JSON.parse(input);
+        const events = o2EventsFromJson(data, sourceUrl);
+        if (events.length) return events;
+      } catch (error) {}
+
+      const documentHtml = new DOMParser().parseFromString(input, "text/html");
+      const structuredEvents = [];
+      documentHtml.querySelectorAll("script[type='application/ld+json']").forEach((script) => {
+        try {
+          const collect = (item) => {
+            if (!item || typeof item !== "object") return;
+            if (Array.isArray(item)) {
+              item.forEach(collect);
+              return;
+            }
+            const type = Array.isArray(item["@type"]) ? item["@type"].join(" ") : item["@type"] || "";
+            if (/event/i.test(type) && item.name) {
+              const event = normalizeO2Event(item, sourceUrl);
+              if (event) structuredEvents.push(event);
+            }
+            Object.values(item).forEach((value) => {
+              if (value && typeof value === "object") collect(value);
+            });
+          };
+          collect(JSON.parse(script.textContent));
+        } catch (error) {}
+      });
+      if (structuredEvents.length) return structuredEvents;
+      const candidates = [...documentHtml.querySelectorAll("article, [class*='event-card'], [class*='event-item'], [class*='event-tile']")];
+      if (!candidates.length) {
+        documentHtml.querySelectorAll("a[href]").forEach((link) => {
+          if (/\/events?\//i.test(link.getAttribute("href") || "") && (link.querySelector("img") || link.textContent.trim())) candidates.push(link);
+        });
+      }
+      const imported = [];
+      const seenLinks = new Set();
+      candidates.forEach((card) => {
+        const link = card.matches("a[href]") ? card : card.querySelector("a[href*='/event'], a[href]");
+        const title = card.querySelector("h1, h2, h3, h4, [class*='title']") || link;
+        const name = title && title.textContent.trim();
+        if (!name) return;
+        const detailUrl = safeHttpUrl(link && link.getAttribute("href") || sourceUrl) || sourceUrl;
+        if (detailUrl !== sourceUrl && seenLinks.has(detailUrl)) return;
+        if (detailUrl !== sourceUrl) seenLinks.add(detailUrl);
+        const image = card.querySelector("img");
+        const dateNodes = [...card.querySelectorAll("time, [datetime], [data-date]")];
+        const dates = dateNodes.map((node) => {
+          const text = `${node.getAttribute("datetime") || ""} ${node.getAttribute("data-date") || ""} ${node.textContent || ""}`;
+          const date = normalizeO2Date(text);
+          return date ? { date, time: normalizeO2Time(`${text} ${node.getAttribute("content") || ""}`) } : null;
+        }).filter(Boolean);
+        if (!dates.length) {
+          const text = card.textContent || "";
+          const matches = text.match(/\b(?:20\d{2}-\d{1,2}-\d{1,2}|\d{1,2}[./]\d{1,2}[./]20\d{2})(?:\s*(?:od|•|,)?\s*[0-2]?\d[:.][0-5]\d)?/g) || [];
+          matches.forEach((match) => {
+            const date = normalizeO2Date(match);
+            if (date) dates.push({ date, time: normalizeO2Time(match) });
+          });
+        }
+        const descriptionNode = card.querySelector("[class*='description'], [class*='excerpt'], p");
+        const event = normalizeO2Event({
+          name,
+          category: card.getAttribute("data-category") || "",
+          dates,
+          description: descriptionNode ? descriptionNode.textContent.trim() : "",
+          image: image && (image.getAttribute("src") || image.getAttribute("data-src")),
+          url: detailUrl,
+          place: "O2 arena"
+        }, sourceUrl);
+        if (event) imported.push(event);
+      });
+      return imported;
+    }
+
+    function areO2EventsDuplicates(first, second) {
+      if (first.sourceUrl && first.sourceUrl === second.sourceUrl
+        && first.sourceUrl !== "https://www.o2arena.cz/events/") return true;
+      if ((first.name || "").trim().toLocaleLowerCase("cs-CZ") !== (second.name || "").trim().toLocaleLowerCase("cs-CZ")) return false;
+      const dates = getActionDates(first).map((entry) => entry.date);
+      return getActionDates(second).some((entry) => dates.includes(entry.date));
+    }
+
+    function isDuplicateO2Event(event) {
+      return state.companyActions.some((action) => areO2EventsDuplicates(action, event));
+    }
+
+    function showO2EventsPreview(events) {
+      pendingO2Events = events;
+      const preview = document.getElementById("o2ImportPreview");
+      const button = document.getElementById("o2ImportSelectedBtn");
+      const message = document.getElementById("o2ImportMessage");
+      preview.replaceChildren();
+      button.style.display = events.length ? "inline-flex" : "none";
+      message.textContent = events.length ? `Nalezeno akcí: ${events.length}. Zkontrolujte výběr před uložením.` : "Nepodařilo se najít žádné akce. Zkuste vložit HTML nebo JSON ručně.";
+      events.forEach((event, index) => {
+        const duplicate = isDuplicateO2Event(event);
+        const row = document.createElement("label");
+        row.style.display = "flex";
+        row.style.gap = "10px";
+        row.style.alignItems = "flex-start";
+        row.style.padding = "10px";
+        row.style.borderBottom = "1px solid var(--border)";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = !duplicate;
+        checkbox.disabled = duplicate;
+        checkbox.dataset.eventIndex = String(index);
+        const content = document.createElement("span");
+        content.textContent = `${event.name} • ${event.dates.map((entry) => `${formatDate(entry.date)} ${entry.time}`.trim()).join(", ")}${duplicate ? " • již importováno" : ""}`;
+        row.append(checkbox, content);
+        preview.appendChild(row);
+      });
+    }
+
+    async function importO2Events() {
+      const proxyInput = document.getElementById("o2ProxyUrl");
+      state.o2ProxyUrl = proxyInput.value.trim() || "https://api.allorigins.win/raw?url=";
+      localStorage.setItem("o2CorsProxyUrl", state.o2ProxyUrl);
+      try {
+        const proxyUrl = state.o2ProxyUrl.includes("{url}")
+          ? state.o2ProxyUrl.replace("{url}", encodeURIComponent("https://www.o2arena.cz/events/"))
+          : `${state.o2ProxyUrl}${state.o2ProxyUrl.endsWith("=") ? "" : state.o2ProxyUrl.includes("?") ? "&url=" : "?url="}${encodeURIComponent("https://www.o2arena.cz/events/")}`;
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const html = await response.text();
+        const events = parseO2Events(html);
+        if (!events.length) throw new Error("Stránka neobsahuje rozpoznatelné akce");
+        showO2EventsPreview(events);
+      } catch (error) {
+        document.getElementById("o2ImportMessage").textContent = `Načtení přes proxy selhalo (${error.message}). Vložte HTML/JSON ručně do pole níže.`;
+      }
+    }
+
+    function parseManualO2Events() {
+      const events = parseO2Events(document.getElementById("o2ManualInput").value.trim());
+      showO2EventsPreview(events);
+    }
+
+    function importSelectedO2Events() {
+      const selected = [];
+      document.querySelectorAll("#o2ImportPreview input[type='checkbox']:checked").forEach((checkbox) => {
+        const event = pendingO2Events[Number(checkbox.dataset.eventIndex)];
+        if (event && !isDuplicateO2Event(event) && !selected.some((selectedEvent) => areO2EventsDuplicates(selectedEvent, event))) selected.push(event);
+      });
+      if (!selected.length) {
+        document.getElementById("o2ImportMessage").textContent = "Vyberte alespoň jednu novou akci.";
+        return;
+      }
+      state.companyActions.push(...selected);
+      persistState();
+      syncToFirebase();
+      renderAll();
+      showO2EventsPreview(pendingO2Events);
+      document.getElementById("o2ImportMessage").textContent = `Importováno akcí: ${selected.length}.`;
     }
 
     function updateLoginBar() {
@@ -1214,16 +1518,18 @@
       const eventDateSelect = document.getElementById("eventDateSelect");
       if (!actionSelect) return;
 
-      actionSelect.innerHTML = '<option value="">-- Vyberte akci --</option>' + state.companyActions.map((action) => `<option value="${action.name}">${action.name}</option>`).join("");
+      actionSelect.innerHTML = '<option value="">-- Vyberte akci --</option>' + state.companyActions.map((action) => `<option value="${escapeHtml(action.id)}">${escapeHtml(action.name)}</option>`).join("");
 
       actionSelect.onchange = () => {
-        const selectedAction = state.companyActions.find((a) => a.name === actionSelect.value);
-        const dates = selectedAction ? (Array.isArray(selectedAction.dates) && selectedAction.dates.length ? selectedAction.dates : [{ date: selectedAction.date, time: selectedAction.time }]) : [];
-        eventDateSelect.innerHTML = dates.map((entry) => `<option value="${entry.date}">${formatDate(entry.date)}${entry.time ? ` • ${entry.time}` : ""}</option>`).join("");
+        const selectedAction = state.companyActions.find((action) => String(action.id) === String(actionSelect.value));
+        const dates = selectedAction ? getActionDates(selectedAction) : [];
+        eventDateSelect.innerHTML = dates.map((entry) => `<option value="${escapeHtml(dateEntryKey(entry))}">${formatDate(entry.date)}${entry.time ? ` • ${escapeHtml(entry.time)}` : ""}</option>`).join("");
+        eventDateSelect.onchange = () => updateTicketLimit(selectedAction && selectedAction.name, dates.find((entry) => dateEntryKey(entry) === eventDateSelect.value), document.getElementById("ticketCount"));
+        eventDateSelect.onchange();
       };
 
       if (state.companyActions.length) {
-        actionSelect.value = state.companyActions[0].name;
+        actionSelect.value = String(state.companyActions[0].id);
         actionSelect.onchange();
       } else {
         eventDateSelect.innerHTML = '<option value="">-- Nejprve vytvořte akci --</option>';
@@ -1268,24 +1574,28 @@
       }
 
       visibleActions.forEach((action) => {
-        const dates = Array.isArray(action.dates) && action.dates.length ? action.dates : [{ date: action.date, time: action.time }];
+        const dates = getActionDates(action);
         const dateText = dates.map((entry) => `${formatDate(entry.date)} ${entry.time || ""}`.trim()).join(" • ");
+        const capacityText = dates.map((entry) => {
+          const capacity = Number(entry.capacity || action.capacity || 0);
+          return `${formatDate(entry.date)}: ${capacity || "—"} / ${getBookedTickets(action.name, entry)} obsazeno`;
+        }).join(" • ");
 
         const card = document.createElement("div");
         card.className = "event-card";
 
-        const imageSrc = action.image || "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80";
+        const imageSrc = safeImageUrl(action.image) || "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80";
 
         card.innerHTML = `
-          <div class="event-badge">${action.category || "Akce"}</div>
-          <div class="event-image-wrap"><img src="${imageSrc}" alt="${action.name}" /></div>
+          <div class="event-badge">${escapeHtml(action.category || "Akce")}</div>
+          <div class="event-image-wrap"><img src="${escapeHtml(imageSrc)}" alt="${escapeHtml(action.name)}" /></div>
           <div class="event-body">
-            <span class="event-category">${action.category || "Akce"}</span>
-            <div class="event-title">${action.name}</div>
-            <div class="event-meta">📍 ${action.place || "-"}</div>
+            <span class="event-category">${escapeHtml(action.category || "Akce")}</span>
+            <div class="event-title">${escapeHtml(action.name)}</div>
+            <div class="event-meta">📍 ${escapeHtml(action.place || "-")}</div>
             <div class="event-meta">🗓️ ${dateText}</div>
-            <div class="event-meta">🎟️ Kapacita: ${action.capacity || 0}</div>
-            <span class="event-btn" onclick="openReservationModal(${action.id})">Rezervovat</span>
+            <div class="event-meta" title="${escapeHtml(capacityText)}">🎟️ Kapacita: ${escapeHtml(capacityText)}</div>
+            <span class="event-btn" onclick="openReservationModal('${escapeHtml(action.id)}')">Rezervovat</span>
           </div>
         `;
 
@@ -1298,7 +1608,22 @@
 
     function showTooltip(event, action) {
       const tooltip = document.getElementById("tooltip");
-      tooltip.innerHTML = `<strong>${action.name}</strong>${(action.description || "Popis akce nebyl zadán.").replace(/\\n/g, "<br>")}`;
+      tooltip.replaceChildren();
+      const title = document.createElement("strong");
+      title.textContent = action.name || "Akce";
+      const description = document.createElement("div");
+      description.textContent = action.description || "Popis akce nebyl zadán.";
+      tooltip.append(title, description);
+      const sourceUrl = safeHttpUrl(action.sourceUrl);
+      if (sourceUrl) {
+        const link = document.createElement("a");
+        link.href = sourceUrl;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = "Zdroj akce";
+        link.style.color = "#fff";
+        tooltip.appendChild(link);
+      }
       tooltip.style.display = "block";
       tooltip.style.left = `${Math.min(event.clientX + 18, window.innerWidth - 340)}px`;
       tooltip.style.top = `${Math.min(event.clientY + 18, window.innerHeight - 180)}px`;
@@ -1312,7 +1637,7 @@
       const action = state.companyActions.find((a) => String(a.id) === String(actionId));
       if (!action) return;
 
-      const dates = Array.isArray(action.dates) && action.dates.length ? action.dates : [{ date: action.date, time: action.time }];
+      const dates = getActionDates(action);
 
       const modal = document.createElement("div");
       modal.className = "modal-backdrop";
@@ -1322,11 +1647,11 @@
             <h2 style="margin:0;">Nová rezervace</h2>
             <button class="modal-close" type="button" onclick="this.closest('.modal-backdrop').remove()">×</button>
           </div>
-          <p><strong>${action.name}</strong> • ${action.place || "-"}</p>
+          <p><strong>${escapeHtml(action.name)}</strong> • ${escapeHtml(action.place || "-")}</p>
           <div class="field-group">
             <label class="label" for="reservationDate">Vyberte datum:</label>
             <select id="reservationDate" class="select">
-              ${dates.map((entry) => `<option value="${entry.date}">${formatDate(entry.date)}${entry.time ? ` • ${entry.time}` : ""}</option>`).join("")}
+              ${dates.map((entry) => `<option value="${escapeHtml(dateEntryKey(entry))}">${formatDate(entry.date)}${entry.time ? ` • ${escapeHtml(entry.time)}` : ""}</option>`).join("")}
             </select>
           </div>
           <div class="form-grid">
@@ -1345,19 +1670,27 @@
           </div>
           <div class="row" style="justify-content:flex-end; margin-top:18px;">
             <button type="button" class="btn muted" onclick="this.closest('.modal-backdrop').remove()">Zrušit</button>
-            <button type="button" class="btn primary" onclick="submitReservationFromModal(${action.id})">Odeslat rezervaci</button>
+            <button type="button" class="btn primary" onclick="submitReservationFromModal('${escapeHtml(action.id)}')">Odeslat rezervaci</button>
           </div>
         </div>
       `;
 
       document.body.appendChild(modal);
+      const dateSelect = modal.querySelector("#reservationDate");
+      const ticketInput = modal.querySelector("#reservationTickets");
+      const updateLimit = () => updateTicketLimit(action.name, dates.find((entry) => dateEntryKey(entry) === dateSelect.value), ticketInput);
+      dateSelect.onchange = updateLimit;
+      updateLimit();
     }
 
     function submitReservationFromModal(actionId) {
       const action = state.companyActions.find((a) => String(a.id) === String(actionId));
       if (!action) return;
 
-      const date = document.getElementById("reservationDate").value;
+      const dateSelect = document.getElementById("reservationDate");
+      const selectedEntry = getActionDates(action).find((entry) => dateEntryKey(entry) === dateSelect.value);
+      if (!selectedEntry) return;
+      const date = selectedEntry.date;
       const customer = document.getElementById("reservationCustomer").value.trim();
       const tickets = Number(document.getElementById("reservationTickets").value || 0);
       const reason = document.getElementById("reservationReason").value.trim();
@@ -1366,11 +1699,18 @@
         alert("Vyplňte všechna pole pro rezervaci.");
         return;
       }
+      const capacity = Number(selectedEntry.capacity || action.capacity || 0);
+      if (capacity && getBookedTickets(action.name, selectedEntry) + tickets > capacity) {
+        alert("Pro tento termín již není dostatečná kapacita.");
+        return;
+      }
 
       const request = {
         id: Date.now(),
         action: action.name,
         eventDate: date,
+        eventTime: selectedEntry.time || "",
+        eventSlot: dateEntryKey(selectedEntry),
         employee: state.currentUser ? state.currentUser.name : "Neznámý",
         manager: state.currentUser && state.currentUser.email ? state.currentUser.email : "",
         customer,
@@ -1437,14 +1777,14 @@
 
         const row = document.createElement("tr");
         row.innerHTML = `
-          <td><strong>${request.action || "-"}</strong></td>
-          <td>${formatDate(request.eventDate || request.date || "")}</td>
-          <td>${request.employee || "-"}</td>
-          <td>${request.customer || "-"}</td>
+          <td><strong>${escapeHtml(request.action || "-")}</strong></td>
+          <td>${escapeHtml(formatRequestTerm(request))}</td>
+          <td>${escapeHtml(request.employee || "-")}</td>
+          <td>${escapeHtml(request.customer || "-")}</td>
           <td>${request.tickets || 0}</td>
           <td><span class="status-pill ${p1}">${s1}</span></td>
           <td><span class="status-pill ${p2}">${s2}</span></td>
-          <td>${request.reason || "-"}</td>
+          <td>${escapeHtml(request.reason || "-")}</td>
           <td>${actionHtml}</td>
         `;
         tbody.appendChild(row);
@@ -1470,7 +1810,7 @@
     function exportCurrentTable() {
       const rows = state.requests.map((req) => ({
         "Akce": req.action || "",
-        "Datum": req.eventDate || req.date || "",
+        "Termín": `${req.eventDate || req.date || ""} ${req.eventTime || ""}`.trim(),
         "Žadatel": req.employee || "",
         "Zákazník": req.customer || "",
         "Počet": req.tickets || "",
@@ -1482,7 +1822,7 @@
 
       const csv =
         [
-          Object.keys(rows[0] || { "Akce": "", "Datum": "", "Žadatel": "", "Zákazník": "", "Počet": "", "Důvod": "", "1. schválení": "", "2. schválení": "", "E-mail": "" }),
+          Object.keys(rows[0] || { "Akce": "", "Termín": "", "Žadatel": "", "Zákazník": "", "Počet": "", "Důvod": "", "1. schválení": "", "2. schválení": "", "E-mail": "" }),
           ...rows.map((row) => Object.values(row))
         ].map((values) => values.map((val) => `"${String(val).replace(/"/g, '""')}"`).join(",")).join("\n");
 
@@ -1503,7 +1843,7 @@
 
       const csv = [
         ["Akce", "Datum", "Žadatel", "Zákazník", "Počet", "Důvod", "1. schválení", "2. schválení"],
-        ...filtered.map((req) => [req.action || "", req.eventDate || req.date || "", req.employee || "", req.customer || "", String(req.tickets || ""), req.reason || "", req.status1 || "", req.status2 || ""])
+        ...filtered.map((req) => [req.action || "", `${req.eventDate || req.date || ""} ${req.eventTime || ""}`.trim(), req.employee || "", req.customer || "", String(req.tickets || ""), req.reason || "", req.status1 || "", req.status2 || ""])
       ].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
 
       const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -1553,14 +1893,14 @@
 
       tbody.innerHTML = filtered.length ? filtered.map((req) => `
         <tr>
-          <td><strong>${req.action || "-"}</strong></td>
-          <td>${formatDate(req.eventDate || req.date || "")}</td>
-          <td>${req.employee || "-"}</td>
-          <td>${req.customer || "-"}</td>
+          <td><strong>${escapeHtml(req.action || "-")}</strong></td>
+          <td>${escapeHtml(formatRequestTerm(req))}</td>
+          <td>${escapeHtml(req.employee || "-")}</td>
+          <td>${escapeHtml(req.customer || "-")}</td>
           <td>${req.tickets || 0}</td>
           <td><span class="status-pill ${(req.status1 || "Čeká") === "Schváleno" ? "status-schvaleno" : (req.status1 || "Čeká") === "Zamítnuto" ? "status-zamitnuto" : "status-cekajici"}">${req.status1 || "Čeká"}</span></td>
           <td><span class="status-pill ${(req.status2 || "Čeká") === "Schváleno" ? "status-schvaleno" : (req.status2 || "Čeká") === "Zamítnuto" ? "status-zamitnuto" : "status-cekajici"}">${req.status2 || "Čeká"}</span></td>
-          <td>${req.reason || "-"}</td>
+          <td>${escapeHtml(req.reason || "-")}</td>
           <td>—</td>
         </tr>
       `).join("") : '<tr><td colspan="9"><div class="empty-state">Žádné žádosti pro tento filtr.</div></td></tr>';
@@ -1569,8 +1909,10 @@
     function handleFormSubmit(event) {
       event.preventDefault();
 
-      const selectedAction = document.getElementById("actionSelect").value;
-      const selectedDate = document.getElementById("eventDateSelect").value;
+      const actionId = document.getElementById("actionSelect").value;
+      const selectedAction = state.companyActions.find((action) => String(action.id) === String(actionId));
+      const selectedEntry = selectedAction && getActionDates(selectedAction)
+        .find((entry) => dateEntryKey(entry) === document.getElementById("eventDateSelect").value);
       const employee = document.getElementById("employeeName").value.trim();
       const manager = document.getElementById("managerEmail").value.trim().toLowerCase();
       const customer = document.getElementById("customerName").value.trim();
@@ -1578,8 +1920,13 @@
       const reasonSelect = document.getElementById("reasonSelect").value;
       const customReason = document.getElementById("customReason").value.trim();
 
-      if (!selectedAction || !selectedDate || !employee || !manager || !customer || !tickets || !reasonSelect) {
+      if (!selectedAction || !selectedEntry || !employee || !manager || !customer || !tickets || !reasonSelect) {
         alert("Vyplňte všechna povinná pole.");
+        return;
+      }
+      const capacity = Number(selectedEntry.capacity || selectedAction.capacity || 0);
+      if (capacity && getBookedTickets(selectedAction.name, selectedEntry) + tickets > capacity) {
+        alert("Pro tento termín již není dostatečná kapacita.");
         return;
       }
 
@@ -1587,9 +1934,11 @@
 
       const request = {
         id: Date.now(),
-        action: selectedAction,
-        date: selectedDate,
-        eventDate: selectedDate,
+        action: selectedAction.name,
+        date: selectedEntry.date,
+        eventDate: selectedEntry.date,
+        eventTime: selectedEntry.time || "",
+        eventSlot: dateEntryKey(selectedEntry),
         employee,
         manager,
         customer,
@@ -1897,15 +2246,20 @@
       }
 
       state.companyActions.forEach((action) => {
-        const dates = Array.isArray(action.dates) && action.dates.length ? action.dates : [{ date: action.date, time: action.time }];
-        const dateText = dates.map((entry) => `${formatDate(entry.date)} ${entry.time || ""}`.trim()).join("<br>");
+        const dates = getActionDates(action);
+        const dateText = dates.map((entry) => `${formatDate(entry.date)} ${entry.time || ""}`.trim()).map(escapeHtml).join("<br>");
+        const capacityText = dates.map((entry) => {
+          const capacity = Number(entry.capacity || action.capacity || 0);
+          return `${formatDate(entry.date)}: ${capacity || "—"} / ${getBookedTickets(action.name, entry)} obsazeno`;
+        }).map(escapeHtml).join("<br>");
+        const sourceUrl = safeHttpUrl(action.sourceUrl);
 
         const row = document.createElement("tr");
         row.innerHTML = `
-          <td><strong>${action.name}</strong><br><small>${action.place || "-"}</small></td>
-          <td>${action.category || "-"}</td>
+          <td><strong>${escapeHtml(action.name)}</strong><br><small>${escapeHtml(action.place || "-")}</small>${sourceUrl ? `<br><a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Zdroj</a>` : ""}</td>
+          <td>${escapeHtml(action.category || "-")}</td>
           <td>${dateText}</td>
-          <td>${action.capacity || 0}</td>
+          <td>${capacityText}</td>
           <td><button class="small-btn danger" onclick="deleteAction(${action.id})">Smazat</button></td>
         `;
         tbody.appendChild(row);
@@ -1920,6 +2274,8 @@
     }
 
     function renderAdminSections() {
+      const proxyInput = document.getElementById("o2ProxyUrl");
+      if (proxyInput) proxyInput.value = state.o2ProxyUrl;
       renderFilterList();
       renderReasonList();
       renderAssistantPreview();
