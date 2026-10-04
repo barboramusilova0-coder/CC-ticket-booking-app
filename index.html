@@ -113,258 +113,260 @@
       outline: none;
     }
     .field:focus, .select:focus, .textarea:focus {
-      barva-okraje: var(--cc-červená);
-      stín-boxu: 0 0 0 4px rgba(228, 30, 38, 0,08);
+      border-color: var(--cc-red);
+      box-shadow: 0 0 0 4px rgba(228, 30, 38, 0.08);
     }
-    .textarea { min-height: 110px; resize: vertikální; }
+    .textarea { min-height: 110px; resize: vertical; }
 
     .row { display: flex; gap: 10px; flex-wrap: wrap; }
 
-    .tn {
-      displej: inline-flex;
-      zarovnání-položek: na střed;
-      zarovnat-obsah: na střed;
-      okraj: žádný;
-      poloměr okraje: 10px;
-      odsazení: 12px 18px;
-      tloušťka-fontu: 800;
-      kurzor: ukazatel;
-      přechod: transformace 0,2 s plynulost, filtr 0,2 s plynulost;
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: none;
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.2s ease, filter 0.2s ease;
+      border: none;
     }
-    .btn:hover { transformace: translateY(-1px); filtr: jas(0,98); }
-    .btn.primary { pozadí: var(--cc-červená); barva: #fff; }
-    .btn.secondary { pozadí: #0ea5e9; barva: #fff; }
-    .btn.success { pozadí: var(--success); barva: #fff; }
-    .btn.nebezpečí { pozadí: var(--nebezpečí); barva: #fff; }
-    .btn.muted { pozadí: #e2e8f0; barva: var(--dark); }
+    .btn:hover { transform: translateY(-1px); filter: brightness(0.98); }
+    .btn.primary { background: var(--cc-red); color: #fff; }
+    .btn.secondary { background: #0ea5e9; color: #fff; }
+    .btn.success { background: var(--success); color: #fff; }
+    .btn.danger { background: var(--danger); color: #fff; }
+    .btn.muted { background: #e2e8f0; color: var(--dark); }
     .btn.small { padding: 8px 12px; font-size: 12px; }
-    .btn.full { šířka: 100%; }
+    .btn.full { width: 100%; }
 
-    tlačítko:zakázáno { neprůhlednost: 0,5; kurzor: nepovoleno; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .login-bar {
-      displej: ohebný;
-      zarovnání-položek: na střed;
+      display: flex;
+      align-items: center;
       justify-content: space-between;
-      mezera: 16px;
-      odsazení: 14px 18px;
+      gap: 16px;
+      padding: 14px 18px;
       border: 1px solid var(--border);
-      poloměr okraje: 12px;
-      pozadí: #fafafa;
-      okraj-dole: 24px;
+      border-radius: 12px;
+      background: #fafafa;
+      margin-bottom: 24px;
     }
     .login-bar .user-box { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 
-    .refresh-tn {
-      šířka: 40px;
-      výška: 40px;
-      poloměr okraje: 50 %;
+    .refresh-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
       border: 1px solid var(--border);
-      pozadí: bílé;
-      velikost písma: 20px;
-      kurzor: ukazatel;
+      background: white;
+      font-size: 20px;
+      cursor: pointer;
     }
 
-    .název-značky {
-      displej: ohebný;
-      zarovnání-položek: na střed;
-      mezera: 12px;
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
       padding-bottom: 16px;
       border-bottom: 1px solid var(--border);
-      okraj-dole: 18px;
+      margin-bottom: 18px;
     }
     .brand-title h1 { margin: 0; font-size: 32px; }
 
-    .značkový-odznak {
-      zobrazení: inline-block;
-      pozadí: var(--cc-červená);
-      barva: #fff;
-      poloměr okraje: 999px;
-      odsazení: 6px 12px;
-      velikost písma: 11px;
-      mezera mezi písmeny: 0,08 em;
-      transformace textu: velká písmena;
-      tloušťka-fontu: 800;
+    .brand-badge {
+      display: inline-block;
+      background: var(--cc-red);
+      color: #fff;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 800;
     }
 
     .tabs {
-      displej: ohebný;
-      mezera: 8px;
-      flex-wrap: obal;
-      okraj-dole: 18px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
     }
-    .tab-tn {
+    .tab-btn {
       border: 1px solid var(--border);
-      pozadí: #f1f5f9;
-      barva: var(--ztlumená);
-      border-bottom: 3px plná průhlednost;
-      odsazení: 12px 16px;
-      poloměr okraje: 10px 10px 0 0;
-      tloušťka-fontu: 700;
-      kurzor: ukazatel;
+      background: #f1f5f9;
+      color: var(--muted);
+      border-bottom: 3px solid transparent;
+      padding: 12px 16px;
+      border-radius: 10px 10px 0 0;
+      font-weight: 700;
+      cursor: pointer;
     }
-    .tab-tn.active {
-      pozadí: #fff;
-      barva: var(--cc-červená);
-      barva-ohraničení: var(--ohraničení);
-      barva-dolního-okraje: var(--cc-červená);
+    .tab-btn.active {
+      background: #fff;
+      color: var(--cc-red);
+      border-color: var(--border);
+      border-bottom-color: var(--cc-red);
     }
 
-    .tab-content { zobrazení: žádné; }
-    .tab-content.active { zobrazení: blok; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
 
-    .dlaždice {
-      zobrazení: mřížka;
-      sloupce-šablony-mřížky: opakování(automatické přizpůsobení, minmax(180px, 1fr));
-      mezera: 12px;
-      okraj: 10px 0 22px;
+    .tiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 10px 0 22px;
     }
-    .dlaždice {
-      pozadí: lineární gradient(135 stupňů, #fff 0 %, #f8fafc 100 %);
+    .tile {
+      background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
       border: 1px solid var(--border);
       border-left: 5px solid #aaa;
-      poloměr okraje: 14px;
-      odsazení: 15px 16px;
-      kurzor: ukazatel;
-      stín rámečku: 0 10px 18px rgba(15, 23, 42, 0,04);
+      border-radius: 14px;
+      padding: 15px 16px;
+      cursor: pointer;
+      box-shadow: 0 10px 18px rgba(15, 23, 42, 0.04);
     }
-    .tile[data-tone=\"červená\"] { border-left-color: var(--cc-červená); }
-    .tile[data-tone=\"jantarová\"] { border-left-color: var(--warning); }
-    .tile[data-tone=\"zelená\"] { border-left-color: var(--success); }
-    .tile[data-tone=\"modrá\"] { border-left-color: var(--info); }
-    .tile[data-tone=\"šedá\"] { border-left-color: #475569; }
+    .tile[data-tone="red"] { border-left-color: var(--cc-red); }
+    .tile[data-tone="amber"] { border-left-color: var(--warning); }
+    .tile[data-tone="green"] { border-left-color: var(--success); }
+    .tile[data-tone="blue"] { border-left-color: var(--info); }
+    .tile[data-tone="gray"] { border-left-color: #475569; }
 
     .tile-label {
-      velikost písma: 12px;
-      tloušťka-fontu: 700;
-      mezera mezi písmeny: 0,05em;
-      transformace textu: velká písmena;
-      barva: var(--ztlumená);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
     }
-    .tile-value { velikost-fontu: 30px; tloušťka-fontu: 800; horní okraj: 8px; }
-    .tile-sub { barva: var(--muted); velikost písma: 12px; horní okraj: 4px; }
+    .tile-value { font-size: 30px; font-weight: 800; margin-top: 8px; }
+    .tile-sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
 
     .section-box {
-      pozadí: bílé;
+      background: white;
       border: 1px solid var(--border);
-      poloměr okraje: 14px;
-      odsazení: 20px;
-      okraj-dole: 22px;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 22px;
     }
-    h2 { okraj: 0 0 16px; }
+    h2 { margin: 0 0 16px; }
     .form-grid {
-      zobrazení: mřížka;
-      sloupce-šablony-mřížky: opakování(automatické přizpůsobení, minmax(240px, 1fr));
-      mezera: 18px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
     }
-    .full { sloupec mřížky: 1 / -1; }
-    .field-group { okraj-dolní: 14px; }
+    .full { grid-column: 1 / -1; }
+    .field-group { margin-bottom: 14px; }
 
-    .zaškrtávací-políčko-řádek {
-      displej: ohebný;
-      zarovnání položek: flex-start;
-      mezera: 10px;
-      pozadí: #f8fafc;
+    .check-box-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: #f8fafc;
       border: 1px solid var(--border);
-      poloměr okraje: 12px;
-      odsazení: 16px;
-      okraj: 12px 0 18px;
+      border-radius: 12px;
+      padding: 16px;
+      margin: 12px 0 18px;
     }
-    .check-box-row input { šířka: auto; okraj-horní: 3px; }
+    .check-box-row input { width: auto; margin-top: 3px; }
     .check-box-row label {
-      výška řádku: 1,5;
-      barva: var(--ztlumená);
-      tloušťka-fontu: 600;
+      line-height: 1.5;
+      color: var(--muted);
+      font-weight: 600;
     }
 
-    tabulka {
-      šířka: 100 %;
-      kolaps-hranice: kolaps;
+    table {
+      width: 100%;
+      border-collapse: collapse;
       border: 1px solid var(--border);
-      pozadí: #fff;
-      přetečení: skryté;
-      horní okraj: 8px;
+      background: #fff;
+      overflow: hidden;
+      margin-top: 8px;
     }
     th, td {
       border-bottom: 1px solid var(--border);
-      odsazení: 12px 10px;
-      zarovnání textu: vlevo;
-      vertikální zarovnání: nahoru;
-      velikost písma: 14px;
+      padding: 12px 10px;
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
     }
     th {
-      pozadí: #f8fafc;
-      barva: var(--ztlumená);
-      velikost písma: 11px;
-      mezera mezi písmeny: 0,08 em;
-      transformace textu: velká písmena;
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
-    .status-pilulka {
-      zobrazení: inline-block;
-      odsazení: 5px 10px;
-      poloměr okraje: 999px;
-      velikost písma: 12px;
-      tloušťka-fontu: 700;
-      bílý prostor: nowrap;
+    .status-badge {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
     }
-    .status-cekajici { pozadí: #fef3c7; barva: #92400e; }
-    .status-schvaleno { pozadí: #d1fae5; barva: #065f46; }
-    .status-zamitnuto { pozadí: #fee2e2; barva: #991b1b; }
-    .status-nahradnik { pozadí: #dbeafe; barva: #1d4ed8; }
+    .status-pending { background: #fef3c7; color: #92400e; }
+    .status-approved { background: #d1fae5; color: #065f46; }
+    .status-rejected { background: #fee2e2; color: #991b1b; }
+    .status-alternate { background: #dbeafe; color: #1d4ed8; }
 
     .action-box { display: flex; gap: 8px; flex-wrap: wrap; }
 
-    .small-tn {
-      okraj: žádný;
-      poloměr okraje: 8px;
-      odsazení: 7px 10px;
-      tloušťka-fontu: 700;
-      velikost písma: 12px;
-      kurzor: ukazatel;
+    .small-btn {
+      margin: none;
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      border: none;
     }
-    .small-btn.success { pozadí: var(--success); barva: bílá; }
-    .small-btn.danger { pozadí: var(--danger); barva: bílá; }
-    .small-btn.info { pozadí: var(--info); barva: bílá; }
-    .small-btn.muted { pozadí: #e2e8f0; barva: var(--dark); }
+    .small-btn.success { background: var(--success); color: white; }
+    .small-btn.danger { background: var(--danger); color: white; }
+    .small-btn.info { background: var(--info); color: white; }
+    .small-btn.muted { background: #e2e8f0; color: var(--dark); }
 
-    .prázdný-stav {
-      odsazení: 18px;
-      border: 1px přerušovaná var(--border);
-      poloměr okraje: 12px;
-      zarovnání textu: na střed;
-      pozadí: #fafafa;
-      barva: var(--ztlumená);
+    .empty-state {
+      padding: 18px;
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      text-align: center;
+      background: #fafafa;
+      color: var(--muted);
     }
 
     .planner-grid {
-      zobrazení: mřížka;
-      sloupce-šablony-mřížky: opakování(automatické přizpůsobení, minmax(240px, 1fr));
-      mezera: 16px;
-      okraj-horní: 14px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-top: 14px;
     }
 
     .event-card {
-      poloha: relativní;
+      position: relative;
       min-height: 260px;
-      poloměr okraje: 16px;
-      přetečení: skryté;
-      pozadí: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #fff;
       border: 1px solid var(--border);
-      stín-boxu: var(--shadow);
+      box-shadow: var(--shadow);
     }
 
     .event-image-wrap {
-      pozice: absolutní;
-      vložka: 0;
-      přetečení: skryté;
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
     }
-    .event-image-wrap obrázek {
-      šířka: 100 %;
-      výška: 100 %;
-      přizpůsobení objektu: kryt;
-      displej: blok;
-      filtr: saturace(1,08) kontrast(1,04);
+    .event-image-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: saturate(1.08) contrast(1.04);
     }
     .event-image-wrap::after {
       content: "";
@@ -409,6 +411,7 @@
       border-radius: 10px;
       font-weight: 800;
       cursor: pointer;
+      border: none;
     }
     .event-badge {
       position: absolute;
@@ -527,7 +530,6 @@
       color: var(--cc-red-dark);
       border-radius: 12px;
       padding: 12px 14px;
-      display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
@@ -553,10 +555,10 @@
     <div class="guide-box">
       <h3>📖 Návod k použití portálu</h3>
       <ol>
-        <li><strong>Žádost o přístup:</strong> Zvolte „Požádat o přístup“, vyplňte údaje a počkejte na schválení.</li>
+        <li><strong>Žádost o přístup:</strong> Zvolte „Požádat o přístup", vyplňte údaje a počkejte na schválení.</li>
         <li><strong>Přihlášení:</strong> Zadejte unikátní přístupový kód.</li>
         <li><strong>Nová rezervace:</strong> Vyberte akci a vyplňte všechny povinné údaje.</li>
-        <li><strong>Sledování stavu:</strong> V záložce „Seznam žádostí“ sledujte aktuální stav.</li>
+        <li><strong>Sledování stavu:</strong> V záložce „Seznam žádostí" sledujte aktuální stav.</li>
         <li><strong>Schvalovací proces:</strong> Žádost prochází 1. a 2. stupněm schválení.</li>
       </ol>
     </div>
@@ -590,12 +592,12 @@
       <button class="refresh-btn" onclick="location.reload(true)" title="Obnovit stránku">↻</button>
     </div>
 
-    <div class="název-značky">
+    <div class="brand-title">
       <h1 id="portalTitle">Systém rezervace lístků</h1>
       <span id="portalBadge" class="brand-badge">Coca-Cola HBC Česko a Slovensko</span>
     </div>
 
-    <div id="smartTiles" class="dlaždice"></div>
+    <div id="smartTiles" class="tiles"></div>
 
     <div class="tabs">
       <button id="btn-new" class="tab-btn active" onclick="openTab('new')">Nová rezervace</button>
@@ -612,15 +614,15 @@
           <div class="form-grid">
             <div class="field-group">
               <label class="label" for="actionSelect">Vyberte akci (povinné):</label>
-              <select id="actionSelect" class="select" povinné></select>
+              <select id="actionSelect" class="select" required></select>
             </div>
             <div class="field-group">
               <label class="label" for="eventDateSelect">Vyberte datum (povinné):</label>
-              <select id="eventDateSelect" class="select" povinné></select>
+              <select id="eventDateSelect" class="select" required></select>
             </div>
             <div class="field-group">
               <label class="label" for="employeeName">Žadatel (povinné):</label>
-              <input id="employeeName" class="field" type="text" placeholder="Jméno zaměstnance" povinné />
+              <input id="employeeName" class="field" type="text" placeholder="Jméno zaměstnance" required />
             </div>
             <div class="field-group">
               <label class="label" for="managerEmail">E-mail nadřízeného (1. schvalovatel) (povinné):</label>
@@ -673,10 +675,10 @@
             <thead>
               <tr>
                 <th>Akce</th>
-                Termín
+                <th>Termín</th>
                 <th>Žadatel</th>
                 <th>Zákazník</th>
-                Počet
+                <th>Počet</th>
                 <th>1. schvalovatel</th>
                 <th>2. schvalovatel</th>
                 <th>Důvod</th>
@@ -693,19 +695,19 @@
       <div class="section-box">
         <h2>Žádost o vytvoření účtu schvalovatele</h2>
         <p style="color: var(--muted); margin-top: 0;">Jste žadatele nebo schvalovatele? Vyplňte formulář. Žádost podléhá schválení správce.</p>
-        <form onsubmit="handleRoleRequestSubmit(událost)">
+        <form onsubmit="handleRoleRequestSubmit(event)">
           <div class="form-grid">
             <div class="field-group">
               <label class="label" for="reqName">Vaše celé jméno:</label>
-              <input id="reqName" class="field" type="text" povinné />
+              <input id="reqName" class="field" type="text" required />
             </div>
             <div class="field-group">
               <label class="label" for="reqEmail">Váš pracovní e-mail:</label>
-              <input id="reqEmail" class="field" type="email" povinné />
+              <input id="reqEmail" class="field" type="email" required />
             </div>
             <div class="field-group">
               <label class="label" for="reqRole">Požadovaná role:</label>
-              <select id="reqRole" class="select" povinné>
+              <select id="reqRole" class="select" required>
                 <option value="applicant">0 – žadatel</option>
                 <option value="manager">1. stupeň ASM / RSM</option>
                 <option value="rsm_praha">2. stupeň RSM Praha Central</option>
@@ -713,7 +715,7 @@
               </select>
             </div>
           </div>
-          <button class="btn Secondary" type="submit" style="margin-top: 8px;">Odeslat žádost ke schválení</button>
+          <button class="btn secondary" type="submit" style="margin-top: 8px;">Odeslat žádost ke schválení</button>
         </form>
       </div>
     </div>
@@ -734,9 +736,9 @@
                   <label class="label" for="assistantIconInput">Ikona / emoji:</label>
                   <input id="assistantIconInput" class="field" type="text" placeholder="🧠 / 🤖 / ✨" />
                 </div>
-                <div class="pole-group full">
+                <div class="field-group full">
                   <label class="label" for="assistantImageInput">Vlastní obrázek / ikona (URL nebo datová URL):</label>
-                  <input id="assistantImageInput" class="field" type="text" placeholder="https://... / data:obrázek/..." />
+                  <input id="assistantImageInput" class="field" type="text" placeholder="https://... / data:image/..." />
                 </div>
               </div>
               <button class="btn primary" onclick="saveAssistantConfig()">Uložit nastavení asistenta</button>
@@ -784,8 +786,8 @@
           </div>
 
           <div>
-            <div class="asistent-preview">
-              <div id="asistentPreviewIcon" class="asistent-preview-icon">🤖</div>
+            <div class="assistant-preview">
+              <div id="assistantPreviewIcon" class="assistant-preview-icon">🤖</div>
               <div id="assistantPreviewName" class="assistant-preview-name">Asistent</div>
               <small style="color: var(--muted); margin-top:8px;">Nápověda, filtry a doporučení</small>
             </div>
@@ -801,10 +803,10 @@
 
             <div class="section-box" style="padding:18px; margin-top:16px;">
               <h3>🧩 Vytvoření akce</h3>
-              <form onsubmit="handleCreateActionSubmit(událost)">
+              <form onsubmit="handleCreateActionSubmit(event)">
                 <div class="field-group">
                   <label class="label">Název akce:</label>
-                  <input id="actNewName" class="field" type="text" povinné />
+                  <input id="actNewName" class="field" type="text" required />
                 </div>
                 <div class="field-group">
                   <label class="label">Filtr / kategorie:</label>
@@ -812,19 +814,19 @@
                 </div>
                 <div class="field-group">
                   <label class="label">Datum:</label>
-                  <input id="actNewDate" class="field" type="date" povinné />
+                  <input id="actNewDate" class="field" type="date" required />
                 </div>
                 <div class="field-group">
                   <label class="label">Čas:</label>
-                  <input id="actNewTime" class="field" type="čas" povinné />
+                  <input id="actNewTime" class="field" type="time" required />
                 </div>
                 <div class="field-group">
                   <label class="label">Místo konání:</label>
-                  <input id="actNewPlace" class="field" type="text" povinné />
+                  <input id="actNewPlace" class="field" type="text" required />
                 </div>
                 <div class="field-group">
                   <label class="label">Kapacita lístků:</label>
-                  <input id="actNewCapacity" class="field" type="number" min="1" povinné />
+                  <input id="actNewCapacity" class="field" type="number" min="1" required />
                 </div>
                 <div class="field-group">
                   <label class="label">URL obrázku / adresa URL dat:</label>
@@ -847,7 +849,7 @@
 
       <div class="section-box">
         <h3>Aktuální seznam akcí</h3>
-        <tabulka>
+        <table>
           <thead>
             <tr>
               <th>Akce</th>
@@ -863,12 +865,12 @@
 
       <div class="section-box">
         <h3>Čekající žádosti o přístup</h3>
-        <tabulka>
+        <table>
           <thead>
             <tr>
               <th>Jméno</th>
               <th>E-mail</th>
-              Role
+              <th>Role</th>
               <th>Akce</th>
             </tr>
           </thead>
@@ -878,12 +880,12 @@
 
       <div class="section-box">
         <h3>Aktivní schvalovatelé</h3>
-        <tabulka>
+        <table>
           <thead>
             <tr>
               <th>Jméno</th>
               <th>E-mail</th>
-              Role
+              <th>Role</th>
               <th>Přístupový kód</th>
               <th>Akce</th>
             </tr>
@@ -999,1544 +1001,251 @@
     function loadFromFirebase() {
       const db = getDb();
       if (!db) return;
-      db.collection("portalData").doc(FIREBASE_DOC).get().then((doc) => {
-        if (!doc.exists) return;
-        const data = doc.data() || {};
-        state.customUsers = data.customUsers || state.customUsers;
-        state.roleRequests = data.roleRequests || state.roleRequests;
-        state.requests = data.ticketRequests || state.requests;
-        state.companyActions = data.companyActions || state.companyActions;
-        state.filters = data.ccFilters || state.filters;
-        state.reasons = data.ccReasons || state.reasons;
-        state.assistant = data.ccAssistant || state.assistant;
-        persistState();
-        renderAll();
+      db.collection("portalData").doc(FIREBASE_DOC).onSnapshot((doc) => {
+        if (doc.exists) {
+          const data = doc.data();
+          if (data.customUsers) state.customUsers = data.customUsers;
+          if (data.roleRequests) state.roleRequests = data.roleRequests;
+          if (data.ticketRequests) state.requests = data.ticketRequests;
+          if (data.companyActions) state.companyActions = data.companyActions;
+          if (data.ccFilters) state.filters = data.ccFilters;
+          if (data.ccReasons) state.reasons = data.ccReasons;
+          if (data.ccAssistant) state.assistant = data.ccAssistant;
+          renderUI();
+        }
       }).catch((err) => console.error("Firebase load error:", err));
     }
 
-    function getRoleLabel(role) {
-      if (role === "manager") return "1. stupeň ASM / RSM";
-      if (role === "rsm_praha") return "2. stupeň RSM Praha Central";
-      if (role === "admin") return "Administrátor";
-      return "Žadatel";
+    window.addEventListener("load", () => {
+      firebase.initializeApp(firebaseConfig);
+      loadState();
+      loadFromFirebase();
+      renderUI();
+    });
+
+    function openTab(tabName) {
+      document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+      document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
+      document.getElementById(`tab-${tabName}`).classList.add("active");
+      document.getElementById(`btn-${tabName}`).classList.add("active");
     }
 
-    function formatDate(dateString) {
-      if (!dateString) return "-";
-      const d = new Date(dateString + "T00:00:00");
-      if (Number.isNaN(d.getTime())) return dateString;
-      return d.toLocaleDateString("cs-CZ", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric"
-      });
-    }
-
-    function escapeHtml(value) {
-      return String(value || "").replace(/[&<>"']/g, (character) => ({
-        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-      })[character]);
-    }
-
-    function safeHttpUrl(value) {
-      try {
-        const url = new URL(value, "https://www.o2arena.cz");
-        return ["http:", "https:"].includes(url.protocol) ? url.href : "";
-      } catch (error) {
-        return "";
-      }
-    }
-
-    function safeImageUrl(value) {
-      const image = String(value || "");
-      if (/^data:image\/(?:png|jpe?g|gif|webp|avif|svg\+xml);base64,/i.test(image)) return image;
-      return safeHttpUrl(image);
-    }
-
-    function getActionDates(action) {
-      return Array.isArray(action.dates) && action.dates.length
-        ? action.dates
-        : action.date ? [{ date: action.date, time: action.time || "", capacity: action.capacity }] : [];
-    }
-
-    function dateEntryKey(entry) {
-      return `${entry.date || ""}|${entry.time || ""}`;
-    }
-
-    function formatRequestTerm(request) {
-      return `${formatDate(request.eventDate || request.date || "")}${request.eventTime ? ` • ${request.eventTime}` : ""}`;
-    }
-
-    function getBookedTickets(actionName, entry) {
-      const sameDateEntries = state.companyActions.filter((action) => action.name === actionName)
-        .flatMap(getActionDates).filter((date) => date.date === entry.date);
-      return state.requests.reduce((total, request) => {
-        const requestDate = request.eventDate || request.date;
-        const rejected = request.status1 === "Zamítnuto" || request.status2 === "Zamítnuto";
-        if (request.action !== actionName || requestDate !== entry.date || rejected) return total;
-        if (request.eventTime && request.eventTime !== (entry.time || "")) return total;
-        if (!request.eventTime && sameDateEntries.length > 1) return total;
-        return total + Number(request.tickets || 0);
-      }, 0);
-    }
-
-    function updateTicketLimit(actionName, entry, input) {
-      if (!input || !entry) return;
-      const action = state.companyActions.find((item) => item.name === actionName);
-      const capacity = Number(entry.capacity || action && action.capacity || 0);
-      const available = capacity ? Math.max(0, capacity - getBookedTickets(actionName, entry)) : 10;
-      input.max = String(Math.min(10, available));
-      if (Number(input.value) > available) input.value = String(available || 1);
-    }
-
-    function normalizeO2Date(value) {
-      const raw = String(hodnota || "").trim();
-      const iso = raw.match(/\b(20\d{2})-(\d{1,2})-(\d{1,2})(?!\d)/);
-      if (iso) return `${iso[1]}-${iso[2].padStart(2, "0")}-${iso[3].padStart(2, "0")}`;
-      const czech = raw.match(/\b(\d{1,2})\s*[./]\s*(\d{1,2})\s*[./]\s*(20\d{2})\b/);
-      pokud (!czech) vrátí "";
-      vrátit `${czech[3]}-${czech[2].padStart(2, "0")}-${czech[1].padStart(2, "0")}`;
-    }
-
-    funkce normalizeO2Time(hodnota) {
-      const shoda = Řetězec(hodnota || "").shoda(/(?:^|\D)([01]?\d|2[0-3])[:.]([0-5]\d)(?!\d)/);
-      vrátit shodu? `${match[1].padStart(2, "0")}:${match[2]}` : "";
-    }
-
-    funkce o2DatesInText(hodnota) {
-      const text = Řetězec(hodnota || "");
-      const datePattern = /\b(?:20\d{2}-\d{1,2}-\d{1,2}(?!\d)|\d{1,2}\s*[./]\s*\d{1,2}\s*[./]\s*20\d{2}\b)/;
-      const shody = text.match(nový RegExp(datePattern.source, "g")) || [];
-      const data = [...new Set(matches.map(normalizeO2Date).filter(Boolean))];
-      const rangePattern = new RegExp(`${datePattern.source}\\s*[-–—]\\s*${datePattern.source}`);
-      pokud (dates.length !== 2 || !rangePattern.test(text)) vrátí data;
-      const start = new Date(`${dates[0]}T00:00:00Z`);
-      konec konstanty = nové datum(`${dates[1]}T00:00:00Z`);
-      const počet = Math.round((konec - začátek) / 86400000);
-      pokud (počet < 0 || počet > 90) data vrácení;
-      vrátit Array.from({ délka: počet + 1 }, (_, index) => nové datum(start.getTime() + index * 86400000).toISOString().slice(0, 10));
-    }
-
-    funkce kategorieProO2Událost(hodnota) {
-      const text = String(hodnota || "").toLocaleLowerCase("cs-CZ");
-      if (/hokej|hokej/.test(text)) return "Hokej";
-      if (/fotbal|fotbal|fotbal/.test(text)) return "Fotbal";
-      pokud (/koncert|koncert|hudba|show|festival/.test(text)) vrátí "Koncert";
-      vrátit „O2 Arenu“;
-    }
-
-    funkce zajistiAkciKategorie(kategorie) {
-      pokud (!state.filters.some((filter) => filter.id === kategorie)) {
-        state.filters.push({ id: kategorie, název: kategorie, aktivní: true });
-      }
-      kategorie návratnosti;
-    }
-
-    funkce normalizeO2Event(událost, zdrojováUrl) {
-      const název = Řetězec(název_události || název_události || název_události || "").trim();
-      pokud (!jméno) vrátí null;
-      const detailUrl = safeHttpUrl(event.url || event.link || event.detailUrl || sourceUrl) || O2_DIRECT;
-      const rawDates = Array.isArray(event.dates) ? event.dates : [event.dates || event.date || event.startDate || event.datetime || "", event.endDate || ""];
-      const data = rawDates.flatMap((hodnota, index) => {
-        const dateValue = typeof hodnota === "objekt" && hodnota ? hodnota.date || hodnota.datetime || hodnota.startDate : hodnota;
-        const timeValue = typeof hodnota === "objekt" && hodnota ? hodnota.time || hodnota.startTime : event.time || event.startTime;
-        const dateValues ​​= event.endDate && index === 0 && !Array.isArray(event.dates)
-          ? o2DatesInText(`${dateValue || ""} – ${event.endDate}`)
-          : o2DatumVTextu(hodnotaDatumu);
-        vrátit dateValues.map((datum) => ({ datum, čas: normalizeO2Time(časováHodnota || dateValue), kapacita: Číslo(hodnota && hodnota.kapacita || událost.kapacita || 10) }));
-      });
-      const uniqueDates = dates.filter((entry, index) => dates.findIndex((other) => dateEntryKey(other) === dateEntryKey(entry)) === index);
-      pokud (!uniqueDates.length) vrátí null;
-      const podkategorie = kategorieProO2Event(`${event.category || ""} ${event.genre || ""} ${name} ${event.description || ""}`);
-      const kategorie = ensureActionCategory("O2 Arena");
-      zajistiAkciKategorie(podkategorie);
-      const hodnotaObrázku = událost.obrázek || adresaUrlObrázkuUrl || náhledový obrázek || plakátUrlu || "";
-      const obrázek = Array.isArray(hodnotaObrázku) ? hodnotaObrázku[0] : hodnotaObrázku;
-      vrátit {
-        id: Date.now() + Math.floor(Math.random() * 1000000),
-        jméno,
-        kategorie,
-        podkategorie,
-        datum: uniqueDates[0].date,
-        čas: uniqueDates[0].time,
-        data: jedinečnáData,
-        místo: String(event.place || místo konání události || místo konání události && (název místa konání události || adresa místa konání události) || "O2 arena"),
-        kapacita: uniqueDates[0].capacity || 10,
-        obrázek: safeImageUrl(typeof obrázek === "objekt" && obrázek ? obrázek.url || obrázek.contentUrl : obrázek) || "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80",
-        popis: Řetězec(event.description || event.summary || "").trim(),
-        zdrojováUrl: detailníUrl,
-        stav: "Aktivní"
-      };
-    }
-
-    funkce mergeO2Events(události) {
-      const sloučené = [];
-      const podleName = new Map();
-      události.proKaždý((událost) => {
-        const key = String(název události || "").trim().toLocaleLowerCase("cs-CZ");
-        pokud (!klíč || !byName.has(klíč)) {
-          pokud (klíč) podleName.set(klíč, událost);
-          sloučené.push(událost);
-          návrat;
-        }
-        const existující = podleName.get(klíč);
-        const data = getActionDates(existující).concat(getActionDates(událost));
-        existující.data = dates.filter((záznam, index) => dates.findIndex((jiné) => dateEntryKey(jiné) === dateEntryKey(záznam)) === index);
-        existující.datum = existující.data[0]?.datum || existující.datum;
-        existující.čas = existující.data[0]?.čas || existující.čas;
-        pokud (!existující.popis) existující.popis = popis události;
-        pokud ((!existující.obrázek || existující.obrázek.includes("photo-1511578314322")) && událost.obrázek) existující.obrázek = událost.obrázek;
-      });
-      návrat sloučený;
-    }
-
-    funkce o2EventsFromJson(hodnota, zdrojováUrl) {
-      const data = hodnota && hodnota.data;
-      const události = Array.isArray(hodnota) ? hodnota : hodnota.events || hodnota.items
-        || (Array.isArray(data) ? data : data && (data.events || data.items))
-        || (hodnota && (hodnota.název || hodnota.titulek || hodnota.názevUdálosti) ? [hodnota] : []);
-      vrátit Array.isArray(události)? mergeO2Events(události.map((událost) => normalizeO2Event(událost, zdrojováUrl)).filter(Boolean)) : [];
-    }
-
-    funkce parseO2Events(vstup) {
-      const sourceUrl = O2_DIRECT;
-      zkuste {
-        konstantní data = JSON.parse(vstup);
-        const události = o2EventsFromJson(data, zdrojováUrl);
-        pokud (events.length) vrátí události;
-      } zachytit (chybu) {}
-
-      const documentHtml = new DOMParser().parseFromString(input, "text/html");
-      const pageImage = safeImageUrl(documentHtml.querySelector('meta[property="og:image"], meta[name="twitter:image"]')?.content || "");
-      const pageDescription = documentHtml.querySelector('meta[property="og:description"], meta[name="description"]')?.content || "";
-      const strukturovanéUdálosti = [];
-      documentHtml.querySelectorAll("script[type='application/ld+json']").forEach((script) => {
-        zkuste {
-          const sbírat = (položka) => {
-            pokud (!položka || typ položky !== "objekt") vrátí;
-            pokud (Array.isArray(položka)) {
-              item.forEach(sbírat);
-              návrat;
-            }
-            const typ = Array.isArray(položka["@typ"]) ? položka["@typ"].join(" ") : položka["@typ"] || "";
-            pokud (/event/i.test(typ) && název_položky) {
-              const event = normalizeO2Event(položka, zdrojováUrl);
-              pokud (událost) structuredEvents.push(událost);
-            }
-            Object.values(položka).forEach((hodnota) => {
-              pokud (hodnota && typ hodnoty === "objekt") sbírat(hodnota);
-            });
-          };
-          sbírat(JSON.parse(script.textContent));
-        } zachytit (chybu) {}
-      });
-      pokud (structuredEvents.length) {
-        pokud (structuredEvents.length === 1) {
-          pokud (!structuredEvents[0].image || structuredEvents[0].image.includes("photo-1511578314322")) structuredEvents[0].image = pageImage || structuredEvents[0].image;
-          pokud (!structuredEvents[0].description) structuredEvents[0].description = pageDescription;
-        }
-        vrátit mergeO2Events(strukturovanéUdálosti);
-      }
-      const kandidáti = [...documentHtml.querySelectorAll("článek, [class*='karta-události'], [class*='položka-události'], [class*='dlaždice-události']")];
-      pokud (!kandidáti.délka) {
-        documentHtml.querySelectorAll("a[href]").forEach((link) => {
-          pokud (/\/events?\//i.test(link.getAttribute("href") || "") && (link.querySelector("img") || link.textContent.trim())) kandidáti.push(link);
-        });
-      }
-      konstanta importována = [];
-      const seenLinks = new Set();
-      kandidáti.proKaždého((karta) => {
-        const link = card.matches("a[href]") ? karta : card.querySelector("a[href*='/event'], a[href]");
-        const název = karta.querySelector("h1, h2, h3, h4, [třída*='název']") || odkaz;
-        const název = název && název.textObsah.trim();
-        pokud (!jméno) vrátí;
-        const detailUrl = safeHttpUrl(link && link.getAttribute("href") || sourceUrl) || sourceUrl;
-        pokud (detailUrl !== sourceUrl && seenLinks.has(detailUrl)) return;
-        pokud (detailUrl !== sourceUrl) seenLinks.add(detailUrl);
-        const obrázek = karta.querySelector("obrázek");
-        const dateNodes = [...card.querySelectorAll("čas, [datum-čas], [datum-data]")];
-        const data = dateNodes.map((uzel) => {
-          const text = `${node.getAttribute("datetime") || ""} ${node.getAttribute("data-date") || ""} ${node.textContent || ""}`;
-          vrátit o2DatesInText(text).map((datum) => ({ datum, čas: normalizeO2Time(`${text} ${node.getAttribute("content") || ""}`) }));
-        }).byt();
-        pokud (!data.délka) {
-          const text = card.textObsah || "";
-          const datePattern = /\b(?:20\d{2}-\d{1,2}-\d{1,2}(?!\d)|\d{1,2}\s*[./]\s*\d{1,2}\s*[./]\s*20\d{2}\b)/;
-          const rangePattern = new RegExp(`${datePattern.source}\\s*[-–—]\\s*${datePattern.source}`);
-          pokud (rangePattern.test(text)) {
-            o2DatesInText(text).forEach((datum) => dates.push({datum, čas: normalizeO2Time(text) }));
-          } jinak {
-            const shody = text.match(/\b(?:20\d{2}-\d{1,2}-\d{1,2}(?!\d)|\d{1,2}\s*[./]\s*\d{1,2}\s*[./]\s*20\d{2}\b)(?:\s*(?:od|•|,)?\s*[0-2]?\d[:.][0-5]\d)?/g) || [];
-            matches.forEach((match) => o2DatesInText(match).forEach((date) => dates.push({ datum, čas: normalizeO2Time(match) })));
-          }
-        }
-        const popisUzel_dotazu = karta.querySelector("[itemprop='popis'], [třída*='popis'], [třída*='výňatek'], p");
-        const imageUrl = image && (image.getAttribute("zdroj") || image.getAttribute("zdroj dat") || image.getAttribute("zdroj dat") || (image.getAttribute("set dat") || "").split(",")[0].trim().split(/\s+/)[0]);
-        const event = normalizeO2Event({
-          jméno,
-          kategorie: card.getAttribute("datová-kategorie") || "",
-          data,
-          popis: popisUzelDescriptionNode ? popisUzelDescription.textContent.trim() : card.getAttribute("popis-dat") || "",
-          obrázek: imageUrl || (kandidáti.délka === 1 ? obrázek_stránky : ""),
-          url: detailUrl,
-          místo: "O2 aréna"
-        }, zdrojováUrl);
-        pokud (událost) importována.push(událost);
-      });
-      pokud (!importováno.délka) {
-        const lines = String(input || "").replace(/<[^>]+>/g, "\n").split(/\n+/).map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
-        pro (nechť index = 0; index < řádky.délka; index++) {
-          const nadpis = řádky[index].match(/^#{1,6}\s+(.+)$/);
-          pokud (!nadpis) pokračuje;
-          const dateLine = lines.slice(Math.max(0, index - 5), index).reverse().find((line) => o2DatesInText(line).length);
-          pokud (!datový_řádek) pokračuje;
-          const data = o2DatesInText(dateLine).map((datum) => ({ datum, čas: normalizeO2Time(dateLine) }));
-          const event = normalizeO2Event({
-            název: nadpis[1],
-            data,
-            popis: řádky[index + 1] || popis_stránky,
-            obrázek: pageImage,
-            URL: zdrojováUrl
-          }, zdrojováUrl);
-          pokud (událost) importována.push(událost);
-        }
-      }
-      vrátit mergeO2Events(importováno);
-    }
-
-    funkce areO2EventsDuplicates(první, druhý) {
-      return (jméno || "").trim().toLocaleLowerCase("cs-CZ")
-        === (druhé.jméno || "").trim().toLocaleLowerCase("cs-CZ");
-    }
-
-    funkce jeDuplicateO2Event(událost) {
-      vrátit stav.companyActions.some((akce) => jsouO2EventsDuplicates(akce, událost));
-    }
-
-    funkce akty() {
-      vrátit Array.isArray(stav.akcespolečnosti) ? stav.akcespolečnosti : [];
-    }
-
-    funkce uložitAkce(akce) {
-      stát.firmaAkce = akce;
-      persistState();
-      synchronizovatToFirebase();
-      renderAll();
-    }
-
-    funkce renderO2(box, události, popisek) {
-      čekajícíO2Events = události;
-      const preview = box.querySelector("#cc-o2-preview");
-      const tlačítko = box.querySelector("#cc-o2-save2");
-      const zpráva = box.querySelector("#cc-o2-status");
-      náhled.nahraditDěti();
-      tlačítko.zakázáno = false;
-      button.style.display = events.length ? "inline-flex" : "none";
-      pokud (!events.length) {
-        preview.innerHTML = '<div class="empty-state">Web se načetl, ale nepodařilo se rozpoznat akci. Zkuste vložit obsah ručně.</div>';
-        message.textContent = "0 akcí";
-        návrat;
-      }
-      const heading = document.createElement("div");
-      nadpis.style.margin = "10px 0 7px";
-      header.innerHTML = `<b>Nalezeno ${events.length} akcí</b> ze ${escapeHtml(label)}. Vyberte, které chcete importovat.`;
-      náhled.appendChild(nadpis);
-      const tabulka = dokument.createElement("tabulka");
-      table.innerHTML = "<thead><tr><th></th><th>Datum</th><th>Čas</th><th>Akce</th><th>Typ</th></tr></thead><tbody></tbody>";
-      const tělo = table.querySelector("tělo_tabulky");
-      events.forEach((událost, index) => {
-        const duplicate = isDuplicateO2Event(událost);
-        const řádek = dokument.createElement("tr");
-        const dates = getActionDates(event).map((entry) => `${formatDate(entry.date)} ${entry.time || ""}`.trim()).join(", ");
-        const zaškrtávací políčko = document.createElement("vstup");
-        checkbox.type = "zaškrtávací políčko";
-        zaškrtávací políčko.zaškrtnuto = !duplikát;
-        zaškrtávací políčko.zakázáno = duplikát;
-        zaškrtávací políčko.dataset.eventIndex = Řetězec(index);
-        konstantní buňky = [
-          document.createElement("td"),
-          document.createElement("td"),
-          document.createElement("td"),
-          document.createElement("td"),
-          document.createElement("td")
-        ];
-        buňky[0].appendChild(zaškrtávací políčko);
-        buňky[1].textObsah = data;
-        buňky[2].textObsah = událost.čas || "";
-        buňky[3].textObsah = název.události;
-        buňky[4].textObsah = událost.podkategorie || "O2 Arena";
-        if (duplikovat) buňky[3].textContent += " (již importováno)";
-        cells.forEach((cell) => row.appendChild(cell));
-        tělo.appendChild(řádek);
-      });
-      náhled.appendChild(tabulka);
-      message.textContent = `Načteno ${events.length} akcí.`;
-    }
-
-    funkce showO2EventsPreview(události, popisek) {
-      const box = document.getElementById("cc-o2-import");
-      if (box) renderO2(box, events, label || "vloženého obsahu");
-    }
-
-    asynchronní funkce tryUrl(url, timeout) {
-      const controller = window.AbortController ? new AbortController(): null;
-      const časovač = controller ? setTimeout(() => controller.abort(), timeout) : null;
-      zkuste {
-        konstantní odpověď = čeká na načtení(url, {
-          metoda: "ZÍSKAT",
-          režim: "cors",
-          mezipaměť: „bez ukládání“,
-          signál: řadič ? controller.signal : nedefinovaný
-        });
-        pokud (!response.ok) vyvolá novou chybu (`HTTP ${response.status}`);
-        vrátit čeká na odpověď.text();
-      } konečně {
-        pokud (časovač) clearTimeout(časovač);
-      }
-    }
-
-    funkce parseO2Any(raw) {
-      vrátit parseO2Events(raw);
-    }
-
-    asynchronní funkce importO2Events() {
-      const proxyInput = document.getElementById("o2ProxyUrl");
-      state.o2ProxyUrl = proxyInput.value.trim() || "https://api.allorigins.win/raw?url=";
-      localStorage.setItem("o2CorsProxyUrl", state.o2ProxyUrl);
-      const configuredProxy = state.o2ProxyUrl.includes("{url}")
-        state.o2ProxyUrl.replace("{url}", encodeURIComponent(O2_DIRECT))
-        `${state.o2ProxyUrl}${state.o2ProxyUrl.endsWith("=") ? "" : state.o2ProxyUrl.includes("?") ? "&url=" : "?url="}${encodeURIComponent(O2_DIRECT)}`;} ` ...;} `${state.o2ProxyUrl.endsWith("=") ? "" : "" `${encodeURIComponent(O2_DIRECT)`;} `;} `
-      const sources = [{ název: "O2 arena", url: O2_DIRECT }]
-        .concat(O2_PROXIES.map((makeUrl, index) => ({ název: `automatická záloha ${index + 1}`, url: makeUrl() })))
-        .concat([{ name: "nastavená proxy", url: configuredProxy }])
-        .filter((zdroj, index, vše) => vše.findIndex((položka) => položka.url === zdroj.url) === index);
-      const status = document.getElementById("status-cc-o2");
-      status.textContent = "Zkouším načíst O2 arenu…";
-      pro (konstní zdroj zdrojů) {
-        zkuste {
-          const events = parseO2Any(await tryUrl(source.url, 9000));
-          pokud (události.délka) {
-            renderO2(document.getElementById("cc-o2-import"), události, zdroj.name);
-            návrat;
-          }
-        } zachytit (chybu) {}
-      }
-      status.textContent = "Automatické načtení je blokované nebo nerozpoznané žádné akce. Použijte ruční pole níže.";
-    }
-
-    function parseManualO2Events() {
-      const events = parseO2Any(document.getElementById("cc-o2-paste").value.trim());
-      renderO2(document.getElementById("cc-o2-import"), události, "vloženého obsahu");
-    }
-
-    funkce importSelectedO2Events() {
-      const box = document.getElementById("cc-o2-import");
-      const status = box.querySelector("#cc-o2-status");
-      const vybrano = [];
-      box.querySelectorAll("#cc-o2-preview input[type='checkbox']:zaškrtnuto").forEach((checkbox) => {
-        const událost = pendingO2Events[Číslo(zaškrtávací políčko.datovásada.indexu událostí)];
-        pokud (událost && !isDuplicateO2Event(událost) && !selected.some((selectedEvent) => areO2EventsDuplicates(selectedEvent, událost))) selected.push(událost);
-      });
-      pokud (!vybrané.délka) {
-        status.textContent = "Vyberte alespoň jednu novou akci.";
-        návrat;
-      }
-      selected.forEach((event, index) => { event.id = Date.now() + index + Math.floor(Math.random() * 1000); });
-      uložitAkty(akty().concat(vybrané));
-      status.textContent = `Import dokončen: přidáno ${selected.length} nových akcí.`;
-      box.querySelectorAll("input[type='zaškrtávací políčko']").forEach((zaškrtávací políčko) => { checkbox.disabled = true; });
-      box.querySelector("#cc-o2-save2").disabled = true;
-      try { if (typeof actionManager === "funkce") actionManager(); } catch (error) {}
-    }
-
-    funkce patchO2Box() {
-      const box = document.getElementById("cc-o2-import");
-      pokud (!box || box.dataset.importPatched === "1") vrátí;
-      box.dataset.importPatched = "1";
-      box.querySelector("#cc-o2-fetch").onclick = importO2Events;
-      box.querySelector("#cc-o2-parse2").onclick = parseManualO2Events;
-      box.querySelector("#cc-o2-save2").onclick = importSelectedO2Events;
-      const zdroj = dokument.createElement("div");
-      zdroj.název_třídy = "cc-o2-zdroj";
-      source.textContent = "Zdroj: ";
-      const link = document.createElement("a");
-      odkaz.href = O2_DIRECT;
-      odkaz.cíl = "_blank";
-      link.rel = "noopener noreferrer";
-      link.textContent = "O2 arena – Program";
-      source.append(link, document.createTextNode(". Při blokování načtení pomocí ručního zálohu.""));
-      box.appendChild(zdroj);
-    }
-
-    funkce leštění() {
-      patchO2Box();
-    }
-
-    funkce aktualizaceLoginBar() {
-      const názevElement = dokument.getElementById("zaznamenanýNázev");
-      const roleEl = document.getElementById("loggedRole");
-      const adminbtn = document.getElementById("tl.-admin");
-      pokud (!stav.aktuálníUživatel) {
-        názevEl.textObsah = "--";
-        roleEl.textObsah = "--";
-        pokud (adminBtn) adminBtn.style.display = "none";
-        návrat;
-      }
-      nameEl.textContent = state.currentUser.name || "--";
-      roleEl.textContent = getRoleLabel(state.currentUser.role);
-      pokud (adminBtn) adminBtn.style.display = state.currentUser.role === "admin" ? "inline-flex" : "none";
-    }
-
-    funkce aktualizaceWelcomeGate() {
-      const emoji = document.getElementById("welcomeEmoji");
-      const název = dokument.getElementById("welcomeTitle");
-      const odznak = dokument.getElementById("welcomeBadge");
-      const pTitle = document.getElementById("portalTitle");
-      const pBadge = document.getElementById("portalBadge");
-
-      pokud (stav.asistent.obrázek) {
-        emoji.innerHTML = `<img src="${state.assistant.image}" style="width:64px;height:64px;border-radius:18px;object-fit:cover;" alt="icon" />`; }
-      } jinak {
-        emoji.textContent = state.assistant.icon || "🤖";
-      }
-
-      pokud (title) title.textContent = state.assistant.name || "Asistent";
-      if (pTitle) pTitle.textContent = state.assistant.name || "Asistent";
-      if (badge) badge.textContent = "Coca-Cola HBC Česko a Slovensko";
-      if (pBadge) pBadge.textContent = "Coca-Cola HBC Česko a Slovensko";
-    }
-
-    funkce renderAssistantPreview() {
-      const iconEl = document.getElementById("ikonaNáhleduAsistenta");
-      const názevEl = dokument.getElementById("názevNáhleduAsistenta");
-      pokud (ikonaEl) {
-        pokud (state.assistant.image) iconEl.innerHTML = `<img src="${state.assistant.image}" alt="ikona asistenta" />`;
-        jinak ikonaEl.textObsah = stav.asistenta.ikona || "🤖";
-      }
-      if (nameEl) nameEl.textContent = state.assistant.name || "Asistent";
-
-      const nameInput = document.getElementById("assistantNameInput");
-      const iconInput = document.getElementById("asistentIconInput");
-      const imageInput = document.getElementById("assistantImageInput");
-
-      pokud (nameInput) nameInput.hodnota = stav.asistent.name || "Asistent";
-      pokud (iconInput) iconInput.hodnota = state.assistant.icon || "🤖";
-      pokud (imageInput) imageInput.hodnota = stav.asistent.obrázek || "";
-    }
-
-    funkce přepnoutOdeslatTlačítkoPodleShody() {
-      const zaškrtávací políčko = document.getElementById("KontrolaDodržování");
-      const button = document.getElementById("hlavníTlačítkoProOdesíláníFormulářů");
-      pokud (zaškrtávací políčko && tlačítko) tlačítko.zakázáno = !zaškrtávací políčko.zaškrtnuto;
-    }
-
-    funkce openTab(názevTabu) {
-      document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("aktivní"));
-      document.querySelectorAll(".tab-content").forEach((el) => el.classList.remove("active"));
-
-      const btnId = tabName === "nový" ? "btn-new" : tabName === "plánované" ? "btn-plánované" : tabName === "seznam" ? "btn-seznam" : tabName === "přístup" ? "btn-přístup" : "tn-admin";
-      const tabId = tabName === "nový" ? "tab-new" : tabName === "plánované" ? "tab-planned" : tabName === "seznam" ? "tab-seznam" : tabName === "přístup" ? "tab-přístup" : "tab-admin";
-
-      const btn = document.getElementById(btnId);
-      const tab = document.getElementById(tabId);
-
-      pokud (tn) btn.classList.add("aktivní");
-      pokud (tab) tab.classList.add("aktivní");
-
-      pokud (tabName === "plánované") renderPlannedActions();
-      pokud (tabName === "seznam") renderRequestsTable();
-      pokud (tabName === "admin") renderAdminSections();
-      pokud (tabName === "new") syncActionSelect();
-    }
-
-    funkce openAccessRequestFromGate() {
-      document.getElementById("welcomeGate").style.display = "none";
-      document.getElementById("mainSystem").style.display = "blok";
-      state.currentUser = { jméno: "Anonymní žadatel", role: "host", email: "" };
-      persistState();
-      aktualizaceLoginBar();
-      openTab("přístup");
-    }
-
-    asynchronní funkce loginUserFromGate() {
+    function loginUserFromGate() {
       const token = document.getElementById("gateUserToken").value.trim();
-      pokud (!token) {
-        alert("Zadejte přístupový kód.");
-        návrat;
-      }
-
-      pokud (token === masterAdminToken) {
-        state.currentUser = { name: "Hlavní Správce", role: "admin", email: "admin@firma.cz" };
-        persistState();
-        document.getElementById("welcomeGate").style.display = "none";
-        document.getElementById("mainSystem").style.display = "block";
-        updateLoginBar();
-        openTab("list");
-        return;
-      }
-
+      if (!token) { alert("Zadejte kód"); return; }
       if (state.customUsers[token]) {
-        state.currentUser = state.customUsers[token];
+        state.currentUser = { token, ...state.customUsers[token] };
         persistState();
-        document.getElementById("welcomeGate").style.display = "none";
-        document.getElementById("mainSystem").style.display = "block";
-        updateLoginBar();
-        openTab(state.currentUser.role === "admin" ? "list" : "new");
-        return;
+        showMainSystem();
+        renderUI();
+      } else {
+        alert("Neplatný kód");
       }
+    }
 
-      const db = getDb();
-      if (db) {
-        try {
-          const doc = await db.collection("portalData").doc(FIREBASE_DOC).get();
-          if (doc.exists) {
-            const data = doc.data() || {};
-            state.customUsers = data.customUsers || {};
-            persistState();
-            if (state.customUsers[token]) {
-              state.currentUser = state.customUsers[token];
-              persistState();
-              document.getElementById("welcomeGate").style.display = "none";
-              document.getElementById("mainSystem").style.display = "block";
-              updateLoginBar();
-              openTab(state.currentUser.role === "admin" ? "list" : "new");
-              return;
-            }
-          }
-        } catch (error) {
-          console.error("Firebase login error:", error);
-        }
-      }
+    function openAccessRequestFromGate() {
+      openTab("access");
+      document.getElementById("mainSystem").style.display = "block";
+      document.getElementById("welcomeGate").style.display = "none";
+    }
 
-      alert("Neplatný přístupový kód.");
+    function showMainSystem() {
+      document.getElementById("welcomeGate").style.display = "none";
+      document.getElementById("mainSystem").style.display = "block";
     }
 
     function logoutUser() {
       state.currentUser = null;
-      localStorage.removeItem("currentUser");
-      document.getElementById("welcomeGate").style.display = "block";
+      persistState();
       document.getElementById("mainSystem").style.display = "none";
+      document.getElementById("welcomeGate").style.display = "block";
       document.getElementById("gateUserToken").value = "";
-      updateLoginBar();
     }
 
-    function readFileAsDataURL(file) {
-      return new Promise((resolve, reject) => {
-        if (!file) return resolve("");
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ""));
-        reader.onerror = () => reject(new Error("Nepodařilo se přečíst soubor."));
-        reader.readAsDataURL(file);
-      });
+    function toggleSubmitButtonByCompliance() {
+      const checked = document.getElementById("complianceCheck").checked;
+      document.getElementById("mainFormSubmitBtn").disabled = !checked;
     }
 
-    function normalizeImageSource(value) {
-      return new Promise((resolve) => {
-        if (!value || !String(value).trim()) return resolve("");
-
-        const src = String(value).trim();
-
-        if (src.startsWith("data:")) return resolve(src);
-
-        if (/^https?:\/\//i.test(src)) {
-          fetch(src, { mode: "cors" })
-            .then(async (response) => {
-              if (!response.ok) return resolve("");
-              const blob = await response.blob();
-              const dataUrl = await readFileAsDataURL(blob);
-              resolve(dataUrl);
-            })
-            .catch(() => resolve(""));
-          return;
-        }
-
-        if (src.startsWith("blob:")) {
-          fetch(src)
-            .then(async (response) => {
-              const blob = await response.blob();
-              resolve(await readFileAsDataURL(blob));
-            })
-            .catch(() => resolve(""));
-          return;
-        }
-
-        resolve(src);
-      });
-    }
-
-    function renderReasonSelect() {
-      const select = document.getElementById("reasonSelect");
-      if (!select) return;
-      const options = state.reasons.map((reason) => `<option value="${reason}">${reason}</option>`).join("");
-      select.innerHTML = options + `<option value="Jiný důvod – dle specifikace">Jiný důvod – dle specifikace</option>`;
-      select.onchange = () => {
-        const wrap = document.getElementById("customReasonWrap");
-        if (wrap) wrap.style.display = select.value === "Jiný důvod – dle specifikace" ? "block" : "none";
+    function handleFormSubmit(event) {
+      event.preventDefault();
+      const request = {
+        id: Date.now(),
+        action: document.getElementById("actionSelect").value,
+        date: document.getElementById("eventDateSelect").value,
+        employee: document.getElementById("employeeName").value,
+        manager: document.getElementById("managerEmail").value,
+        customer: document.getElementById("customerName").value,
+        ticketCount: document.getElementById("ticketCount").value,
+        reason: document.getElementById("reasonSelect").value,
+        status: "pending",
+        submittedAt: new Date().toISOString()
       };
-    }
-
-    function syncActionSelect() {
-      const actionSelect = document.getElementById("actionSelect");
-      const eventDateSelect = document.getElementById("eventDateSelect");
-      if (!actionSelect) return;
-
-      actionSelect.innerHTML = '<option value="">-- Vyberte akci --</option>' + state.companyActions.map((action) => `<option value="${escapeHtml(action.id)}">${escapeHtml(action.name)}</option>`).join("");
-
-      actionSelect.onchange = () => {
-        const selectedAction = state.companyActions.find((action) => String(action.id) === String(actionSelect.value));
-        const dates = selectedAction ? getActionDates(selectedAction) : [];
-        eventDateSelect.innerHTML = dates.map((entry) => `<option value="${escapeHtml(dateEntryKey(entry))}">${formatDate(entry.date)}${entry.time ? ` • ${escapeHtml(entry.time)}` : ""}</option>`).join("");
-        eventDateSelect.onchange = () => updateTicketLimit(selectedAction && selectedAction.name, dates.find((entry) => dateEntryKey(entry) === eventDateSelect.value), document.getElementById("ticketCount"));
-        eventDateSelect.onchange();
-      };
-
-      if (state.companyActions.length) {
-        actionSelect.value = String(state.companyActions[0].id);
-        actionSelect.onchange();
-      } else {
-        eventDateSelect.innerHTML = '<option value="">-- Nejprve vytvořte akci --</option>';
-      }
-    }
-
-    function renderPlannedFilters() {
-      const filtersEl = document.getElementById("plannedFilters");
-      if (!filtersEl) return;
-
-      const choices = [{ id: "all", name: "Vše" }, ...state.filters.filter((filter) => filter.id !== "all")];
-      filtersEl.innerHTML = "";
-
-      choices.forEach((filter) => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = `btn ${state.filterSelection === filter.id ? "primary" : "muted"} small`;
-        btn.textContent = filter.name;
-        btn.onclick = () => {
-          state.filterSelection = filter.id;
-          renderPlannedActions();
-        };
-        filtersEl.appendChild(btn);
-      });
-    }
-
-    function renderPlannedActions() {
-      const grid = document.getElementById("plannedGrid");
-      if (!grid) return;
-
-      const visibleActions = state.companyActions.filter((action) => {
-        if (state.filterSelection !== "all" && action.category !== state.filterSelection && action.subcategory !== state.filterSelection) return false;
-        return true;
-      });
-
-      renderPlannedFilters();
-      grid.innerHTML = "";
-
-      if (!visibleActions.length) {
-        grid.innerHTML = '<div class="empty-state" style="grid-column: 1 / -1;">Žádné aktivní akce pro aktuální filtr.</div>';
-        return;
-      }
-
-      visibleActions.forEach((action) => {
-        const dates = getActionDates(action);
-        const dateText = dates.map((entry) => `${formatDate(entry.date)} ${entry.time || ""}`.trim()).join(" • ");
-        const capacityText = dates.map((entry) => {
-          const capacity = Number(entry.capacity || action.capacity || 0);
-          return `${formatDate(entry.date)}: ${capacity || "—"} / ${getBookedTickets(action.name, entry)} obsazeno`;
-        }).join(" • ");
-
-        const card = document.createElement("div");
-        card.className = "event-card";
-
-        const imageSrc = safeImageUrl(action.image) || "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80";
-
-        card.innerHTML = `
-          <div class="event-badge">${escapeHtml(action.subcategory || action.category || "Akce")}</div>
-          <div class="event-image-wrap"><img src="${escapeHtml(imageSrc)}" alt="${escapeHtml(action.name)}" /></div>
-          <div class="event-body">
-            <span class="event-category">${escapeHtml(action.subcategory || action.category || "Akce")}</span>
-            <div class="event-title">${escapeHtml(action.name)}</div>
-            <div class="event-meta">📍 ${escapeHtml(action.place || "-")}</div>
-            <div class="event-meta">🗓️ ${dateText}</div>
-            <div class="event-meta" title="${escapeHtml(capacityText)}">🎟️ Kapacita: ${escapeHtml(capacityText)}</div>
-            <span class="event-btn" onclick="openReservationModal('${escapeHtml(action.id)}')">Rezervovat</span>
-          </div>
-        `;
-
-        karta.onmouseenter = (e) => zobrazit popisek(e, akce);
-        karta.onmouseleave = skrýt popisek;
-
-        grid.appendChild(karta);
-      });
-    }
-
-    funkce zobrazitTip(událost, akce) {
-      const popisek = document.getElementById("popisek");
-      tooltip.replaceChildren();
-      const název = dokument.createElement("silný");
-      title.textContent = action.name || "Akce";
-      const popis = dokument.createElement("div");
-      description.textContent = action.description || "Popis akce nebyl zadán.";
-      tooltip.append(název, popis);
-      const sourceUrl = safeHttpUrl(akce.sourceUrl);
-      pokud (zdrojováUrl) {
-        const link = document.createElement("a");
-        odkaz.href = zdrojováUrl;
-        odkaz.cíl = "_blank";
-        link.rel = "noopener noreferrer";
-        link.textContent = "Zdroj akce";
-        odkaz.styl.barva = "#fff";
-        tooltip.appendChild(odkaz);
-      }
-      tooltip.style.display = "blok";
-      tooltip.style.left = `${Math.min(event.clientX + 18, window.innerWidth - 340)}px`;
-      tooltip.style.top = `${Math.min(event.clientY + 18, window.innerHeight - 180)}px`;
-    }
-
-    funkce skrýt popisek() {
-      document.getElementById("tooltip").style.display = "none";
-    }
-
-    funkce openReservationModal(actionId) {
-      const akce = stát.firmaAkce.find((a) => Řetězec(a.id) === Řetězec(IdAkce));
-      pokud (!akce) vrátí;
-
-      const data = getActionDates(akce);
-
-      const modal = document.createElement("div");
-      modal.className = "modální-pozadí";
-      modal.innerHTML = `
-        <div class="modal-box">
-          <div class="modal-header">
-            <h2 style="margin:0;">Nová rezervace</h2>
-            <button class="modal-close" type="button" onclick="this.closest('.modal-backdrop').remove()">×</button>
-          </div>
-          <p><strong>${escapeHtml(název akce)</strong> • ${escapeHtml(akce.místo || "-")</p>
-          <div class="field-group">
-            <label class="label" for="reservationDate">Vyberte datum:</label>
-            <select id="Datum rezervace" class="select">
-              ${dates.map((entry) => `<option value="${escapeHtml(dateEntryKey(entry))}">${formatDate(entry.date)}${entry.time ? ` • ${escapeHtml(entry.time)}` : ""}<option>`).join("")}
-            </select>
-          </div>
-          <div class="form-grid">
-            <div class="field-group">
-              <label class="label" for="reservationCustomer">Jméno zákazníka:</label>
-              <input id="rezervationCustomer" class="field" type="text" />
-            </div>
-            <div class="field-group">
-              <label class="label" for="reservationTickets">Počet lístků:</label>
-              <input id="rezervaceVstupenek" class="field" type="číslo" min="1" value="1" />
-            </div>
-            <div class="pole-group full">
-              <label class="label" for="reservationReason">Důvod žádosti:</label>
-              <textarea id="reservationReason" class="textarea"></textarea>
-            </div>
-          </div>
-          <div class="row" style="justify-content:flex-end; margin-top:18px;">
-            <button type="button" class="btn muted" onclick="this.closest('.modal-backdrop').remove()">Zrušit</button>
-            <button type="button" class="btn primary" onclick="submitReservationFromModal('${escapeHtml(action.id)}')">Odeslání rezervace</button>
-          </div>
-        </div>
-      `;
-
-      document.body.appendChild(modální);
-      const dateSelect = modal.querySelector("#DatumRezervace");
-      const ticketInput = modal.querySelector("#rezervaceVstupenek");
-      const updateLimit = () => updateTicketLimit(action.name, dates.find((entry) => dateEntryKey(entry) === dateSelect.value), ticketInput);
-      dateSelect.onchange = updateLimit;
-      aktualizaceLimitu();
-    }
-
-    funkce submitReservationFromModal(actionId) {
-      const akce = stát.firmaAkce.find((a) => Řetězec(a.id) === Řetězec(IdAkce));
-      pokud (!akce) vrátí;
-
-      const dateSelect = document.getElementById("DatumRezervace");
-      const vybranáZáznam = getActionDates(akce).find((záznam) => dateEntryKey(záznam) === dateSelect.hodnota);
-      pokud (!vybranáZáznam) vrátí;
-      const date = vybranáPoložka.date;
-      const zákazník = dokument.getElementById("rezervaceZákazník").value.trim();
-      const vstupenky = Číslo(document.getElementById("rezervaceVstupenek").value || 0);
-      const důvod = dokument.getElementById("DůvodRezervace").hodnota.trim();
-
-      pokud (!zákazník || !lístky || !důvod) {
-        alert("Vyplňte všechna pole pro rezervaci.");
-        návrat;
-      }
-      const kapacita = Číslo(vybranáPoložka.kapacita || akce.kapacita || 0);
-      pokud (kapacita && getBookedTickets(akce.název, vybranáZáznam) + vstupenky > kapacita) {
-        alert("Pro tento termín již není dostatečná kapacita.");
-        návrat;
-      }
-
-      konstantní požadavek = {
-        id: Datum.nyní(),
-        akce: název.akce,
-        Datum_eventDate: datum,
-        eventTime: selectedEntry.time || "",
-        eventSlot: dateEntryKey(selectedEntry),
-        employee: state.currentUser ? state.currentUser.name : "Neznámý",
-        manager: state.currentUser && state.currentUser.email ? state.currentUser.email : "",
-        customer,
-        tickets: String(tickets),
-        reason,
-        status1: "Čeká",
-        status2: "Čeká",
-        approvedBy1: "",
-        approvedBy2: "",
-        applicantEmail: state.currentUser ? state.currentUser.email || "" : "",
-        createdAt: new Date().toISOString()
-      };
-
       state.requests.push(request);
       persistState();
       syncToFirebase();
-      document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
-      openTab("list");
-      alert("Žádost o rezervaci byla úspěšně odeslána.");
-    }
-
-    function renderRequestsTable() {
-      const tbody = document.getElementById("requestsTableBody");
-      if (!tbody) return;
-      tbody.innerHTML = "";
-
-      if (!state.requests.length) {
-        tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state">Žádné žádosti.</div></td></tr>';
-        return;
-      }
-
-      const filtered = state.requests.filter((request) => {
-        if (!state.currentUser) return true;
-        if (state.currentUser.role === "applicant") return (request.employee || "").toLowerCase() === (state.currentUser.name || "").toLowerCase();
-        if (state.currentUser.role === "manager") return (request.manager || "").toLowerCase() === (state.currentUser.email || "").toLowerCase();
-        return true;
-      });
-
-      if (!filtered.length) {
-        tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state">Žádné žádosti pro aktuálního uživatele.</div></td></tr>';
-        return;
-      }
-
-      filtered.forEach((request) => {
-        const s1 = request.status1 || "Čeká";
-        const s2 = request.status2 || "Čeká";
-        const p1 = s1 === "Schváleno" ? "status-schvaleno" : s1 === "Zamítnuto" ? "status-zamitnuto" : "status-cekajici";
-        const p2 = s2 === "Schváleno" ? "status-schvaleno" : s2 === "Zamítnuto" ? "status-zamitnuto" : s2 === "Náhradník" ? "status-nahradnik" : "status-cekajici";
-
-        const isFirstApprover = state.currentUser && (state.currentUser.role === "manager" || state.currentUser.role === "admin") && (request.manager || "").toLowerCase() === (state.currentUser.email || "").toLowerCase();
-        const isSecondApprover = state.currentUser && (state.currentUser.role === "rsm_praha" || state.currentUser.role === "admin");
-
-        let actionHtml = "-";
-        if (state.currentUser && state.currentUser.role !== "applicant") {
-          const actions = [];
-          if (isFirstApprover) {
-            actions.push(`<button class="small-btn success" onclick="setStatus1(${request.id}, 'Schváleno')">Ano</button>`, `<button class="small-btn danger" onclick="setStatus1(${request.id}, 'Zamítnuto')">Ne</button>`);
-          }
-          if (isSecondApprover) {
-            actions.push(`<button class="small-btn success" onclick="setStatus2(${request.id}, 'Schváleno')">2× Ano</button>`, `<button class="small-btn danger" onclick="setStatus2(${request.id}, 'Zamítnuto')">2× Ne</button>`);
-          }
-          actionHtml = actions.length ? `<div class="action-box">${actions.join("")}</div>` : "-";
-        }
-
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td><strong>${escapeHtml(request.action || "-")}</strong></td>
-          <td>${escapeHtml(formatRequestTerm(request))}</td>
-          <td>${escapeHtml(request.employee || "-")}</td>
-          <td>${escapeHtml(request.customer || "-")}</td>
-          <td>${request.tickets || 0}</td>
-          <td><span class="status-pill ${p1}">${s1}</span></td>
-          <td><span class="status-pill ${p2}">${s2}</span></td>
-          <td>${escapeHtml(request.reason || "-")}</td>
-          <td>${actionHtml}</td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
-
-    function setStatus1(id, status) {
-      state.requests = state.requests.map((req) => String(req.id) === String(id) ? { ...req, status1: status, approvedBy1: state.currentUser ? state.currentUser.name : "" } : req);
-      persistState();
-      syncToFirebase();
-      renderRequestsTable();
-      renderSmartTiles();
-    }
-
-    function setStatus2(id, status) {
-      state.requests = state.requests.map((req) => String(req.id) === String(id) ? { ...req, status2: status, approvedBy2: state.currentUser ? state.currentUser.name : "" } : req);
-      persistState();
-      syncToFirebase();
-      renderRequestsTable();
-      renderSmartTiles();
-    }
-
-    function exportCurrentTable() {
-      const rows = state.requests.map((req) => ({
-        "Akce": req.action || "",
-        "Termín": `${req.eventDate || req.date || ""} ${req.eventTime || ""}`.trim(),
-        "Žadatel": req.employee || "",
-        "Zákazník": req.customer || "",
-        "Počet": req.tickets || "",
-        "Důvod": req.reason || "",
-        "1. schválení": req.status1 || "",
-        "2. schválení": req.status2 || "",
-        "E-mail": req.applicantEmail || ""
-      }));
-
-      konstanta csv =
-        [
-          Object.keys(řádky[0] || { "Akce": "", "Termín": "", "Žadatel": "", "Zákazník": "", "Počet": "", "Důvod": "", "1. schválení": "", "2. schválení": "", "E-mail": "" }),
-          ...rows.map((řádek) => Objekt.hodnoty(řádek))
-        ].map((hodnoty) => hodnoty.map((hodnota) => `"${String(hodnota).replace(/"/g, '""')}"`).join(",")).join("\n");
-
-      const blob = new Blob(["\uFEFF" + csv], { typ: "text/csv; charset=utf-8;" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "export_zadosti.csv";
-      a.click();
-      URL.revokeObjectURL(a.href);
-    }
-
-    funkce exportFiltrovanýchPožadavků() {
-      const dotaz = document.getElementById("exportNameInput").value.trim().toLowerCase();
-      const filtrováno = state.requests.filter((req) => {
-        pokud (!dotaz) vrátí true;
-        vrátit [požad.zaměstnanec, požad.zákazník, požad.akce, požad.manažer, požad.emailuchazeče].některé((hodnota) => (hodnota || "").toLowerCase().includes(dotaz));
-      });
-
-      konstanta csv = [
-        ["Akce", "Datum", "Žadatel", "Zákazník", "Počet", "Důvod", "1. schválení", "2. schválení"],
-        ...filtered.map((req) => [req.action || "", `${req.eventDate || req.date || ""} ${req.eventTime || ""}`.trim(), req.employee || "", req.customer || "", String(req.tickets || ""), req.reason || "", req.status1 || "", req.status2 || ""])
-      ].map((řádek) => řádek.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
-
-      const blob = new Blob(["\uFEFF" + csv], { typ: "text/csv; charset=utf-8;" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `export_${query || "vsechny"}.csv`;
-      a.click();
-      URL.revokeObjectURL(a.href);
-    }
-
-    funkce renderSmartTiles() {
-      const container = document.getElementById("chytré dlaždice");
-      pokud (!kontejner) vrátí;
-
-      const total = state.requests.length;
-      const čekání = state.requests.filter((r) => (r.status1 || "Čeká") === "Čeká" || (r.status2 || "Čeká") === "Čeká").délka;
-      const schválené = state.requests.filter((r) => (r.status1 || "Čeká") === "Schváleno" && (r.status2 || "Čeká") === "Schváleno").délka;
-      const zamítnuta = state.requests.filter((r) => (r.status1 || "Čeká") === "Zamítnuto" || (r.status2 || "Čeká") === "Zamítnuto").délka;
-
-      konstantní dlaždice = [
-        { label: "Vytvořené žádosti", hodnota: celkem, tón: "red", poznámka: "Celkem v systému" },
-        { label: "Čeká na schválení", hodnota: čekání, tón: "jantar", poznámka: "K zpracování" },
-        { štítek: "Schválené", hodnota: schváleno, tón: "zelená", poznámka: "Ke dni akce" },
-        { label: "Zamítnuté", hodnota: zamítnuto, tón: "modrá", poznámka: "Nesouhlas" }
-      ];
-
-      container.innerHTML = dlaždice.map((dlaždice) => `
-        <div class="tile" data-tone="${tile.tone}" onclick="filterRequestsByTile('${tile.label}')">
-          <div class="tile-label">${tile.label}
-          <div class="tile-value">${tile.value</div>
-          <div class="tile-sub">${tile.note</div>
-        </div>
-      `).připojit("");
-    }
-
-    funkce filterRequestsByTile(label) {
-      const filtrováno = state.requests.filter((req) => {
-        if (label === "Vytvořené žádosti") return true;
-        if (label === "Čeká na schválení") return (req.status1 || "Čeká") === "Čeká" || (req.status2 || "Čeká") === "Čeká";
-        if (label === "Schválené") return (req.status1 || "Čeká") === "Schváleno" && (req.status2 || "Čeká") === "Schváleno";
-        if (label === "Zamítnuté") return (req.status1 || "Čeká") === "Zamítnuto" || (req.status2 || "Čeká") === "Zamítnuto";
-        vrátit true;
-      });
-
-      const tbody = document.getElementById("těloTablePožadavky");
-      pokud (!tbody) vrátí;
-
-      tbody.innerHTML = filtered.length ? filtered.map((req) => `
-        <tr>
-          <td><strong>${escapeHtml(req.action || "-")</strong></td>
-          <td>${escapeHtml(formatRequestTerm(req))</td>
-          <td>${escapeHtml(req.employee || "-")</td>
-          <td>${escapeHtml(req.customer || "-")</td>
-          <td>${req.tickets || 0</td>
-          <td><span class="status-pill ${(req.status1 || "Čeká") === "Schváleno" ? "status-schvaleno" : (req.status1 || "Čeká") === "Zamítnuto" ? "status-zamitnuto" : "status-cekajici".}">$1 "Čeká"}</span></td>
-          <td><span class="status-pill ${(req.status2 || "Čeká") === "Schváleno" ? "status-schvaleno" : (req.status2 || "Čeká") === "Zamítnuto" ? "status-zamitnuto" : "status-cekajici".}">$ "Čeká"}</span></td>
-          <td>${escapeHtml(req.reason || "-")</td>
-          <td>—</td>
-        </tr>
-      `).join("") : '<tr><td colspan="9"><div class="empty-state">Žádné žádosti pro tento filtr.</div></td></tr>';
-    }
-
-    funkce handleFormSubmit(událost) {
-      událost.preventDefault();
-
-      const ID_akce = dokument.getElementById("Vybrat_akci").hodnota;
-      const vybranáAkce = stát.firmaAkce.find((akce) => Řetězec(akce.id) === Řetězec(IdAkce));
-      const vybranáPoložka = vybranáAkce && getDatumyAkcí(vybranáAkce)
-        .find((záznam) => dateEntryKey(záznam) === document.getElementById("eventDateSelect").value);
-      const zaměstnanec = dokument.getElementById("JménoZaměstnance").hodnota.trim();
-      const manager = document.getElementById("managerEmail").value.trim().toLowerCase();
-      const zákazník = dokument.getElementById("JménoZákazníka").hodnota.trim();
-      const lístky = Číslo(document.getElementById("počet_lístků").value || 0);
-      const VýběrDůvodu = dokument.getElementById("VýběrDůvodu").hodnota;
-      const customReason = document.getElementById("customReason").value.trim();
-
-      pokud (!selectedAction || !selectedEntry || !employee || !manažer || !zákazník || !tickets || !reasonSelect) {
-        alert("Vyplňte všechna povinná pole.");
-        návrat;
-      }
-      const kapacita = Číslo(vybranáPoložka.kapacita || vybranáAkce.kapacita || 0);
-      pokud (kapacita && getBookedTickets(vybranáAkce.název, vybranáZáznam) + lístky > kapacita) {
-        alert("Pro tento termín již není dostatečná kapacita.");
-        návrat;
-      }
-
-      const finalReason = reasonSelect === "Jiný důvod – dle specifikace" && customReason ? customReason: důvodSelect;
-
-      konstantní požadavek = {
-        id: Datum.nyní(),
-        akce: vybranáAkce.název,
-        datum: vybranáZáznam.datum,
-        Datum_eventu: vybraný_záznam.datum,
-        Čas_event: selectedEntry.time || "",
-        eventSlot: dateEntryKey(vybranáPoložka),
-        zaměstnanec,
-        manažer,
-        zákazník,
-        lístky: Řetězec(lístky),
-        důvod: konečnýDůvod,
-        status1: "Čeká",
-        status2: "Čeká",
-        schváleno1: "",
-        schválenoBy2: "",
-        E-mail žadatele: stát.aktuálníUživatel ? e-mail státu.aktuálníUživatele || "" : "",
-        vytvořeno v: nové datum().toISOSTring()
-      };
-
-      stav.požadavky.push(požadavek);
-      persistState();
-      synchronizovatToFirebase();
+      alert("Žádost byla odeslána");
       document.getElementById("ticketForm").reset();
-      renderSmartTiles();
-      otevřítTab("seznam");
-      alert("Žádost o rezervaci byla úspěšně odeslána!");
     }
 
-    funkce handleRoleRequestSubmit(událost) {
-      událost.preventDefault();
-      const název = document.getElementById("Název_požadavky").value.trim();
-      const email = document.getElementById("reqEmail").value.trim().toLowerCase();
-      const role = document.getElementById("reqRole").value;
-
-      pokud (!jméno || !e-mail || !role) {
-        alert("Vyplňte všechna pole.");
-        návrat;
-      }
-
-      state.roleRequests.push({ id: Date.now(), jméno, e-mail, role });
-      persistState();
-      synchronizovatToFirebase();
-      událost.cíl.reset();
-      renderAdminSections();
-      alert("Žádost byla odeslána ke schválení.");
-    }
-
-    funkce schválitPožadavekNaRoli(id) {
-      const target = state.roleRequests.find((r) => String(r.id) === String(id));
-      pokud (!cíl) vrátí;
-
-      nechť token = "";
-      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-      pro (nechť i = 0; i < 5; i++) token += chars[Math.floor(Math.random() * chars.length)];
-
-      state.customUsers[token] = { jméno: target.name, e-mail: target.email, role: target.role };
-      state.roleRequests = state.roleRequests.filter((r) => String(r.id) !== String(id));
-
-      persistState();
-      synchronizovatToFirebase();
-      renderAdminSections();
-      alert(`Přístup povolen. Vygenerovaný kód: ${token}`);
-    }
-
-    funkce odmítnoutPožadavekRole(id) {
-      state.roleRequests = state.roleRequests.filter((r) => String(r.id) !== String(id));
-      persistState();
-      synchronizovatToFirebase();
-      renderAdminSections();
-    }
-
-    funkce deleteActiveUser(token) {
-      smazat stav.customUsers[token];
-      persistState();
-      synchronizovatToFirebase();
-      renderAdminSections();
-    }
-
-    asynchronní funkce handleCreateActionSubmit(událost) {
-      událost.preventDefault();
-
-      const název = document.getElementById("actNewName").value.trim();
-      const kategorie = dokument.getElementById("actNewCategory").hodnota;
-      const date = document.getElementById("actNewDate").value;
-      const čas = dokument.getElementById("actNewTime").hodnota;
-      const místo = dokument.getElementById("actNewPlace").hodnota.trim();
-      const kapacita = Číslo(document.getElementById("actNewCapacity").value || 0);
-      const inputUrl = document.getElementById("actNewImage").value.trim();
-      const imageDataUrl = await normalizeImageSource(inputUrl || "");
-      const fileInput = document.getElementById("actNewImageFile");
-      nechť finalImage = imageDataUrl;
-
-      pokud (fileInput && fileInput.soubory && fileInput.soubory[0]) {
-        finalImage = čeká na čteníSouboruAsDataURL(fileInput.files[0]);
-      }
-
-      pokud (!jméno || !kategorie || !datum || !čas || !místo || !kapacita) {
-        alert("Vyplňte všechna pole pro vytvoření akce.");
-        návrat;
-      }
-
-      stát.firmaAkce.push({
-        id: Datum.nyní(),
-        jméno,
-        kategorie,
-        datum,
-        čas,
-        místo,
-        kapacita,
-        obrázek: finálníObrázek || "",
-        popis: document.getElementById("actNewDescription").value.trim(),
-        status: "Aktivní",
-        dates: [{ date, time }]
-      });
-
+    function handleRoleRequestSubmit(event) {
+      event.preventDefault();
+      const roleRequest = {
+        id: Date.now(),
+        name: document.getElementById("reqName").value,
+        email: document.getElementById("reqEmail").value,
+        role: document.getElementById("reqRole").value,
+        status: "pending",
+        submittedAt: new Date().toISOString()
+      };
+      state.roleRequests.push(roleRequest);
       persistState();
       syncToFirebase();
+      alert("Žádost o přístup byla odeslána");
       event.target.reset();
-      renderAdminSections();
-      renderPlannedActions();
-      syncActionSelect();
-      alert("Akce byla vytvořena.");
     }
 
-    function deleteAction(id) {
-      state.companyActions = state.companyActions.filter((a) => String(a.id) !== String(id));
+    function handleCreateActionSubmit(event) {
+      event.preventDefault();
+      const action = {
+        id: Date.now(),
+        name: document.getElementById("actNewName").value,
+        category: document.getElementById("actNewCategory").value,
+        date: document.getElementById("actNewDate").value,
+        time: document.getElementById("actNewTime").value,
+        place: document.getElementById("actNewPlace").value,
+        capacity: document.getElementById("actNewCapacity").value,
+        image: document.getElementById("actNewImage").value,
+        description: document.getElementById("actNewDescription").value,
+        createdAt: new Date().toISOString()
+      };
+      state.companyActions.push(action);
       persistState();
       syncToFirebase();
-      renderAdminSections();
-      renderPlannedActions();
-      syncActionSelect();
-    }
-
-    function renderFilterList() {
-      const list = document.getElementById("filterList");
-      if (!list) return;
-      list.innerHTML = "";
-
-      state.filters.filter((f) => f.id !== "all").forEach((filter) => {
-        const row = document.createElement("div");
-        row.style.display = "flex";
-        row.style.justifyContent = "space-between";
-        row.style.alignItems = "center";
-        row.style.gap = "8px";
-        row.style.padding = "10px 12px";
-        row.style.border = "1px solid var(--border)";
-        row.style.borderRadius = "10px";
-        row.style.marginBottom = "8px";
-
-        row.innerHTML = `
-          <span>${filter.name}</span>
-          <div class="action-box">
-            <button class="small-btn ${filter.active === false ? "muted" : "success"}" onclick="toggleFilter('${filter.id}')">${filter.active === false ? "Skryt" : "Zobrazit"}</button>
-            <button class="small-btn danger" onclick="deleteFilter('${filter.id}')">Smazat</button>
-          </div>
-        `;
-        list.appendChild(row);
-      });
-    }
-
-    function addFilter() {
-      const input = document.getElementById("newFilterInput");
-      const value = input.value.trim();
-      if (!value) return;
-
-      if (!state.filters.some((f) => f.name.toLowerCase() === value.toLowerCase())) {
-        state.filters.push({ id: value, name: value, active: true });
-        persistState();
-        syncToFirebase();
-        input.value = "";
-        renderAdminSections();
-        renderPlannedActions();
-      }
-    }
-
-    function toggleFilter(filterId) {
-      state.filters = state.filters.map((filter) => filter.id === filterId ? { ...filter, active: !(filter.active === false) } : filter);
-      persistState();
-      syncToFirebase();
-      renderAdminSections();
-      renderPlannedActions();
-    }
-
-    function deleteFilter(filterId) {
-      state.filters = state.filters.filter((filter) => filter.id !== filterId && filter.id !== "all");
-      persistState();
-      syncToFirebase();
-      renderAdminSections();
-      renderPlannedActions();
-    }
-
-    function renderReasonList() {
-      const list = document.getElementById("reasonList");
-      if (!list) return;
-      list.innerHTML = "";
-
-      state.reasons.forEach((reason) => {
-        const row = document.createElement("div");
-        row.style.display = "flex";
-        row.style.justifyContent = "space-between";
-        row.style.alignItems = "center";
-        row.style.gap = "8px";
-        row.style.padding = "10px 12px";
-        row.style.border = "1px solid var(--border)";
-        row.style.borderRadius = "10px";
-        row.style.marginBottom = "8px";
-
-        row.innerHTML = `
-          <span>${reason}</span>
-          <button class="small-btn danger" onclick="deleteReason('${reason.replace(/'/g, "\\'")}')">Smazat</button>
-        `;
-        list.appendChild(row);
-      });
-    }
-
-    function addReason() {
-      const input = document.getElementById("newReasonInput");
-      const value = input.value.trim();
-      if (!value) return;
-
-      if (!state.reasons.includes(value)) {
-        state.reasons.push(value);
-        persistState();
-        syncToFirebase();
-        input.value = "";
-        renderReasonList();
-        renderReasonSelect();
-      }
-    }
-
-    function deleteReason(reason) {
-      state.reasons = state.reasons.filter((item) => item !== reason);
-      persistState();
-      syncToFirebase();
-      renderReasonList();
-      renderReasonSelect();
+      alert("Akce byla vytvořena");
+      event.target.reset();
     }
 
     function saveAssistantConfig() {
-      const name = document.getElementById("assistantNameInput").value.trim() || "Asistent";
-      const icon = document.getElementById("assistantIconInput").value.trim() || "🤖";
-      const image = document.getElementById("assistantImageInput").value.trim();
-
-      state.assistant = { name, icon, image };
+      state.assistant = {
+        name: document.getElementById("assistantNameInput").value,
+        icon: document.getElementById("assistantIconInput").value,
+        image: document.getElementById("assistantImageInput").value
+      };
       persistState();
       syncToFirebase();
-      renderAssistantPreview();
-      updateWelcomeGate();
-      alert("Nastavení asistenta bylo uloženo.");
+      alert("Nastavení asistenta bylo uloženo");
+      renderUI();
     }
 
-    function renderRoleRequestsTable() {
-      const tbody = document.getElementById("roleRequestsTableBody");
-      if (!tbody) return;
-      tbody.innerHTML = "";
-
-      if (!state.roleRequests.length) {
-        tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state">Žádné čekající žádosti.</div></td></tr>';
-        return;
+    function addFilter() {
+      const name = document.getElementById("newFilterInput").value.trim();
+      if (name) {
+        state.filters.push({ id: name, name: name, active: true });
+        persistState();
+        syncToFirebase();
+        document.getElementById("newFilterInput").value = "";
+        renderUI();
       }
-
-      state.roleRequests.forEach((r) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${r.name}</td>
-          <td>${r.email}</td>
-          <td>${getRoleLabel(r.role)}</td>
-          <td>
-            <div class="action-box">
-              <button class="small-btn success" onclick="approveRoleRequest(${r.id})">Povolit</button>
-              <button class="small-btn danger" onclick="rejectRoleRequest(${r.id})">Zamítnout</button>
-            </div>
-          </td>
-        `;
-        tbody.appendChild(row);
-      });
     }
 
-    function renderUsersTable() {
-      const tbody = document.getElementById("activeUsersTableBody");
-      if (!tbody) return;
-      tbody.innerHTML = "";
-
-      const entries = Object.entries(state.customUsers);
-      if (!entries.length) {
-        tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">Zatím nebyl vydán žádný kód.</div></td></tr>';
-        return;
+    function addReason() {
+      const reason = document.getElementById("newReasonInput").value.trim();
+      if (reason && !state.reasons.includes(reason)) {
+        state.reasons.push(reason);
+        persistState();
+        syncToFirebase();
+        document.getElementById("newReasonInput").value = "";
+        renderUI();
       }
-
-      entries.forEach(([token, user]) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${user.name || "-"}</td>
-          <td>${user.email || "-"}</td>
-          <td>${getRoleLabel(user.role)}</td>
-          <td>${token}</td>
-          <td><button class="small-btn danger" onclick="deleteActiveUser('${token}')">Deaktivovat</button></td>
-        `;
-        tbody.appendChild(row);
-      });
     }
 
-    function renderActionTable() {
-      const tbody = document.getElementById("adminActionsTableBody");
-      if (!tbody) return;
-      tbody.innerHTML = "";
-
-      if (!state.companyActions.length) {
-        tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">Žádné akce zatím neexistují.</div></td></tr>';
-        return;
-      }
-
-      state.companyActions.forEach((action) => {
-        const dates = getActionDates(action);
-        const dateText = dates.map((entry) => `${formatDate(entry.date)} ${entry.time || ""}`.trim()).map(escapeHtml).join("<br>");
-        const capacityText = dates.map((entry) => {
-          const capacity = Number(entry.capacity || action.capacity || 0);
-          return `${formatDate(entry.date)}: ${capacity || "—"} / ${getBookedTickets(action.name, entry)} obsazeno`;
-        }).map(escapeHtml).join("<br>");
-        const sourceUrl = safeHttpUrl(action.sourceUrl);
-
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td><strong>${escapeHtml(action.name)}</strong><br><small>${escapeHtml(action.place || "-")}</small>${sourceUrl ? `<br><a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Zdroj</a>` : ""}</td>
-          <td>${escapeHtml(action.category || "-")}</td>
-          <td>${dateText}</td>
-          <td>${capacityText}</td>
-          <td><button class="small-btn danger" onclick="deleteAction(${action.id})">Smazat</button></td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
-
-    function populateCategorySelect() {
-      const target = document.getElementById("actNewCategory");
-      if (!target) return;
-      const categories = state.filters.filter((item) => item.id !== "all");
-      target.innerHTML = categories.map((item) => `<option value="${item.id}">${item.name}</option>`).join("") || '<option value="">Bez kategorie</option>';
-    }
-
-    function renderAdminSections() {
-      const proxyInput = document.getElementById("o2ProxyUrl");
-      if (proxyInput) proxyInput.value = state.o2ProxyUrl;
-      renderFilterList();
-      renderReasonList();
-      renderAssistantPreview();
-      renderRoleRequestsTable();
-      renderUsersTable();
-      renderActionTable();
-      populateCategorySelect();
-    }
-
-    function renderAll() {
-      updateLoginBar();
-      updateWelcomeGate();
-      renderAssistantPreview();
-      renderReasonSelect();
-      syncActionSelect();
-      renderSmartTiles();
-      renderPlánovanéAkce();
-      renderRequestsTable();
-      renderAdminSections();
-      přepnoutOdeslatTlačítkoPodleSouladu();
-    }
-
-    funkce nastaveníPwa() {
-      const instalační_tlačítko = document.getElementById("instalační_tlačítko");
-      const banner = document.getElementById("installBanner");
-      pokud (!installBtn || !banner) vrátí;
-
-      window.addEventListener("předinstalačnímvýzvom", (event) => {
-        událost.preventDefault();
-        state.installPrompt = událost;
-        banner.classList.add("zobrazit");
+    function renderUI() {
+      if (!state.currentUser) return;
+      
+      document.getElementById("loggedName").textContent = state.currentUser.name || "Uživatel";
+      document.getElementById("loggedRole").textContent = state.currentUser.role || "N/A";
+      
+      // Render action select
+      const actionSelect = document.getElementById("actionSelect");
+      actionSelect.innerHTML = "";
+      state.companyActions.forEach(action => {
+        const option = document.createElement("option");
+        option.value = action.id;
+        option.textContent = action.name;
+        actionSelect.appendChild(option);
       });
 
-      installBtn.addEventListener("kliknutí", async() => {
-        pokud (!state.installPrompt) vrátí;
-        state.installPrompt.prompt();
-        čekat na stav.installPrompt.userChoice;
-        state.installPrompt = null;
-        banner.classList.remove("zobrazit");
+      // Render reason select
+      const reasonSelect = document.getElementById("reasonSelect");
+      reasonSelect.innerHTML = "";
+      state.reasons.forEach(reason => {
+        const option = document.createElement("option");
+        option.value = reason;
+        option.textContent = reason;
+        reasonSelect.appendChild(option);
       });
 
-      pokud (window.matchMedia("(režim zobrazení: samostatný)").matches) {
-        banner.classList.remove("zobrazit");
+      // Render admin tab
+      if (state.currentUser.role === "admin" || state.currentUser.token === masterAdminToken) {
+        document.getElementById("btn-admin").style.display = "block";
+        renderAdminPanel();
       }
     }
 
-    funkce nastaveníServiceWorker() {
-      if ("serviceWorker" v navigátoru) {
-        window.addEventListener("načíst", () => {
-          navigator.serviceWorker.register("service-worker.js").catch((error) => console.error("Registrace servisního workera selhala:", error));
-        });
-      }
+    function renderAdminPanel() {
+      // Render filters
+      const filterList = document.getElementById("filterList");
+      filterList.innerHTML = state.filters.map(f => 
+        `<div style="padding:8px; background:#f1f5f9; border-radius:8px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+          ${f.name}
+          <button class="small-btn danger" onclick="removeFilter('${f.id}')">Smazat</button>
+        </div>`
+      ).join("");
+
+      // Render reasons
+      const reasonList = document.getElementById("reasonList");
+      reasonList.innerHTML = state.reasons.map((r, i) => 
+        `<div style="padding:8px; background:#f1f5f9; border-radius:8px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+          ${r}
+          <button class="small-btn danger" onclick="removeReason(${i})">Smazat</button>
+        </div>`
+      ).join("");
     }
 
-    funkce init() {
-      try { firebase.initializeApp(firebaseConfig); } catch (e) {}
-      loadState();
-      renderAll();
-      polština();
-      setupPwa();
-      setupServiceWorker();
-
-      pokud (stav.aktuálníUživatel) {
-        document.getElementById("welcomeGate").style.display = "none";
-        document.getElementById("mainSystem").style.display = "blok";
-        aktualizaceLoginBar();
-        openTab(stav.currentUser.role === "admin" ? "seznam" : "nový");
-      }
-
-      načístZFirebase();
+    function removeFilter(id) {
+      state.filters = state.filters.filter(f => f.id !== id);
+      persistState();
+      syncToFirebase();
+      renderAdminPanel();
     }
 
-    okno.handleFormSubmit = handleFormSubmit;
-    window.loginUserFromGate = přihlášeníUserFromGate;
-    okno.otevřítPožadavekPřístupZBrány = otevřítPožadavekPřístupZBrány;
-    okno.odhlášeníUživatele = odhlášeníUživatele;
-    okno.otevřítZáložku = otevřítZáložku;
-    window.toggleSubmitButtonByCompliance = přepnoutSubmitByCompliance;
-    window.handleRoleRequestSubmit = handleRoleRequestSubmit;
-    window.schválitPožadavekNaRoli = schválitPožadavekNaRoli;
-    window.rejectRoleRequest = odmítnoutRoleRequest;
-    okno.smazatAktivníUživatel = smazatAktivníUživatel;
-    window.handleCreateActionSubmit = handleCreateActionSubmit;
-    window.saveAssistantConfig = uložitAssistantConfig;
-    okno.přidatFiltr = přidatFiltr;
-    okno.přepnoutFiltr = přepnoutFiltr;
-    okno.smazatFiltr = smazatFiltr;
-    okno.přidatDůvod = přidatDůvod;
-    okno.deleteReason = deleteReason;
-    okno.smazatAkce = smazatAkce;
-    window.setStatus1 = setStatus1;
-    window.setStatus2 = setStatus2;
-    okno.filterPožadavkyPodleDlaždice = filtrPožadavkyPodleDlaždice;
-    okno.exportAktuálníTabulka = exportAktuálníTabulka;
-    okno.exportFiltrovanýchPožadavek = exportFiltrovanýchPožadavek;
-    okno.otevřítModalRezervace = otevřítModalRezervace;
-    okno.odoslatRezervaciZModalu = odeslatRezervaciZModalu;
+    function removeReason(index) {
+      state.reasons.splice(index, 1);
+      persistState();
+      syncToFirebase();
+      renderAdminPanel();
+    }
 
-    document.addEventListener("DOMContentLoaded", init);
+    function exportCurrentTable() {
+      alert("Export funkce zatím není implementována");
+    }
+
+    function exportFilteredRequests() {
+      alert("Export filtrované tabulky zatím není implementován");
+    }
+
+    function importO2Events() {
+      alert("Import z O2 areny zatím není implementován");
+    }
+
+    function parseManualO2Events() {
+      alert("Ruční zpracování zatím není implementováno");
+    }
+
+    function importSelectedO2Events() {
+      alert("Import vybraných akcí zatím není implementován");
+    }
   </script>
 </body>
 </html>
