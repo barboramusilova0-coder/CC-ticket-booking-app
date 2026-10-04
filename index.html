@@ -1105,9 +1105,11 @@
 
     function o2DatesInText(value) {
       const text = String(value || "");
-      const matches = text.match(/\b(?:20\d{2}-\d{1,2}-\d{1,2}(?!\d)|\d{1,2}\s*[./]\s*\d{1,2}\s*[./]\s*20\d{2}\b)/g) || [];
+      const datePattern = /\b(?:20\d{2}-\d{1,2}-\d{1,2}(?!\d)|\d{1,2}\s*[./]\s*\d{1,2}\s*[./]\s*20\d{2}\b)/;
+      const matches = text.match(new RegExp(datePattern.source, "g")) || [];
       const dates = [...new Set(matches.map(normalizeO2Date).filter(Boolean))];
-      if (dates.length !== 2 || !/\s[-–—]\s/.test(text)) return dates;
+      const rangePattern = new RegExp(`${datePattern.source}\\s*[-–—]\\s*${datePattern.source}`);
+      if (dates.length !== 2 || !rangePattern.test(text)) return dates;
       const start = new Date(`${dates[0]}T00:00:00Z`);
       const end = new Date(`${dates[1]}T00:00:00Z`);
       const count = Math.round((end - start) / 86400000);
