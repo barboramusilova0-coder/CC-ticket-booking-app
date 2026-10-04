@@ -765,21 +765,21 @@
               <button class="btn success" onclick="addReason()">Přidat důvod</button>
               <div id="reasonList" style="margin-top:14px;"></div>
             </div>
-            <div class="section-box" style="padding:18px; margin:0 0 16px;">
+            <div class="section-box" id="cc-o2-import" style="padding:18px; margin:0 0 16px;">
               <h3>🌐 Import akcí z O2 areny</h3>
               <div class="field-group">
                 <label class="label" for="o2ProxyUrl">URL CORS proxy:</label>
                 <input id="o2ProxyUrl" class="field" type="url" placeholder="https://api.allorigins.win/raw?url=" />
               </div>
-              <button class="btn primary" type="button" onclick="importO2Events()">Importovat akce z O2 areny</button>
+              <button class="btn primary" id="cc-o2-fetch" type="button" onclick="importO2Events()">Načíst akce z O2 arena</button>
               <div class="field-group" style="margin-top:14px;">
-                <label class="label" for="o2ManualInput">Náhradní vstup HTML nebo JSON:</label>
-                <textarea id="o2ManualInput" class="textarea" placeholder="Vložte HTML stránky nebo JSON s akcemi"></textarea>
+                <label class="label" for="cc-o2-paste">Ruční záloha: vložte HTML nebo JSON stránky O2 arena.</label>
+                <textarea id="cc-o2-paste" class="textarea" placeholder="Vložte HTML stránky nebo JSON s akcemi"></textarea>
               </div>
-              <button class="btn muted" type="button" onclick="parseManualO2Events()">Načíst vložený HTML/JSON</button>
-              <div id="o2ImportMessage" role="status" style="margin-top:10px;"></div>
-              <div id="o2ImportPreview" style="margin-top:14px;"></div>
-              <button id="o2ImportSelectedBtn" class="btn success" type="button" onclick="importSelectedO2Events()" style="display:none; margin-top:12px;">Importovat vybrané</button>
+              <button class="btn muted" id="cc-o2-parse2" type="button" onclick="parseManualO2Events()">Zpracovat vložený obsah</button>
+              <div id="cc-o2-status" role="status" style="margin-top:10px;"></div>
+              <div id="cc-o2-preview" style="margin-top:14px;"></div>
+              <button id="cc-o2-save2" class="btn success" type="button" onclick="importSelectedO2Events()" style="display:none; margin-top:12px;">Přidat vybrané akce</button>
             </div>
           </div>
 
@@ -936,6 +936,11 @@
       o2ProxyUrl: "https://api.allorigins.win/raw?url="
     };
     let pendingO2Events = [];
+    const O2_DIRECT = "https://www.o2arena.cz/program/";
+    const O2_PROXIES = [
+      () => `https://r.jina.ai/${O2_DIRECT}`,
+      () => `https://api.allorigins.win/raw?url=${encodeURIComponent(O2_DIRECT)}`
+    ];
 
     function safeJsonParse(value, fallback) {
       try { return value ? JSON.parse(value) : fallback; } catch (e) { return fallback; }
@@ -1086,8 +1091,8 @@
 
     function normalizeO2Date(value) {
       const raw = String(value || "").trim();
-      const iso = raw.match(/\b(20\d{2})-(\d{2})-(\d{2})(?!\d)/);
-      if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+      const iso = raw.match(/\b(20\d{2})-(\d{1,2})-(\d{1,2})(?!\d)/);
+      if (iso) return `${iso[1]}-${iso[2].padStart(2, "0")}-${iso[3].padStart(2, "0")}`;
       const czech = raw.match(/\b(\d{1,2})\s*[./]\s*(\d{1,2})\s*[./]\s*(20\d{2})\b/);
       if (!czech) return "";
       return `${czech[3]}-${czech[2].padStart(2, "0")}-${czech[1].padStart(2, "0")}`;
@@ -1096,6 +1101,20 @@
     function normalizeO2Time(value) {
       const match = String(value || "").match(/(?:^|\D)([01]?\d|2[0-3])[:.]([0-5]\d)(?!\d)/);
       return match ? `${match[1].padStart(2, "0")}:${match[2]}` : "";
+    }
+
+    function o2DatesInText(value) {
+      const text = String(value || "");
+      const datePattern = /\b(?:20\d{2}-\d{1,2}-\d{1,2}(?!\d)|\d{1,2}\s*[./]\s*\d{1,2}\s*[./]\s*20\d{2}\b)/;
+      const matches = text.match(new RegExp(datePattern.source, "g")) || [];
+      const dates = [...new Set(matches.map(normalizeO2Date).filter(Boolean))];
+      const rangePattern = new RegExp(`${datePattern.source}\\s*[-–—]\\s*${datePattern.source}`);
+      if (dates.length !== 2 || !rangePattern.test(text)) return dates;
+      const start = new Date(`${dates[0]}T00:00:00Z`);
+      const end = new Date(`${dates[1]}T00:00:00Z`);
+      const count = Math.round((end - start) / 86400000);
+      if (count < 0 || count > 90) return dates;
+      return Array.from({ length: count + 1 }, (_, index) => new Date(start.getTime() + index * 86400000).toISOString().slice(0, 10));
     }
 
     function categoryForO2Event(value) {
@@ -1116,31 +1135,59 @@
     function normalizeO2Event(event, sourceUrl) {
       const name = String(event.name || event.title || event.eventName || "").trim();
       if (!name) return null;
-      const detailUrl = safeHttpUrl(event.url || event.link || event.detailUrl || sourceUrl) || "https://www.o2arena.cz/events/";
+      const detailUrl = safeHttpUrl(event.url || event.link || event.detailUrl || sourceUrl) || O2_DIRECT;
       const rawDates = Array.isArray(event.dates) ? event.dates : [event.dates || event.date || event.startDate || event.datetime || "", event.endDate || ""];
-      const dates = rawDates.map((value) => {
+      const dates = rawDates.flatMap((value, index) => {
         const dateValue = typeof value === "object" && value ? value.date || value.datetime || value.startDate : value;
         const timeValue = typeof value === "object" && value ? value.time || value.startTime : event.time || event.startTime;
-        const date = normalizeO2Date(dateValue);
-        return date ? { date, time: normalizeO2Time(timeValue || dateValue), capacity: Number(value && value.capacity || event.capacity || 10) } : null;
-      }).filter(Boolean);
+        const dateValues = event.endDate && index === 0 && !Array.isArray(event.dates)
+          ? o2DatesInText(`${dateValue || ""} – ${event.endDate}`)
+          : o2DatesInText(dateValue);
+        return dateValues.map((date) => ({ date, time: normalizeO2Time(timeValue || dateValue), capacity: Number(value && value.capacity || event.capacity || 10) }));
+      });
       const uniqueDates = dates.filter((entry, index) => dates.findIndex((other) => dateEntryKey(other) === dateEntryKey(entry)) === index);
       if (!uniqueDates.length) return null;
-      const category = ensureActionCategory(categoryForO2Event(event.category || event.genre || `${name} ${event.description || ""}`));
+      const subcategory = categoryForO2Event(`${event.category || ""} ${event.genre || ""} ${name} ${event.description || ""}`);
+      const category = ensureActionCategory("O2 Arena");
+      ensureActionCategory(subcategory);
+      const imageValue = event.image || event.imageUrl || event.thumbnail || event.poster || "";
+      const image = Array.isArray(imageValue) ? imageValue[0] : imageValue;
       return {
         id: Date.now() + Math.floor(Math.random() * 1000000),
         name,
         category,
+        subcategory,
         date: uniqueDates[0].date,
         time: uniqueDates[0].time,
         dates: uniqueDates,
         place: String(event.place || event.venue || event.location && (event.location.name || event.location.address) || "O2 arena"),
         capacity: uniqueDates[0].capacity || 10,
-        image: safeImageUrl(Array.isArray(event.image) ? event.image[0] : event.image || event.imageUrl || event.thumbnail || "") || "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80",
+        image: safeImageUrl(typeof image === "object" && image ? image.url || image.contentUrl : image) || "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80",
         description: String(event.description || event.summary || "").trim(),
         sourceUrl: detailUrl,
         status: "Aktivní"
       };
+    }
+
+    function mergeO2Events(events) {
+      const merged = [];
+      const byName = new Map();
+      events.forEach((event) => {
+        const key = String(event.name || "").trim().toLocaleLowerCase("cs-CZ");
+        if (!key || !byName.has(key)) {
+          if (key) byName.set(key, event);
+          merged.push(event);
+          return;
+        }
+        const existing = byName.get(key);
+        const dates = getActionDates(existing).concat(getActionDates(event));
+        existing.dates = dates.filter((entry, index) => dates.findIndex((other) => dateEntryKey(other) === dateEntryKey(entry)) === index);
+        existing.date = existing.dates[0]?.date || existing.date;
+        existing.time = existing.dates[0]?.time || existing.time;
+        if (!existing.description) existing.description = event.description;
+        if ((!existing.image || existing.image.includes("photo-1511578314322")) && event.image) existing.image = event.image;
+      });
+      return merged;
     }
 
     function o2EventsFromJson(value, sourceUrl) {
@@ -1148,11 +1195,11 @@
       const events = Array.isArray(value) ? value : value.events || value.items
         || (Array.isArray(data) ? data : data && (data.events || data.items))
         || (value && (value.name || value.title || value.eventName) ? [value] : []);
-      return Array.isArray(events) ? events.map((event) => normalizeO2Event(event, sourceUrl)).filter(Boolean) : [];
+      return Array.isArray(events) ? mergeO2Events(events.map((event) => normalizeO2Event(event, sourceUrl)).filter(Boolean)) : [];
     }
 
     function parseO2Events(input) {
-      const sourceUrl = "https://www.o2arena.cz/events/";
+      const sourceUrl = O2_DIRECT;
       try {
         const data = JSON.parse(input);
         const events = o2EventsFromJson(data, sourceUrl);
@@ -1160,6 +1207,8 @@
       } catch (error) {}
 
       const documentHtml = new DOMParser().parseFromString(input, "text/html");
+      const pageImage = safeImageUrl(documentHtml.querySelector('meta[property="og:image"], meta[name="twitter:image"]')?.content || "");
+      const pageDescription = documentHtml.querySelector('meta[property="og:description"], meta[name="description"]')?.content || "";
       const structuredEvents = [];
       documentHtml.querySelectorAll("script[type='application/ld+json']").forEach((script) => {
         try {
@@ -1181,7 +1230,13 @@
           collect(JSON.parse(script.textContent));
         } catch (error) {}
       });
-      if (structuredEvents.length) return structuredEvents;
+      if (structuredEvents.length) {
+        if (structuredEvents.length === 1) {
+          if (!structuredEvents[0].image || structuredEvents[0].image.includes("photo-1511578314322")) structuredEvents[0].image = pageImage || structuredEvents[0].image;
+          if (!structuredEvents[0].description) structuredEvents[0].description = pageDescription;
+        }
+        return mergeO2Events(structuredEvents);
+      }
       const candidates = [...documentHtml.querySelectorAll("article, [class*='event-card'], [class*='event-item'], [class*='event-tile']")];
       if (!candidates.length) {
         documentHtml.querySelectorAll("a[href]").forEach((link) => {
@@ -1202,112 +1257,219 @@
         const dateNodes = [...card.querySelectorAll("time, [datetime], [data-date]")];
         const dates = dateNodes.map((node) => {
           const text = `${node.getAttribute("datetime") || ""} ${node.getAttribute("data-date") || ""} ${node.textContent || ""}`;
-          const date = normalizeO2Date(text);
-          return date ? { date, time: normalizeO2Time(`${text} ${node.getAttribute("content") || ""}`) } : null;
-        }).filter(Boolean);
+          return o2DatesInText(text).map((date) => ({ date, time: normalizeO2Time(`${text} ${node.getAttribute("content") || ""}`) }));
+        }).flat();
         if (!dates.length) {
           const text = card.textContent || "";
-          const matches = text.match(/\b(?:20\d{2}-\d{1,2}-\d{1,2}|\d{1,2}\s*[./]\s*\d{1,2}\s*[./]\s*20\d{2})(?:\s*(?:od|•|,)?\s*[0-2]?\d[:.][0-5]\d)?/g) || [];
-          matches.forEach((match) => {
-            const date = normalizeO2Date(match);
-            if (date) dates.push({ date, time: normalizeO2Time(match) });
-          });
+          const datePattern = /\b(?:20\d{2}-\d{1,2}-\d{1,2}(?!\d)|\d{1,2}\s*[./]\s*\d{1,2}\s*[./]\s*20\d{2}\b)/;
+          const rangePattern = new RegExp(`${datePattern.source}\\s*[-–—]\\s*${datePattern.source}`);
+          if (rangePattern.test(text)) {
+            o2DatesInText(text).forEach((date) => dates.push({ date, time: normalizeO2Time(text) }));
+          } else {
+            const matches = text.match(/\b(?:20\d{2}-\d{1,2}-\d{1,2}(?!\d)|\d{1,2}\s*[./]\s*\d{1,2}\s*[./]\s*20\d{2}\b)(?:\s*(?:od|•|,)?\s*[0-2]?\d[:.][0-5]\d)?/g) || [];
+            matches.forEach((match) => o2DatesInText(match).forEach((date) => dates.push({ date, time: normalizeO2Time(match) })));
+          }
         }
-        const descriptionNode = card.querySelector("[class*='description'], [class*='excerpt'], p");
+        const descriptionNode = card.querySelector("[itemprop='description'], [class*='description'], [class*='excerpt'], p");
+        const imageUrl = image && (image.getAttribute("src") || image.getAttribute("data-src") || image.getAttribute("data-lazy-src") || (image.getAttribute("srcset") || "").split(",")[0].trim().split(/\s+/)[0]);
         const event = normalizeO2Event({
           name,
           category: card.getAttribute("data-category") || "",
           dates,
-          description: descriptionNode ? descriptionNode.textContent.trim() : "",
-          image: image && (image.getAttribute("src") || image.getAttribute("data-src")),
+          description: descriptionNode ? descriptionNode.textContent.trim() : card.getAttribute("data-description") || "",
+          image: imageUrl || (candidates.length === 1 ? pageImage : ""),
           url: detailUrl,
           place: "O2 arena"
         }, sourceUrl);
         if (event) imported.push(event);
       });
-      return imported;
+      if (!imported.length) {
+        const lines = String(input || "").replace(/<[^>]+>/g, "\n").split(/\n+/).map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
+        for (let index = 0; index < lines.length; index++) {
+          const heading = lines[index].match(/^#{1,6}\s+(.+)$/);
+          if (!heading) continue;
+          const dateLine = lines.slice(Math.max(0, index - 5), index).reverse().find((line) => o2DatesInText(line).length);
+          if (!dateLine) continue;
+          const dates = o2DatesInText(dateLine).map((date) => ({ date, time: normalizeO2Time(dateLine) }));
+          const event = normalizeO2Event({
+            name: heading[1],
+            dates,
+            description: lines[index + 1] || pageDescription,
+            image: pageImage,
+            url: sourceUrl
+          }, sourceUrl);
+          if (event) imported.push(event);
+        }
+      }
+      return mergeO2Events(imported);
     }
 
     function areO2EventsDuplicates(first, second) {
-      if (first.sourceUrl && first.sourceUrl === second.sourceUrl
-        && first.sourceUrl !== "https://www.o2arena.cz/events/") return true;
-      if ((first.name || "").trim().toLocaleLowerCase("cs-CZ") !== (second.name || "").trim().toLocaleLowerCase("cs-CZ")) return false;
-      const dates = getActionDates(first).map((entry) => entry.date);
-      return getActionDates(second).some((entry) => dates.includes(entry.date));
+      return (first.name || "").trim().toLocaleLowerCase("cs-CZ")
+        === (second.name || "").trim().toLocaleLowerCase("cs-CZ");
     }
 
     function isDuplicateO2Event(event) {
       return state.companyActions.some((action) => areO2EventsDuplicates(action, event));
     }
 
-    function showO2EventsPreview(events) {
+    function acts() {
+      return Array.isArray(state.companyActions) ? state.companyActions : [];
+    }
+
+    function saveActs(actions) {
+      state.companyActions = actions;
+      persistState();
+      syncToFirebase();
+      renderAll();
+    }
+
+    function renderO2(box, events, label) {
       pendingO2Events = events;
-      const preview = document.getElementById("o2ImportPreview");
-      const button = document.getElementById("o2ImportSelectedBtn");
-      const message = document.getElementById("o2ImportMessage");
+      const preview = box.querySelector("#cc-o2-preview");
+      const button = box.querySelector("#cc-o2-save2");
+      const message = box.querySelector("#cc-o2-status");
       preview.replaceChildren();
+      button.disabled = false;
       button.style.display = events.length ? "inline-flex" : "none";
-      message.textContent = events.length ? `Nalezeno akcí: ${events.length}. Zkontrolujte výběr před uložením.` : "Nepodařilo se najít žádné akce. Zkuste vložit HTML nebo JSON ručně.";
+      if (!events.length) {
+        preview.innerHTML = '<div class="empty-state">Web se načetl, ale nepodařilo se rozpoznat akce. Zkuste vložit obsah ručně.</div>';
+        message.textContent = "0 akcí";
+        return;
+      }
+      const heading = document.createElement("div");
+      heading.style.margin = "10px 0 7px";
+      heading.innerHTML = `<b>Nalezeno ${events.length} akcí</b> ze ${escapeHtml(label)}. Vyberte, které chcete importovat.`;
+      preview.appendChild(heading);
+      const table = document.createElement("table");
+      table.innerHTML = "<thead><tr><th></th><th>Datum</th><th>Čas</th><th>Akce</th><th>Typ</th></tr></thead><tbody></tbody>";
+      const body = table.querySelector("tbody");
       events.forEach((event, index) => {
         const duplicate = isDuplicateO2Event(event);
-        const row = document.createElement("label");
-        row.style.display = "flex";
-        row.style.gap = "10px";
-        row.style.alignItems = "flex-start";
-        row.style.padding = "10px";
-        row.style.borderBottom = "1px solid var(--border)";
+        const row = document.createElement("tr");
+        const dates = getActionDates(event).map((entry) => `${formatDate(entry.date)} ${entry.time || ""}`.trim()).join(", ");
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.checked = !duplicate;
         checkbox.disabled = duplicate;
         checkbox.dataset.eventIndex = String(index);
-        const content = document.createElement("span");
-        content.textContent = `${event.name} • ${event.dates.map((entry) => `${formatDate(entry.date)} ${entry.time}`.trim()).join(", ")}${duplicate ? " • již importováno" : ""}`;
-        row.append(checkbox, content);
-        preview.appendChild(row);
+        const cells = [
+          document.createElement("td"),
+          document.createElement("td"),
+          document.createElement("td"),
+          document.createElement("td"),
+          document.createElement("td")
+        ];
+        cells[0].appendChild(checkbox);
+        cells[1].textContent = dates;
+        cells[2].textContent = event.time || "";
+        cells[3].textContent = event.name;
+        cells[4].textContent = event.subcategory || "O2 Arena";
+        if (duplicate) cells[3].textContent += " (již importováno)";
+        cells.forEach((cell) => row.appendChild(cell));
+        body.appendChild(row);
       });
+      preview.appendChild(table);
+      message.textContent = `Načteno ${events.length} akcí.`;
+    }
+
+    function showO2EventsPreview(events, label) {
+      const box = document.getElementById("cc-o2-import");
+      if (box) renderO2(box, events, label || "vloženého obsahu");
+    }
+
+    async function tryUrl(url, timeout) {
+      const controller = window.AbortController ? new AbortController() : null;
+      const timer = controller ? setTimeout(() => controller.abort(), timeout) : null;
+      try {
+        const response = await fetch(url, {
+          method: "GET",
+          mode: "cors",
+          cache: "no-store",
+          signal: controller ? controller.signal : undefined
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.text();
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
+    }
+
+    function parseO2Any(raw) {
+      return parseO2Events(raw);
     }
 
     async function importO2Events() {
       const proxyInput = document.getElementById("o2ProxyUrl");
       state.o2ProxyUrl = proxyInput.value.trim() || "https://api.allorigins.win/raw?url=";
       localStorage.setItem("o2CorsProxyUrl", state.o2ProxyUrl);
-      try {
-        const proxyUrl = state.o2ProxyUrl.includes("{url}")
-          ? state.o2ProxyUrl.replace("{url}", encodeURIComponent("https://www.o2arena.cz/events/"))
-          : `${state.o2ProxyUrl}${state.o2ProxyUrl.endsWith("=") ? "" : state.o2ProxyUrl.includes("?") ? "&url=" : "?url="}${encodeURIComponent("https://www.o2arena.cz/events/")}`;
-        const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const html = await response.text();
-        const events = parseO2Events(html);
-        if (!events.length) throw new Error("Stránka neobsahuje rozpoznatelné akce");
-        showO2EventsPreview(events);
-      } catch (error) {
-        document.getElementById("o2ImportMessage").textContent = `Načtení přes proxy selhalo (${error.message}). Vložte HTML/JSON ručně do pole níže.`;
+      const configuredProxy = state.o2ProxyUrl.includes("{url}")
+        ? state.o2ProxyUrl.replace("{url}", encodeURIComponent(O2_DIRECT))
+        : `${state.o2ProxyUrl}${state.o2ProxyUrl.endsWith("=") ? "" : state.o2ProxyUrl.includes("?") ? "&url=" : "?url="}${encodeURIComponent(O2_DIRECT)}`;
+      const sources = [{ name: "O2 arena", url: O2_DIRECT }]
+        .concat(O2_PROXIES.map((makeUrl, index) => ({ name: `automatická záloha ${index + 1}`, url: makeUrl() })))
+        .concat([{ name: "nastavená proxy", url: configuredProxy }])
+        .filter((source, index, all) => all.findIndex((item) => item.url === source.url) === index);
+      const status = document.getElementById("cc-o2-status");
+      status.textContent = "Zkouším načíst O2 arena…";
+      for (const source of sources) {
+        try {
+          const events = parseO2Any(await tryUrl(source.url, 9000));
+          if (events.length) {
+            renderO2(document.getElementById("cc-o2-import"), events, source.name);
+            return;
+          }
+        } catch (error) {}
       }
+      status.textContent = "Automatické načtení je blokované nebo nebyly rozpoznány žádné akce. Použijte ruční pole níže.";
     }
 
     function parseManualO2Events() {
-      const events = parseO2Events(document.getElementById("o2ManualInput").value.trim());
-      showO2EventsPreview(events);
+      const events = parseO2Any(document.getElementById("cc-o2-paste").value.trim());
+      renderO2(document.getElementById("cc-o2-import"), events, "vloženého obsahu");
     }
 
     function importSelectedO2Events() {
+      const box = document.getElementById("cc-o2-import");
+      const status = box.querySelector("#cc-o2-status");
       const selected = [];
-      document.querySelectorAll("#o2ImportPreview input[type='checkbox']:checked").forEach((checkbox) => {
+      box.querySelectorAll("#cc-o2-preview input[type='checkbox']:checked").forEach((checkbox) => {
         const event = pendingO2Events[Number(checkbox.dataset.eventIndex)];
         if (event && !isDuplicateO2Event(event) && !selected.some((selectedEvent) => areO2EventsDuplicates(selectedEvent, event))) selected.push(event);
       });
       if (!selected.length) {
-        document.getElementById("o2ImportMessage").textContent = "Vyberte alespoň jednu novou akci.";
+        status.textContent = "Vyberte alespoň jednu novou akci.";
         return;
       }
-      state.companyActions.push(...selected);
-      persistState();
-      syncToFirebase();
-      renderAll();
-      showO2EventsPreview(pendingO2Events);
-      document.getElementById("o2ImportMessage").textContent = `Importováno akcí: ${selected.length}.`;
+      selected.forEach((event, index) => { event.id = Date.now() + index + Math.floor(Math.random() * 1000); });
+      saveActs(acts().concat(selected));
+      status.textContent = `Import dokončen: přidáno ${selected.length} nových akcí.`;
+      box.querySelectorAll("input[type='checkbox']").forEach((checkbox) => { checkbox.disabled = true; });
+      box.querySelector("#cc-o2-save2").disabled = true;
+      try { if (typeof actionManager === "function") actionManager(); } catch (error) {}
+    }
+
+    function patchO2Box() {
+      const box = document.getElementById("cc-o2-import");
+      if (!box || box.dataset.importPatched === "1") return;
+      box.dataset.importPatched = "1";
+      box.querySelector("#cc-o2-fetch").onclick = importO2Events;
+      box.querySelector("#cc-o2-parse2").onclick = parseManualO2Events;
+      box.querySelector("#cc-o2-save2").onclick = importSelectedO2Events;
+      const source = document.createElement("div");
+      source.className = "cc-o2-source";
+      source.textContent = "Zdroj: ";
+      const link = document.createElement("a");
+      link.href = O2_DIRECT;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "O2 arena – Program";
+      source.append(link, document.createTextNode(". Při blokování načtení použijte ruční zálohu."));
+      box.appendChild(source);
+    }
+
+    function polish() {
+      patchO2Box();
     }
 
     function updateLoginBar() {
@@ -1561,7 +1723,7 @@
       if (!grid) return;
 
       const visibleActions = state.companyActions.filter((action) => {
-        if (state.filterSelection !== "all" && action.category !== state.filterSelection) return false;
+        if (state.filterSelection !== "all" && action.category !== state.filterSelection && action.subcategory !== state.filterSelection) return false;
         return true;
       });
 
@@ -1587,10 +1749,10 @@
         const imageSrc = safeImageUrl(action.image) || "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80";
 
         card.innerHTML = `
-          <div class="event-badge">${escapeHtml(action.category || "Akce")}</div>
+          <div class="event-badge">${escapeHtml(action.subcategory || action.category || "Akce")}</div>
           <div class="event-image-wrap"><img src="${escapeHtml(imageSrc)}" alt="${escapeHtml(action.name)}" /></div>
           <div class="event-body">
-            <span class="event-category">${escapeHtml(action.category || "Akce")}</span>
+            <span class="event-category">${escapeHtml(action.subcategory || action.category || "Akce")}</span>
             <div class="event-title">${escapeHtml(action.name)}</div>
             <div class="event-meta">📍 ${escapeHtml(action.place || "-")}</div>
             <div class="event-meta">🗓️ ${dateText}</div>
@@ -2334,6 +2496,7 @@
       try { firebase.initializeApp(firebaseConfig); } catch (e) {}
       loadState();
       renderAll();
+      polish();
       setupPwa();
       setupServiceWorker();
 
