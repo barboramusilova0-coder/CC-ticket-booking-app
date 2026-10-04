@@ -2056,7 +2056,7 @@
       ];
 
       const csv = '\uFEFF' + rows.map((row) => row.map((cell) => {
-        const value = String(cell ?? '').replace(/^([=+\-@])/, "'$1");
+        const value = String(cell ?? '').replace(/^(\s*[=+\-@])/, "'$1");
         return '"' + value.replace(/"/g, '""') + '"';
       }).join(';')).join('\r\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
