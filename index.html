@@ -445,6 +445,14 @@
   </div>
 
   <div class="panel">
+    <h3>Synchronizace dat</h3>
+    <p style="color: var(--muted); margin-bottom: 0;">
+      Lokální data zůstávají uložena. Cloudová synchronizace zachovává původní záznamy a načte Firebase konfiguraci z hostingu,
+      pokud je dostupná jako <code>window.CC_FIREBASE_CONFIG</code>.
+    </p>
+  </div>
+
+  <div class="panel">
     <h3>Notifikace (příprava integrace)</h3>
     <p style="color: var(--muted); margin-bottom: 0;">
       Nová rezervace a žádost o přístup předávají událost backendu pro soukromý Teams kanál;
@@ -841,6 +849,11 @@
     const NOTIFICATION_ENDPOINT = '';
     const PROBLEM_NOTIFICATION_EMAIL = 'barbora.musilova@cchellenic.com';
     const DEFAULT_REQUEST_REASONS = ['Obchodní schůzka se zákazníkem', 'Péče o zákazníka', 'Jiný důvod – dle specifikace'];
+    const FIREBASE_DOCUMENT = 'cocaColaDatabase';
+    let firebaseDatabase = null;
+    let firebaseSyncLoading = null;
+    let isApplyingRemoteSync = false;
+    let lastSyncedPayload = '';
 
     const DEFAULT_ADMIN = {
       id: 'admin-default',
@@ -908,6 +921,7 @@
       } else {
         localStorage.removeItem(STORAGE_KEYS.currentUser);
       }
+      if (!isApplyingRemoteSync) syncToFirebase();
     }
 
     function getRoleLabel(role) {
@@ -957,6 +971,152 @@
         notifyEmail: PROBLEM_NOTIFICATION_EMAIL,
         teamsChannel: 'admin-private'
       });
+    }
+
+    function mergeById(current, incoming) {
+      const records = new Map((current || []).filter((item) => item && item.id != null).map((item) => [String(item.id), item]));
+      (incoming || []).filter((item) => item && item.id != null).forEach((item) => {
+        records.set(String(item.id), { ...records.get(String(item.id)), ...item });
+      });
+      return [...records.values()];
+    }
+
+    function mergeFirebaseUsers(incoming) {
+      const usersByEmail = new Map((state.users || []).filter((user) => user?.email).map((user) => [user.email.toLowerCase(), user]));
+      (incoming || []).filter((user) => user?.email).forEach((user) => {
+        const email = user.email.toLowerCase();
+        const localUser = usersByEmail.get(email);
+        usersByEmail.set(email, { ...localUser, ...user, password: localUser?.password || user.password || '' });
+      });
+      state.users = [...usersByEmail.values()];
+    }
+
+    function legacyFirebaseData(data) {
+      const actions = Array.isArray(data.companyActions) ? data.companyActions : [];
+      const requests = Array.isArray(data.ticketRequests) ? data.ticketRequests : [];
+      const users = Object.entries(data.customUsers || {}).map(([id, user]) => ({ ...user, id: user.id || id, password: '' }));
+      const normalizeStatus = (status) => {
+        const value = String(status || 'čeká').toLowerCase();
+        if (value.includes('schvál')) return 'schváleno';
+        if (value.includes('zamítn')) return 'zamítnuto';
+        return 'čeká';
+      };
+      return {
+        users,
+        roleRequests: Array.isArray(data.roleRequests) ? data.roleRequests : [],
+        actions,
+        ticketRequests: requests.map((request) => {
+          const status1 = normalizeStatus(request.status1);
+          const status2 = normalizeStatus(request.status2);
+          const action = actions.find((item) => item.name === request.action);
+          const date = request.requestedEventDate || request.eventDate || request.date || '';
+          const slot = getActionDates(action || {}).find((item) => item.date === date);
+          return {
+            ...request,
+            requestedEventDate: date,
+            requestedEventTime: request.requestedEventTime || slot?.time || '',
+            applicantName: request.applicantName || request.employee || '',
+            managerEmail: request.managerEmail || request.manager || '',
+            customerName: request.customerName || request.customer || '',
+            count: request.count || request.tickets || 0,
+            requestedBy: request.requestedBy || request.applicantEmail || '',
+            status1,
+            status2,
+            reservationStatus: status1 === 'zamítnuto' || status2 === 'zamítnuto' ? 'zamítnuto'
+              : status1 === 'schváleno' && status2 === 'schváleno' ? 'schváleno' : 'čeká'
+          };
+        }),
+        categories: (data.ccFilters || []).map((filter) => filter.name || filter.id).filter((name) => name && name !== 'Vše'),
+        reasons: data.ccReasons,
+        chatProfiles: data.ccAssistant ? [{ ...state.chatProfiles[0], ...data.ccAssistant, id: state.chatProfiles[0]?.id || 'female' }] : []
+      };
+    }
+
+    function applyFirebaseData(data) {
+      const incoming = data.ccPortalV2 || legacyFirebaseData(data);
+      isApplyingRemoteSync = true;
+      mergeFirebaseUsers(incoming.users);
+      state.roleRequests = localStorage.getItem(STORAGE_KEYS.roleRequests)
+        ? mergeById(state.roleRequests, incoming.roleRequests)
+        : (incoming.roleRequests || state.roleRequests);
+      state.ticketRequests = localStorage.getItem(STORAGE_KEYS.ticketRequests)
+        ? mergeById(state.ticketRequests, incoming.ticketRequests)
+        : (incoming.ticketRequests || state.ticketRequests);
+      state.actions = localStorage.getItem(STORAGE_KEYS.actions)
+        ? mergeById(state.actions, incoming.actions)
+        : (incoming.actions?.length ? incoming.actions : state.actions);
+      if (Array.isArray(incoming.categories)) state.categories = [...new Set(['Nezařazeno', ...state.categories, ...incoming.categories])];
+      if (Array.isArray(incoming.reasons)) state.reasons = [...new Set([...state.reasons, ...incoming.reasons])];
+      if (Array.isArray(incoming.chatProfiles) && incoming.chatProfiles.length) {
+        state.chatProfiles = mergeById(state.chatProfiles, incoming.chatProfiles);
+      }
+      if (state.currentUser) {
+        state.currentUser = state.users.find((user) => user.email.toLowerCase() === state.currentUser.email.toLowerCase()) || state.currentUser;
+      }
+      persist();
+      isApplyingRemoteSync = false;
+      syncToFirebase();
+      updateUserHeader();
+      renderActions();
+      renderRequestsTable();
+      renderAdminSection();
+    }
+
+    function syncToFirebase() {
+      if (!firebaseDatabase || isApplyingRemoteSync) return;
+      const stateForSync = {
+        users: state.users.map(({ password, ...user }) => user),
+        roleRequests: state.roleRequests,
+        ticketRequests: state.ticketRequests,
+        actions: state.actions,
+        chatProfiles: state.chatProfiles,
+        categories: state.categories,
+        reasons: state.reasons
+      };
+      const payload = JSON.stringify(stateForSync);
+      if (payload === lastSyncedPayload) return;
+      lastSyncedPayload = payload;
+      firebaseDatabase.collection('portalData').doc(FIREBASE_DOCUMENT)
+        .set({ ccPortalV2: JSON.parse(payload) }, { merge: true })
+        .catch((error) => {
+          lastSyncedPayload = '';
+          console.error('Firebase sync error:', error);
+        });
+    }
+
+    function initializeFirebaseSync() {
+      // Hosting may define window.CC_FIREBASE_CONFIG; never place admin tokens or passwords here.
+      const config = window.CC_FIREBASE_CONFIG;
+      if (!config || !config.apiKey || !config.projectId) return;
+      const start = () => {
+        try {
+          if (!firebase.apps.length) firebase.initializeApp(config);
+          firebaseDatabase = firebase.firestore();
+          firebaseDatabase.collection('portalData').doc(FIREBASE_DOCUMENT).onSnapshot((snapshot) => {
+            if (snapshot.exists) applyFirebaseData(snapshot.data() || {});
+            else syncToFirebase();
+          }, (error) => console.error('Firebase sync listener error:', error));
+        } catch (error) {
+          console.error('Firebase initialization failed:', error);
+        }
+      };
+      if (window.firebase?.firestore) {
+        start();
+        return;
+      }
+      if (!firebaseSyncLoading) {
+        const loadScript = (src) => new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = src;
+          script.onload = resolve;
+          script.onerror = () => reject(new Error('Firebase SDK could not be loaded.'));
+          document.head.appendChild(script);
+        });
+        firebaseSyncLoading = loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js')
+          .then(() => loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js'))
+          .then(start)
+          .catch((error) => console.error('Firebase sync is unavailable:', error));
+      }
     }
 
     function openTab(tabNumber) {
@@ -2018,6 +2178,7 @@
       setupInstallPrompt();
 
       document.getElementById('settingsButton').addEventListener('click', openSettingsModal);
+      initializeFirebaseSync();
 
       if (state.currentUser) {
         showSystem();
