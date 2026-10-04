@@ -407,8 +407,50 @@
 <tbody id="activeUsersTableBody"></tbody>
 </table>
 </div>
+<div class="box-section" id="cc-teams-panel">
+<h3>💬 Teams notifikace</h3>
+<p>Nastavení webhooku a testovací zpráva.</p>
+<div class="form-group">
+<label for="ccTeamsWebhookInput">Webhook URL</label>
+<input id="ccTeamsWebhookInput" type="url" autocomplete="off" placeholder="https://..."/>
+</div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+<button type="button" id="ccTeamsSaveBtn" class="btn-submit" style="width: auto; padding: 10px 20px;">Uložit URL</button>
+<button type="button" id="ccTeamsClearBtn" class="btn-submit" style="width: auto; padding: 10px 20px; background: #dc3545;">Smazat URL</button>
+<button type="button" id="ccTeamsTestBtn" class="btn-submit" style="width: auto; padding: 10px 20px; background: #17a2b8;">Testovat</button>
+</div>
+<p id="ccTeamsStatus" role="status" style="margin-top: 10px;"></p>
 </div>
 </div>
+<script>
+(function () {
+    function initTeamsPanel() {
+        var input = document.getElementById('ccTeamsWebhookInput');
+        var status = document.getElementById('ccTeamsStatus');
+        if (!input) return;
+        try { input.value = localStorage.getItem('teamsWebhookUrl') || ''; } catch (e) {}
+        function say(msg) { if (status) status.textContent = msg; }
+        document.getElementById('ccTeamsSaveBtn').onclick = function () {
+            var r = window.saveTeamsWebhookUrl ? window.saveTeamsWebhookUrl(input.value) : { ok: false, message: 'Teams funkce není dostupná.' };
+            say(r.ok ? 'Webhook URL uložena.' : r.message);
+        };
+        document.getElementById('ccTeamsClearBtn').onclick = function () {
+            var r = window.saveTeamsWebhookUrl ? window.saveTeamsWebhookUrl('') : { ok: false, message: 'Teams funkce není dostupná.' };
+            if (r.ok) input.value = '';
+            say(r.ok ? 'Webhook URL byla smazána.' : r.message);
+        };
+        document.getElementById('ccTeamsTestBtn').onclick = async function () {
+            if (!window.saveTeamsWebhookUrl || !window.sendTeamsNotification) { say('Teams funkce není dostupná.'); return; }
+            var r = window.saveTeamsWebhookUrl(input.value);
+            if (!r.ok) { say(r.message); return; }
+            say('Odesílám testovací zprávu…');
+            var ok = await window.sendTeamsNotification('test', { name: (currentUser && currentUser.name) || 'Administrátor' });
+            say(ok ? 'Testovací zpráva byla odeslána.' : 'Odeslání se nezdařilo. Zkontrolujte URL a připojení.');
+        };
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initTeamsPanel); else initTeamsPanel();
+})();
+</script>
 <script>
     const masterAdminToken = "Magnolie27"; 
     let customUsers = JSON.parse(localStorage.getItem('customUsers')) || {};
@@ -4179,7 +4221,7 @@ function hideOldAdmin(){
   var tab=document.getElementById('tab4'); if(!tab)return;
   tab.classList.add('cc-admin-rebuilt');
   var legacy=document.getElementById('cc-admin-legacy');
-  if(!legacy){legacy=document.createElement('div');legacy.id='cc-admin-legacy';while(tab.firstChild)legacy.appendChild(tab.firstChild);tab.appendChild(legacy)}
+  if(!legacy){legacy=document.createElement('div');legacy.id='cc-admin-legacy';var teamsPanel=document.getElementById('cc-teams-panel');while(tab.firstChild)legacy.appendChild(tab.firstChild);tab.appendChild(legacy);if(teamsPanel)tab.appendChild(teamsPanel)}
   var oldFinal=document.getElementById('cc-final-admin-settings');if(oldFinal)oldFinal.remove();
 }
 
