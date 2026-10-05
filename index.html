@@ -29,7 +29,45 @@
         approval:{title:'Žádost o přístup schválena',color:'28A745'},
         rejection:{title:'Žádost o přístup zamítnuta',color:'DC2626'},
         new_reservation:{title:'Nová žádost o rezervaci',color:'00A4EF'},
+        chatbot_issue:{title:'Problém z chatbota',color:'F59E0B'},
         test:{title:'Testovací zpráva',color:'64748B'}
+      };
+      var PREFS_KEY='teamsNotificationPrefs';
+      var DEFAULT_PREFS={registration:true,chatbot_issues:true,other_events:false};
+      var TYPE_CATEGORY={new_registration:'registration',chatbot_issue:'chatbot_issues',approval:'other_events',rejection:'other_events',new_reservation:'other_events'};
+      function loadPrefs(){
+        var prefs={registration:DEFAULT_PREFS.registration,chatbot_issues:DEFAULT_PREFS.chatbot_issues,other_events:DEFAULT_PREFS.other_events},saved=null;
+        try{saved=JSON.parse(localStorage.getItem(PREFS_KEY)||'null');}catch(e){}
+        if(saved&&typeof saved==='object'){Object.keys(prefs).forEach(function(k){if(typeof saved[k]==='boolean')prefs[k]=saved[k];});}
+        window.teamsNotificationPrefs=prefs;
+        return prefs;
+      }
+      window.teamsNotificationPrefs=loadPrefs();
+      window.saveTeamsNotificationPrefs=function(prefs){
+        var next=loadPrefs();
+        Object.keys(next).forEach(function(k){if(prefs&&typeof prefs[k]==='boolean')next[k]=prefs[k];});
+        window.teamsNotificationPrefs=next;
+        try{localStorage.setItem(PREFS_KEY,JSON.stringify(next));return {ok:true};}
+        catch(e){return {ok:false,message:'Nastavení se nepodařilo uložit.'};}
+      };
+      window.isTeamsNotificationEnabled=function(type){
+        var category=TYPE_CATEGORY[type];
+        if(!category)return true;
+        return !!loadPrefs()[category];
+      };
+      window.renderTeamsPrefsControls=function(container){
+        if(!container)return;
+        var labels=[['registration','Notifikace o žádostech o registraci (nový uživatel)'],['chatbot_issues','Notifikace o chybách/problémech z chatbota'],['other_events','Notifikace o jiných důležitých akcích']];
+        var prefs=loadPrefs();
+        container.innerHTML='';
+        labels.forEach(function(item){
+          var label=document.createElement('label'),box=document.createElement('input');
+          label.style.cssText='display:flex;align-items:center;gap:8px;margin:6px 0;cursor:pointer';
+          box.type='checkbox';box.checked=!!prefs[item[0]];
+          box.onchange=function(){var o={};o[item[0]]=box.checked;window.saveTeamsNotificationPrefs(o);};
+          label.appendChild(box);label.appendChild(document.createTextNode(item[1]));
+          container.appendChild(label);
+        });
       };
       function safeText(value){
         return String(value==null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\|/g,'\\|').slice(0,500);
@@ -49,6 +87,7 @@
       window.sendTeamsNotification=async function(type,data){
         var config=TYPES[type],url='';
         if(!config)return false;
+        if(!window.isTeamsNotificationEnabled(type))return false;
         try{url=String(localStorage.getItem(URL_KEY)||'').trim();}catch(e){return false;}
         if(!url)return false;
         data=data||{};
@@ -59,6 +98,8 @@
         ];
         if(data.email&&data.name)facts.push({name:'E-mail',value:safeText(data.email)});
         if(data.role)facts.push({name:'Role',value:safeText(data.role)});
+        if(data.question)facts.push({name:'Původní otázka',value:safeText(data.question)});
+        if(data.problem)facts.push({name:'Problém',value:safeText(data.problem)});
         if(data.action)facts.push({name:'Akce',value:safeText(data.action)});
         if(data.customer)facts.push({name:'Zákazník',value:safeText(data.customer)});
         if(data.tickets)facts.push({name:'Počet lístků',value:safeText(data.tickets)});
@@ -242,6 +283,16 @@
 <button class="tab-btn" id="btn-seznam" onclick="openTab(2)">Seznam žádostí</button>
 <button class="tab-btn" id="btn-zadost-role" onclick="openTab(3)">Požádat o přístup</button>
 <button class="tab-btn" id="btn-admin" onclick="openTab(4)" style="display: none;">⚙️ Schvalování přístupů</button>
+<button class="tab-btn" id="btn-chatbot" type="button">🤖 Chatbot</button>
+</div>
+<div class="tab-content" id="cc-chatbot-tab">
+<h3>🤖 Chatbot asistent</h3>
+<p>Zeptejte se na cokoli ohledně rezervace lístků. Odpovědi jsou zatím simulované.</p>
+<div id="ccChatLog" style="border: 1px solid var(--border); border-radius: 8px; padding: 12px; min-height: 160px; max-height: 420px; overflow-y: auto; background: #f8fafc; margin-bottom: 12px;"></div>
+<form id="ccChatForm" style="display: flex; gap: 8px;">
+<input id="ccChatInput" type="text" autocomplete="off" placeholder="Napište svou otázku…" style="flex: 1;"/>
+<button type="submit" class="btn-submit" style="width: auto; padding: 10px 20px;">Odeslat</button>
+</form>
 </div>
 <div class="tab-content active" id="tab1">
 <div style="background: #f8fafc; border: 1px solid var(--border); padding: 20px; border-radius: 8px; margin-bottom: 24px; font-size: 14px;">
@@ -420,6 +471,8 @@
 <button type="button" id="ccTeamsTestBtn" class="btn-submit" style="width: auto; padding: 10px 20px; background: #17a2b8;">Testovat</button>
 </div>
 <p id="ccTeamsStatus" role="status" style="margin-top: 10px;"></p>
+<h4 style="margin-top: 16px;">Které notifikace chci dostávat</h4>
+<div id="ccTeamsPrefs"></div>
 </div>
 </div>
 <script>
@@ -428,6 +481,7 @@
         var input = document.getElementById('ccTeamsWebhookInput');
         var status = document.getElementById('ccTeamsStatus');
         if (!input) return;
+        if (window.renderTeamsPrefsControls) window.renderTeamsPrefsControls(document.getElementById('ccTeamsPrefs'));
         try { input.value = localStorage.getItem('teamsWebhookUrl') || ''; } catch (e) {}
         function say(msg) { if (status) status.textContent = msg; }
         document.getElementById('ccTeamsSaveBtn').onclick = function () {
@@ -449,6 +503,94 @@
         };
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initTeamsPanel); else initTeamsPanel();
+})();
+</script>
+<script id="cc-chatbot">
+(function () {
+    var FAQ = [
+        { keys: ['rezerv', 'lístek', 'listek', 'vstupenk'], answer: 'Novou rezervaci vytvoříte v záložce „Nová rezervace“: vyberte akci, vyplňte údaje a odešlete žádost.' },
+        { keys: ['přístup', 'pristup', 'registr', 'role'], answer: 'O přístup požádáte v záložce „Požádat o přístup“. Žádost schvaluje administrátor.' },
+        { keys: ['stav', 'seznam', 'schvál', 'schval'], answer: 'Stav svých žádostí uvidíte v záložce „Seznam žádostí“.' },
+        { keys: ['heslo', 'kód', 'kod', 'přihlás', 'prihlas'], answer: 'Přihlašovací kód vám vydá administrátor po schválení žádosti o přístup.' }
+    ];
+    function answerFor(q) {
+        var t = q.toLowerCase();
+        for (var i = 0; i < FAQ.length; i++) {
+            for (var j = 0; j < FAQ[i].keys.length; j++) { if (t.indexOf(FAQ[i].keys[j]) !== -1) return FAQ[i].answer; }
+        }
+        return 'Na tuto otázku zatím nemám přesnou odpověď.';
+    }
+    function initChatbot() {
+        var btn = document.getElementById('btn-chatbot'), tab = document.getElementById('cc-chatbot-tab');
+        var log = document.getElementById('ccChatLog'), form = document.getElementById('ccChatForm'), input = document.getElementById('ccChatInput');
+        if (!btn || !tab || !log || !form || !input) return;
+        function msg(text, mine) {
+            var d = document.createElement('div');
+            d.style.cssText = 'margin: 6px 0; padding: 8px 12px; border-radius: 8px; max-width: 85%; white-space: pre-wrap; ' + (mine ? 'background: #fee2e2; margin-left: auto;' : 'background: #fff; border: 1px solid var(--border);');
+            d.textContent = text;
+            log.appendChild(d);
+            log.scrollTop = log.scrollHeight;
+            return d;
+        }
+        function sendIssue(question, problem, box) {
+            var u = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : {};
+            box.textContent = 'Odesílám…';
+            var p = window.sendTeamsNotification ? window.sendTeamsNotification('chatbot_issue', { name: u.name || 'Neznámý uživatel', email: u.email || '', role: u.role || '', question: question, problem: problem }) : Promise.resolve(false);
+            p.then(function (ok) {
+                box.textContent = ok ? 'Děkujeme, problém byl odeslán administrátorovi.' : 'Problém se nepodařilo odeslat (notifikace nejsou zapnuté nebo nastavené). Kontaktujte prosím administrátora přímo.';
+            });
+        }
+        function addFeedback(question) {
+            var box = document.createElement('div');
+            box.style.cssText = 'margin: 4px 0 12px; font-size: 14px;';
+            box.appendChild(document.createTextNode('Pomohla vám tato odpověď? '));
+            function mk(label, bg) {
+                var b = document.createElement('button');
+                b.type = 'button'; b.textContent = label; b.className = 'btn-submit';
+                b.style.cssText = 'width: auto; padding: 6px 14px; margin-right: 6px; background: ' + bg + ';';
+                return b;
+            }
+            var yes = mk('Ano ✓', '#10b981'), no = mk('Ne ✗', '#dc3545');
+            yes.onclick = function () { box.textContent = 'Děkujeme za zpětnou vazbu.'; };
+            no.onclick = function () {
+                box.textContent = '';
+                var lbl = document.createElement('label'), ta = document.createElement('textarea');
+                lbl.textContent = 'Jaký je váš problém?'; lbl.style.display = 'block';
+                ta.rows = 3; ta.maxLength = 500; ta.style.cssText = 'width: 100%; box-sizing: border-box; margin: 6px 0;';
+                var send = mk('Poslat Adminovi', '#0078D4'), cancel = mk('Zrušit', '#64748b');
+                send.onclick = function () {
+                    var problem = ta.value.trim();
+                    if (!problem) { ta.focus(); return; }
+                    sendIssue(question, problem, box);
+                };
+                cancel.onclick = function () { box.textContent = ''; };
+                box.appendChild(lbl); box.appendChild(ta); box.appendChild(send); box.appendChild(cancel);
+            };
+            box.appendChild(yes); box.appendChild(no);
+            log.appendChild(box);
+            log.scrollTop = log.scrollHeight;
+        }
+        btn.onclick = function () {
+            document.querySelectorAll('.tab-content').forEach(function (x) { x.classList.remove('active'); });
+            document.querySelectorAll('.tabs .tab-btn').forEach(function (x) { x.classList.remove('active'); });
+            tab.classList.add('active'); btn.classList.add('active');
+            if (!log.children.length) msg('Ahoj! Jsem chatbot asistent. S čím vám mohu pomoci?', false);
+        };
+        document.querySelector('.tabs').addEventListener('click', function (e) {
+            var b = e.target.closest ? e.target.closest('.tab-btn') : null;
+            if (b && b !== btn) { tab.classList.remove('active'); btn.classList.remove('active'); }
+        }, true);
+        form.onsubmit = function (e) {
+            e.preventDefault();
+            var q = input.value.trim();
+            if (!q) return;
+            input.value = '';
+            msg(q, true);
+            msg(answerFor(q), false);
+            addFeedback(q);
+        };
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initChatbot); else initChatbot();
 })();
 </script>
 <script>
@@ -1199,7 +1341,7 @@ window.addEventListener('scroll',function(){if(tipCard)positionTip(tipCard);},tr
   var DOC_KEY='cocaColaDatabase';
   var UI_KEY='ccPortalConfigV3';
   var PROFILE_PREFIX='ccManager_';
-  var SYNC_KEYS=['companyActions','ticketRequests','customUsers','users','roleRequests','ccSeasonMode','cc_dynamic_reasons','teamsWebhookUrl',UI_KEY];
+  var SYNC_KEYS=['companyActions','ticketRequests','customUsers','users','roleRequests','ccSeasonMode','cc_dynamic_reasons','teamsWebhookUrl','teamsNotificationPrefs',UI_KEY];
   var busy=false, timer=null, ready=false;
   var nativeSet=Storage.prototype.setItem;
   var nativeRemove=Storage.prototype.removeItem;
@@ -1225,6 +1367,7 @@ window.addEventListener('scroll',function(){if(tipCard)positionTip(tipCard);},tr
       users:json('users',{}),
       roleRequests:json('roleRequests',[]),
       teamsWebhookUrl:getLocal('teamsWebhookUrl')||'',
+      teamsNotificationPrefs:json('teamsNotificationPrefs',null),
       ccPortalConfigV3:json(UI_KEY,{}),
       ccManagerProfiles:collectProfiles(),
       ccSeasonMode:getLocal('ccSeasonMode')||'autumn'
@@ -1260,6 +1403,7 @@ window.addEventListener('scroll',function(){if(tipCard)positionTip(tipCard);},tr
       if(d.users!==undefined){setLocal('users',JSON.stringify(d.users||{}));window.users=d.users||{};}
       if(d.roleRequests!==undefined){setLocal('roleRequests',JSON.stringify(d.roleRequests||[]));try{roleRequests=d.roleRequests||[];}catch(e){}}
       if(d.teamsWebhookUrl!==undefined)setLocal('teamsWebhookUrl',d.teamsWebhookUrl||'');
+      if(d.teamsNotificationPrefs)setLocal('teamsNotificationPrefs',JSON.stringify(d.teamsNotificationPrefs));
       if(d.ccPortalConfigV3!==undefined)setLocal(UI_KEY,JSON.stringify(d.ccPortalConfigV3||{}));
       if(d.ccManagerProfiles!==undefined){
         setLocal('ccManagerProfilesCloud',JSON.stringify(d.ccManagerProfiles||{}));
@@ -4304,7 +4448,7 @@ function pageApprovers(c){var profiles={};try{profiles=JSON.parse(localStorage.g
  var list=c.querySelector('#applist');list.innerHTML=managers.length?managers.map(function(m,i){return '<div class="cc-adm-listrow"><div class="cc-adm-form"><div class="cc-adm-field"><label>Jméno</label><input data-n="'+i+'" value="'+escA(m.name||'')+'"></div><div class="cc-adm-field"><label>E-mail</label><input data-e="'+i+'" value="'+escA(m.email||'')+'"></div></div><span class="cc-adm-pill">'+roleName(m.role)+'</span></div>'}).join(''):'<div class="cc-adm-muted">Žádní aktivní schvalovatelé.</div>';
  c.querySelector('#saveapps').onclick=function(){list.querySelectorAll('[data-n]').forEach(function(i){managers[Number(i.dataset.n)].name=i.value});list.querySelectorAll('[data-e]').forEach(function(i){managers[Number(i.dataset.e)].email=i.value.toLowerCase().trim()});managers.forEach(function(m){localStorage.setItem('ccManager_'+String(m.email).toLowerCase(),JSON.stringify({name:m.name,email:m.email}))});alert('Profily schvalovatelů uloženy.')};
 }
-function pageTeams(c){var url=localStorage.getItem('teamsWebhookUrl')||'';c.innerHTML='<div class="cc-adm-section"><h3>Microsoft Teams</h3><p class="cc-adm-muted">Webhook URL se ukládá v tomto prohlížeči a synchronizuje se do Firebase. Pole je skryté, aby se URL nezobrazovala při běžné správě.</p><div class="cc-adm-form"><div class="cc-adm-field full"><label for="teamsWebhookUrlInput">Teams Webhook URL</label><input id="teamsWebhookUrlInput" type="password" autocomplete="off" placeholder="https://…" value="'+escA(url)+'"></div></div><div class="cc-adm-inline" style="margin-top:12px"><button class="cc-adm-btn primary" id="teamsSave">Uložit URL</button><button class="cc-adm-btn" id="teamsTest">Testovat</button><button class="cc-adm-btn danger" id="teamsClear">Smazat URL</button><span class="cc-adm-muted" id="teamsStatus" role="status"></span></div></div>';var input=c.querySelector('#teamsWebhookUrlInput'),status=c.querySelector('#teamsStatus');c.querySelector('#teamsSave').onclick=function(){var result=window.saveTeamsWebhookUrl(input.value);status.textContent=result.ok?'Webhook URL uložena.':result.message};c.querySelector('#teamsTest').onclick=async function(){var result=window.saveTeamsWebhookUrl(input.value);if(!result.ok){status.textContent=result.message;return}status.textContent='Odesílám testovací zprávu…';var ok=await window.sendTeamsNotification('test',{name:currentUser&&currentUser.name||'Administrátor'});status.textContent=ok?'Testovací zpráva byla odeslána.':'Odeslání se nezdařilo. Zkontrolujte URL a připojení.'};c.querySelector('#teamsClear').onclick=function(){var result=window.saveTeamsWebhookUrl('');input.value='';status.textContent=result.ok?'Webhook URL byla smazána.':result.message}}
+function pageTeams(c){if(!isAdmin()){c.innerHTML='';return}var url=localStorage.getItem('teamsWebhookUrl')||'';c.innerHTML='<div class="cc-adm-section"><h3>Microsoft Teams</h3><p class="cc-adm-muted">Webhook URL se ukládá v tomto prohlížeči a synchronizuje se do Firebase. Pole je skryté, aby se URL nezobrazovala při běžné správě.</p><div class="cc-adm-form"><div class="cc-adm-field full"><label for="teamsWebhookUrlInput">Teams Webhook URL</label><input id="teamsWebhookUrlInput" type="password" autocomplete="off" placeholder="https://…" value="'+escA(url)+'"></div></div><div class="cc-adm-inline" style="margin-top:12px"><button class="cc-adm-btn primary" id="teamsSave">Uložit URL</button><button class="cc-adm-btn" id="teamsTest">Testovat</button><button class="cc-adm-btn danger" id="teamsClear">Smazat URL</button><span class="cc-adm-muted" id="teamsStatus" role="status"></span></div></div><div class="cc-adm-section"><h3>Které notifikace chci dostávat</h3><div id="teamsPrefsBox"></div></div>';if(window.renderTeamsPrefsControls)window.renderTeamsPrefsControls(c.querySelector('#teamsPrefsBox'));var input=c.querySelector('#teamsWebhookUrlInput'),status=c.querySelector('#teamsStatus');c.querySelector('#teamsSave').onclick=function(){var result=window.saveTeamsWebhookUrl(input.value);status.textContent=result.ok?'Webhook URL uložena.':result.message};c.querySelector('#teamsTest').onclick=async function(){var result=window.saveTeamsWebhookUrl(input.value);if(!result.ok){status.textContent=result.message;return}status.textContent='Odesílám testovací zprávu…';var ok=await window.sendTeamsNotification('test',{name:currentUser&&currentUser.name||'Administrátor'});status.textContent=ok?'Testovací zpráva byla odeslána.':'Odeslání se nezdařilo. Zkontrolujte URL a připojení.'};c.querySelector('#teamsClear').onclick=function(){var result=window.saveTeamsWebhookUrl('');input.value='';status.textContent=result.ok?'Webhook URL byla smazána.':result.message}}
 function pageSystem(c){c.innerHTML='<div class="cc-adm-section"><h3>Záloha dat</h3><p class="cc-adm-muted">Stáhne aktuální administrativní data do JSON souboru. Hodí se před většími úpravami nebo importem Excelu.</p><button class="cc-adm-btn primary" id="exportjson">Stáhnout zálohu</button><button class="cc-adm-btn" id="importjson">Obnovit ze zálohy</button><input id="jsonfile" type="file" accept="application/json" style="display:none"></div><div class="cc-adm-section"><h3>Obnovení výchozího vzhledu</h3><p class="cc-adm-muted">Obnoví pouze konfiguraci vzhledu a kategorií. Akce, žádosti a uživatelé se nemažou.</p><button class="cc-adm-btn danger" id="resetcfg">Obnovit výchozí nastavení</button></div>';
  c.querySelector('#exportjson').onclick=function(){var data={companyActions:A(),ticketRequests:R(),customUsers:JSON.parse(localStorage.getItem('customUsers')||'{}'),users:U(),roleRequests:RR(),ccPortalConfigV3:typeof cfg==='function'?cfg():{},cc_dynamic_reasons:localStorage.getItem('cc_dynamic_reasons')||'',ccSeasonMode:localStorage.getItem('ccSeasonMode')||'autumn'};var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='CC-ticket-portal-backup.json';a.click();setTimeout(function(){URL.revokeObjectURL(url)},500)};
  c.querySelector('#importjson').onclick=function(){c.querySelector('#jsonfile').click()};c.querySelector('#jsonfile').onchange=function(e){var f=e.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{var d=JSON.parse(rd.result);if(!confirm('Import nahradí aktuální data akcí, žádostí, uživatelů a nastavení. Pokračovat?'))return;companyActions=d.companyActions||[];requests=d.ticketRequests||[];customUsers=d.customUsers||{};roleRequests=d.roleRequests||[];saveK('companyActions',companyActions);saveK('ticketRequests',requests);saveK('customUsers',customUsers);if(d.users)ccSaveUsers(d.users);saveK('roleRequests',roleRequests);if(d.ccPortalConfigV3)localStorage.setItem('ccPortalConfigV3',JSON.stringify(d.ccPortalConfigV3));if(d.cc_dynamic_reasons!==undefined)localStorage.setItem('cc_dynamic_reasons',d.cc_dynamic_reasons);if(d.ccSeasonMode)localStorage.setItem('ccSeasonMode',d.ccSeasonMode);syncAll();alert('Záloha obnovena.')}catch(err){alert('Soubor se nepodařilo načíst: '+err.message)}};rd.readAsText(f)};
