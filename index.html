@@ -39,7 +39,7 @@
         if(url){
           try{
             var parsed=new URL(url),host=parsed.hostname.toLowerCase();
-            var teamsHost=host==='outlook.office.com'||host==='webhook.office.com'||host.endsWith('.webhook.office.com')||host.endsWith('.logic.azure.com');
+            var teamsHost=host==='outlook.office.com'||host==='webhook.office.com'||host.endsWith('.webhook.office.com')||host.endsWith('.logic.azure.com')||host.endsWith('.api.powerplatform.com');
             if(parsed.protocol!=='https:'||!teamsHost||parsed.username||parsed.password||(parsed.port&&parsed.port!=='443'))return {ok:false,message:'Zadejte platnou HTTPS URL Teams webhooku.'};
           }catch(e){return {ok:false,message:'Zadejte platnou HTTPS URL Teams webhooku.'};}
         }
@@ -4981,7 +4981,7 @@ function ensureShell(){
 }
 function showPageSafe(page){
   var shell=ensureShell();if(!shell)return;
-  var titlesMap={home:['Přehled','Rychlý přehled portálu a nejdůležitější administrativní úkony.'],events:['Akce a kapacita','Vytváření, úprava, skrytí, archivace a kontrola obsazenosti akcí.'],requests:['Žádosti o rezervace','Přehled všech žádostí a jejich stavů.'],users:['Uživatelé a role','Přístupy, role, žádosti o přístup a vydané kódy.'],appearance:['Vzhled a vstupní strana','Upravte texty, vzhled portálu a nastavení pomocníka.'],helper:['Chytrý pomocník','Nastavení personifikace pomocníka a jeho odpovědí.'],filters:['Kategorie a důvody','Kategorie akcí, filtry a nabídka důvodů rezervace.'],approvers:['Schvalovatelé','Správa profilů nadřízených a schvalovacích vazeb.'],system:['Systém a záloha','Export, import nastavení a bezpečné obnovení výchozího vzhledu.']};
+  var titlesMap={home:['Přehled','Rychlý přehled portálu a nejdůležitější administrativní úkony.'],events:['Akce a kapacita','Vytváření, úprava, skrytí, archivace a kontrola obsazenosti akcí.'],requests:['Žádosti o rezervace','Přehled všech žádostí a jejich stavů.'],users:['Uživatelé a role','Přístupy, role, žádosti o přístup a vydané kódy.'],appearance:['Vzhled a vstupní strana','Upravte texty, vzhled portálu a nastavení pomocníka.'],helper:['Chytrý pomocník','Nastavení personifikace pomocníka a jeho odpovědí.'],filters:['Kategorie a důvody','Kategorie akcí, filtry a nabídka důvodů rezervace.'],approvers:['Schvalovatelé','Správa profilů nadřízených a schvalovacích vazeb.'],system:['Systém a záloha','Export, import nastavení a bezpečné obnovení výchozího vzhledu.'],teams:['Teams notifikace','Nastavení webhooku a testovací zpráva.']};
   if(!titlesMap[page])page='home';
   window.__ccAdminCurrentPage=page;
   shell.querySelectorAll('.cc-admin-nav button[data-page]').forEach(function(b){b.classList.toggle('active',b.dataset.page===page)});
