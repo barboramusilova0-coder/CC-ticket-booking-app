@@ -1415,12 +1415,13 @@ window.addEventListener('scroll',function(){if(tipCard)positionTip(tipCard);},tr
 </style>
 
 <script>
-/* V10 – autoritativní cloudová synchronizace; akce jsou uloženy samostatně kvůli obrázkům */
+/* V11 – živá cloudová synchronizace akcí; bezpečné sloučení + podpora velkého počtu akcí */
 (function(){
   'use strict';
   var DOC_KEY='cocaColaDatabase', ACTIONS_COL='cocaColaActions', UI_KEY='ccPortalConfigV3', PROFILE_PREFIX='ccManager_';
   var SYNC_KEYS=['ticketRequests','customUsers','users','roleRequests','ccSeasonMode','cc_dynamic_reasons','teamsWebhookUrl','teamsNotificationPrefs',UI_KEY];
   var busy=false, timer=null, actionTimer=null, ready=false, actionReady=false, actionWriteBusy=false;
+  var actionLocalDirty=false, actionInitialised=false, actionUnsub=null;
   var nativeSet=Storage.prototype.setItem, nativeRemove=Storage.prototype.removeItem;
   function setLocal(k,v){nativeSet.call(localStorage,k,v)}
   function getLocal(k){return localStorage.getItem(k)}
@@ -1431,22 +1432,74 @@ window.addEventListener('scroll',function(){if(tipCard)positionTip(tipCard);},tr
   function actionsCol(){return ref().collection(ACTIONS_COL)}
   function collectProfiles(){var p=json('ccManagerProfilesCloud',{});for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf(PROFILE_PREFIX)===0){var v=json(k,null);if(v)p[k.slice(PROFILE_PREFIX.length)]=v}}return p}
   function collect(){var d={ticketRequests:json('ticketRequests',[]),customUsers:json('customUsers',{}),users:json('users',{}),roleRequests:json('roleRequests',[]),teamsWebhookUrl:getLocal('teamsWebhookUrl')||'',teamsNotificationPrefs:json('teamsNotificationPrefs',null),ccPortalConfigV3:json(UI_KEY,{}),ccManagerProfiles:collectProfiles(),ccSeasonMode:getLocal('ccSeasonMode')||'autumn'};var reasons=getLocal('cc_dynamic_reasons');if(reasons!==null)d.cc_dynamic_reasons=reasons;return d}
-  function scheduleSave(){if(busy||!ready)return;clearTimeout(timer);timer=setTimeout(function(){if(busy)return;ref().set(collect(),{merge:true}).then(function(){console.log('V10: cloud save OK')}).catch(function(e){console.error('V10: cloud save ERROR',e)})},250)}
+  function scheduleSave(){if(busy||!ready)return;clearTimeout(timer);timer=setTimeout(function(){if(busy)return;ref().set(collect(),{merge:true}).then(function(){console.log('V11: cloud save OK')}).catch(function(e){console.error('V11: cloud save ERROR',e)})},250)}
   function actionId(a){return String(a&&a.id!=null?a.id:'')}
-  function scheduleActionsSave(){if(!actionReady)return;clearTimeout(actionTimer);actionTimer=setTimeout(saveActionsCloud,350)}
+  function scheduleActionsSave(){if(!actionReady)return;actionLocalDirty=true;clearTimeout(actionTimer);actionTimer=setTimeout(saveActionsCloud,350)}
+  function showActionError(msg){try{var n=document.getElementById('cc-action-save-error');if(!n){n=document.createElement('div');n.id='cc-action-save-error';n.style.cssText='position:fixed;right:18px;bottom:18px;z-index:30000;padding:12px 15px;border-radius:10px;background:#fff1f2;border:1px solid #fecdd3;color:#9f1239;font-weight:700;font-size:13px;box-shadow:0 8px 25px rgba(0,0,0,.15)';document.body.appendChild(n)}n.textContent=msg;setTimeout(function(){if(n)n.remove()},7000)}catch(x){}}
+  function chunk(a,n){var out=[];for(var i=0;i<a.length;i+=n)out.push(a.slice(i,i+n));return out}
   async function saveActionsCloud(){
-    if(!firebaseReady()||!actionReady||actionWriteBusy)return;
+    if(!firebaseReady()||!actionReady)return;
+    if(actionWriteBusy){clearTimeout(actionTimer);actionTimer=setTimeout(saveActionsCloud,500);return;}
     actionWriteBusy=true;
     try{
       var list=json('companyActions',[]),snap=await actionsCol().get(),existing={};
       snap.forEach(function(d){existing[d.id]=true});
-      var batch=db().batch(),ops=0;
-      list.forEach(function(a){var id=actionId(a);if(!id)return;batch.set(actionsCol().doc(id),a,{merge:true});ops++;delete existing[id]});
-      Object.keys(existing).forEach(function(id){batch.delete(actionsCol().doc(id));ops++});
-      if(ops)await batch.commit();
-      console.log('V10: actions cloud save OK',list.length);
-    }catch(e){console.error('V10: actions cloud save ERROR',e);try{var n=document.getElementById('cc-action-save-error');if(!n){n=document.createElement('div');n.id='cc-action-save-error';n.style.cssText='position:fixed;right:18px;bottom:18px;z-index:30000;padding:12px 15px;border-radius:10px;background:#fff1f2;border:1px solid #fecdd3;color:#9f1239;font-weight:700;font-size:13px;box-shadow:0 8px 25px rgba(0,0,0,.15)';document.body.appendChild(n)}n.textContent='Akce se nepodařilo uložit do cloudu. Změny zůstávají v tomto prohlížeči a aplikace to zkusí znovu.';setTimeout(function(){if(n)n.remove()},6000)}catch(x){}}
-    finally{actionWriteBusy=false}
+      var writes=[];
+      list.forEach(function(a){var id=actionId(a);if(!id)return;writes.push({type:'set',id:id,data:a});delete existing[id]});
+      Object.keys(existing).forEach(function(id){writes.push({type:'delete',id:id})});
+      for(var ci=0;ci<writes.length;ci+=450){
+        var batch=db().batch(),part=writes.slice(ci,ci+450);
+        part.forEach(function(w){var r=actionsCol().doc(w.id);if(w.type==='set')batch.set(r,w.data,{merge:true});else batch.delete(r)});
+        await batch.commit();
+      }
+      actionLocalDirty=false;
+      console.log('V11: actions cloud save OK',list.length);
+    }catch(e){console.error('V11: actions cloud save ERROR',e);showActionError('Akce se nepodařilo uložit do cloudu. Změny zůstávají v tomto prohlížeči a aplikace to zkusí znovu.')}finally{actionWriteBusy=false}
+  }
+  function mergeActions(cloud,legacy){
+    var map={};
+    (Array.isArray(legacy)?legacy:[]).forEach(function(a){var id=actionId(a);if(id)map[id]=a});
+    (Array.isArray(cloud)?cloud:[]).forEach(function(a){var id=actionId(a);if(id)map[id]=a});
+    return Object.keys(map).map(function(id){return map[id]});
+  }
+  function refreshActionUI(){
+    try{if(typeof updateActionSelectOptions==='function')updateActionSelectOptions()}catch(e){}
+    try{if(typeof renderAdminSection==='function')renderAdminSection()}catch(e){}
+    try{if(typeof renderCards==='function')renderCards('all')}catch(e){}
+    try{if(typeof renderLanding==='function')renderLanding()}catch(e){}
+    try{if(typeof planned==='function')planned()}catch(e){}
+  }
+  async function migrateLegacyIfNeeded(legacy,cloudList){
+    if(actionInitialised)return;
+    var merged=mergeActions(cloudList,legacy);
+    if(merged.length && (!cloudList.length || merged.length!==cloudList.length)){
+      setLocal('companyActions',JSON.stringify(merged));try{companyActions=merged}catch(e){}
+      actionLocalDirty=true;
+      actionReady=true;
+      await saveActionsCloud();
+      try{await ref().set({companyActions:firebase.firestore.FieldValue.delete()},{merge:true})}catch(e){console.warn('V11: legacy companyActions cleanup failed',e)}
+      return;
+    }
+    if(cloudList.length){setLocal('companyActions',JSON.stringify(cloudList));try{companyActions=cloudList}catch(e){}}
+    else if(Array.isArray(legacy)&&legacy.length){setLocal('companyActions',JSON.stringify(legacy));try{companyActions=legacy}catch(e){}}
+    actionReady=true;
+    actionInitialised=true;
+  }
+  function applyActionSnapshot(snap,legacy){
+    var cloudList=[];snap.forEach(function(d){cloudList.push(d.data()||{})});
+    if(!actionInitialised){
+      migrateLegacyIfNeeded(legacy||[],cloudList).then(function(){actionInitialised=true;refreshActionUI()}).catch(function(e){console.error('V11: action migration ERROR',e);actionReady=true;actionInitialised=true;refreshActionUI()});
+      return;
+    }
+    /* Pokud tento prohlížeč právě ukládá vlastní změnu, necháme ji doběhnout.
+       Následný snapshot po commitu už změnu normálně potvrdí. */
+    if(actionLocalDirty)return;
+    if(cloudList.length || !getLocal('companyActions')){
+      setLocal('companyActions',JSON.stringify(cloudList));
+      try{companyActions=cloudList}catch(e){}
+      actionReady=true;
+      refreshActionUI();
+    }
   }
   function apply(d){
     busy=true;try{
@@ -1469,26 +1522,21 @@ window.addEventListener('scroll',function(){if(tipCard)positionTip(tipCard);},tr
     try{if(typeof renderFloatingEvent==='function')renderFloatingEvent()}catch(e){}
     try{if(typeof ccApplySeason==='function'&&d.ccSeasonMode)ccApplySeason(d.ccSeasonMode,false)}catch(e){}
   }
-  async function loadActionsCloud(legacy){
-    if(!firebaseReady())return;
-    try{
-      var snap=await actionsCol().get(),list=[];
-      snap.forEach(function(d){list.push(d.data()||{})});
-      if(list.length){setLocal('companyActions',JSON.stringify(list));try{companyActions=list}catch(e){};actionReady=true;return}
-      if(Array.isArray(legacy)&&legacy.length){
-        setLocal('companyActions',JSON.stringify(legacy));try{companyActions=legacy}catch(e){};
-        actionReady=true;await saveActionsCloud();
-        try{await ref().set({companyActions:firebase.firestore.FieldValue.delete()},{merge:true})}catch(e){}
-      }else{actionReady=true}
-    }catch(e){console.error('V10: actions cloud read ERROR',e);actionReady=true}
-    try{if(typeof updateActionSelectOptions==='function')updateActionSelectOptions()}catch(e){}
-    try{if(typeof renderAdminSection==='function')renderAdminSection()}catch(e){}
-    try{if(typeof renderCards==='function')renderCards('all')}catch(e){}
-    try{if(typeof renderLanding==='function')renderLanding()}catch(e){}
-  }
   localStorage.setItem=function(k,v){nativeSet.call(localStorage,k,v);if(k==='companyActions'){scheduleActionsSave();return}if(SYNC_KEYS.indexOf(k)!==-1||k.indexOf(PROFILE_PREFIX)===0)scheduleSave()};
-  localStorage.removeItem=function(k){nativeRemove.call(localStorage);if(k==='companyActions'){scheduleActionsSave();return}if(SYNC_KEYS.indexOf(k)!==-1||k.indexOf(PROFILE_PREFIX)===0)scheduleSave()};
-  function start(){if(!firebaseReady()){console.error('V10: Firebase není načtený');return}var r=ref();r.onSnapshot(function(snap){var d=snap.exists?(snap.data()||{}):{};apply(d);ready=true;window.__ccCloudReady=true;window.__ccInitialDataReady=true;try{window.dispatchEvent(new CustomEvent('cc-cloud-ready'))}catch(e){};loadActionsCloud(d.companyActions);if(!snap.exists)r.set(collect(),{merge:true}).catch(function(e){console.error('V10: initial cloud create ERROR',e)});console.log('V10: cloud snapshot OK')},function(e){ready=false;window.__ccCloudReady=true;window.__ccInitialDataReady=true;try{window.dispatchEvent(new CustomEvent('cc-cloud-ready'))}catch(x){};console.error('V10: FIREBASE READ ERROR',e)});}
+  localStorage.removeItem=function(k){nativeRemove.call(localStorage,k);if(k==='companyActions'){scheduleActionsSave();return}if(SYNC_KEYS.indexOf(k)!==-1||k.indexOf(PROFILE_PREFIX)===0)scheduleSave()};
+  function start(){
+    if(!firebaseReady()){console.error('V11: Firebase není načtený');return}
+    var r=ref();
+    r.onSnapshot(function(snap){
+      var d=snap.exists?(snap.data()||{}):{};
+      apply(d);ready=true;window.__ccCloudReady=true;window.__ccInitialDataReady=true;
+      try{window.dispatchEvent(new CustomEvent('cc-cloud-ready'))}catch(e){}
+      if(actionUnsub)try{actionUnsub()}catch(e){}
+      actionUnsub=actionsCol().onSnapshot(function(asnap){applyActionSnapshot(asnap,d.companyActions)},function(e){console.error('V11: ACTIONS FIREBASE READ ERROR',e);actionReady=true;showActionError('Akce se nepodařilo načíst z cloudu. Zkontrolujte připojení a oprávnění Firebase.')});
+      if(!snap.exists)r.set(collect(),{merge:true}).catch(function(e){console.error('V11: initial cloud create ERROR',e)});
+      console.log('V11: main cloud snapshot OK; action listener active');
+    },function(e){ready=false;window.__ccCloudReady=true;window.__ccInitialDataReady=true;try{window.dispatchEvent(new CustomEvent('cc-cloud-ready'))}catch(x){};console.error('V11: FIREBASE READ ERROR',e)});
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
 
