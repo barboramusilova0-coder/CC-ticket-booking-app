@@ -821,16 +821,25 @@
             openTab(2); 
         }
     }
-    function logoutUser() { 
-        currentUser = null; 
-        localStorage.removeItem('currentUser'); 
+    function logoutUser() {
+        // Vyčistíme obě reference přihlášeného uživatele.
+        // Aplikace používá současně currentUser a window.currentUser; pokud
+        // zůstane druhá reference, synchronizační/pomocné skripty mohou účet
+        // po odhlášení znovu obnovit.
+        currentUser = null;
+        window.currentUser = null;
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('activeCcTab');
         document.getElementById('welcomeGate').style.display = 'block';
         document.getElementById('mainSystem').style.display = 'none';
-        document.getElementById('gateUserToken').value = '';
+        const token = document.getElementById('gateUserToken'); if (token) token.value = '';
         const gp = document.getElementById('gateUserPassword'); if (gp) gp.value = '';
-        document.getElementById('gateLoginBox').style.display = 'block';
-        document.getElementById('gateRegisterBox').style.display = 'none';
-        document.getElementById('gateAdminBox').style.display = 'none';
+        const login = document.getElementById('gateLoginBox'); if (login) login.style.display = 'block';
+        const reg = document.getElementById('gateRegisterBox'); if (reg) reg.style.display = 'none';
+        const adm = document.getElementById('gateAdminBox'); if (adm) adm.style.display = 'none';
+        if (typeof updateLoginBar === 'function') updateLoginBar();
+        if (typeof ccRenderDashboard === 'function') ccRenderDashboard();
+        if (typeof renderFloatingEvent === 'function') renderFloatingEvent();
     }
     function updateLoginBar() {
         const btn = document.getElementById('btn-admin');
