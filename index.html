@@ -1415,115 +1415,80 @@ window.addEventListener('scroll',function(){if(tipCard)positionTip(tipCard);},tr
 </style>
 
 <script>
-/* V9 – JEDINÁ AUTORITATIVNÍ CLOUD SYNCHRONIZACE */
+/* V10 – autoritativní cloudová synchronizace; akce jsou uloženy samostatně kvůli obrázkům */
 (function(){
   'use strict';
-  var DOC_KEY='cocaColaDatabase';
-  var UI_KEY='ccPortalConfigV3';
-  var PROFILE_PREFIX='ccManager_';
-  var SYNC_KEYS=['companyActions','ticketRequests','customUsers','users','roleRequests','ccSeasonMode','cc_dynamic_reasons','teamsWebhookUrl','teamsNotificationPrefs',UI_KEY];
-  var busy=false, timer=null, ready=false;
-  var nativeSet=Storage.prototype.setItem;
-  var nativeRemove=Storage.prototype.removeItem;
-  function setLocal(k,v){ nativeSet.call(localStorage,k,v); }
-  function getLocal(k){ return localStorage.getItem(k); }
-  function json(k,f){ try{var v=getLocal(k);return v?JSON.parse(v):f;}catch(e){return f;} }
-  function firebaseReady(){return typeof firebase!=='undefined' && firebase.apps && firebase.apps.length;}
-  function db(){return firebase.firestore();}
-  function ref(){return db().collection('portalData').doc(DOC_KEY);}
-  function collectProfiles(){
-    var p=json('ccManagerProfilesCloud',{});
-    for(var i=0;i<localStorage.length;i++){
-      var k=localStorage.key(i);
-      if(k&&k.indexOf(PROFILE_PREFIX)===0){var v=json(k,null);if(v)p[k.slice(PROFILE_PREFIX.length)]=v;}
-    }
-    return p;
-  }
-  function collect(){
-    var d={
-      companyActions:json('companyActions',[]),
-      ticketRequests:json('ticketRequests',[]),
-      customUsers:json('customUsers',{}),
-      users:json('users',{}),
-      roleRequests:json('roleRequests',[]),
-      teamsWebhookUrl:getLocal('teamsWebhookUrl')||'',
-      teamsNotificationPrefs:json('teamsNotificationPrefs',null),
-      ccPortalConfigV3:json(UI_KEY,{}),
-      ccManagerProfiles:collectProfiles(),
-      ccSeasonMode:getLocal('ccSeasonMode')||'autumn'
-    };
-    var reasons=getLocal('cc_dynamic_reasons'); if(reasons!==null)d.cc_dynamic_reasons=reasons;
-    return d;
-  }
-  function scheduleSave(){
-    if(busy||!ready)return;
-    clearTimeout(timer);
-    timer=setTimeout(function(){
-      if(busy)return;
-      ref().set(collect(),{merge:true}).then(function(){
-        console.log('V9: cloud save OK');
-      }).catch(function(e){console.error('V9: cloud save ERROR',e);});
-    },250);
-  }
-  // This is deliberately the LAST localStorage.setItem override. It bypasses all older wrappers.
-  localStorage.setItem=function(k,v){
-    nativeSet.call(localStorage,k,v);
-    if(SYNC_KEYS.indexOf(k)!==-1 || k.indexOf(PROFILE_PREFIX)===0) scheduleSave();
-  };
-  localStorage.removeItem=function(k){
-    nativeRemove.call(localStorage,k);
-    if(SYNC_KEYS.indexOf(k)!==-1 || k.indexOf(PROFILE_PREFIX)===0) scheduleSave();
-  };
-  function apply(d){
-    busy=true;
+  var DOC_KEY='cocaColaDatabase', ACTIONS_COL='cocaColaActions', UI_KEY='ccPortalConfigV3', PROFILE_PREFIX='ccManager_';
+  var SYNC_KEYS=['ticketRequests','customUsers','users','roleRequests','ccSeasonMode','cc_dynamic_reasons','teamsWebhookUrl','teamsNotificationPrefs',UI_KEY];
+  var busy=false, timer=null, actionTimer=null, ready=false, actionReady=false, actionWriteBusy=false;
+  var nativeSet=Storage.prototype.setItem, nativeRemove=Storage.prototype.removeItem;
+  function setLocal(k,v){nativeSet.call(localStorage,k,v)}
+  function getLocal(k){return localStorage.getItem(k)}
+  function json(k,f){try{var v=getLocal(k);return v?JSON.parse(v):f}catch(e){return f}}
+  function firebaseReady(){return typeof firebase!=='undefined'&&firebase.apps&&firebase.apps.length}
+  function db(){return firebase.firestore()}
+  function ref(){return db().collection('portalData').doc(DOC_KEY)}
+  function actionsCol(){return ref().collection(ACTIONS_COL)}
+  function collectProfiles(){var p=json('ccManagerProfilesCloud',{});for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf(PROFILE_PREFIX)===0){var v=json(k,null);if(v)p[k.slice(PROFILE_PREFIX.length)]=v}}return p}
+  function collect(){var d={ticketRequests:json('ticketRequests',[]),customUsers:json('customUsers',{}),users:json('users',{}),roleRequests:json('roleRequests',[]),teamsWebhookUrl:getLocal('teamsWebhookUrl')||'',teamsNotificationPrefs:json('teamsNotificationPrefs',null),ccPortalConfigV3:json(UI_KEY,{}),ccManagerProfiles:collectProfiles(),ccSeasonMode:getLocal('ccSeasonMode')||'autumn'};var reasons=getLocal('cc_dynamic_reasons');if(reasons!==null)d.cc_dynamic_reasons=reasons;return d}
+  function scheduleSave(){if(busy||!ready)return;clearTimeout(timer);timer=setTimeout(function(){if(busy)return;ref().set(collect(),{merge:true}).then(function(){console.log('V10: cloud save OK')}).catch(function(e){console.error('V10: cloud save ERROR',e)})},250)}
+  function actionId(a){return String(a&&a.id!=null?a.id:'')}
+  function scheduleActionsSave(){if(!actionReady)return;clearTimeout(actionTimer);actionTimer=setTimeout(saveActionsCloud,350)}
+  async function saveActionsCloud(){
+    if(!firebaseReady()||!actionReady||actionWriteBusy)return;
+    actionWriteBusy=true;
     try{
-      if(d.companyActions!==undefined){setLocal('companyActions',JSON.stringify(d.companyActions||[]));try{companyActions=d.companyActions||[];}catch(e){}}
-      if(d.ticketRequests!==undefined){setLocal('ticketRequests',JSON.stringify(d.ticketRequests||[]));try{requests=d.ticketRequests||[];}catch(e){}}
-      if(d.customUsers!==undefined){setLocal('customUsers',JSON.stringify(d.customUsers||{}));try{customUsers=d.customUsers||{};}catch(e){} window.customUsers=d.customUsers||{};}
-      if(d.users!==undefined){setLocal('users',JSON.stringify(d.users||{}));window.users=d.users||{};}
-      if(d.roleRequests!==undefined){setLocal('roleRequests',JSON.stringify(d.roleRequests||[]));try{roleRequests=d.roleRequests||[];}catch(e){}}
+      var list=json('companyActions',[]),snap=await actionsCol().get(),existing={};
+      snap.forEach(function(d){existing[d.id]=true});
+      var batch=db().batch(),ops=0;
+      list.forEach(function(a){var id=actionId(a);if(!id)return;batch.set(actionsCol().doc(id),a,{merge:true});ops++;delete existing[id]});
+      Object.keys(existing).forEach(function(id){batch.delete(actionsCol().doc(id));ops++});
+      if(ops)await batch.commit();
+      console.log('V10: actions cloud save OK',list.length);
+    }catch(e){console.error('V10: actions cloud save ERROR',e);try{var n=document.getElementById('cc-action-save-error');if(!n){n=document.createElement('div');n.id='cc-action-save-error';n.style.cssText='position:fixed;right:18px;bottom:18px;z-index:30000;padding:12px 15px;border-radius:10px;background:#fff1f2;border:1px solid #fecdd3;color:#9f1239;font-weight:700;font-size:13px;box-shadow:0 8px 25px rgba(0,0,0,.15)';document.body.appendChild(n)}n.textContent='Akce se nepodařilo uložit do cloudu. Změny zůstávají v tomto prohlížeči a aplikace to zkusí znovu.';setTimeout(function(){if(n)n.remove()},6000)}catch(x){}}
+    finally{actionWriteBusy=false}
+  }
+  function apply(d){
+    busy=true;try{
+      if(d.ticketRequests!==undefined){setLocal('ticketRequests',JSON.stringify(d.ticketRequests||[]));try{requests=d.ticketRequests||[]}catch(e){}}
+      if(d.customUsers!==undefined){setLocal('customUsers',JSON.stringify(d.customUsers||{}));try{customUsers=d.customUsers||{}}catch(e){}window.customUsers=d.customUsers||{}}
+      if(d.users!==undefined){setLocal('users',JSON.stringify(d.users||{}));window.users=d.users||{}}
+      if(d.roleRequests!==undefined){setLocal('roleRequests',JSON.stringify(d.roleRequests||[]));try{roleRequests=d.roleRequests||[]}catch(e){}}
       if(d.teamsWebhookUrl!==undefined)setLocal('teamsWebhookUrl',d.teamsWebhookUrl||'');
       if(d.teamsNotificationPrefs)setLocal('teamsNotificationPrefs',JSON.stringify(d.teamsNotificationPrefs));
       if(d.ccPortalConfigV3!==undefined)setLocal(UI_KEY,JSON.stringify(d.ccPortalConfigV3||{}));
-      if(d.ccManagerProfiles!==undefined){
-        setLocal('ccManagerProfilesCloud',JSON.stringify(d.ccManagerProfiles||{}));
-        Object.keys(d.ccManagerProfiles||{}).forEach(function(email){setLocal(PROFILE_PREFIX+email,JSON.stringify(d.ccManagerProfiles[email]));});
-      }
-      if(d.ccSeasonMode){setLocal('ccSeasonMode',d.ccSeasonMode);}
+      if(d.ccManagerProfiles!==undefined){setLocal('ccManagerProfilesCloud',JSON.stringify(d.ccManagerProfiles||{}));Object.keys(d.ccManagerProfiles||{}).forEach(function(email){setLocal(PROFILE_PREFIX+email,JSON.stringify(d.ccManagerProfiles[email]))})}
+      if(d.ccSeasonMode)setLocal('ccSeasonMode',d.ccSeasonMode);
       if(d.cc_dynamic_reasons!==undefined)setLocal('cc_dynamic_reasons',d.cc_dynamic_reasons);
-    }finally{busy=false;}
-    try{if(typeof updateActionSelectOptions==='function')updateActionSelectOptions();}catch(e){}
-    try{if(typeof renderTable==='function')renderTable();}catch(e){}
-    try{if(typeof renderAdminSection==='function')renderAdminSection();}catch(e){}
-    try{if(typeof renderCards==='function')renderCards('all');}catch(e){}
-    try{if(typeof renderLanding==='function')renderLanding();}catch(e){}
-    try{if(typeof renderFloatingEvent==='function')renderFloatingEvent();}catch(e){}
-    try{if(typeof renderHelp==='function')renderHelp();}catch(e){}
-    try{if(typeof ccApplySeason==='function'&&d.ccSeasonMode)ccApplySeason(d.ccSeasonMode,false);}catch(e){}
+    }finally{busy=false}
+    try{if(typeof updateActionSelectOptions==='function')updateActionSelectOptions()}catch(e){}
+    try{if(typeof renderTable==='function')renderTable()}catch(e){}
+    try{if(typeof renderAdminSection==='function')renderAdminSection()}catch(e){}
+    try{if(typeof renderCards==='function')renderCards('all')}catch(e){}
+    try{if(typeof renderLanding==='function')renderLanding()}catch(e){}
+    try{if(typeof renderFloatingEvent==='function')renderFloatingEvent()}catch(e){}
+    try{if(typeof ccApplySeason==='function'&&d.ccSeasonMode)ccApplySeason(d.ccSeasonMode,false)}catch(e){}
   }
-  function start(){
-    if(!firebaseReady()){console.error('V9: Firebase není načtený');return;}
-    var r=ref();
-    r.onSnapshot(function(snap){
-      var d=snap.exists?(snap.data()||{}):{};
-      if(snap.exists)apply(d);
-      ready=true;
-      window.__ccCloudReady=true;window.__ccInitialDataReady=true;
-      try{window.dispatchEvent(new CustomEvent("cc-cloud-ready"));}catch(e){}
-      if(!snap.exists)r.set(collect(),{merge:true}).catch(function(e){console.error('V9: initial cloud create ERROR',e);});
-      console.log('V9: cloud snapshot OK');
-    },function(e){
-      ready=false;
-      window.__ccCloudReady=true;window.__ccInitialDataReady=true;
-      try{window.dispatchEvent(new CustomEvent("cc-cloud-ready"));}catch(x){}
-      console.error('V9: FIREBASE READ ERROR',e);
-      var msg=(e&&e.code)?String(e.code):'';
-      if(msg==='permission-denied'){
-        var gate=document.getElementById('welcomeGate');
-        if(gate){var n=document.getElementById('cc-v9-cloud-error');if(!n){n=document.createElement('div');n.id='cc-v9-cloud-error';n.style.cssText='margin:12px 0;padding:10px 12px;border-radius:8px;background:#fff1f2;border:1px solid #fecdd3;color:#9f1239;font-size:13px;font-weight:700';n.textContent='Cloud synchronizace je odmítnuta Firebase pravidly (permission-denied).';gate.appendChild(n);}}
-      }
-    });
+  async function loadActionsCloud(legacy){
+    if(!firebaseReady())return;
+    try{
+      var snap=await actionsCol().get(),list=[];
+      snap.forEach(function(d){list.push(d.data()||{})});
+      if(list.length){setLocal('companyActions',JSON.stringify(list));try{companyActions=list}catch(e){};actionReady=true;return}
+      if(Array.isArray(legacy)&&legacy.length){
+        setLocal('companyActions',JSON.stringify(legacy));try{companyActions=legacy}catch(e){};
+        actionReady=true;await saveActionsCloud();
+        try{await ref().set({companyActions:firebase.firestore.FieldValue.delete()},{merge:true})}catch(e){}
+      }else{actionReady=true}
+    }catch(e){console.error('V10: actions cloud read ERROR',e);actionReady=true}
+    try{if(typeof updateActionSelectOptions==='function')updateActionSelectOptions()}catch(e){}
+    try{if(typeof renderAdminSection==='function')renderAdminSection()}catch(e){}
+    try{if(typeof renderCards==='function')renderCards('all')}catch(e){}
+    try{if(typeof renderLanding==='function')renderLanding()}catch(e){}
   }
+  localStorage.setItem=function(k,v){nativeSet.call(localStorage,k,v);if(k==='companyActions'){scheduleActionsSave();return}if(SYNC_KEYS.indexOf(k)!==-1||k.indexOf(PROFILE_PREFIX)===0)scheduleSave()};
+  localStorage.removeItem=function(k){nativeRemove.call(localStorage);if(k==='companyActions'){scheduleActionsSave();return}if(SYNC_KEYS.indexOf(k)!==-1||k.indexOf(PROFILE_PREFIX)===0)scheduleSave()};
+  function start(){if(!firebaseReady()){console.error('V10: Firebase není načtený');return}var r=ref();r.onSnapshot(function(snap){var d=snap.exists?(snap.data()||{}):{};apply(d);ready=true;window.__ccCloudReady=true;window.__ccInitialDataReady=true;try{window.dispatchEvent(new CustomEvent('cc-cloud-ready'))}catch(e){};loadActionsCloud(d.companyActions);if(!snap.exists)r.set(collect(),{merge:true}).catch(function(e){console.error('V10: initial cloud create ERROR',e)});console.log('V10: cloud snapshot OK')},function(e){ready=false;window.__ccCloudReady=true;window.__ccInitialDataReady=true;try{window.dispatchEvent(new CustomEvent('cc-cloud-ready'))}catch(x){};console.error('V10: FIREBASE READ ERROR',e)});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
 
@@ -1601,7 +1566,7 @@ function planned(){
  card.addEventListener('mouseenter',function(){tipShow(card,a)});card.addEventListener('mouseleave',tipHide);card.addEventListener('click',function(e){if(e.target.closest('button'))return;if(status==='Zrušeno/Přesunuto'||full){alert(status==='Zrušeno/Přesunuto'?'Tato akce je zrušena nebo přesunuta.':'Kapacita akce je naplněna.');return;}ccOpenReservationSafe(a);});var rb=body.querySelector('button');if(rb&&!rb.disabled)rb.onclick=function(){ccOpenReservationSafe(a)};
  })
 }
-function fileToData(file,done){if(!file){done('');return}var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){var max=1200,s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*s));c.height=Math.max(1,Math.round(im.height*s));c.getContext('2d').drawImage(im,0,0,c.width,c.height);done(c.toDataURL('image/jpeg',.78))};im.onerror=function(){done(r.result)};im.src=r.result};r.readAsDataURL(file)}
+function fileToData(file,done){if(!file){done('');return}var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){var max=900,s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*s));c.height=Math.max(1,Math.round(im.height*s));c.getContext('2d').drawImage(im,0,0,c.width,c.height);done(c.toDataURL('image/jpeg',.68))};im.onerror=function(){done(r.result)};im.src=r.result};r.readAsDataURL(file)}
 function editor(action){
  var old=document.getElementById('cc-v10-editor-backdrop');if(old)old.remove();var b=document.createElement('div');b.id='cc-v10-editor-backdrop';b.className='cc-v10-editor-backdrop';var f=document.createElement('div');f.className='cc-v10-editor';
  f.innerHTML='<h3>Upravit akci</h3><div class="cc-v10-form"><div><label>Název akce</label><input id="v10-name"></div><div><label>Kapacita</label><input id="v10-cap" type="number" min="1"></div><div><label>Datum</label><input id="v10-date" type="date"></div><div><label>Čas</label><input id="v10-time" type="time"></div><div><label>Místo</label><input id="v10-place"></div><div><label>Kategorie</label><select id="v10-cat"><option value="">-- Vyberte --</option><option>O2 Arena</option><option>Fotbal</option><option>SKS Slavia</option><option>Reprezentace</option></select></div><div><label>Typ akce</label><input id="v10-sub"></div><div class="full"><label>Popis / tooltip</label><textarea id="v10-desc" rows="4"></textarea></div><div class="full"><label>Obrázek</label><input id="v10-file" type="file" accept="image/*"><div id="v10-paste" class="cc-v10-paste" tabindex="0"><strong>Vložte obrázek pomocí Ctrl+V</strong>Zkopírujte obrázek a vložte ho sem.</div><img id="v10-preview" style="display:none;width:100%;max-height:190px;object-fit:cover;border-radius:10px;margin-top:8px"></div></div><div class="cc-v10-editor-actions"><button class="cc-v10-btn" id="v10-cancel">Zrušit</button><button class="cc-v10-btn primary" id="v10-save">Uložit změny</button></div>';
@@ -6147,7 +6112,7 @@ function ccRenderFilterAdmin(c){
 }
 
 /* ---------- enhanced action editor: preserves existing fields + image + nested filter + YouTube ---------- */
-function ccReadImage(file,done){if(!file){done('');return}var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){var max=1200,s=Math.min(1,max/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(im.width*s));cv.height=Math.max(1,Math.round(im.height*s));var x=cv.getContext('2d');x.drawImage(im,0,0,cv.width,cv.height);done(cv.toDataURL('image/jpeg',.86))};im.onerror=function(){done(r.result)};im.src=r.result};r.readAsDataURL(file)}
+function ccReadImage(file,done){if(!file){done('');return}var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){var max=900,s=Math.min(1,max/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(im.width*s));cv.height=Math.max(1,Math.round(im.height*s));var x=cv.getContext('2d');x.drawImage(im,0,0,cv.width,cv.height);done(cv.toDataURL('image/jpeg',.70))};im.onerror=function(){done(r.result)};im.src=r.result};r.readAsDataURL(file)}
 function ccYoutubeId(url){var s=String(url||'').trim(),m=s.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{6,})/);return m?m[1]:''}
 function ccYoutubeEmbed(url){var id=ccYoutubeId(url);return id?'https://www.youtube.com/embed/'+id:''}
 function ccCategoryChildren(cat){var f=ccFilterTree().find(function(x){return x.name===cat||x.id===cat});return f&&Array.isArray(f.children)?f.children.filter(function(x){return x.active!==false}):[]}
