@@ -4,7 +4,7 @@
 <head>
 <style id="cc-boot-guard">html.cc-ui-booting body{visibility:hidden!important}html.cc-ui-booting .container{opacity:0!important}html.cc-ui-ready body{visibility:visible!important}html.cc-ui-ready .container{opacity:1!important}html.cc-ui-booting #cc-v3-eventgrid,html.cc-ui-booting #cc-planned-grid,html.cc-ui-booting #cc-v3-filterbar{visibility:hidden!important}html.cc-ui-booting #cc-planned-grid .cc-event-card,html.cc-ui-booting #cc-v3-eventgrid .cc-v3-card{transition:none!important}</style><script id="cc-boot-init">document.documentElement.classList.add("cc-ui-booting");window.__ccCloudReady=false;window.__ccInitialDataReady=false;</script>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
@@ -197,7 +197,16 @@
             100% { transform: translateY(105vh) rotate(360deg) translateX(-30px); opacity: 0; }
         }
     </style>
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<!-- PWA: instalace jako aplikace (PC, tablet, iPad) -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#e41e26">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lístky">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 </head>
 <body>
 <!-- Kontejner pro detailní podzimní lístky (Javor a Dub) -->
@@ -1925,6 +1934,36 @@ setTimeout(bootFix,700);setTimeout(bootFix,1800);
     guardGrid();
     setTimeout(guardGrid,0);
   });
+})();
+</script>
+<script id="cc-pwa-install">
+(function(){
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(e){console.warn('SW:',e);});});
+  }
+  var standalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
+  if(standalone)return;
+  var deferred=null,KEY='ccPwaHintDismissed';
+  function dismissed(){try{return localStorage.getItem(KEY)==='1';}catch(e){return false;}}
+  function pill(text,onclick){
+    if(document.getElementById('cc-pwa-pill'))return;
+    var b=document.createElement('div');b.id='cc-pwa-pill';
+    b.style.cssText='position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:99999;display:flex;align-items:center;gap:10px;background:#0f172a;color:#fff;padding:10px 14px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.28);font:600 14px system-ui,-apple-system,Segoe UI,sans-serif;max-width:calc(100vw - 24px)';
+    var t=document.createElement('span');t.textContent=text;b.appendChild(t);
+    if(onclick){var i=document.createElement('button');i.textContent='Nainstalovat';i.style.cssText='background:#e41e26;color:#fff;border:0;border-radius:999px;padding:7px 14px;font:inherit;cursor:pointer';i.onclick=onclick;b.appendChild(i);}
+    var x=document.createElement('button');x.textContent='\u00d7';x.setAttribute('aria-label','Zavřít');x.style.cssText='background:transparent;color:#fff;border:0;font-size:20px;line-height:1;cursor:pointer;padding:0 4px';
+    x.onclick=function(){b.remove();try{localStorage.setItem(KEY,'1');}catch(e){}};b.appendChild(x);
+    document.body.appendChild(b);
+  }
+  window.addEventListener('beforeinstallprompt',function(e){
+    e.preventDefault();deferred=e;if(dismissed())return;
+    pill('Přidat portál jako aplikaci',function(){deferred.prompt();deferred.userChoice.finally(function(){deferred=null;var p=document.getElementById('cc-pwa-pill');if(p)p.remove();});});
+  });
+  var ua=navigator.userAgent||'';
+  var isIOS=/iphone|ipad|ipod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(isIOS&&!dismissed()){
+    window.addEventListener('load',function(){setTimeout(function(){pill('Na plochu: Sdílet \u2192 Přidat na plochu');},2500);});
+  }
 })();
 </script>
 </body>
