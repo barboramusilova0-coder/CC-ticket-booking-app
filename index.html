@@ -7332,3 +7332,125 @@ if(window.MutationObserver){var obs=new MutationObserver(function(){clearTimeout
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(guardPlanned,50);});else setTimeout(guardPlanned,50);
 })();
 </script>
+
+
+
+<!-- FINAL ROUTER + PLANNED STABILITY PATCH 2026-10-07 -->
+<style id="cc-final-router-planned-stability">
+  /* Jen finální vzhled plánovaných akcí. Staré gridy nesmí být viditelné. */
+  #cc-v3-eventgrid,#cc-v10-planned-grid,#cc-final-planned-grid{display:none!important}
+  #cc-canonical-planned-wrap{display:block!important;visibility:visible!important;opacity:1!important}
+  #cc-planned-tab{visibility:visible!important;opacity:1!important}
+</style>
+<script id="cc-final-router-planned-stability-js">
+(function(){
+'use strict';
+
+/*
+  Důležitá oprava: Administrativa se ve skutečnosti otevírá přes
+  window.__ccRenderAdminPage -> starý renderPage. Pouhé přepsání renderPage
+  proto předchozí opravy nezasáhlo. Tady přesměrujeme skutečný router.
+*/
+var oldAdminRouter=window.__ccRenderAdminPage;
+window.__ccRenderAdminPage=function(page){
+  try{
+    var c=document.getElementById('cc-admin-content');
+    if(page==='filters' && c && typeof ccRenderCategoryEditor==='function'){
+      c.innerHTML='';
+      ccRenderCategoryEditor(c);
+      return true;
+    }
+  }catch(e){console.error('Kategorie router:',e);}
+  try{return oldAdminRouter ? oldAdminRouter(page) : false;}catch(e){
+    console.error('Admin router:',e);
+    return false;
+  }
+};
+
+/* Když se právě zobrazují Kategorie a nějaká starší vrstva je přepíše,
+   obnovíme jediný editor. Nezasahuje do ostatních administrativních stránek. */
+function repairCategories(){
+  try{
+    var c=document.getElementById('cc-admin-content');
+    var b=document.querySelector('#cc-admin-shell .cc-admin-nav button[data-page="filters"].active');
+    if(b && c && !c.querySelector('#cc-canon-filter-list')){
+      window.__ccRenderAdminPage('filters');
+    }
+  }catch(e){}
+}
+
+/* Finální plánované akce: karta zůstává stejná, ale tooltip je opravdu
+   napojený na finální kartu, kterou uživatel vidí. */
+function addTooltips(){
+  try{
+    var grid=document.getElementById('cc-planned-grid');
+    if(!grid || grid.__ccTooltipBound)return;
+    grid.__ccTooltipBound=true;
+    grid.addEventListener('mouseover',function(e){
+      var card=e.target.closest('.cc-event-card');
+      if(!card || !grid.contains(card))return;
+      if(card.__ccTipShown)return;
+      var cards=Array.prototype.slice.call(grid.querySelectorAll('.cc-event-card'));
+      var idx=cards.indexOf(card);
+      var acts=[];
+      try{acts=typeof ccActions==='function'?ccActions():[];}catch(x){}
+      var a=acts[idx];
+      if(a && typeof tipShow==='function'){card.__ccTipShown=true;tipShow(card,a);}
+    });
+    grid.addEventListener('mouseout',function(e){
+      var card=e.target.closest('.cc-event-card');
+      if(card && !card.contains(e.relatedTarget)){
+        card.__ccTipShown=false;
+        try{if(typeof tipHide==='function')tipHide();}catch(x){}
+      }
+    });
+  }catch(e){}
+}
+
+function plannedGuard(){
+  try{
+    var p=document.getElementById('cc-planned-tab');
+    if(!p || !p.classList.contains('active'))return;
+    var grid=document.getElementById('cc-planned-grid');
+    var wrap=document.getElementById('cc-canonical-planned-wrap');
+    if(!wrap || !grid || !grid.children.length || getComputedStyle(p).display==='none'){
+      if(typeof window.__ccCanonicalRender==='function')window.__ccCanonicalRender();
+      else if(typeof window.renderPlanned==='function')window.renderPlanned();
+    }
+    addTooltips();
+  }catch(e){}
+}
+
+/* Uložíme finální renderer jako samostatný veřejný vstup, aby ho mohly
+   všechny poslední vrstvy volat bez ohledu na staré názvy funkcí. */
+if(typeof window.renderPlanned==='function')window.__ccCanonicalRender=window.renderPlanned;
+if(typeof window.planned==='function')window.__ccCanonicalRender=window.planned;
+
+/* Opravíme aktuální stav po načtení a po cloud synchronizaci. */
+function boot(){
+  setTimeout(repairCategories,20);
+  setTimeout(repairCategories,150);
+  setTimeout(plannedGuard,40);
+  setTimeout(plannedGuard,250);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+window.addEventListener('cc-cloud-ready',function(){setTimeout(repairCategories,30);setTimeout(plannedGuard,60);setTimeout(plannedGuard,300);});
+
+/* Pokud starý renderer později smaže finální karty, vrať je. */
+if(window.MutationObserver){
+  var timer=null;
+  new MutationObserver(function(){
+    clearTimeout(timer);
+    timer=setTimeout(function(){repairCategories();plannedGuard();},35);
+  }).observe(document.body,{childList:true,subtree:true});
+}
+
+/* Lehký guard pouze v režimu Plánované akce. */
+setInterval(function(){
+  try{
+    var p=document.getElementById('cc-planned-tab');
+    if(p && p.classList.contains('active'))plannedGuard();
+  }catch(e){}
+},350);
+})();
+</script>
