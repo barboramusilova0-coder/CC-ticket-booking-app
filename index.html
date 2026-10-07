@@ -1,41 +1,7 @@
 <!DOCTYPE html>
 
 <html lang="cs">
-
 <head>
-
-<link rel="manifest" href="manifest.json">
-
-<meta name="theme-color" content="#e41e26">
-
-<meta name="apple-mobile-web-app-capable" content="yes">
-
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-
-<meta name="apple-mobile-web-app-title" content="CC Tickets">
-
-<link rel="icon" href="icon.svg" type="image/svg+xml">
-
-<style id="cc-boot-guard">
-html.cc-ui-booting body{visibility:hidden!important}
-html.cc-ui-booting .container{opacity:0!important}
-html.cc-ui-ready body{visibility:visible!important}
-html.cc-ui-ready .container{opacity:1!important}
-</style>
-
-<script id="cc-boot-init">
-document.documentElement.classList.add("cc-ui-booting");
-window.__ccCloudReady=false;
-window.__ccInitialDataReady=false;
-</script>
-
-<meta charset="utf-8"/>
-
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<meta name="apple-mobile-web-app-title" content="CC Tickets">
-
-<link rel="icon" href
-<link rel="icon" href="icon.svg" type="image/svg+xml
 <style id="cc-boot-guard">html.cc-ui-booting body{visibility:hidden!important}html.cc-ui-booting .container{opacity:0!important}html.cc-ui-ready body{visibility:visible!important}html.cc-ui-ready .container{opacity:1!important}html.cc-ui-booting #cc-v3-eventgrid,html.cc-ui-booting #cc-planned-grid,html.cc-ui-booting #cc-v3-filterbar{visibility:hidden!important}html.cc-ui-booting #cc-planned-grid .cc-event-card,html.cc-ui-booting #cc-v3-eventgrid .cc-v3-card{transition:none!important}</style><script id="cc-boot-init">document.documentElement.classList.add("cc-ui-booting");window.__ccCloudReady=false;window.__ccInitialDataReady=false;</script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -6849,13 +6815,4 @@ function tick(){try{installQA();installBulk()}catch(e){console.warn('cc tools',e
 function boot(){tick();if(window.MutationObserver){var t=null;new MutationObserver(function(){clearTimeout(t);t=setTimeout(tick,40)}).observe(document.body,{childList:true,subtree:true})}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
-</script>
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js')
-      .then(() => console.log('Service Worker registrován'))
-      .catch(err => console.log('Chyba Service Workeru:', err));
-  });
-}
 </script>
