@@ -1939,6 +1939,14 @@ setTimeout(bootFix,700);setTimeout(bootFix,1800);
 <script id="cc-pwa-install">
 (function(){
   if('serviceWorker' in navigator){
+    /* úklid po starších pokusech: odregistruje cizí service workery a smaže jejich cache */
+    navigator.serviceWorker.getRegistrations().then(function(regs){
+      return Promise.all(regs.map(function(r){
+        var w=r.active||r.waiting||r.installing;
+        if(w&&!/\/sw\.js(\?|$)/.test(w.scriptURL))return r.unregister();
+      }));
+    }).catch(function(){});
+    if(window.caches){caches.keys().then(function(ks){ks.forEach(function(k){if(k.indexOf('ticket-portal-')!==0)caches.delete(k);});}).catch(function(){});}
     window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(e){console.warn('SW:',e);});});
   }
   var standalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
@@ -2041,16 +2049,16 @@ setTimeout(bootFix,700);setTimeout(bootFix,1800);
                 var odpovidaStavu = false;
                 if (filterStav === 'moje_cekajici') {
                     if (uRole === 'admin') {
-                        odpovidastavu = (naKomToVisi !== 'nikdo'); // Admin vidí všechno, co někde čeká
+                        odpovidaStavu = (naKomToVisi !== 'nikdo'); // Admin vidí všechno, co někde čeká
                     } else if (uRole.includes('manager') || uRole.includes('1')) {
-                        odpovidastavu = (naKomToVisi === 'manažer' && jeToMojeRezervace);
+                        odpovidaStavu = (naKomToVisi === 'manažer' && jeToMojeRezervace);
                     } else if (uRole.includes('rsm_praha') || uRole.includes('2')) {
-                        odpovidastavu = (naKomToVisi === 'rsm' && textStavu1.indexOf('schváleno') > -1);
+                        odpovidaStavu = (naKomToVisi === 'rsm' && textStavu1.indexOf('schváleno') > -1);
                     }
                 } else if (filterStav === 'vyrizene') {
-                    odpovidastavu = (naKomToVisi === 'nikdo');
+                    odpovidaStavu = (naKomToVisi === 'nikdo');
                 } else {
-                    odpovidastavu = true; // Zobrazit vše
+                    odpovidaStavu = true; // Zobrazit vše
                 }
 
                 // Vyhodnocení textového vyhledávání (Žadatel + Zákazník)
@@ -2058,7 +2066,7 @@ setTimeout(bootFix,700);setTimeout(bootFix,1800);
                 var odpovidaZakaznikovi = (searchCustomer === '' || textZakaznika.indexOf(searchCustomer) > -1);
 
                 // Řádek ukážeme, pouze pokud splňuje všechny 3 filtry naráz
-                if (odpovidastavu && odpovidaZadateli && odpovidaZakaznikovi) {
+                if (odpovidaStavu && odpovidaZadateli && odpovidaZakaznikovi) {
                     row.style.display = '';
                 } else {
                     row.style.display = 'none';
