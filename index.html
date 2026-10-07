@@ -1931,6 +1931,211 @@ setTimeout(bootFix,700);setTimeout(bootFix,1800);
   });
 })();
 </script>
+<style id="cc-final-unified-fixes">
+/* Finální sjednocení: kategorie, hromadné úpravy a jeden společný pomocník. */
+#cc-v10-filters{display:none!important}
+#cc-v3-filterbar,#cc-v6-filterbar,#cc-planned-filterbar,#cc-v10-filters{display:none!important}
+.cc-unified-helper-admin{border:1px solid #dbe3ec;border-radius:14px;padding:16px;background:#f8fafc;margin-bottom:15px}
+.cc-unified-helper-admin .uh-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cc-unified-helper-admin label{display:block;font-size:12px;font-weight:750;color:#334155;margin:7px 0 5px}
+.cc-unified-helper-admin input,.cc-unified-helper-admin textarea{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:8px;padding:9px 10px;background:#fff;font:inherit}
+.cc-unified-helper-admin textarea{min-height:75px;resize:vertical}
+.cc-unified-helper-admin .uh-note{font-size:12px;color:#64748b;line-height:1.45}
+.cc-unified-helper-admin .uh-answer{border:1px solid #dbe3ec;border-radius:10px;background:#fff;padding:11px;margin:9px 0}
+.cc-unified-helper-admin .uh-answer-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cc-unified-helper-admin .uh-answer textarea{min-height:80px}
+.cc-unified-helper-admin .uh-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+@media(max-width:700px){.cc-unified-helper-admin .uh-grid,.cc-unified-helper-admin .uh-answer-grid{grid-template-columns:1fr}}
+.cc-unified-bulk{width:min(1180px,96vw)!important;max-height:92vh!important}
+.cc-unified-bulk .ub-table-wrap{overflow:auto;max-height:60vh;border:1px solid #e2e8f0;border-radius:10px}
+.cc-unified-bulk table{border-collapse:collapse;width:100%;font-size:12px;background:#fff}
+.cc-unified-bulk th{position:sticky;top:0;background:#f1f5f9;padding:8px;text-align:left;z-index:2}
+.cc-unified-bulk td{padding:5px;border-top:1px solid #eef2f7;vertical-align:middle}
+.cc-unified-bulk td input,.cc-unified-bulk td select{width:100%;min-width:95px;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:6px;padding:6px;font:inherit;font-size:12px;background:#fff}
+.cc-unified-bulk td:first-child input{min-width:auto;width:auto}
+.cc-unified-bulk .ub-quick{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin:10px 0}
+.cc-unified-bulk .ub-quick input,.cc-unified-bulk .ub-quick select{width:auto;min-width:110px}
+</style>
+<script id="cc-final-unified-fixes-js">
+(function(){
+'use strict';
+
+/* ================================================================
+   1) KATEGORIE/FILTRY – fungující uložení i pro starší renderer.
+   ================================================================ */
+function uhCfg(){
+  try{return JSON.parse(localStorage.getItem('ccPortalConfigV3')||'{}')||{};}catch(e){return {};}
+}
+function uhSaveCfg(c,done){
+  try{localStorage.setItem('ccPortalConfigV3',JSON.stringify(c||{}));}catch(e){}
+  try{if(typeof syncAll==='function')syncAll();}catch(e){}
+  /* V12 localStorage hook synchronizuje config do cloudu; přímý zápis je
+     jen pojistka, pokud už je Firebase připravený. */
+  try{
+    if(typeof firebase!=='undefined'&&firebase.apps&&firebase.apps.length){
+      firebase.firestore().collection('portalData').doc('cocaColaDatabase').set({ccPortalConfigV3:c||{}},{merge:true})
+        .then(function(){if(done)done(true)}).catch(function(err){console.error('Kategorie – cloud save',err);if(done)done(false)});
+      return;
+    }
+  }catch(e){}
+  if(done)done(false);
+}
+function uhCollectCategories(){
+  var c=uhCfg(),old=Array.isArray(c.filters)?c.filters:[],out=[];
+  var enhanced=document.getElementById('cc-ext-filter-tree');
+  if(enhanced){
+    var customOld=old.filter(function(x){return x&&x.id!=='all'});
+    enhanced.querySelectorAll('.cc-ext-filter-parent').forEach(function(box,i){
+      var name=((box.querySelector('[data-fn]')||{}).value||'').trim();
+      var prev=customOld.find(function(x){return x&&((x.name===name)||(x.id===box.dataset.filterId))})||customOld[i]||{};
+      if(!name)return;
+      var f={id:box.dataset.filterId||prev.id||('cat_'+Date.now().toString(36)+'_'+i),name:name,locked:!!prev.locked,active:!!((box.querySelector('[data-fa]')||{}).checked),children:[]};
+      box.querySelectorAll('.cc-ext-child').forEach(function(row,j){
+        var q=(prev.children||prev.subfilters||[])[j]||{},cn=((row.querySelector('[data-cn]')||{}).value||'').trim();
+        if(cn)f.children.push({id:row.dataset.childId||q.id||('sub_'+Date.now().toString(36)+'_'+j),name:cn,active:!!((row.querySelector('[data-ca]')||{}).checked)});
+      });
+      out.push(f);
+    });
+    var system=old.filter(function(x){return x&&x.id==='all'});
+    return system.concat(out);
+  }
+  var legacy=document.getElementById('filterlist');
+  if(legacy){
+    legacy.querySelectorAll('[data-fn]').forEach(function(inp,i){
+      var prev=old[i]||{},name=String(inp.value||'').trim();if(!name)return;
+      out.push(Object.assign({},prev,{name:name,active:!!((legacy.querySelector('[data-fa="'+i+'"]')||{}).checked)}));
+    });
+  }
+  return out.length?out:old;
+}
+function uhSaveCategories(ev){
+  if(ev){ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();}
+  var c=uhCfg();c.filters=uhCollectCategories();
+  uhSaveCfg(c,function(ok){
+    try{if(typeof renderFilters==='function')renderFilters();}catch(e){}
+    try{if(typeof planned==='function')planned();}catch(e){}
+    try{if(typeof renderPage==='function'&&window.__ccAdminCurrentPage==='filters')renderPage('filters');}catch(e){}
+    alert(ok?'Kategorie a filtry byly uloženy a synchronizovány.':'Kategorie byly uloženy v tomto zařízení. Cloud se v tuto chvíli nepodařilo potvrdit.');
+  });
+}
+document.addEventListener('click',function(e){
+  var b=e.target.closest&&e.target.closest('#cc-ext-save-filters,#savefilters');
+  if(b)uhSaveCategories(e);
+},true);
+
+/* ================================================================
+   2) PRAKTIČTĚJŠÍ HROMADNÁ ÚPRAVA – tabulka + kapacita + další pole.
+   ================================================================ */
+window.ccBulkEdit=function(ids){
+  ids=(ids||[]).map(String);var all=ccActionsNow(),list=all.filter(function(a){return ids.indexOf(String(a.id))>=0});
+  if(!list.length)return;
+  var back=document.createElement('div');back.className='cc-ext-modalback';
+  back.innerHTML='<div class="cc-ext-modal cc-unified-bulk"><div class="cc-ext-modal-head"><h2>🛠 Hromadná úprava akcí</h2><button class="cc-ext-close" type="button">×</button></div>'+
+    '<p class="cc-unified-note">Upravujte více akcí najednou. Zaškrtnuté řádky se uloží; ostatní zůstanou beze změny.</p>'+
+    '<div class="ub-quick"><b>Rychlá změna pro vybrané řádky:</b><label>Kapacita <input id="ub-q-cap" type="number" min="1" placeholder="např. 100"></label><button type="button" class="cc-adm-btn" id="ub-q-cap-apply">Nastavit kapacitu</button><label>Stav <select id="ub-q-status"><option value="">— beze změny —</option><option>Aktivní</option><option>Skryto</option><option>Zrušena</option></select></label><button type="button" class="cc-adm-btn" id="ub-q-status-apply">Nastavit stav</button></div>'+
+    '<div class="ub-table-wrap"><table><thead><tr><th><input id="ub-all" type="checkbox" checked></th><th>Název</th><th>Datum</th><th>Čas</th><th>Místo</th><th>Kategorie</th><th>Kapacita</th><th>Stav</th><th>Portál</th><th>Viditelnost</th></tr></thead><tbody id="ub-body"></tbody></table></div>'+
+    '<div class="cc-ext-guide-actions"><button class="cc-ext-mini" id="ub-cancel" type="button">Zrušit</button><button class="cc-adm-btn primary" id="ub-save" type="button">Uložit změny</button></div></div>';
+  document.body.appendChild(back);
+  var cats=ccFilterTree().map(function(f){return f.name});
+  var body=back.querySelector('#ub-body');
+  function esc(v){return ccEsc(v==null?'':v)}
+  function catOpts(v){return '<option value="">Bez kategorie</option>'+cats.map(function(x){return '<option value="'+esc(x)+'"'+(String(x)===String(v)?' selected':'')+'>'+esc(x)+'</option>'}).join('')}
+  body.innerHTML=list.map(function(a,i){return '<tr data-i="'+i+'"><td><input type="checkbox" class="ub-sel" checked></td><td><input data-f="name" value="'+esc(a.name)+'"></td><td><input type="date" data-f="date" value="'+esc(a.date||'')+'"></td><td><input type="time" data-f="time" value="'+esc(a.time||'')+'"></td><td><input data-f="place" value="'+esc(a.place||'')+'"></td><td><select data-f="category">'+catOpts(a.category||a.cat||'')+'</select></td><td><input type="number" min="1" data-f="capacity" value="'+esc(a.capacity==null?'':a.capacity)+'"></td><td><select data-f="status"><option'+((a.status||'Aktivní')==='Aktivní'?' selected':'')+'>Aktivní</option><option'+(a.status==='Skryto'?' selected':'')+'>Skryto</option><option'+(a.status==='Zrušena'?' selected':'')+'>Zrušena</option></select></td><td><select data-f="portalStatus"><option value=""'+(!a.portalStatus?' selected':'')+'>Běžný</option><option value="Plno"'+(a.portalStatus==='Plno'?' selected':'')+'>Plno</option><option value="Zrušeno/Přesunuto"'+(a.portalStatus==='Zrušeno/Přesunuto'?' selected':'')+'>Zrušeno / Přesunuto</option></select></td><td><select data-f="visible"><option value="true"'+(a.visible!==false?' selected':'')+'>Ano</option><option value="false"'+(a.visible===false?' selected':'')+'>Ne</option></select></td></tr>'}).join('');
+  function rowsSelected(){return Array.from(body.querySelectorAll('tr')).filter(function(tr){return tr.querySelector('.ub-sel').checked})}
+  back.querySelector('#ub-all').onchange=function(){body.querySelectorAll('.ub-sel').forEach(function(x){x.checked=back.querySelector('#ub-all').checked})};
+  back.querySelector('#ub-q-cap-apply').onclick=function(){var v=Number(back.querySelector('#ub-q-cap').value);if(!v||v<1){alert('Zadejte kapacitu alespoň 1.');return}rowsSelected().forEach(function(tr){tr.querySelector('[data-f=capacity]').value=v})};
+  back.querySelector('#ub-q-status-apply').onclick=function(){var v=back.querySelector('#ub-q-status').value;if(!v){alert('Vyberte stav.');return}rowsSelected().forEach(function(tr){tr.querySelector('[data-f=status]').value=v})};
+  function close(){back.remove()};back.querySelector('.cc-ext-close').onclick=close;back.querySelector('#ub-cancel').onclick=close;
+  back.querySelector('#ub-save').onclick=function(){
+    var selectedRows=rowsSelected();if(!selectedRows.length){alert('Vyberte alespoň jednu akci.');return}
+    var renamed={},errors=[];
+    selectedRows.forEach(function(tr){var src=list[Number(tr.dataset.i)],a=all.find(function(x){return String(x.id)===String(src.id)});if(!a)return;var g=function(f){return tr.querySelector('[data-f="'+f+'"]').value};var name=g('name').trim(),cap=g('capacity');if(!name){errors.push('Prázdný název u „'+(src.name||'')+'“.');return}if(cap===''||Number(cap)<1||isNaN(Number(cap))){errors.push('Neplatná kapacita u „'+name+'“.');return}if(name!==a.name)renamed[a.name]=name;a.name=name;a.date=g('date');a.time=g('time');a.place=g('place');a.capacity=Number(cap);a.category=g('category');a.subcategory='';var kids=ccCategoryChildren(a.category);if(kids.length===1)a.subcategory=kids[0].name||kids[0];a.status=g('status');a.portalStatus=g('portalStatus');a.visible=g('visible')==='true'});
+    if(errors.length){alert(errors.join('\n'));return}
+    if(Object.keys(renamed).length){var rq=ccRequestsNow();rq.forEach(function(r){if(renamed[r.action])r.action=renamed[r.action]});ccSaveRequests(rq)}
+    ccSaveActions(all);close();try{renderPage('events')}catch(e){}
+  };
+};
+
+/* ================================================================
+   3) JEDEN ZDROJ IDENTITY POMOCNÍKA – chat + chytrý pomocník + onboarding.
+   ================================================================ */
+function uhHelperProfile(){
+  var c=uhCfg(),p=c.helperProfile||{};
+  if(!p.name||(!p.emoji&&!p.image)){
+    try{var ex=ccExtRead(),g=ex.guide||{};if(g.name||g.avatar){p=Object.assign({},p,{name:p.name||g.name,image:p.image||g.avatar,greeting:p.greeting||g.greeting});}}catch(e){}
+  }
+  return {name:String(p.name||'Chytrý pomocník'),greeting:String(p.greeting||'Dobrý den! Jsem váš pomocník portálu. Ptejte se mě na akce, rezervace nebo kapacitu.'),emoji:String(p.emoji||'🤖'),image:String(p.image||'')};
+}
+function uhSaveHelperProfile(p,done){
+  var c=uhCfg();c.helperProfile={name:String(p.name||'Chytrý pomocník').trim()||'Chytrý pomocník',greeting:String(p.greeting||'').trim()||'Dobrý den! Jsem váš pomocník portálu. Ptejte se mě na akce, rezervace nebo kapacitu.',emoji:String(p.emoji||'🤖').trim()||'🤖',image:String(p.image||'').trim()};
+  c.help=c.help||{answers:[],contact:''};
+  try{localStorage.setItem('ccHelperProfile',JSON.stringify({name:c.helperProfile.name,greeting:c.helperProfile.greeting,icon:c.helperProfile.emoji}));}catch(e){}
+  if(window.ccPersistUnifiedHelp){window.ccPersistUnifiedHelp(c,done);}else{try{localStorage.setItem('ccPortalConfigV3',JSON.stringify(c));}catch(e){}if(done)done(false)}
+}
+window.ccUnifiedHelperProfile=uhHelperProfile;
+window.ccUnifiedSaveHelperProfile=uhSaveHelperProfile;
+
+/* Make every existing helper reader return the same global profile. */
+window.ccGuideProfile=function(){var p=uhHelperProfile();return {variant:'female',name:p.name,avatar:p.image,greeting:p.greeting,emoji:p.emoji}};
+window.ccGuideVariants=function(){var p=uhHelperProfile();return {female:{name:p.name,avatar:p.image,greeting:p.greeting},male:{name:p.name,avatar:p.image,greeting:p.greeting}}};
+window.ccHelperLook=function(){var p=uhHelperProfile();return {name:p.name,image:p.image,emoji:p.emoji,greeting:p.greeting}};
+window.getProfile=function(){return uhHelperProfile()};
+window.profile=function(){var p=uhHelperProfile();return {name:p.name,icon:p.emoji,greeting:p.greeting}};
+window.saveProfile=function(p){uhSaveHelperProfile({name:p.name,greeting:p.greeting,emoji:p.emoji||p.icon||'🤖',image:p.image||''})};
+
+/* Onboarding už nic nevybírá a nic nepřepisuje – pouze představí stejného pomocníka. */
+window.ccOpenOnboarding=function(force){
+  var u=ccUserNow();if(!u||u.role==='guest')return;
+  var key='ccOnboardingSeen_'+String(u.email||u.name).toLowerCase(),p=uhHelperProfile(),back=document.createElement('div');
+  back.className='cc-ext-modalback';
+  back.innerHTML='<div class="cc-ext-modal" id="cc-guide-modal"><div class="cc-ext-modal-head"><h2>👋 Poznej svého pomocníka</h2><button class="cc-ext-close" type="button">×</button></div><div class="cc-ext-guide-step"><div style="display:flex;gap:12px;align-items:center"><div class="cc-ext-guide-avatar">'+(p.image?'<img src="'+ccEsc(p.image)+'">':ccEsc(p.emoji))+'</div><div><b>'+ccEsc(p.name)+'</b><br><span style="font-size:12px;color:#64748b">Stejný pomocník pro onboarding, chat i nápovědu v portálu.</span></div></div><p style="margin-bottom:0">'+ccEsc(p.greeting)+'</p></div><div id="cc-guide-step"></div><div class="cc-ext-guide-actions"><button class="cc-ext-mini" id="cc-guide-skip" type="button">Přeskočit</button><button class="cc-adm-btn primary" id="cc-guide-next" type="button">Pokračovat</button></div></div>';
+  document.body.appendChild(back);
+  var steps=[['Plánované akce','Tady najdeš aktuální akce a můžeš otevřít rezervaci.'],['Nová rezervace','Vybereš akci, zákazníka, počet lístků a důvod a odešleš žádost.'],['Seznam žádostí','Tady sleduješ stav žádosti a schvalování.'],['Pomoc','Kdykoliv se zeptej stejného pomocníka vpravo dole.']];var i=0;
+  function draw(){var s=back.querySelector('#cc-guide-step');s.innerHTML=i<steps.length?'<div class="cc-ext-guide-step"><b>'+ccEsc(steps[i][0])+'</b><br>'+ccEsc(steps[i][1])+'</div>':'<div class="cc-ext-guide-step"><b>Hotovo.</b><br>Pomocník je připravený.</div>';back.querySelector('#cc-guide-next').textContent=i<steps.length?'Pokračovat':'Dokončit'}
+  function done(){localStorage.setItem(key,'1');back.remove();if(typeof ccRenderChat==='function')ccRenderChat()}
+  back.querySelector('.cc-ext-close').onclick=done;back.querySelector('#cc-guide-skip').onclick=done;back.querySelector('#cc-guide-next').onclick=function(){if(i<steps.length){i++;draw()}else done()};draw();
+};
+
+/* Chat: zachová stávající funkce, ale po vykreslení vždy vezme jméno/ikonu z jednoho zdroje. */
+if(window.ccRenderChat){
+  var oldUnifiedChat=window.ccRenderChat;
+  window.ccRenderChat=function(){oldUnifiedChat();setTimeout(function(){
+    var p=uhHelperProfile(),tg=document.getElementById('cc-ext-chat-toggle'),head=document.querySelector('#cc-ext-chat .cc-ext-chat-head'),av=document.querySelector('#cc-ext-chat .cc-ext-chat-avatar'),name=document.querySelector('#cc-ext-chat .cc-ext-chat-head b');
+    if(name)name.textContent=p.name;
+    if(tg){tg.removeAttribute('data-icon');tg.classList.remove('cc-has-img');tg.innerHTML='';if(p.image){tg.classList.add('cc-has-img');var im=document.createElement('img');im.alt='';im.src=p.image;tg.appendChild(im)}else tg.textContent=p.emoji||'🤖';tg.title=p.name+' – chytrý pomocník';tg.setAttribute('aria-label',p.name+' – chytrý pomocník')}
+    if(av){av.innerHTML='';if(p.image){var ai=document.createElement('img');ai.alt='';ai.src=p.image;av.appendChild(ai)}else av.textContent=p.emoji||'🤖'}
+  },0)};
+}
+
+/* Personal settings už nesmí vytvářet druhého průvodce. */
+if(window.ccOpenSettings){
+  var oldUnifiedSettings=window.ccOpenSettings;
+  window.ccOpenSettings=function(){oldUnifiedSettings();setTimeout(function(){var m=document.querySelector('.cc-ext-settings');if(!m)return;var s=m.querySelector('#ccs-guide');if(s)s.innerHTML='<h3>Můj průvodce</h3><p style="font-size:12px;color:#64748b;margin:0">Totožný pomocník pro všechny uživatele je spravován v <b>Administrativa → Chytrý pomocník</b>. Osobní nastavení zde nevytváří jinou variantu.</p>';},40)};
+}
+
+/* ================================================================
+   4) ADMIN → CHYTRÝ POMOCNÍK: jediný editor identity + odpovědí.
+   ================================================================ */
+window.ccUnifiedHelperAdmin=function(c){
+  var cfg=window.ccUnifiedHelpConfig?window.ccUnifiedHelpConfig():uhCfg(),p=uhHelperProfile(),h=cfg.help||{answers:[],contact:''};if(!Array.isArray(h.answers))h.answers=[];
+  c.innerHTML='<div class="cc-adm-section"><h3>Jeden pomocník pro celý portál</h3><p class="cc-adm-muted">Tady spravujete <b>stejného pomocníka</b>, který se zobrazí jako Chytrý pomocník vpravo dole, v onboardingu i v nápovědě. Jméno, ikona a pozdrav jsou společné pro všechny uživatele a synchronizují se do cloudu.</p><div class="cc-unified-helper-admin"><div class="uh-grid"><div><label>Jméno pomocníka</label><input id="uh-name" value="'+ccEsc(p.name)+'"><label>Ikona / emoji</label><input id="uh-emoji" maxlength="8" value="'+ccEsc(p.emoji)+'"><label>URL obrázku (volitelné)</label><input id="uh-image" value="'+ccEsc(p.image)+'" placeholder="https://…"></div><div><label>Úvodní pozdrav</label><textarea id="uh-greeting">'+ccEsc(p.greeting)+'</textarea><p class="uh-note">Pokud zadáte URL obrázku, použije se místo emoji. Změna se projeví všem uživatelům po synchronizaci.</p></div></div></div></div><div class="cc-adm-section"><h3>Otázky a odpovědi</h3><p class="cc-adm-muted">Tyto odpovědi jsou jeden společný zdroj pro chat i onboarding. Můžete přidat klíčová slova a určit úvodní tlačítka.</p><div id="uh-answers"></div><div class="uh-actions" style="justify-content:flex-start"><button type="button" class="cc-adm-btn" id="uh-add">+ Přidat otázku</button></div><div class="cc-adm-field" style="margin-top:12px"><label>Kontakt při nevyřešeném problému</label><input id="uh-contact" value="'+ccEsc(h.contact||'')+'"></div><div class="uh-actions"><span id="uh-status" class="cc-adm-muted"></span><button type="button" class="cc-adm-btn primary" id="uh-save">Uložit pomocníka pro všechny</button></div></div>';
+  var host=c.querySelector('#uh-answers'),items=h.answers.map(function(a){return {id:a.id||('q_'+Date.now()+'_'+Math.random().toString(36).slice(2,7)),q:a.q||a.question||'',a:a.a||a.answer||'',keys:a.keys||'',start:!!a.start,next:Array.isArray(a.next)?a.next.slice():[]}});
+  function draw(){host.innerHTML=items.map(function(it,i){return '<div class="uh-answer" data-i="'+i+'"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>#'+(i+1)+'</b><button type="button" class="cc-adm-btn small danger" data-del="'+i+'">Smazat</button></div><div class="uh-answer-grid"><div><label>Otázka / tlačítko</label><input data-f="q" value="'+ccEsc(it.q)+'"><label>Klíčová slova</label><input data-f="keys" value="'+ccEsc(it.keys)+'" placeholder="např. parkování, kapacita"></div><div><label>Odpověď</label><textarea data-f="a">'+ccEsc(it.a)+'</textarea><label><input data-f="start" type="checkbox" '+(it.start?'checked':'')+'> Zobrazit jako úvodní tlačítko</label></div></div></div>'}).join('')||'<div class="cc-adm-muted">Zatím není přidána žádná vlastní odpověď.</div>';host.querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){items.splice(Number(b.dataset.del),1);draw()}})}
+  c.querySelector('#uh-add').onclick=function(){items.push({id:'q_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),q:'Nová otázka',a:'',keys:'',start:false,next:[]});draw()};
+  c.querySelector('#uh-save').onclick=function(){host.querySelectorAll('.uh-answer').forEach(function(row){var it=items[Number(row.dataset.i)];it.q=row.querySelector('[data-f=q]').value.trim();it.a=row.querySelector('[data-f=a]').value.trim();it.keys=row.querySelector('[data-f=keys]').value.trim();it.start=row.querySelector('[data-f=start]').checked});items=items.filter(function(x){return x.q&&x.a});var out={name:c.querySelector('#uh-name').value.trim(),emoji:c.querySelector('#uh-emoji').value.trim()||'🤖',image:c.querySelector('#uh-image').value.trim(),greeting:c.querySelector('#uh-greeting').value.trim(),help:{answers:items,contact:c.querySelector('#uh-contact').value.trim()}};var st=c.querySelector('#uh-status');st.textContent='Ukládám…';uhSaveHelperProfile(out,function(ok){st.textContent=ok?'Uloženo ✓ – stejné nastavení používá chat, Chytrý pomocník i onboarding.':'Uloženo v tomto zařízení; cloud se nepodařilo potvrdit.';try{ccRenderChat()}catch(e){}})};
+  draw();
+};
+
+/* Starý personifikační editor nesmí na stejné stránce vytvořit druhého pomocníka. */
+try{window.installProfileEditor=function(){};window.ensureEditor=function(){}}catch(e){}
+
+/* Nahradíme administrativní renderer a okamžitě překreslíme, pokud je stránka otevřená. */
+try{pageHelper=window.ccUnifiedHelperAdmin;}catch(e){}
+try{if(window.__ccAdminCurrentPage==='helper'&&typeof renderPage==='function')renderPage('helper');}catch(e){}
+
+})();
+</script>
+
 </body>
 <script>
     // 🔍 POKROČILÁ MANAŽERSKÁ VYHLEDÁVACÍ LIŠTA (Coca-Cola HBC)
