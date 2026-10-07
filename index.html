@@ -7222,3 +7222,113 @@ window.addEventListener('cc-cloud-ready',function(){setTimeout(installCanonical,
 window.addEventListener('storage',function(e){if(e.key==='ccPortalConfigV3'||e.key==='companyActions')setTimeout(installCanonical,50);});
 })();
 </script>
+
+
+<!-- FINAL STABILITY + CATEGORY/FILTER EDITOR PATCH 2026-10-07 -->
+<style id="cc-final-category-stability">
+#cc-canonical-filterbar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
+#cc-canonical-filterbar button{border:1px solid #dbe3ec;background:#fff;color:#334155;border-radius:999px;padding:8px 13px;font-weight:700;cursor:pointer}
+#cc-canonical-filterbar button.active{background:#111827;color:#fff;border-color:#111827}
+.cc-canon-child{margin:6px 0 0 38px;padding:7px 9px;border-left:3px solid #e2e8f0;display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.cc-canon-child input[type=text]{flex:1;min-width:180px}
+.cc-canon-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+</style>
+<script id="cc-final-category-stability-js">
+(function(){
+'use strict';
+function cfgSafe(){try{return JSON.parse(localStorage.getItem('ccPortalConfigV3')||'{}')||{};}catch(e){return {};}}
+function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function catNameByIdOrName(v){
+  var c=cfgSafe(),fs=Array.isArray(c.filters)?c.filters:[],s=String(v==null?'':v);
+  for(var i=0;i<fs.length;i++){if(String(fs[i].id||'')===s)return String(fs[i].name||'');if(String(fs[i].name||'')===s)return String(fs[i].name||'');}
+  return s;
+}
+function saveCfgCloud(c,done){
+  try{localStorage.setItem('ccPortalConfigV3',JSON.stringify(c));}catch(e){}
+  try{if(typeof saveCfg==='function')saveCfg(c);}catch(e){}
+  try{if(typeof syncAll==='function')syncAll();}catch(e){}
+  var fsaved=false;
+  try{if(typeof firebase!=='undefined'&&firebase.apps&&firebase.apps.length){firebase.firestore().collection('portalData').doc('cocaColaDatabase').set({ccPortalConfigV3:c},{merge:true}).then(function(){fsaved=true;if(done)done(true);}).catch(function(){if(done)done(false);});return;}}catch(e){}
+  if(done)done(fsaved);
+}
+
+/* One authoritative editor for categories + subfilters. */
+function ccRenderCategoryEditor(c){
+  var conf=cfgSafe(); var filters=Array.isArray(conf.filters)?conf.filters.filter(function(f){return f&&f.id!=='all';}).map(function(f){return Object.assign({children:[]},f,{children:Array.isArray(f.children)?f.children.slice():[]});}):[];
+  c.innerHTML='<div class="cc-adm-section"><h3>Kategorie / filtry akcí</h3><p class="cc-adm-muted">Tady se spravují stejné kategorie a podfiltry, které se používají v seznamu „Plánované akce“. Můžeš je přejmenovat, zobrazit/skrýt, zamknout, měnit pořadí a mazat. Změny se ukládají do cloudu.</p><div id="cc-canon-filter-list"></div><div class="cc-canon-actions" style="margin-top:12px"><button type="button" class="cc-adm-btn" id="cc-canon-add">+ Přidat kategorii</button><button type="button" class="cc-adm-btn primary" id="cc-canon-save">Uložit kategorie a filtry</button></div></div><div class="cc-adm-section"><h3>Důvody rezervace</h3><div id="cc-canon-reasons"></div><div class="cc-canon-actions" style="margin-top:10px"><button type="button" class="cc-adm-btn" id="cc-canon-addreason">+ Přidat důvod</button><button type="button" class="cc-adm-btn primary" id="cc-canon-savereasons">Uložit důvody</button></div></div>';
+  var list=c.querySelector('#cc-canon-filter-list'), rb=c.querySelector('#cc-canon-reasons');
+  var reasons=(localStorage.getItem('cc_dynamic_reasons')||'Obchodní schůzka,VIP zákazník,Interní akce').split(',').map(function(x){return x.trim();}).filter(Boolean);
+  function draw(){
+    list.innerHTML=filters.map(function(f,i){
+      var locked=!!f.locked;
+      var children=Array.isArray(f.children)?f.children:[];
+      return '<div class="cc-adm-listrow" data-fi="'+i+'" style="display:block;padding:12px;margin-bottom:9px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="width:28px;font-weight:800;color:#64748b">'+(i+1)+'.</span><input data-cat-name="'+i+'" value="'+esc(f.name||'')+'" '+(locked?'disabled':'')+' style="flex:1;min-width:220px"><label class="cc-adm-check"><input type="checkbox" data-cat-active="'+i+'" '+(f.active!==false?'checked':'')+'> zobrazit</label><button type="button" class="cc-adm-btn small" data-cat-lock="'+i+'">'+(locked?'🔓 Odemknout':'🔒 Zamknout')+'</button><button type="button" class="cc-adm-btn small" data-cat-up="'+i+'" '+(i===0?'disabled':'')+'>↑</button><button type="button" class="cc-adm-btn small" data-cat-down="'+i+'" '+(i===filters.length-1?'disabled':'')+'>↓</button><button type="button" class="cc-adm-btn small danger" data-cat-del="'+i+'">Smazat</button></div><div style="margin-top:8px"><button type="button" class="cc-adm-btn small" data-child-add="'+i+'">+ Přidat filtr</button></div>'+children.map(function(ch,j){return '<div class="cc-canon-child"><input type="text" data-child-name="'+i+'" data-child-index="'+j+'" value="'+esc(ch.name||'')+'" '+(ch.locked?'disabled':'')+'><label class="cc-adm-check"><input type="checkbox" data-child-active="'+i+'" data-child-index="'+j+'" '+(ch.active!==false?'checked':'')+'> zobrazit</label><button type="button" class="cc-adm-btn small" data-child-lock="'+i+'" data-child-index="'+j+'">'+(ch.locked?'🔓':'🔒')+'</button><button type="button" class="cc-adm-btn small danger" data-child-del="'+i+'" data-child-index="'+j+'">Smazat</button></div>';}).join('')+'</div>';
+    }).join('')||'<div class="cc-adm-muted">Zatím není vytvořena žádná kategorie.</div>';
+  }
+  function drawReasons(){rb.innerHTML=reasons.map(function(r,i){return '<div class="cc-adm-listrow"><input data-r="'+i+'" value="'+esc(r)+'"><button type="button" class="cc-adm-btn small danger" data-rd="'+i+'">Smazat</button></div>';}).join('');}
+  function read(){
+    list.querySelectorAll('[data-cat-name]').forEach(function(el){var i=+el.dataset.catName;if(filters[i]&&!filters[i].locked&&el.value.trim())filters[i].name=el.value.trim();});
+    list.querySelectorAll('[data-cat-active]').forEach(function(el){var i=+el.dataset.catActive;if(filters[i])filters[i].active=el.checked;});
+    list.querySelectorAll('[data-child-name]').forEach(function(el){var i=+el.dataset.childName,j=+el.dataset.childIndex;if(filters[i]&&filters[i].children[j]&&!filters[i].children[j].locked&&el.value.trim())filters[i].children[j].name=el.value.trim();});
+    list.querySelectorAll('[data-child-active]').forEach(function(el){var i=+el.dataset.childActive,j=+el.dataset.childIndex;if(filters[i]&&filters[i].children[j])filters[i].children[j].active=el.checked;});
+  }
+  c.querySelector('#cc-canon-add').onclick=function(){read();filters.push({id:'cat_'+Date.now().toString(36),name:'Nová kategorie',locked:false,active:true,children:[]});draw();};
+  c.querySelector('#cc-canon-save').onclick=function(){
+    read();filters=filters.filter(function(f){return f&&String(f.name||'').trim();});
+    conf.filters=[{id:'all',name:'Vše',locked:true,active:true,children:[]}].concat(filters.map(function(f){return {id:f.id||('cat_'+Date.now().toString(36)),name:String(f.name).trim(),locked:!!f.locked,active:f.active!==false,children:(f.children||[]).filter(function(ch){return ch&&String(ch.name||'').trim();}).map(function(ch){return {id:ch.id||('sub_'+Date.now().toString(36)),name:String(ch.name).trim(),locked:!!ch.locked,active:ch.active!==false};})};}));
+    saveCfgCloud(conf,function(ok){try{canonicalRender();}catch(e){};alert(ok?'Kategorie a filtry byly uloženy a synchronizují se na všechna zařízení.':'Kategorie a filtry byly uloženy lokálně; cloud zatím není dostupný.');});
+  };
+  list.onclick=function(e){
+    var el=e.target, i,j,t;
+    if((t=el.closest('[data-cat-lock]'))){read();i=+t.dataset.catLock;filters[i].locked=!filters[i].locked;draw();return;}
+    if((t=el.closest('[data-cat-up]'))){read();i=+t.dataset.catUp;if(i>0){var a=filters[i-1];filters[i-1]=filters[i];filters[i]=a;draw();}return;}
+    if((t=el.closest('[data-cat-down]'))){read();i=+t.dataset.catDown;if(i<filters.length-1){var b=filters[i+1];filters[i+1]=filters[i];filters[i]=b;draw();}return;}
+    if((t=el.closest('[data-cat-del]'))){read();i=+t.dataset.catDel;if(confirm('Opravdu chcete kategorii „'+filters[i].name+'“ smazat?')){filters.splice(i,1);draw();}return;}
+    if((t=el.closest('[data-child-add]'))){read();i=+t.dataset.childAdd;filters[i].children=filters[i].children||[];filters[i].children.push({id:'sub_'+Date.now().toString(36),name:'Nový filtr',locked:false,active:true});draw();return;}
+    if((t=el.closest('[data-child-lock]'))){read();i=+t.dataset.childLock;j=+t.dataset.childIndex;filters[i].children[j].locked=!filters[i].children[j].locked;draw();return;}
+    if((t=el.closest('[data-child-del]'))){read();i=+t.dataset.childDel;j=+t.dataset.childIndex;filters[i].children.splice(j,1);draw();return;}
+  };
+  c.querySelector('#cc-canon-addreason').onclick=function(){reasons.push('Nový důvod');drawReasons();};
+  c.querySelector('#cc-canon-savereasons').onclick=function(){reasons=[];rb.querySelectorAll('[data-r]').forEach(function(el){var v=el.value.trim();if(v)reasons.push(v);});localStorage.setItem('cc_dynamic_reasons',reasons.join(','));try{if(typeof ccSaveReservationReasons==='function')ccSaveReservationReasons(reasons);}catch(e){}try{syncAll();}catch(e){}alert('Důvody rezervace byly uloženy.');};
+  rb.onclick=function(e){var b=e.target.closest('[data-rd]');if(b){reasons.splice(+b.dataset.rd,1);drawReasons();}};
+  draw();drawReasons();
+}
+
+/* Make every action renderer use the same category names, even for older actions saved with category IDs. */
+var oldCanonicalRender=canonicalRender;
+canonicalRender=function(){
+  try{
+    var acts=window.ccActions;
+    if(typeof acts==='function'){}
+  }catch(e){}
+  return oldCanonicalRender.apply(this,arguments);
+};
+
+/* Replace the admin router so the visible tile ALWAYS opens the editor above. */
+var oldRenderPage=renderPage;
+renderPage=function(page){
+  var c=document.getElementById('cc-admin-content');
+  if(page==='filters'&&c){c.innerHTML='';ccRenderCategoryEditor(c);return;}
+  return oldRenderPage(page);
+};
+
+/* The older planned renderers are lexical functions too; redirect their calls, not only window properties. */
+try{ensurePlanned=canonicalRender;}catch(e){}
+try{renderPlanned=canonicalRender;}catch(e){}
+try{planned=canonicalRender;}catch(e){}
+try{renderPlannedFilter=function(){canonicalRender();};}catch(e){}
+window.ensurePlanned=canonicalRender;window.renderPlanned=canonicalRender;window.planned=canonicalRender;
+
+/* Resolve old action category IDs to the current category name in the final public renderer. */
+var oldCCActions=window.ccActions;
+if(typeof oldCCActions==='function'){
+  window.ccActions=function(){var arr=oldCCActions.apply(this,arguments)||[];return arr.map(function(a){var n=catNameByIdOrName(a.category||a.cat||'');if(n&&n!==String(a.category||a.cat||'')){var x=Object.assign({},a);x.category=n;return x;}return a;});};
+}
+
+/* Keep the final view alive if a legacy observer tries to clear it. */
+var guardTimer=null;
+function guardPlanned(){var p=document.getElementById('cc-planned-tab');if(!p||!p.classList.contains('active'))return;if(!document.getElementById('cc-canonical-planned-wrap'))canonicalRender();}
+if(window.MutationObserver){var obs=new MutationObserver(function(){clearTimeout(guardTimer);guardTimer=setTimeout(guardPlanned,20);});obs.observe(document.body,{childList:true,subtree:true});window.__ccFinalPlannedGuard=obs;}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(guardPlanned,50);});else setTimeout(guardPlanned,50);
+})();
+</script>
