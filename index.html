@@ -7073,3 +7073,152 @@ function boot(){tick();if(window.MutationObserver){var t=null;new MutationObserv
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
 </script>
+
+<!-- =========================================================
+     CC CANONICAL CATEGORY + PLANNED ACTION RENDERER 2026-10-07
+     Jediný zdroj kategorií + jediný vzhled plánovaných akcí.
+     Zachovává finální kartu s tooltipem (.cc-event-card).
+     ========================================================= -->
+<style id="cc-canonical-action-layer">
+/* Starší renderery nesmí během startu ani po synchronizaci probliknout. */
+#cc-v3-eventgrid,#cc-v10-planned-grid,#cc-final-planned-grid,#cc-v3-filterbar,#cc-v6-filterbar,#cc-planned-filterbar,#cc-v10-filters{display:none!important;}
+#cc-canonical-planned-wrap{display:block!important;}
+#cc-canonical-filterbar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px;padding:2px 1px 7px;}
+#cc-canonical-filterbar button{border:1px solid #d7dce3;background:#fff;color:#26323f;border-radius:999px;padding:8px 15px;font-weight:700;white-space:nowrap;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+#cc-canonical-filterbar button.active{background:#111827;color:#fff;border-color:#111827}
+</style>
+<script id="cc-canonical-action-script">
+(function(){
+'use strict';
+
+function cfgRaw(){try{return JSON.parse(localStorage.getItem('ccPortalConfigV3')||'{}')||{};}catch(e){return {};}}
+function escC(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+function catsNow(){
+  var c=cfgRaw(), fs=Array.isArray(c.filters)?c.filters.slice():[];
+  if(!fs.some(function(f){return f&&f.id==='all'}))fs.unshift({id:'all',name:'Vše',locked:true,active:true});
+  return fs;
+}
+function cloudSaveConfig(c,done){
+  try{localStorage.setItem('ccPortalConfigV3',JSON.stringify(c));}catch(e){}
+  try{if(typeof saveCfg==='function')saveCfg(c);}catch(e){}
+  try{if(typeof syncAll==='function')syncAll();}catch(e){}
+  try{
+    if(typeof firebase!=='undefined'&&firebase.apps&&firebase.apps.length){
+      firebase.firestore().collection('portalData').doc('cocaColaDatabase').set({ccPortalConfigV3:c},{merge:true}).then(function(){if(done)done(true);}).catch(function(e){console.error('Kategorie cloud save:',e);if(done)done(false);});
+      return;
+    }
+  }catch(e){console.error('Kategorie cloud save:',e);}
+  if(done)done(false);
+}
+
+/* ---------- Jediná administrace kategorií ---------- */
+function canonicalFiltersPage(c){
+  var conf=cfgRaw(), filters=catsNow().filter(function(f){return f&&f.id!=='all';});
+  var reasons=(localStorage.getItem('cc_dynamic_reasons')||'Obchodní schůzka,VIP zákazník,Interní akce').split(',').map(function(x){return x.trim();}).filter(Boolean);
+  c.innerHTML='<div class="cc-adm-section"><h3>Kategorie / filtry akcí</h3><p class="cc-adm-muted">Tyto kategorie se používají přímo v seznamu „Plánované akce“. Změna se uloží do cloudu a projeví se na ostatních zařízeních.</p><div id="cc-canon-filter-list"></div><div style="margin-top:10px"><button type="button" class="cc-adm-btn" id="cc-canon-add">+ Přidat kategorii</button><button type="button" class="cc-adm-btn primary" id="cc-canon-save">Uložit kategorie</button></div></div><div class="cc-adm-section"><h3>Důvody rezervace</h3><div id="cc-canon-reasons"></div><button type="button" class="cc-adm-btn" id="cc-canon-addreason">+ Přidat důvod</button><button type="button" class="cc-adm-btn primary" id="cc-canon-savereasons">Uložit důvody</button></div>';
+  var list=c.querySelector('#cc-canon-filter-list'), rb=c.querySelector('#cc-canon-reasons');
+  function draw(){
+    list.innerHTML=filters.map(function(f,i){
+      var locked=!!f.locked;
+      return '<div class="cc-adm-listrow" style="align-items:center;gap:8px;flex-wrap:wrap"><span style="width:28px;text-align:center;font-weight:800;color:#64748b">'+(i+1)+'.</span><input data-cat-name="'+i+'" value="'+escC(f.name||'')+'" '+(locked?'disabled':'')+' style="flex:1;min-width:240px"><label class="cc-adm-check" style="white-space:nowrap"><input type="checkbox" data-cat-active="'+i+'" '+(f.active!==false?'checked':'')+'> zobrazit</label><button type="button" class="cc-adm-btn small" data-cat-up="'+i+'" '+(i===0?'disabled':'')+'>↑</button><button type="button" class="cc-adm-btn small" data-cat-down="'+i+'" '+(i===filters.length-1?'disabled':'')+'>↓</button><button type="button" class="cc-adm-btn small danger" data-cat-del="'+i+'" '+(locked?'disabled':'')+'>Smazat</button></div>';
+    }).join('')||'<div class="cc-adm-muted">Zatím není vytvořena žádná kategorie.</div>';
+  }
+  function drawReasons(){
+    rb.innerHTML=reasons.map(function(r,i){return '<div class="cc-adm-listrow"><input data-r="'+i+'" value="'+escC(r)+'"><button type="button" class="cc-adm-btn small danger" data-rd="'+i+'">Smazat</button></div>';}).join('');
+  }
+  function readCats(){
+    list.querySelectorAll('[data-cat-name]').forEach(function(el){var i=Number(el.dataset.catName);if(filters[i]&&!filters[i].locked){var v=el.value.trim();if(v)filters[i].name=v;}});
+    list.querySelectorAll('[data-cat-active]').forEach(function(el){var i=Number(el.dataset.catActive);if(filters[i])filters[i].active=el.checked;});
+  }
+  c.querySelector('#cc-canon-add').onclick=function(){readCats();filters.push({id:'cat_'+Date.now().toString(36),name:'Nová kategorie',locked:false,active:true,children:[]});draw();};
+  c.querySelector('#cc-canon-save').onclick=function(){
+    readCats();
+    filters=filters.filter(function(f){return f&&String(f.name||'').trim();});
+    var out=[{id:'all',name:'Vše',locked:true,active:true}].concat(filters.map(function(f){return {id:f.id||('cat_'+Date.now().toString(36)),name:String(f.name).trim(),locked:!!f.locked,active:f.active!==false,children:Array.isArray(f.children)?f.children:[]};}));
+    conf.filters=out;
+    cloudSaveConfig(conf,function(ok){
+      /* Překreslíme pouze kanonický seznam; žádný starý renderer. */
+      try{canonicalRender();}catch(e){}
+      alert(ok?'Kategorie byly uloženy a synchronizují se na všechna zařízení.':'Kategorie byly uloženy v tomto prohlížeči. Cloud zatím není dostupný.');
+    });
+  };
+  list.onclick=function(e){
+    var u=e.target.closest('[data-cat-up]'),d=e.target.closest('[data-cat-down]'),x=e.target.closest('[data-cat-del]');
+    readCats();
+    if(u){var i=Number(u.dataset.catUp);if(i>0){var t=filters[i-1];filters[i-1]=filters[i];filters[i]=t;draw();}return;}
+    if(d){var j=Number(d.dataset.catDown);if(j<filters.length-1){var q=filters[j+1];filters[j+1]=filters[j];filters[j]=q;draw();}return;}
+    if(x){var k=Number(x.dataset.catDel);if(filters[k]&&!filters[k].locked&&confirm('Opravdu chcete kategorii „'+filters[k].name+'“ smazat?')){filters.splice(k,1);draw();}return;}
+  };
+  c.querySelector('#cc-canon-addreason').onclick=function(){reasons.push('Nový důvod');drawReasons();};
+  c.querySelector('#cc-canon-savereasons').onclick=function(){
+    reasons=[];rb.querySelectorAll('[data-r]').forEach(function(el){var v=el.value.trim();if(v)reasons.push(v);});
+    localStorage.setItem('cc_dynamic_reasons',reasons.join(','));
+    try{if(typeof ccSaveReservationReasons==='function')ccSaveReservationReasons(reasons);}catch(e){}
+    try{if(typeof syncAll==='function')syncAll();}catch(e){}
+    alert('Důvody rezervace byly uloženy.');
+  };
+  rb.onclick=function(e){var b=e.target.closest('[data-rd]');if(!b)return;reasons.splice(Number(b.dataset.rd),1);drawReasons();};
+  draw();drawReasons();
+}
+
+/* ---------- Jediný veřejný renderer: finální karta + tooltip ---------- */
+var canonicalFilter='all';
+function canonicalRender(){
+  var p=document.getElementById('cc-planned-tab'),grid=document.getElementById('cc-planned-grid');
+  if(!p||!grid)return;
+  /* Staré DOM stromy schováme před každým renderem. */
+  ['cc-v3-eventgrid','cc-v10-planned-grid','cc-final-planned-grid'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.setProperty('display','none','important');});
+  ['cc-v3-filterbar','cc-v6-filterbar','cc-planned-filterbar','cc-v10-filters'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.setProperty('display','none','important');});
+  var oldWrap=document.getElementById('cc-canonical-planned-wrap');if(oldWrap)oldWrap.remove();
+  var wrap=document.createElement('div');wrap.id='cc-canonical-planned-wrap';
+  var title=document.createElement('div');title.innerHTML='<h2 style="margin-bottom:4px">Plánované akce</h2><p style="margin:0 0 16px;color:#64748b;font-size:13px">Vyberte akci a rezervujte lístky.</p>';wrap.appendChild(title);
+  var bar=document.createElement('div');bar.id='cc-canonical-filterbar';
+  var fs=catsNow().filter(function(f){return f.id!=='all'&&f.active!==false;});
+  var all=document.createElement('button');all.type='button';all.textContent='Vše';all.className=canonicalFilter==='all'?'active':'';all.onclick=function(){canonicalFilter='all';canonicalRender();};bar.appendChild(all);
+  fs.forEach(function(f){var b=document.createElement('button');b.type='button';b.textContent=f.name;b.className=canonicalFilter===f.name?'active':'';b.onclick=function(){canonicalFilter=f.name;canonicalRender();};bar.appendChild(b);});
+  wrap.appendChild(bar);
+  grid.innerHTML='';grid.style.display='grid';grid.style.visibility='visible';
+  var acts=ccActions().filter(function(a){return (a.status||'Aktivní')!=='Skryto'&&(a.status||'Aktivní')!=='Zrušena'&&a.visible!==false&&(canonicalFilter==='all'||String(a.category||a.cat||'')===canonicalFilter);});
+  acts.sort(function(a,b){var ao=Number(a.order)||0,bo=Number(b.order)||0;if(ao&&bo&&ao!==bo)return ao-bo;if(ao&&!bo)return -1;if(!ao&&bo)return 1;return String((a.date||'9999')+' '+(a.time||'99:99')).localeCompare(String((b.date||'9999')+' '+(b.time||'99:99')));});
+  var rs=[];try{rs=JSON.parse(localStorage.getItem('ticketRequests')||'[]')||[];}catch(e){}
+  if(!acts.length){var empty=document.createElement('div');empty.style.cssText='grid-column:1/-1;padding:25px;color:#64748b;text-align:center';empty.textContent='Pro tento filtr zatím není žádná akce.';grid.appendChild(empty);wrap.appendChild(grid);p.appendChild(wrap);return;}
+  acts.forEach(function(a){
+    var approved=rs.filter(function(r){return r.action===a.name&&r.status1==='Schváleno'&&r.status2==='Schváleno';}).reduce(function(n,r){return n+(parseInt(r.tickets)||0);},0),cap=Number(a.capacity)||0,full=cap>0&&approved>=cap,status=a.portalStatus||'';
+    var card=document.createElement('div');card.className='cc-event-card';
+    var img=a.image||'';var bg=img?' style="background-image:url('+JSON.stringify(img)+')"':'';
+    var cat=a.category||a.cat||'';var sub=a.subcategory||'';var badge=cat?'<span class="cc-event-category">'+escC(cat)+(sub?' · '+escC(sub):'')+'</span>':'';
+    var meta=(a.date?'📅 '+escC(ccFmtDate(a.date))+'<br>':'')+(a.time?'⏰ '+escC(a.time)+'<br>':'')+(a.place?'📍 '+escC(a.place):'');
+    var state=(full?'Plno':status);var stateHtml=state?'<div style="margin-top:6px;font-weight:800;color:#ffd8da">'+escC(state)+'</div>':'';
+    var info=a.description?'<div class="cc-event-info"><strong>O akci</strong>'+escC(a.description).replace(/\n/g,'<br>')+'</div>':'';
+    card.innerHTML='<div class="cc-event-image"'+bg+'><div class="cc-event-overlay">'+badge+'<h3>'+escC(a.name)+'</h3><div class="cc-event-meta">'+meta+'</div>'+stateHtml+'<div class="cc-event-capacity">🎟️ Obsazeno: <strong>'+approved+'</strong> / '+cap+'</div></div></div>'+info+'<div class="cc-event-actions"><button type="button" class="cc-event-reserve" '+(full||status==='Zrušeno/Přesunuto'?'disabled':'')+'>Rezervovat lístky</button></div>';
+    var rb=card.querySelector('.cc-event-reserve');if(rb&&!rb.disabled)rb.onclick=function(){if(typeof window.ccOpenReservationSafe==='function')window.ccOpenReservationSafe(a);else{window.openTab(2);setTimeout(function(){if(typeof window.ccSelectAction==='function')window.ccSelectAction(a.name);},100);}};
+    grid.appendChild(card);
+  });
+  wrap.appendChild(grid);p.appendChild(wrap);
+}
+
+/* Zabrání starým timerům/observerům, aby znovu ukázaly druhý vzhled. */
+function installCanonical(){
+  try{pageFilters=canonicalFiltersPage;}catch(e){}
+  try{window.renderPlannedEvents=canonicalRender;}catch(e){}
+  try{window.renderPlanned=canonicalRender;window.planned=canonicalRender;}catch(e){}
+  try{if(typeof ccEnhancedPlanned==='function')window.__ccEnhancedPlannedDisabled=true;}catch(e){}
+  canonicalRender();
+}
+
+/* Pokud administrace právě ukazuje Kategorie, přepneme ji na jedinou opravenou verzi. */
+function repairAdminFilters(){
+  try{
+    var content=document.getElementById('cc-admin-content');
+    var active=document.querySelector('#cc-admin-shell button[data-page="filters"].active');
+    if(active&&content)canonicalFiltersPage(content);
+  }catch(e){}
+}
+
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(installCanonical,30);setTimeout(repairAdminFilters,50);});
+else{setTimeout(installCanonical,30);setTimeout(repairAdminFilters,50);}
+setTimeout(installCanonical,250);
+window.addEventListener('cc-cloud-ready',function(){setTimeout(installCanonical,50);setTimeout(repairAdminFilters,60);});
+window.addEventListener('storage',function(e){if(e.key==='ccPortalConfigV3'||e.key==='companyActions')setTimeout(installCanonical,50);});
+})();
+</script>
