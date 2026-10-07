@@ -197,16 +197,6 @@
             100% { transform: translateY(105vh) rotate(360deg) translateX(-30px); opacity: 0; }
         }
     </style>
-<!-- PWA: instalace jako aplikace (PC, tablet, iPad) -->
-<link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#e41e26">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-<link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Lístky">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 </head>
 <body>
 <!-- Kontejner pro detailní podzimní lístky (Javor a Dub) -->
@@ -2051,44 +2041,6 @@ setTimeout(bootFix,700);setTimeout(bootFix,1800);
     guardGrid();
     setTimeout(guardGrid,0);
   });
-})();
-</script>
-<script id="cc-pwa-install">
-(function(){
-  if('serviceWorker' in navigator){
-    /* úklid po starších pokusech: odregistruje cizí service workery a smaže jejich cache */
-    navigator.serviceWorker.getRegistrations().then(function(regs){
-      return Promise.all(regs.map(function(r){
-        var w=r.active||r.waiting||r.installing;
-        if(w&&!/\/sw\.js(\?|$)/.test(w.scriptURL))return r.unregister();
-      }));
-    }).catch(function(){});
-    if(window.caches){caches.keys().then(function(ks){ks.forEach(function(k){if(k.indexOf('ticket-portal-')!==0)caches.delete(k);});}).catch(function(){});}
-    window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(e){console.warn('SW:',e);});});
-  }
-  var standalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
-  if(standalone)return;
-  var deferred=null,KEY='ccPwaHintDismissed';
-  function dismissed(){try{return localStorage.getItem(KEY)==='1';}catch(e){return false;}}
-  function pill(text,onclick){
-    if(document.getElementById('cc-pwa-pill'))return;
-    var b=document.createElement('div');b.id='cc-pwa-pill';
-    b.style.cssText='position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:99999;display:flex;align-items:center;gap:10px;background:#0f172a;color:#fff;padding:10px 14px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.28);font:600 14px system-ui,-apple-system,Segoe UI,sans-serif;max-width:calc(100vw - 24px)';
-    var t=document.createElement('span');t.textContent=text;b.appendChild(t);
-    if(onclick){var i=document.createElement('button');i.textContent='Nainstalovat';i.style.cssText='background:#e41e26;color:#fff;border:0;border-radius:999px;padding:7px 14px;font:inherit;cursor:pointer';i.onclick=onclick;b.appendChild(i);}
-    var x=document.createElement('button');x.textContent='\u00d7';x.setAttribute('aria-label','Zavřít');x.style.cssText='background:transparent;color:#fff;border:0;font-size:20px;line-height:1;cursor:pointer;padding:0 4px';
-    x.onclick=function(){b.remove();try{localStorage.setItem(KEY,'1');}catch(e){}};b.appendChild(x);
-    document.body.appendChild(b);
-  }
-  window.addEventListener('beforeinstallprompt',function(e){
-    e.preventDefault();deferred=e;if(dismissed())return;
-    pill('Přidat portál jako aplikaci',function(){deferred.prompt();deferred.userChoice.finally(function(){deferred=null;var p=document.getElementById('cc-pwa-pill');if(p)p.remove();});});
-  });
-  var ua=navigator.userAgent||'';
-  var isIOS=/iphone|ipad|ipod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  if(isIOS&&!dismissed()){
-    window.addEventListener('load',function(){setTimeout(function(){pill('Na plochu: Sdílet \u2192 Přidat na plochu');},2500);});
-  }
 })();
 </script>
 </body>
@@ -6981,138 +6933,66 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 
-<!-- V13 FINAL UX: viditelná instalace + ruční kontrola synchronizace -->
-<script id="cc-v13-final-ux">
-(function(){
-'use strict';
-function installButton(){
-  if(window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true)return;
-  var bar=document.querySelector('.login-bar');if(!bar||document.getElementById('cc-install-visible'))return;
-  var b=document.createElement('button');b.id='cc-install-visible';b.type='button';b.textContent='📲 Přidat jako aplikaci';
-  b.style.cssText='margin-left:8px;background:#fff!important;color:#0f172a!important;border:1px solid #cbd5e1!important;padding:9px 13px!important;border-radius:8px!important;font-weight:700;cursor:pointer;white-space:nowrap';
-  var deferred=null;
-  function openInstall(){
-    if(deferred){deferred.prompt();deferred.userChoice.then(function(){deferred=null;}).catch(function(){});return;}
-    alert('Pokud se instalace sama nenabízí, otevřete v Chrome/Edge nabídku ⋮ a zvolte „Nainstalovat aplikaci“ nebo „Přidat na plochu“. Na iPhonu/iPadu použijte Sdílet → Přidat na plochu.');
-  }
-  b.onclick=openInstall;bar.appendChild(b);
-  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferred=e;});
-  window.addEventListener('appinstalled',function(){b.textContent='✓ Aplikace je nainstalovaná';b.disabled=true;});
-}
-function boot(){installButton();setInterval(installButton,1500)}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
-})();
-</script>
-
-
-<!-- V14 FINAL UI REPAIR: one authoritative planned-events renderer + explicit statuses -->
-<style id="cc-v14-final-ui-css">
-  /* Staré vizuální renderery zůstávají v kódu kvůli kompatibilitě, ale nesmí se zobrazovat. */
-  #cc-v3-eventgrid,#cc-planned-grid,#cc-v10-planned-grid{display:none!important}
-  #cc-v3-filterbar,#cc-v6-filterbar,#cc-v10-filters{display:none!important}
-  #cc-final-planned-wrap{margin-top:0}
-  #cc-final-planned-filters{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 22px}
-  #cc-final-planned-filters button{border:1px solid #dbe3ec;background:#fff;color:#334155;border-radius:999px;padding:9px 15px;font-weight:750;cursor:pointer}
-  #cc-final-planned-filters button.active{background:#0f172a;color:#fff;border-color:#0f172a}
-  #cc-final-planned-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
-  .cc-final-card{position:relative;overflow:hidden;background:#fff;border:1px solid #dbe3ec;border-radius:18px;box-shadow:0 7px 24px rgba(15,23,42,.07);transition:transform .16s ease,box-shadow .16s ease}
-  .cc-final-card:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(15,23,42,.12)}
-  .cc-final-media{height:188px;background:linear-gradient(135deg,#eef2f7,#f8fafc);background-size:cover;background-position:center;position:relative}
-  .cc-final-media:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.02),rgba(0,0,0,.34))}
-  .cc-final-status{position:absolute;z-index:2;top:12px;left:12px;padding:7px 11px;border-radius:999px;color:#fff;font-size:12px;font-weight:850;letter-spacing:.02em;box-shadow:0 4px 12px rgba(0,0,0,.18)}
-  .cc-final-status.cancelled{background:#b91c1c}.cc-final-status.moved{background:#7c3aed}.cc-final-status.full{background:#334155}
-  .cc-final-body{padding:17px 18px 18px}
-  .cc-final-body h3{margin:0 0 9px;color:#172033;font-size:18px;line-height:1.25}
-  .cc-final-meta{color:#64748b;font-size:13px;line-height:1.65}
-  .cc-final-cap{margin-top:9px;font-size:12px;color:#475569}
-  .cc-final-actions{margin-top:14px}
-  .cc-final-actions button{border:0;border-radius:9px;background:#e41e26;color:#fff;padding:10px 14px;font-weight:800;cursor:pointer}
-  .cc-final-actions button:disabled{background:#cbd5e1;color:#64748b;cursor:not-allowed}
-  .cc-final-note{margin-top:8px;font-size:12px;font-weight:750}
-  .cc-final-note.cancelled{color:#b91c1c}.cc-final-note.moved{color:#6d28d9}.cc-final-note.full{color:#475569}
-  @media(max-width:1000px){#cc-final-planned-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-  @media(max-width:650px){#cc-final-planned-grid{grid-template-columns:1fr}.cc-final-media{height:175px}}
+<!-- FINAL V10 RESTORE: one planned-events renderer, original card look + tooltip; no PWA/install UI -->
+<style id="cc-v10-restore-final-css">
+  /* Only the original V10 card system is visible. */
+  #cc-v3-eventgrid,#cc-planned-grid,#cc-final-planned-wrap{display:none!important}
+  #cc-v3-filterbar,#cc-v6-filterbar,#cc-final-planned-filters{display:none!important}
+  #cc-v10-planned-grid{display:grid!important}
+  .cc-v10-action-card{position:relative;overflow:hidden;background:#fff;border:1px solid #dbe3ec;border-radius:16px;box-shadow:0 6px 22px rgba(15,23,42,.07);transition:transform .16s ease,box-shadow .16s ease}
+  .cc-v10-action-card:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(15,23,42,.12)}
+  .cc-v10-action-image,.cc-v10-action-noimage{height:188px;background-size:cover;background-position:center;background-color:#f1f5f9;position:relative}
+  .cc-v10-action-image:after,.cc-v10-action-noimage:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.16));pointer-events:none}
+  .cc-v10-action-body{padding:16px 17px 17px}
+  .cc-v10-action-body h3{margin:0 0 8px;color:#172033;font-size:18px;line-height:1.25}
+  .cc-v10-meta{color:#64748b;font-size:13px;line-height:1.6}
+  .cc-v10-status{display:inline-block;margin-top:9px;padding:6px 10px;border-radius:999px;background:#eef2f7;color:#334155;font-size:11px;font-weight:850}
+  .cc-v10-status.cc-state-cancelled{background:#fee2e2;color:#991b1b}.cc-v10-status.cc-state-moved{background:#ede9fe;color:#6d28d9}.cc-v10-status.cc-state-full{background:#e2e8f0;color:#334155}
+  .cc-v10-actions{margin-top:13px}
+  .cc-v10-btn:disabled{opacity:.65!important;cursor:not-allowed!important}
+  .cc-v10-state-note{margin-top:7px;font-size:11px;font-weight:750}.cc-v10-state-note.cancelled{color:#991b1b}.cc-v10-state-note.moved{color:#6d28d9}.cc-v10-state-note.full{color:#475569}
+  @media(max-width:800px){.cc-v10-action-grid{grid-template-columns:1fr 1fr!important}.cc-v10-action-image,.cc-v10-action-noimage{height:125px!important}}
+  @media(max-width:520px){.cc-v10-action-grid{grid-template-columns:1fr!important}.cc-v10-action-image,.cc-v10-action-noimage{height:155px!important}}
 </style>
-<script id="cc-v14-final-ui-js">
+<script id="cc-v10-restore-final-js">
 (function(){
 'use strict';
-function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
+var tip=null,tipTarget=null;
+function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 function A(){try{return JSON.parse(localStorage.getItem('companyActions')||'[]')||[]}catch(e){return []}}
 function R(){try{return JSON.parse(localStorage.getItem('ticketRequests')||'[]')||[]}catch(e){return []}}
 function C(){try{return JSON.parse(localStorage.getItem('ccPortalConfigV3')||'{}')||{}}catch(e){return {}}}
-function image(a){return a.image||a.imageUrl||a.backgroundImage||''}
-function state(a,approved){
-  var raw=String(a.portalStatus||'').trim();
-  var internal=String(a.status||'').trim();
-  if(internal==='Zrušena'||raw==='Zrušeno')return {key:'cancelled',label:'ZRUŠENO'};
-  if(raw==='Přesunuto')return {key:'moved',label:'PŘESUNUTO'};
-  if(raw==='Zrušeno/Přesunuto')return {key:'cancelled',label:'ZRUŠENO / PŘESUNUTO'};
-  var cap=Number(a.capacity)||0;
-  if(raw==='Plno'||(cap>0&&approved>=cap))return {key:'full',label:'PLNO'};
-  return {key:'',label:''};
-}
+function imageFor(a){return a.image||a.imageUrl||a.backgroundImage||''}
+function tipShow(card,a){if(window.innerWidth<=800)return;if(!tip){tip=document.createElement('div');tip.className='cc-v10-tooltip';tip.id='cc-v10-tooltip-restored';document.body.appendChild(tip)}tip.innerHTML='<strong>'+esc(a.name)+'</strong>'+esc(a.description||'Popis akce nebyl zadán.').replace(/\n/g,'<br>');tip.style.display='block';tipTarget=card;tipPos(card)}
+function tipPos(card){if(!tip||!tipTarget)return;var r=card.getBoundingClientRect(),w=Math.min(340,window.innerWidth-24);tip.style.width=w+'px';var left=Math.max(12,Math.min(r.left,window.innerWidth-w-12));tip.style.left=left+'px';var h=tip.offsetHeight,top=r.bottom+9;if(top+h>window.innerHeight-12)top=r.top-h-9;if(top<12)top=12;tip.style.top=top+'px'}
+function tipHide(){if(tip)tip.style.display='none';tipTarget=null}
 function approvedFor(name){return R().filter(function(r){return r.action===name&&r.status1==='Schváleno'&&r.status2==='Schváleno'}).reduce(function(n,r){return n+(parseInt(r.tickets)||0)},0)}
+function state(a,approved){var raw=String(a.portalStatus||'').trim(),internal=String(a.status||'').trim();if(internal==='Zrušena'||raw==='Zrušeno'||raw==='Zrušena')return {key:'cancelled',label:'ZRUŠENO',note:'Rezervace není možná'};if(raw==='Přesunuto'||raw==='Přesunuta')return {key:'moved',label:'PŘESUNUTO',note:'Termín nebo místo bylo změněno'};if(raw==='Zrušeno/Přesunuto')return {key:'moved',label:'PŘESUNUTO / ZRUŠENO',note:'Termín nebo místo bylo změněno'};var cap=Number(a.capacity)||0;if(raw==='Plno'||(cap>0&&approved>=cap))return {key:'full',label:'PLNO',note:'Kapacita je naplněná'};return {key:'',label:'',note:''}}
 function cats(){var f=C().filters||[];return f.filter(function(x){return x&&x.active!==false}).map(function(x){return {id:x.id,name:x.name}})}
-function openReservation(a){
-  try{if(typeof ccOpenReservationSafe==='function'){ccOpenReservationSafe(a);return}}catch(e){}
-  try{if(typeof openReservationModal==='function'){openReservationModal(a);return}}catch(e){}
-}
+function reserve(a){try{if(typeof ccOpenReservationSafe==='function'){ccOpenReservationSafe(a);return}}catch(e){}try{if(typeof openReservationModal==='function'){openReservationModal(a)}}catch(e){}}
 function render(){
-  var p=document.getElementById('cc-planned-tab');if(!p)return;
-  var wrap=document.getElementById('cc-final-planned-wrap');
-  if(!wrap){
-    wrap=document.createElement('div');wrap.id='cc-final-planned-wrap';
-    wrap.innerHTML='<div><h2 style="margin:0 0 4px">Plánované akce</h2><p style="margin:0;color:#64748b;font-size:13px">Vyberte akci a rezervujte lístky.</p></div><div id="cc-final-planned-filters"></div><div id="cc-final-planned-grid"></div>';
-    p.innerHTML='';p.appendChild(wrap);
-  }
-  var fb=document.getElementById('cc-final-planned-filters'),grid=document.getElementById('cc-final-planned-grid');
-  var list=cats(), af=window.__ccV14Filter||'all';
-  if(fb){fb.innerHTML='';var all=document.createElement('button');all.textContent='Vše';all.className=af==='all'?'active':'';all.onclick=function(){window.__ccV14Filter='all';render()};fb.appendChild(all);list.forEach(function(f){var b=document.createElement('button');b.textContent=f.name;b.className=af===f.id?'active':'';b.onclick=function(){window.__ccV14Filter=f.id;render()};fb.appendChild(b)})}
-  var actions=A().filter(function(a){return a.visible!==false&&(a.status||'Aktivní')!=='Skryto'}).filter(function(a){return af==='all'||(a.category||a.cat||'')===af});
-  actions.sort(function(a,b){return String((a.date||'9999')+' '+(a.time||'')).localeCompare(String((b.date||'9999')+' '+(b.time||'')))});
-  grid.innerHTML='';
-  if(!actions.length){grid.innerHTML='<div style="grid-column:1/-1;padding:25px;color:#64748b;text-align:center">Pro tento filtr zatím není žádná akce.</div>';return}
-  actions.forEach(function(a){
-    var approved=approvedFor(a.name),st=state(a,approved),cap=Number(a.capacity)||0,card=document.createElement('article');card.className='cc-final-card';
-    var media=document.createElement('div');media.className='cc-final-media';if(image(a))media.style.backgroundImage='url('+JSON.stringify(image(a))+')';
-    if(st.key){var badge=document.createElement('span');badge.className='cc-final-status '+st.key;badge.textContent=st.label;media.appendChild(badge)}
-    card.appendChild(media);
-    var body=document.createElement('div');body.className='cc-final-body';
-    var note=st.key?'<div class="cc-final-note '+st.key+'">'+st.label+(st.key==='full'?' — rezervace již není možná':st.key==='moved'?' — termín/místo bylo změněno':' — rezervace není možná')+'</div>':'';
-    body.innerHTML='<h3>'+esc(a.name)+'</h3><div class="cc-final-meta">'+(a.date?'📅 '+esc(a.date):'')+(a.time?' · '+esc(a.time):'')+(a.place?'<br>📍 '+esc(a.place):'')+'</div><div class="cc-final-cap">🎟️ Obsazeno: <strong>'+approved+'</strong> / '+cap+'</div>'+note+'<div class="cc-final-actions"><button type="button" '+(st.key?'disabled':'')+'>Rezervovat</button></div>';
-    card.appendChild(body);grid.appendChild(card);
-    var btn=body.querySelector('button');if(btn&&!st.key)btn.onclick=function(){openReservation(a)};
-  });
+ var p=document.getElementById('cc-planned-tab');if(!p)return;
+ var grid=document.getElementById('cc-v10-planned-grid');
+ if(!grid){p.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><h2 style="margin-bottom:4px">Plánované akce</h2><p style="margin:0;color:#64748b;font-size:13px">Vyberte akci a rezervujte lístky.</p></div></div><div id="cc-v10-filters" style="display:flex;gap:7px;flex-wrap:wrap;margin:18px 0"></div><div id="cc-v10-planned-grid" class="cc-v10-action-grid"></div>';grid=document.getElementById('cc-v10-planned-grid')}
+ var cfg=C(),filters=cats(),af=window.__v10RestoreFilter||'all',fb=document.getElementById('cc-v10-filters');
+ if(fb){fb.innerHTML='';filters.forEach(function(f){var b=document.createElement('button');b.className='cc-v3-filter'+(af===f.id?' active':'');b.textContent=f.name;b.onclick=function(){window.__v10RestoreFilter=f.id;render()};fb.appendChild(b)})}
+ var list=A().filter(function(a){return a.visible!==false&&(a.status||'Aktivní')!=='Skryto'}).filter(function(a){return af==='all'||(a.category||a.cat||'')===af});
+ list.sort(function(a,b){return String((a.date||'9999')+' '+(a.time||'')).localeCompare(String((b.date||'9999')+' '+(b.time||'')))});
+ grid.innerHTML='';if(!list.length){grid.innerHTML='<div style="grid-column:1/-1;padding:25px;color:#64748b;text-align:center">Zatím nebyla vytvořena žádná akce.</div>';return}
+ var rs=R();list.forEach(function(a){var approved=approvedFor(a.name),st=state(a,approved),cap=Number(a.capacity)||0,img=imageFor(a),card=document.createElement('article');card.className='cc-v10-action-card';
+ var media=document.createElement('div');media.className=img?'cc-v10-action-image':'cc-v10-action-noimage';if(img)media.style.backgroundImage='url('+JSON.stringify(img)+')';card.appendChild(media);
+ var body=document.createElement('div');body.className='cc-v10-action-body';var badge=st.key?'<span class="cc-v10-status cc-state-'+st.key+'">'+st.label+'</span>':'';var note=st.key?'<div class="cc-v10-state-note '+st.key+'">'+st.note+'</div>':'';body.innerHTML='<h3>'+esc(a.name)+'</h3><div class="cc-v10-meta">'+(a.date?'📅 '+esc(a.date):'')+(a.time?' · '+esc(a.time):'')+(a.place?'<br>📍 '+esc(a.place):'')+'</div>'+badge+'<div class="cc-v10-actions"><button class="cc-v10-btn primary" type="button" '+(st.key?'disabled':'')+'>Rezervovat</button></div>'+note;card.appendChild(body);grid.appendChild(card);
+ card.addEventListener('mouseenter',function(){tipShow(card,a)});card.addEventListener('mouseleave',tipHide);card.addEventListener('click',function(e){if(e.target.closest('button'))return;if(!st.key)reserve(a)});var rb=body.querySelector('button');if(rb&&!rb.disabled)rb.onclick=function(e){e.stopPropagation();reserve(a)};
+ });
 }
-function hideLegacy(){['cc-v3-eventgrid','cc-planned-grid','cc-v10-planned-grid'].forEach(function(id){var x=document.getElementById(id);if(x)x.style.display='none'});['cc-v3-filterbar','cc-v6-filterbar','cc-v10-filters'].forEach(function(id){var x=document.getElementById(id);if(x)x.style.display='none'})}
-function boot(){hideLegacy();render()}
-window.ccV14RenderPlanned=render;
-window.renderPlanned=render;
-window.planned=render;
-window.renderCards=function(){hideLegacy();render()};
+function suppress(){['cc-v3-eventgrid','cc-planned-grid','cc-final-planned-wrap'].forEach(function(id){var x=document.getElementById(id);if(x)x.style.display='none'});['cc-v3-filterbar','cc-v6-filterbar','cc-final-planned-filters'].forEach(function(id){var x=document.getElementById(id);if(x)x.style.display='none'});var g=document.getElementById('cc-v10-planned-grid');if(g)g.style.display='grid'}
+function boot(){suppress();render();suppress()}
+window.ccV10RestoredRender=render;window.renderPlanned=render;window.planned=render;window.renderCards=function(){render()};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
-setTimeout(boot,300);setTimeout(boot,1200);setInterval(function(){hideLegacy()},800);
-window.addEventListener('cc-cloud-ready',function(){setTimeout(render,50);setTimeout(render,500)});
+setTimeout(boot,250);setTimeout(boot,900);window.addEventListener('resize',function(){if(tipTarget)tipPos(tipTarget)});window.addEventListener('scroll',function(){if(tipTarget)tipPos(tipTarget)},true);window.addEventListener('cc-cloud-ready',function(){setTimeout(boot,50)});
 })();
+</script>
+<script id="cc-remove-old-pwa-cleanup">
+(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister()})}).catch(function(){})}if(window.caches){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k)})}).catch(function(){})}}catch(e){}})();
 </script>
 
-<!-- V14 PWA installability: Chrome/Edge require sufficiently large icons -->
-<script id="cc-v14-pwa-ux">
-(function(){
-'use strict';
-function ready(){
-  var b=document.getElementById('cc-install-visible');if(!b)return;
-  if(window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true){b.textContent='✓ Aplikace je nainstalovaná';b.disabled=true;return}
-  b.textContent=window.__ccInstallReady?'📲 Nainstalovat aplikaci':'📲 Přidat jako aplikaci';
-  b.onclick=function(){
-    var e=window.__ccInstallEvent;
-    if(e){e.prompt();e.userChoice.then(function(){window.__ccInstallEvent=null;window.__ccInstallReady=false;ready()}).catch(function(){})}
-    else alert('Chrome/Edge zatím instalaci této stránky nenabídl. Zkontrolujte, že jste na aktuální HTTPS adrese GitHub Pages, a po obnovení stránky otevřete nabídku ⋮ → Nainstalovat aplikaci / Přidat na plochu.');
-  };
-}
-window.__ccInstallReady=false;
-window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__ccInstallEvent=e;window.__ccInstallReady=true;ready()});
-window.addEventListener('appinstalled',function(){window.__ccInstallReady=false;ready()});
-setInterval(ready,1200);
-})();
-</script>
