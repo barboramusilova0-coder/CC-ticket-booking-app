@@ -2,7 +2,7 @@
 
 <html lang="cs">
 <head>
-<style id="cc-boot-guard">html.cc-ui-booting body{visibility:hidden!important}html.cc-ui-booting .container{opacity:0!important}html.cc-ui-ready body{visibility:visible!important}html.cc-ui-ready .container{opacity:1!important}html.cc-ui-booting #cc-v3-eventgrid,html.cc-ui-booting #cc-planned-grid,html.cc-ui-booting #cc-v3-filterbar{visibility:hidden!important}html.cc-ui-booting #cc-planned-grid .cc-event-card,html.cc-ui-booting #cc-v3-eventgrid .cc-v3-card{transition:none!important}</style><script id="cc-boot-init">document.documentElement.classList.add("cc-ui-booting");window.__ccCloudReady=false;window.__ccInitialDataReady=false;</script>
+<style id="cc-boot-guard">html.cc-ui-booting body{visibility:visible!important}html.cc-ui-booting .container{opacity:1!important}html.cc-ui-ready body{visibility:visible!important}html.cc-ui-ready .container{opacity:1!important}html.cc-ui-booting #cc-v3-eventgrid,html.cc-ui-booting #cc-planned-grid,html.cc-ui-booting #cc-v3-filterbar{visibility:hidden!important}html.cc-ui-booting #cc-planned-grid .cc-event-card,html.cc-ui-booting #cc-v3-eventgrid .cc-v3-card{transition:none!important}</style><script id="cc-boot-init">document.documentElement.classList.add("cc-ui-booting");window.__ccCloudReady=false;window.__ccInitialDataReady=false;</script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -1156,13 +1156,7 @@ window.deleteCompanyAction = function(id) {
 
 var CFG_KEY='ccPortalConfigV3';
 var defaultCfg={
-  filters:[
-    {id:'all',name:'Vše',locked:true,active:true},
-    {id:'O2 Arena',name:'O2 Arena',locked:false,active:true},
-    {id:'Fotbal',name:'Fotbal',locked:false,active:true},
-    {id:'SKS Slavia',name:'SKS Slavia',locked:false,active:true},
-    {id:'Reprezentace',name:'Reprezentace',locked:false,active:true}
-  ],
+  filters:[],
   tileStyle:'photo',
   landing:{enabled:true,title:'Nadcházející akce',text:'Sledujte zde důležité informace o nadcházejících akcích, změnách času nebo zrušení akce.'},
   help:[
@@ -1653,9 +1647,6 @@ window.addEventListener('scroll',function(){if(tipCard)positionTip(tipCard);},tr
   function boot(){track();indicator();setInterval(function(){track();indicator()},1000)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
-</script>
-/* V9 – cloud-first přihlášení; kód se nikdy nehledá pouze lokálně. */
-(function(){var oldLogin=window.loginUserFromGate;window.loginUserFromGate=oldLogin;function firebaseReadyForLogin(){return typeof firebase!=='undefined'&&firebase.apps&&firebase.apps.length;}})();
 </script>
 <!-- V10 UX / MOBILE / ACTION CARDS REPAIR 2026-10-03 -->
 <style id="cc-v10-style">
@@ -4292,13 +4283,7 @@ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded'
 
 var CFG_KEY='ccPortalConfigV3';
 var defaultCfg={
-  filters:[
-    {id:'all',name:'Vše',locked:true,active:true},
-    {id:'O2 Arena',name:'O2 Arena',locked:false,active:true},
-    {id:'Fotbal',name:'Fotbal',locked:false,active:true},
-    {id:'SKS Slavia',name:'SKS Slavia',locked:false,active:true},
-    {id:'Reprezentace',name:'Reprezentace',locked:false,active:true}
-  ],
+  filters:[],
   tileStyle:'photo',
   landing:{enabled:true,title:'Nadcházející akce',text:'Sledujte zde důležité informace o nadcházejících akcích, změnách času nebo zrušení akce.'},
   help:[
@@ -6267,10 +6252,36 @@ function ccRenderFilterAdmin(c){
  var conf=ccCfgNow(),filters=ccFilterTree(),reasons=(localStorage.getItem('cc_dynamic_reasons')||'Obchodní schůzka,VIP zákazník,Interní akce').split(',').map(function(x){return x.trim()}).filter(Boolean);
  c.innerHTML='<div class="cc-adm-section"><h3>Kategorie a podfiltry akcí</h3><p class="cc-adm-muted">Filtr může mít vlastní podfiltry. Například <b>O2 Arena → Koncert / Hokej</b>. Podfiltr se uloží přímo k nadřazené kategorii.</p><div id="cc-ext-filter-tree"></div><div style="margin-top:10px"><button class="cc-adm-btn" id="cc-ext-add-parent">+ Přidat hlavní filtr</button><button class="cc-adm-btn primary" id="cc-ext-save-filters">Uložit filtry</button></div></div><div class="cc-adm-section"><h3>Důvody rezervace</h3><div id="cc-ext-reasons"></div><button class="cc-adm-btn" id="cc-ext-add-reason">+ Přidat důvod</button><button class="cc-adm-btn primary" id="cc-ext-save-reasons">Uložit důvody</button></div>';
  var tree=c.querySelector('#cc-ext-filter-tree'),reasonBox=c.querySelector('#cc-ext-reasons');
- function draw(){tree.innerHTML='';filters.forEach(function(f,i){var box=document.createElement('div');box.className='cc-ext-filter-parent';box.innerHTML='<div class="row"><input data-fn value="'+ccEsc(f.name)+'" '+(f.locked?'disabled':'')+'><label class="cc-adm-check"><input type="checkbox" data-fa '+(f.active!==false?'checked':'')+'> zobrazit</label><button class="cc-ext-mini" data-addchild>+ Podfiltr</button><button class="cc-ext-mini cc-ext-danger" data-del '+(f.locked?'disabled':'')+'>Smazat</button></div><div class="cc-ext-children"></div>';var children=Array.isArray(f.children)?f.children:(Array.isArray(f.subfilters)?f.subfilters:[]);f.children=children;var ch=box.querySelector('.cc-ext-children');children.forEach(function(q,j){var row=document.createElement('div');row.className='cc-ext-child';row.innerHTML='<input type="text" data-cn value="'+ccEsc(q.name||q)+'"><label class="cc-adm-check"><input type="checkbox" data-ca '+(q.active!==false?'checked':'')+'> zobrazit</label><button class="cc-ext-mini cc-ext-danger" data-cd>×</button>';ch.appendChild(row);row.querySelector('[data-cd]').onclick=function(){children.splice(j,1);draw()}});box.querySelector('[data-addchild]').onclick=function(){children.push({id:'sub_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),name:'Nový podfiltr',active:true});draw()};box.querySelector('[data-del]').onclick=function(){filters.splice(i,1);draw()};tree.appendChild(box)});if(!filters.length)tree.innerHTML='<div class="cc-adm-muted">Zatím nejsou vytvořené žádné vlastní hlavní filtry.</div>'}
+ function draw(){tree.innerHTML='';filters.forEach(function(f,i){var box=document.createElement('div');box.className='cc-ext-filter-parent';box.dataset.filterId=f.id||'';box.innerHTML='<div class="row"><input data-fn value="'+ccEsc(f.name)+'" '+(f.locked?'disabled':'')+'><label class="cc-adm-check"><input type="checkbox" data-fa '+(f.active!==false?'checked':'')+'> zobrazit</label><button class="cc-ext-mini" data-addchild>+ Podfiltr</button><button class="cc-ext-mini cc-ext-danger" data-del '+(f.locked?'disabled':'')+'>Smazat</button></div><div class="cc-ext-children"></div>';var children=Array.isArray(f.children)?f.children:(Array.isArray(f.subfilters)?f.subfilters:[]);f.children=children;var ch=box.querySelector('.cc-ext-children');children.forEach(function(q,j){var row=document.createElement('div');row.className='cc-ext-child';row.dataset.childId=q.id||'';row.innerHTML='<input type="text" data-cn value="'+ccEsc(q.name||q)+'"><label class="cc-adm-check"><input type="checkbox" data-ca '+(q.active!==false?'checked':'')+'> zobrazit</label><button class="cc-ext-mini cc-ext-danger" data-cd>×</button>';ch.appendChild(row);row.querySelector('[data-cd]').onclick=function(){children.splice(j,1);draw()}});box.querySelector('[data-addchild]').onclick=function(){children.push({id:'sub_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),name:'Nový podfiltr',active:true});draw()};box.querySelector('[data-del]').onclick=function(){filters.splice(i,1);draw()};tree.appendChild(box)});if(!filters.length)tree.innerHTML='<div class="cc-adm-muted">Zatím nejsou vytvořené žádné vlastní hlavní filtry.</div>'}
  draw();
  c.querySelector('#cc-ext-add-parent').onclick=function(){filters.push({id:'cat_'+Date.now(),name:'Nová kategorie',locked:false,active:true,children:[]});draw()};
- c.querySelector('#cc-ext-save-filters').onclick=function(){Array.prototype.forEach.call(tree.querySelectorAll('.cc-ext-filter-parent'),function(box,i){filters[i].name=box.querySelector('[data-fn]').value.trim();filters[i].active=box.querySelector('[data-fa]').checked;var ch=filters[i].children||[];Array.prototype.forEach.call(box.querySelectorAll('.cc-ext-child'),function(row,j){if(ch[j]){ch[j].name=row.querySelector('[data-cn]').value.trim();ch[j].active=row.querySelector('[data-ca]').checked}})});conf.filters=filters;ccSaveCfgNow(conf);try{renderFilters()}catch(e){};try{renderCards('all')}catch(e){};try{if(typeof planned==='function')planned()}catch(e){};alert('Filtry a podfiltry byly uloženy.')};
+ c.querySelector('#cc-ext-save-filters').onclick=function(){
+  try{
+    var next=[];
+    Array.prototype.forEach.call(tree.querySelectorAll('.cc-ext-filter-parent'),function(box){
+      var name=(box.querySelector('[data-fn]')||{}).value||'';name=name.trim();
+      if(!name)return;
+      var existingId=box.dataset.filterId||'';
+      var existing=filters.find(function(f){return String(f.id)===String(existingId)})||{};
+      var item={id:existingId||('cat_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7)),name:name,locked:!!existing.locked,active:!!((box.querySelector('[data-fa]')||{}).checked),children:[]};
+      Array.prototype.forEach.call(box.querySelectorAll('.cc-ext-child'),function(row){
+        var cn=(row.querySelector('[data-cn]')||{}).value||'';cn=cn.trim();if(!cn)return;
+        item.children.push({id:(row.dataset.childId||('sub_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7))),name:cn,active:!!((row.querySelector('[data-ca]')||{}).checked)});
+      });
+      next.push(item);
+    });
+    conf=ccCfgNow();conf.filters=next;
+    var payload=JSON.stringify(conf);
+    localStorage.setItem('ccPortalConfigV3',payload);
+    try{if(typeof saveCfg==='function')saveCfg(conf)}catch(e){}
+    try{if(typeof syncAll==='function')syncAll()}catch(e){}
+    try{if(typeof renderFilters==='function')renderFilters()}catch(e){}
+    try{if(typeof renderCards==='function')renderCards('all')}catch(e){}
+    try{if(typeof planned==='function')planned()}catch(e){}
+    try{if(typeof ccPersistUnifiedHelp==='function'){} }catch(e){}
+    alert('Kategorie a filtry byly uloženy.');
+  }catch(err){console.error('CC filter save error',err);alert('Kategorie se nepodařilo uložit: '+(err&&err.message||err));}
+};
  reasonBox.innerHTML=reasons.map(function(r,i){return '<div class="cc-adm-listrow"><input data-rn="'+i+'" value="'+ccEsc(r)+'"><button class="cc-ext-mini cc-ext-danger" data-rd="'+i+'">Smazat</button></div>'}).join('');
  c.querySelector('#cc-ext-add-reason').onclick=function(){reasons.push('Nový důvod');reasonBox.innerHTML=reasons.map(function(r,i){return '<div class="cc-adm-listrow"><input data-rn="'+i+'" value="'+ccEsc(r)+'"><button class="cc-ext-mini cc-ext-danger" data-rd="'+i+'">Smazat</button></div>'}).join('')};
  c.querySelector('#cc-ext-save-reasons').onclick=function(){Array.prototype.forEach.call(reasonBox.querySelectorAll('[data-rn]'),function(i){reasons[Number(i.dataset.rn)]=i.value.trim()});reasons=reasons.filter(Boolean);ccSaveReservationReasons(reasons);alert('Důvody uloženy. Nová rezervace je bude používat okamžitě.')};reasonBox.onclick=function(e){var b=e.target.closest('[data-rd]');if(b){reasons.splice(Number(b.dataset.rd),1);b.parentNode.remove()}};
@@ -7134,5 +7145,33 @@ setTimeout(boot,120);setTimeout(boot,500);setTimeout(boot,1200);
 var mo=new MutationObserver(function(m){var p=document.getElementById('cc-planned-tab');if(p&&p.classList.contains('active')){var g=document.getElementById('cc-final-planned-grid');if(!g||!g.parentNode||document.getElementById('cc-v10-planned-grid')?.style.display!=='none')render()}adminPage()});
 mo.observe(document.body,{childList:true,subtree:true});
 window.addEventListener('cc-cloud-ready',function(){setTimeout(render,30)});
+})();
+</script>
+
+<!-- CC CATEGORY SAVE REPAIR 2026-10-07 -->
+<script id="cc-category-save-repair">
+(function(){
+  'use strict';
+  /* Keep the category editor authoritative: save exactly what is visible in the editor. */
+  window.ccSaveCategoriesNow=function(){
+    var tree=document.getElementById('cc-ext-filter-tree');
+    if(!tree)return false;
+    var conf={};try{conf=JSON.parse(localStorage.getItem('ccPortalConfigV3')||'{}')}catch(e){conf={};}
+    var out=[];
+    tree.querySelectorAll('.cc-ext-filter-parent').forEach(function(box){
+      var name=((box.querySelector('[data-fn]')||{}).value||'').trim(); if(!name)return;
+      var f={id:box.dataset.filterId||('cat_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7)),name:name,locked:false,active:!!((box.querySelector('[data-fa]')||{}).checked),children:[]};
+      box.querySelectorAll('.cc-ext-child').forEach(function(row){
+        var cn=((row.querySelector('[data-cn]')||{}).value||'').trim(); if(!cn)return;
+        f.children.push({id:row.dataset.childId||('sub_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7)),name:cn,active:!!((row.querySelector('[data-ca]')||{}).checked)});
+      });
+      out.push(f);
+    });
+    conf.filters=out;
+    localStorage.setItem('ccPortalConfigV3',JSON.stringify(conf));
+    try{if(typeof saveCfg==='function')saveCfg(conf)}catch(e){}
+    try{if(typeof syncAll==='function')syncAll()}catch(e){}
+    return true;
+  };
 })();
 </script>
