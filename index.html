@@ -6992,7 +6992,147 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 setTimeout(boot,250);setTimeout(boot,900);window.addEventListener('resize',function(){if(tipTarget)tipPos(tipTarget)});window.addEventListener('scroll',function(){if(tipTarget)tipPos(tipTarget)},true);window.addEventListener('cc-cloud-ready',function(){setTimeout(boot,50)});
 })();
 </script>
-<script id="cc-remove-old-pwa-cleanup">
-(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister()})}).catch(function(){})}if(window.caches){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k)})}).catch(function(){})}}catch(e){}})();
-</script>
 
+
+<!-- FINAL PLANNED/ACTIONS FIX 2026-10-07: one stable card renderer, empty initial filters, visible bulk edit -->
+<style id="cc-final-planned-2026-10-07-css">
+  /* The intended compact image-first card design. */
+  #cc-v10-planned-grid,#cc-v10-planned-grid.cc-v10-action-grid{display:none!important}
+  #cc-v3-eventgrid,#cc-planned-grid,#cc-final-planned-wrap{display:none!important}
+  #cc-v6-filterbar,#cc-v3-filterbar,#cc-final-planned-filters{display:none!important}
+  #cc-final-planned-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;margin-top:16px}
+  #cc-final-planned-grid .cc-event-card{position:relative!important;padding:0!important;overflow:visible!important;background:transparent!important;border:0!important;box-shadow:none!important;transform-origin:center top!important;z-index:1;transition:transform .22s ease,filter .22s ease!important}
+  #cc-final-planned-grid .cc-event-card:hover{transform:scale(1.025)!important;z-index:50!important;filter:drop-shadow(0 12px 20px rgba(15,23,42,.14))!important}
+  #cc-final-planned-grid .cc-event-image{position:relative;width:100%;height:230px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#e2e8f0,#f8fafc);border:1px solid var(--border,#dbe3ec);box-shadow:0 5px 18px rgba(15,23,42,.07);background-size:cover;background-position:center}
+  #cc-final-planned-grid .cc-event-image::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(15,23,42,.82) 0%,rgba(15,23,42,.18) 55%,rgba(15,23,42,0) 100%);pointer-events:none}
+  #cc-final-planned-grid .cc-event-overlay{position:absolute;left:0;right:0;bottom:0;padding:18px;color:#fff;z-index:2}
+  #cc-final-planned-grid .cc-event-overlay h3{color:#fff!important;margin:7px 0 5px!important;font-size:19px!important;text-shadow:0 1px 3px rgba(0,0,0,.35)}
+  #cc-final-planned-grid .cc-event-category{display:inline-block;background:rgba(255,255,255,.92);color:#334155;font-size:10px;font-weight:800;padding:5px 8px;border-radius:999px}
+  #cc-final-planned-grid .cc-event-meta{color:#fff;font-size:12px;line-height:1.5;text-shadow:0 1px 3px rgba(0,0,0,.35)}
+  #cc-final-planned-grid .cc-event-capacity{color:#fff;font-size:11px;margin-top:5px;text-shadow:0 1px 3px rgba(0,0,0,.35)}
+  #cc-final-planned-grid .cc-event-info{margin-top:10px;padding:12px 14px;border-radius:12px;background:#fff;border:1px solid #dbe3ec;box-shadow:0 12px 28px rgba(15,23,42,.16);color:#334155;font-size:13px;line-height:1.55;text-align:left;position:absolute;left:0;right:0;top:calc(100% - 4px);z-index:100;opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease,visibility .18s ease;pointer-events:none}
+  #cc-final-planned-grid .cc-event-card:hover .cc-event-info{opacity:1;visibility:visible;transform:translateY(0)}
+  #cc-final-planned-grid .cc-event-actions{padding:0;margin-top:8px}
+  #cc-final-planned-grid .cc-event-reserve{width:100%;border:0;border-radius:9px;background:#e41e26;color:#fff;padding:10px 12px;font-weight:800;cursor:pointer}
+  #cc-final-planned-grid .cc-event-reserve:disabled{background:#e2e8f0;color:#64748b;cursor:not-allowed}
+  #cc-final-planned-grid .cc-final-state{position:absolute;top:10px;right:10px;z-index:4;padding:7px 10px;border-radius:999px;font-size:10px;font-weight:900;letter-spacing:.02em;box-shadow:0 5px 15px rgba(0,0,0,.18)}
+  #cc-final-planned-grid .cc-final-state.cancelled{background:#fee2e2;color:#991b1b}
+  #cc-final-planned-grid .cc-final-state.moved{background:#ede9fe;color:#6d28d9}
+  #cc-final-planned-grid .cc-final-state.full{background:#e2e8f0;color:#334155}
+  #cc-final-planned-grid .cc-final-state-note{font-size:11px;font-weight:800;margin-top:7px}
+  #cc-final-planned-grid .cc-final-state-note.cancelled{color:#991b1b}
+  #cc-final-planned-grid .cc-final-state-note.moved{color:#6d28d9}
+  #cc-final-planned-grid .cc-final-state-note.full{color:#475569}
+  #cc-final-filterbar{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+  #cc-final-filterbar:empty{display:none!important}
+  #cc-final-filterbar .cc-final-filter{border:1px solid #dbe3ec;background:#fff;color:#475569;border-radius:999px;padding:8px 13px;font-weight:700;cursor:pointer}
+  #cc-final-filterbar .cc-final-filter.active{background:#111827;color:#fff;border-color:#111827}
+  #cc-final-filter-empty{display:none}
+  #cc-final-admin-bulk-ensure{margin-bottom:12px}
+  @media(max-width:800px){#cc-final-planned-grid{grid-template-columns:1fr 1fr;gap:11px}#cc-final-planned-grid .cc-event-image{height:180px}#cc-final-planned-grid .cc-event-overlay{padding:13px}#cc-final-planned-grid .cc-event-overlay h3{font-size:16px!important}#cc-final-planned-grid .cc-event-info{display:none!important}}
+  @media(max-width:520px){#cc-final-planned-grid{grid-template-columns:1fr}#cc-final-planned-grid .cc-event-image{height:190px}}
+</style>
+<script id="cc-final-planned-2026-10-07-js">
+(function(){
+'use strict';
+var activeFilter='__all__';
+var tipBound=false;
+function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function actions(){try{return JSON.parse(localStorage.getItem('companyActions')||'[]')||[]}catch(e){return []}}
+function requests(){try{return JSON.parse(localStorage.getItem('ticketRequests')||'[]')||[]}catch(e){return []}}
+function config(){try{return JSON.parse(localStorage.getItem('ccPortalConfigV3')||'{}')||{}}catch(e){return {}}}
+function categoryList(){
+  var f=Array.isArray(config().filters)?config().filters:[];
+  var builtins={'vse':1,'o2 arena':1,'fotbal':1,'sks slavia':1,'reprezentace':1};
+  /* The portal starts with an intentionally empty category filter. The administrator adds the categories later. */
+  return f.filter(function(x){var n=String(x&&x.name||'').trim();return x&&x.id!=='all'&&x.active!==false&&n&&!builtins[n.toLowerCase()]});
+}
+function approvedFor(name){return requests().filter(function(r){return r.action===name&&r.status1==='Schváleno'&&r.status2==='Schváleno'}).reduce(function(n,r){return n+(parseInt(r.tickets)||0)},0)}
+function state(a,approved){
+  var p=String(a.portalStatus||'').trim().toLowerCase();
+  var s=String(a.status||'').trim().toLowerCase();
+  if(s==='zrušena'||p==='zrušeno'||p==='zrušena')return {key:'cancelled',label:'ZRUŠENO',note:'Rezervace není možná'};
+  if(p==='přesunuto'||p==='přesunuta')return {key:'moved',label:'PŘESUNUTO',note:'Termín nebo místo bylo změněno'};
+  if(p==='zrušeno/přesunuto')return {key:'moved',label:'PŘESUNUTO / ZRUŠENO',note:'Termín nebo místo bylo změněno'};
+  var cap=Number(a.capacity)||0;
+  if(p==='plno'||(cap>0&&approved>=cap))return {key:'full',label:'PLNO',note:'Kapacita je naplněná'};
+  return {key:'',label:'',note:''};
+}
+function image(a){return a.image||a.imageUrl||a.backgroundImage||''}
+function clearLegacy(){
+  ['cc-v10-planned-grid','cc-v3-eventgrid','cc-planned-grid','cc-final-planned-wrap'].forEach(function(id){var x=document.getElementById(id);if(x)x.style.display='none'});
+  ['cc-v10-filters','cc-v3-filterbar','cc-v6-filterbar','cc-final-planned-filters'].forEach(function(id){var x=document.getElementById(id);if(x)x.style.display='none'});
+}
+function ensureShell(){
+  var p=document.getElementById('cc-planned-tab');if(!p)return null;
+  var old=document.getElementById('cc-final-planned-head');
+  if(!old){
+    p.innerHTML='<div id="cc-final-planned-head"><h2 style="margin-bottom:4px">Plánované akce</h2><p style="margin:0;color:#64748b;font-size:13px">Vyberte akci a rezervujte lístky.</p></div><div id="cc-final-filterbar"></div><div id="cc-final-planned-grid"></div>';
+  }
+  clearLegacy();
+  return document.getElementById('cc-final-planned-grid');
+}
+function renderFilters(){
+  var fb=document.getElementById('cc-final-filterbar');if(!fb)return;
+  var cats=categoryList();
+  /* No built-in categories: the administrator adds their own. */
+  fb.innerHTML='';
+  if(!cats.length){activeFilter='__all__';return}
+  var all=document.createElement('button');all.type='button';all.className='cc-final-filter'+(activeFilter==='__all__'?' active':'');all.textContent='Vše';all.onclick=function(){activeFilter='__all__';render()};fb.appendChild(all);
+  cats.forEach(function(c){var b=document.createElement('button');b.type='button';b.className='cc-final-filter'+(activeFilter===c.name?' active':'');b.textContent=c.name;b.onclick=function(){activeFilter=c.name;render()};fb.appendChild(b)});
+  if(cats.every(function(c){return c.name!==activeFilter})&&activeFilter!=='__all__')activeFilter='__all__';
+}
+function render(){
+  var p=document.getElementById('cc-planned-tab');if(!p)return;
+  var grid=ensureShell();if(!grid)return;
+  renderFilters();
+  var list=actions().filter(function(a){return a.visible!==false&&String(a.status||'Aktivní').toLowerCase()!=='skryto'});
+  if(activeFilter!=='__all__')list=list.filter(function(a){return String(a.category||a.cat||'')===activeFilter});
+  list.sort(function(a,b){var ao=Number(a.order)||0,bo=Number(b.order)||0;if(ao&&bo&&ao!==bo)return ao-bo;if(ao&&!bo)return -1;if(!ao&&bo)return 1;return String((a.date||'9999-99-99')+' '+(a.time||'99:99')).localeCompare(String((b.date||'9999-99-99')+' '+(b.time||'99:99')))});
+  grid.innerHTML='';
+  if(!list.length){grid.innerHTML='<div style="grid-column:1/-1;padding:25px;color:#64748b;text-align:center">Zatím nebyla vytvořena žádná akce.</div>';return}
+  list.forEach(function(a){
+    var approved=approvedFor(a.name),st=state(a,approved),cap=Number(a.capacity)||0,im=image(a),catText=String(a.category||a.cat||'')+(a.subcategory?' · '+String(a.subcategory):'');
+    var card=document.createElement('article');card.className='cc-event-card';
+    var media=document.createElement('div');media.className='cc-event-image';if(im)media.style.backgroundImage='url('+JSON.stringify(im)+')';
+    var overlay=document.createElement('div');overlay.className='cc-event-overlay';
+    if(catText){var badge=document.createElement('span');badge.className='cc-event-category';badge.textContent=catText;overlay.appendChild(badge)}
+    var h=document.createElement('h3');h.textContent=a.name||'Bez názvu';overlay.appendChild(h);
+    var meta=document.createElement('div');meta.className='cc-event-meta';meta.innerHTML=(a.date?'📅 '+esc(a.date)+'<br>':'')+(a.time?'⏰ '+esc(a.time)+'<br>':'')+(a.place?'📍 '+esc(a.place):'');overlay.appendChild(meta);
+    var capEl=document.createElement('div');capEl.className='cc-event-capacity';capEl.innerHTML='🎟️ Obsazeno: <strong>'+approved+'</strong> / '+cap;overlay.appendChild(capEl);media.appendChild(overlay);card.appendChild(media);
+    if(st.key){var stateBadge=document.createElement('div');stateBadge.className='cc-final-state '+st.key;stateBadge.textContent=st.label;media.appendChild(stateBadge)}
+    var info=document.createElement('div');info.className='cc-event-info';info.innerHTML='<strong>'+esc(a.name||'')+'</strong><br>'+esc(a.description||a.tooltip||'Popis akce nebyl zadán.').replace(/\n/g,'<br>');card.appendChild(info);
+    var actionsBox=document.createElement('div');actionsBox.className='cc-event-actions';var btn=document.createElement('button');btn.type='button';btn.className='cc-event-reserve';btn.textContent='Rezervovat lístky';btn.disabled=!!st.key;btn.onclick=function(e){e.stopPropagation();if(!st.key&&typeof ccOpenReservationSafe==='function')ccOpenReservationSafe(a)};actionsBox.appendChild(btn);card.appendChild(actionsBox);
+    if(st.key){var note=document.createElement('div');note.className='cc-final-state-note '+st.key;note.textContent=st.note;actionsBox.appendChild(note)}
+    grid.appendChild(card);
+  });
+}
+function ensureBulk(){
+  try{
+    var panel=document.querySelector('#tab4 .cc-admin-subpanel[data-panel="events"]');
+    if(!panel||!panel.classList.contains('active'))return;
+    var legacy=document.getElementById('cc-v10-action-manager');if(legacy)legacy.style.display='none';
+    var bulk=document.getElementById('cc-ev-bulk');
+    if(!bulk&&typeof ccEnhancedEventsPage==='function'){
+      ccEnhancedEventsPage(panel);
+      bulk=document.getElementById('cc-ev-bulk');
+    }
+    if(bulk){bulk.style.display='inline-flex';bulk.disabled=bulk.disabled;}
+  }catch(e){console.warn('bulk repair',e)}
+}
+function adminPage(){
+  try{
+    if(typeof isAdmin==='function'&&!isAdmin())return;
+    var page=window.__ccAdminCurrentPage||'';
+    if(page==='events'||document.querySelector('#tab4 .cc-admin-subpanel[data-panel="events"].active'))ensureBulk();
+  }catch(e){}
+}
+function boot(){render();adminPage()}
+window.renderPlanned=render;window.planned=render;window.ensurePlanned=render;window.renderPlannedFilter=function(f){activeFilter=f||'__all__';render()};window.ccFinalPlannedRender=render;
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+setTimeout(boot,120);setTimeout(boot,500);setTimeout(boot,1200);
+var mo=new MutationObserver(function(m){var p=document.getElementById('cc-planned-tab');if(p&&p.classList.contains('active')){var g=document.getElementById('cc-final-planned-grid');if(!g||!g.parentNode||document.getElementById('cc-v10-planned-grid')?.style.display!=='none')render()}adminPage()});
+mo.observe(document.body,{childList:true,subtree:true});
+window.addEventListener('cc-cloud-ready',function(){setTimeout(render,30)});
+})();
+</script>
