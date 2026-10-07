@@ -2136,6 +2136,57 @@ try{if(window.__ccAdminCurrentPage==='helper'&&typeof renderPage==='function')re
 })();
 </script>
 
+<script id="cc-hard-category-router-2026-10-07">
+(function(){
+  'use strict';
+  /* HARD ROUTE: intercept the actual visible admin tile before any legacy
+     onclick handler can render the old category/filter screen. */
+  function openCategoryEditor(e){
+    var b=e.target && e.target.closest ? e.target.closest('#cc-admin-shell .cc-admin-nav button[data-page="filters"]') : null;
+    if(!b) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    try{
+      var shell=document.getElementById('cc-admin-shell');
+      if(!shell && typeof makeShell==='function') shell=makeShell();
+      if(!shell) return;
+      var c=shell.querySelector('#cc-admin-content');
+      if(!c) return;
+      window.__ccAdminCurrentPage='filters';
+      shell.querySelectorAll('.cc-admin-nav button[data-page]').forEach(function(x){x.classList.toggle('active',x===b);});
+      var title=shell.querySelector('#cc-admin-title'), sub=shell.querySelector('#cc-admin-subtitle');
+      if(title) title.textContent='Kategorie a důvody';
+      if(sub) sub.textContent='Kategorie akcí, filtry a nabídka důvodů rezervace.';
+      if(typeof ccRenderCategoryEditor==='function'){
+        c.innerHTML='';
+        ccRenderCategoryEditor(c);
+      }
+    }catch(err){console.error('Hard category editor:',err);}
+  }
+  document.addEventListener('click',openCategoryEditor,true);
+
+  /* Also make the router itself authoritative for programmatic navigation. */
+  var prev=window.__ccRenderAdminPage;
+  window.__ccRenderAdminPage=function(page){
+    if(page==='filters'){
+      var shell=document.getElementById('cc-admin-shell') || (typeof makeShell==='function'?makeShell():null);
+      var c=shell&&shell.querySelector('#cc-admin-content');
+      if(c && typeof ccRenderCategoryEditor==='function'){
+        window.__ccAdminCurrentPage='filters';
+        c.innerHTML='';
+        ccRenderCategoryEditor(c);
+        var bs=shell.querySelectorAll('.cc-admin-nav button[data-page]');
+        bs.forEach(function(x){x.classList.toggle('active',x.dataset.page==='filters');});
+        var t=shell.querySelector('#cc-admin-title'),sub=shell.querySelector('#cc-admin-subtitle');
+        if(t)t.textContent='Kategorie a důvody';
+        if(sub)sub.textContent='Kategorie akcí, filtry a nabídka důvodů rezervace.';
+        return true;
+      }
+    }
+    return prev ? prev(page) : false;
+  };
+})();
+</script>
 </body>
 <script>
     // 🔍 POKROČILÁ MANAŽERSKÁ VYHLEDÁVACÍ LIŠTA (Coca-Cola HBC)
