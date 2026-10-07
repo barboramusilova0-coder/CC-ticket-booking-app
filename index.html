@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 
 <html lang="cs">
-<head>
- 
+
 <head>
 
-manifest.json
+<link rel="manifest" href="manifest.json">
 
 <meta name="theme-color" content="#e41e26">
 
@@ -13,6 +12,26 @@ manifest.json
 
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
+<meta name="apple-mobile-web-app-title" content="CC Tickets">
+
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+
+<style id="cc-boot-guard">
+html.cc-ui-booting body{visibility:hidden!important}
+html.cc-ui-booting .container{opacity:0!important}
+html.cc-ui-ready body{visibility:visible!important}
+html.cc-ui-ready .container{opacity:1!important}
+</style>
+
+<script id="cc-boot-init">
+document.documentElement.classList.add("cc-ui-booting");
+window.__ccCloudReady=false;
+window.__ccInitialDataReady=false;
+</script>
+
+<meta charset="utf-8"/>
+
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <meta name="apple-mobile-web-app-title" content="CC Tickets">
 
 <link rel="icon" href
