@@ -1433,120 +1433,237 @@ window.addEventListener('scroll',function(){if(tipCard)positionTip(tipCard);},tr
 </style>
 
 <script>
-/* V12 – robustní synchronizace akcí: synchronizují se pouze skutečné změny, žádný klient nemaže cizí změny */
+/* V13 – robustní cloudová synchronizace
+   - akce jsou autoritativně v portalData/cocaColaDatabase/cocaColaActions
+   - posílají se pouze skutečně změněná pole
+   - cizí změny se nesmažou kvůli zastaralému localStorage
+   - mazání je explicitní (nikdy nevzniká jen proto, že klient ještě nemá dokument)
+   - konfliktní změny stejného pole: poslední potvrzená lokální úprava tohoto klienta má přednost
+   - ostatní cloudové klíče se synchronizují po jednotlivých polích, ne celým objektem
+*/
 (function(){
   'use strict';
   var DOC_KEY='cocaColaDatabase', ACTIONS_COL='cocaColaActions', UI_KEY='ccPortalConfigV3', PROFILE_PREFIX='ccManager_';
   var SYNC_KEYS=['ticketRequests','customUsers','users','roleRequests','ccSeasonMode','cc_dynamic_reasons','teamsWebhookUrl','teamsNotificationPrefs',UI_KEY];
-  var busy=false,timer=null,actionTimer=null,ready=false,actionReady=false,actionUnsub=null;
-  var actionSyncing=false,actionLocalDirty=false,actionInitialised=false;
-  var lastCloudActions={};
-  var nativeSet=Storage.prototype.setItem,nativeRemove=Storage.prototype.removeItem;
+  var busy=false, timer=null, actionTimer=null, ready=false, actionReady=false, actionUnsub=null;
+  var actionSyncing=false, actionInitialised=false;
+  var cloudActions={}, baseActions={}, dirtyActions={}, deletedActions={};
+  var nativeSet=Storage.prototype.setItem, nativeRemove=Storage.prototype.removeItem;
+  var nativeGet=Storage.prototype.getItem;
+  var cloudBase={};
+  var clientId=null;
+  try{clientId=localStorage.getItem('ccSyncClientId')}catch(e){}
+  if(!clientId){clientId='cc-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10);try{nativeSet.call(localStorage,'ccSyncClientId',clientId)}catch(e){}}
+
   function setLocal(k,v){nativeSet.call(localStorage,k,v)}
-  function getLocal(k){return localStorage.getItem(k)}
+  function getLocal(k){return nativeGet.call(localStorage,k)}
   function json(k,f){try{var v=getLocal(k);return v?JSON.parse(v):f}catch(e){return f}}
   function firebaseReady(){return typeof firebase!=='undefined'&&firebase.apps&&firebase.apps.length}
   function db(){return firebase.firestore()}
   function ref(){return db().collection('portalData').doc(DOC_KEY)}
   function actionsCol(){return ref().collection(ACTIONS_COL)}
-  function collectProfiles(){var p=json('ccManagerProfilesCloud',{});for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf(PROFILE_PREFIX)===0){var v=json(k,null);if(v)p[k.slice(PROFILE_PREFIX.length)]=v}}return p}
-  function collect(){var d={ticketRequests:json('ticketRequests',[]),customUsers:json('customUsers',{}),users:json('users',{}),roleRequests:json('roleRequests',[]),teamsWebhookUrl:getLocal('teamsWebhookUrl')||'',teamsNotificationPrefs:json('teamsNotificationPrefs',null),ccPortalConfigV3:json(UI_KEY,{}),ccManagerProfiles:collectProfiles(),ccSeasonMode:getLocal('ccSeasonMode')||'autumn'};var reasons=getLocal('cc_dynamic_reasons');if(reasons!==null)d.cc_dynamic_reasons=reasons;return d}
-  function scheduleSave(){if(busy||!ready)return;clearTimeout(timer);timer=setTimeout(function(){if(busy)return;ref().set(collect(),{merge:true}).catch(function(e){console.error('V12: cloud save ERROR',e)})},250)}
   function actionId(a){return String(a&&a.id!=null?a.id:'')}
-  function actionKey(id){return String(id)}
-  function actionSignature(a){try{var x={};Object.keys(a||{}).sort().forEach(function(k){if(k!=='_ccUpdatedAt'&&k!=='_ccClient')x[k]=a[k]});return JSON.stringify(x)}catch(e){return ''}}
-  function mapList(list){var m={};(Array.isArray(list)?list:[]).forEach(function(a){var id=actionId(a);if(id)m[actionKey(id)]=a});return m}
+  function mapList(list){var m={};(Array.isArray(list)?list:[]).forEach(function(a){var id=actionId(a);if(id)m[id]=a});return m}
+  function clone(o){try{return JSON.parse(JSON.stringify(o))}catch(e){return o}}
+  function sig(v){try{return JSON.stringify(v)}catch(e){return String(v)} }
+  function actionSig(a){var x={};Object.keys(a||{}).sort().forEach(function(k){if(k!=='_ccUpdatedAt'&&k!=='_ccClient'&&k!=='_ccSyncVersion')x[k]=a[k]});return sig(x)}
   function showActionError(msg){try{var n=document.getElementById('cc-action-save-error');if(!n){n=document.createElement('div');n.id='cc-action-save-error';n.style.cssText='position:fixed;right:18px;bottom:18px;z-index:30000;padding:12px 15px;border-radius:10px;background:#fff1f2;border:1px solid #fecdd3;color:#9f1239;font-weight:700;font-size:13px;box-shadow:0 8px 25px rgba(0,0,0,.15)';document.body.appendChild(n)}n.textContent=msg;setTimeout(function(){if(n)n.remove()},8000)}catch(x){}}
-  function refreshActionUI(){try{if(typeof updateActionSelectOptions==='function')updateActionSelectOptions()}catch(e){}try{if(typeof renderAdminSection==='function')renderAdminSection()}catch(e){}try{if(typeof renderCards==='function')renderCards('all')}catch(e){}try{if(typeof renderLanding==='function')renderLanding()}catch(e){}try{if(typeof planned==='function')planned()}catch(e){}}
-  function markDirty(){if(!actionReady)return;actionLocalDirty=true;clearTimeout(actionTimer);actionTimer=setTimeout(syncActionDiff,350)}
-  function normalizeLocalActions(){var list=json('companyActions',[]);return Array.isArray(list)?list:[]}
+  function refreshActionUI(){try{if(typeof updateActionSelectOptions==='function')updateActionSelectOptions()}catch(e){}try{if(typeof renderAdminSection==='function')renderAdminSection()}catch(e){}try{if(typeof renderCards==='function')renderCards('all')}catch(e){}try{if(typeof renderLanding==='function')renderLanding()}catch(e){}try{if(typeof planned==='function')planned()}catch(e){}try{if(typeof renderPlanned==='function')renderPlanned()}catch(e){}}
+
+  function collectProfiles(){
+    var p=json('ccManagerProfilesCloud',{});
+    for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf(PROFILE_PREFIX)===0){var v=json(k,null);if(v)p[k.slice(PROFILE_PREFIX.length)]=v}}
+    return p;
+  }
+  function collect(){
+    var d={ticketRequests:json('ticketRequests',[]),customUsers:json('customUsers',{}),users:json('users',{}),roleRequests:json('roleRequests',[]),teamsWebhookUrl:getLocal('teamsWebhookUrl')||'',teamsNotificationPrefs:json('teamsNotificationPrefs',null),ccPortalConfigV3:json(UI_KEY,{}),ccManagerProfiles:collectProfiles(),ccSeasonMode:getLocal('ccSeasonMode')||'autumn'};
+    var reasons=getLocal('cc_dynamic_reasons');if(reasons!==null)d.cc_dynamic_reasons=reasons;return d;
+  }
+  function scheduleSave(){
+    if(busy||!ready)return;
+    clearTimeout(timer);timer=setTimeout(syncGeneral,250);
+  }
+  async function syncGeneral(){
+    if(!firebaseReady()||!ready||busy)return;
+    busy=true;
+    try{
+      var next=collect(), updates={};
+      Object.keys(next).forEach(function(k){
+        if(k==='ccManagerProfiles')return;
+        if(sig(next[k])!==sig(cloudBase[k]))updates[k]=next[k];
+      });
+      if(sig(next.ccManagerProfiles)!==sig(cloudBase.ccManagerProfiles))updates.ccManagerProfiles=next.ccManagerProfiles;
+      if(Object.keys(updates).length){await ref().set(updates,{merge:true});Object.keys(updates).forEach(function(k){cloudBase[k]=clone(updates[k])})}
+    }catch(e){console.error('V13: general cloud save ERROR',e);showActionError('Některé změny se nepodařilo uložit do cloudu. Zkusím to znovu.');clearTimeout(timer);timer=setTimeout(syncGeneral,3000)}
+    finally{busy=false}
+  }
+
+  function markActionDirty(){
+    if(!actionReady)return;
+    var local=mapList(json('companyActions',[]));
+    Object.keys(local).forEach(function(id){
+      var base=baseActions[id];
+      if(!base || actionSig(local[id])!==actionSig(base))dirtyActions[id]=true;
+      else delete dirtyActions[id];
+    });
+    Object.keys(baseActions).forEach(function(id){
+      if(!local[id]){
+        /* absence is not deletion unless the user explicitly marked it */
+        if(!deletedActions[id]) delete dirtyActions[id];
+      }
+    });
+    clearTimeout(actionTimer);actionTimer=setTimeout(syncActionDiff,350);
+  }
+  function explicitDeletionFromLists(prevList,nextList){
+    var p=mapList(prevList),n=mapList(nextList);
+    Object.keys(p).forEach(function(id){if(!n[id])deletedActions[id]=true});
+  }
+  function noteCurrentList(list){
+    var m=mapList(list);Object.keys(m).forEach(function(id){if(deletedActions[id])delete deletedActions[id]});
+  }
+  function localActions(){var a=json('companyActions',[]);return Array.isArray(a)?a:[]}
+
   async function migrateLegacy(legacy,cloudMap){
-    var legacyMap=mapList(legacy), merged={};Object.keys(legacyMap).forEach(function(id){merged[id]=legacyMap[id]});Object.keys(cloudMap).forEach(function(id){merged[id]=cloudMap[id]});
-    var ids=Object.keys(merged);
-    if(ids.length){setLocal('companyActions',JSON.stringify(ids.map(function(id){return merged[id]})));try{companyActions=ids.map(function(id){return merged[id]})}catch(e){}}
-    lastCloudActions=cloudMap;actionReady=true;actionInitialised=true;
-    /* Pouze chybějící/staré dokumenty doplníme. Nikdy zde nemažeme cloudová data. */
-    var missing=[];ids.forEach(function(id){if(!cloudMap[id])missing.push(merged[id])});
-    if(missing.length){
-      var batch=db().batch();missing.forEach(function(a){batch.set(actionsCol().doc(actionId(a)),a,{merge:true})});
-      try{await batch.commit()}catch(e){console.error('V12: legacy migration ERROR',e);showActionError('Akce se nepodařilo dokončit synchronizaci. Změny zůstávají lokálně a zkusí se znovu.')}
-    }
+    var localMap=mapList(legacy), merged={};
+    Object.keys(cloudMap).forEach(function(id){merged[id]=clone(cloudMap[id])});
+    Object.keys(localMap).forEach(function(id){if(!merged[id])merged[id]=clone(localMap[id])});
+    var list=Object.keys(merged).map(function(id){return merged[id]});
+    setLocal('companyActions',JSON.stringify(list));try{companyActions=list}catch(e){}
+    cloudActions=clone(cloudMap);baseActions=clone(cloudMap);actionReady=true;actionInitialised=true;
+    var writes=[];Object.keys(localMap).forEach(function(id){if(!cloudMap[id])writes.push(localMap[id])});
+    if(writes.length){var b=db().batch();writes.forEach(function(a){var d=Object.assign({},a,{_ccUpdatedAt:Date.now(),_ccClient:clientId,_ccSyncVersion:13});b.set(actionsCol().doc(actionId(a)),d,{merge:true})});await b.commit()}
+    /* Starý top-level companyActions už není zdrojem pravdy. Nikdy nemažeme akce z podkolekce. */
     try{await ref().set({companyActions:firebase.firestore.FieldValue.delete()},{merge:true})}catch(e){}
   }
+
   async function syncActionDiff(){
     if(!firebaseReady()||!actionReady)return;
     if(actionSyncing){clearTimeout(actionTimer);actionTimer=setTimeout(syncActionDiff,500);return}
     actionSyncing=true;
     try{
-      var localMap=mapList(normalizeLocalActions()), writes=[],deletes=[];
-      Object.keys(localMap).forEach(function(id){
-        var local=localMap[id], old=lastCloudActions[id];
-        if(!old){
-          var created=Object.assign({},local,{_ccUpdatedAt:Date.now(),_ccClient:'browser'});
-          writes.push({id:id,data:created});
-        }else if(actionSignature(local)!==actionSignature(old)){
-          /* U existující akce posíláme jen pole, která tento počítač skutečně změnil.
-             Když druhý počítač mezitím upraví jiné pole stejné akce, jeho změna se tím nepřepíše. */
-          var patch={};Object.keys(local||{}).forEach(function(k){if(k==='_ccUpdatedAt'||k==='_ccClient')return;if(JSON.stringify(local[k])!==JSON.stringify(old[k]))patch[k]=local[k]});
-          Object.keys(old||{}).forEach(function(k){if(k==='_ccUpdatedAt'||k==='_ccClient')return;if(!(k in local))patch[k]=firebase.firestore.FieldValue.delete()});
-          patch._ccUpdatedAt=Date.now();patch._ccClient='browser';
-          writes.push({id:id,data:patch});
-        }
+      var local=mapList(localActions()), writes=[],deletes=[];
+      Object.keys(dirtyActions).forEach(function(id){
+        if(deletedActions[id]){deletes.push(id);return}
+        var a=local[id];if(!a)return;
+        var base=baseActions[id]||{};
+        var patch={};
+        Object.keys(a).forEach(function(k){if(k==='_ccUpdatedAt'||k==='_ccClient'||k==='_ccSyncVersion')return;if(sig(a[k])!==sig(base[k]))patch[k]=clone(a[k])});
+        Object.keys(base).forEach(function(k){if(k==='_ccUpdatedAt'||k==='_ccClient'||k==='_ccSyncVersion')return;if(!(k in a))patch[k]=firebase.firestore.FieldValue.delete()});
+        if(Object.keys(patch).length){patch._ccUpdatedAt=Date.now();patch._ccClient=clientId;patch._ccSyncVersion=13;writes.push({id:id,data:patch})}
       });
-      Object.keys(lastCloudActions).forEach(function(id){if(!localMap[id])deletes.push(id)});
-      /* Nikdy neposíláme celý seznam. Měníme pouze dokumenty, které tento prohlížeč skutečně změnil. */
+      if(!writes.length&&!deletes.length){Object.keys(dirtyActions).forEach(function(id){delete dirtyActions[id]});actionSyncing=false;return}
       var batch=db().batch();writes.forEach(function(w){batch.set(actionsCol().doc(w.id),w.data,{merge:true})});deletes.forEach(function(id){batch.delete(actionsCol().doc(id))});
-      if(writes.length||deletes.length)await batch.commit();
-      /* Po úspěchu aktualizujeme lokální cloudový základ jen pro změny, které jsme právě poslali. */
-      writes.forEach(function(w){lastCloudActions[w.id]=w.data});deletes.forEach(function(id){delete lastCloudActions[id]});
-      actionLocalDirty=false;
-    }catch(e){console.error('V12: actions cloud diff ERROR',e);showActionError('Úprava akce se nepodařila uložit do cloudu. Změna zůstává v tomto prohlížeči a bude se zkoušet znovu.');clearTimeout(actionTimer);actionTimer=setTimeout(syncActionDiff,2500)}finally{actionSyncing=false}
+      await batch.commit();
+      /* Po úspěchu si znovu načteme potvrzený dokument přes lokální základ: patch aplikujeme na base. */
+      writes.forEach(function(w){var merged=clone(baseActions[w.id]||{});Object.keys(w.data).forEach(function(k){if(k.charAt(0)==='_')return;merged[k]=w.data[k]});baseActions[w.id]=merged;cloudActions[w.id]=merged;delete dirtyActions[w.id]});
+      deletes.forEach(function(id){delete baseActions[id];delete cloudActions[id];delete dirtyActions[id];delete deletedActions[id]});
+    }catch(e){console.error('V13: actions cloud diff ERROR',e);showActionError('Úprava akce se nepodařila uložit do cloudu. Změna zůstává lokálně a zkusím ji znovu.');clearTimeout(actionTimer);actionTimer=setTimeout(syncActionDiff,3000)}
+    finally{actionSyncing=false}
+  }
+
+  function mergeRemote(cloudMap){
+    var local=mapList(localActions()), result={};
+    Object.keys(cloudMap).forEach(function(id){
+      var remote=cloudMap[id],base=baseActions[id],loc=local[id];
+      if(dirtyActions[id]&&loc){
+        var merged=clone(remote);
+        var b=base||{};
+        Object.keys(loc).forEach(function(k){if(k.charAt(0)==='_')return;if(sig(loc[k])!==sig(b[k]))merged[k]=clone(loc[k])});
+        Object.keys(b).forEach(function(k){if(k.charAt(0)==='_')return;if(!(k in loc)&&sig(b[k])!==sig(remote[k])){/* remote deletion wins only when local did not explicitly change */}});
+        result[id]=merged;
+      }else result[id]=clone(remote);
+    });
+    /* Lokální nová/změněná akce, která ještě není na cloudu, zůstane viditelná a bude znovu odeslána. */
+    Object.keys(local).forEach(function(id){if(!result[id]&&dirtyActions[id]&&!deletedActions[id])result[id]=clone(local[id])});
+    Object.keys(deletedActions).forEach(function(id){delete result[id]});
+    var list=Object.keys(result).map(function(id){return result[id]});
+    setLocal('companyActions',JSON.stringify(list));try{companyActions=list}catch(e){}
+    cloudActions=clone(cloudMap);baseActions=clone(cloudMap);
+    Object.keys(dirtyActions).forEach(function(id){if(!local[id]&&!deletedActions[id])delete dirtyActions[id]});
+    refreshActionUI();
   }
   function applyActionSnapshot(snap,legacy){
-    var cloudMap={};snap.forEach(function(d){var a=d.data()||{};if(actionId(a))cloudMap[actionKey(actionId(a))]=a});
-    if(!actionInitialised){migrateLegacy(legacy||[],cloudMap).then(refreshActionUI);return}
-    var localMap=mapList(normalizeLocalActions());
-    /* Pokud máme vlastní neuložené změny, zachováme je v UI a sloučíme jen vzdálené dokumenty,
-       které se od posledního snapshotu změnily. Tím se nepřepíše práce druhého počítače. */
-    if(actionLocalDirty||actionSyncing){
-      Object.keys(cloudMap).forEach(function(id){
-        var cloud=cloudMap[id],base=lastCloudActions[id];
-        if(!localMap[id] || actionSignature(cloud)!==actionSignature(base||{})){
-          /* Pokud stejný dokument upravil i tento klient, jeho lokální změna má přednost do dokončení zápisu. */
-          if(localMap[id] && base && actionSignature(localMap[id])!==actionSignature(base))return;
-          localMap[id]=cloud;
-        }
-      });
-      Object.keys(lastCloudActions).forEach(function(id){if(!cloudMap[id]&&localMap[id]&&actionSignature(localMap[id])===actionSignature(lastCloudActions[id]))delete localMap[id]});
-      setLocal('companyActions',JSON.stringify(Object.keys(localMap).map(function(id){return localMap[id]})));
-      try{companyActions=Object.keys(localMap).map(function(id){return localMap[id]})}catch(e){}
-      lastCloudActions=cloudMap;refreshActionUI();return;
-    }
-    setLocal('companyActions',JSON.stringify(Object.keys(cloudMap).map(function(id){return cloudMap[id]})));
-    try{companyActions=Object.keys(cloudMap).map(function(id){return cloudMap[id]})}catch(e){}
-    lastCloudActions=cloudMap;refreshActionUI();
+    var cloudMap={};snap.forEach(function(d){var a=d.data()||{};if(actionId(a))cloudMap[actionId(a)]=a});
+    if(!actionInitialised){migrateLegacy(legacy||[],cloudMap).then(refreshActionUI).catch(function(e){console.error('V13 migrate',e);actionReady=true;actionInitialised=true});return}
+    mergeRemote(cloudMap);
   }
-  function apply(d){busy=true;try{
-    if(d.ticketRequests!==undefined){setLocal('ticketRequests',JSON.stringify(d.ticketRequests||[]));try{requests=d.ticketRequests||[]}catch(e){}}
-    if(d.customUsers!==undefined){setLocal('customUsers',JSON.stringify(d.customUsers||{}));try{customUsers=d.customUsers||{}}catch(e){}window.customUsers=d.customUsers||{}}
-    if(d.users!==undefined){setLocal('users',JSON.stringify(d.users||{}));window.users=d.users||{}}
-    if(d.roleRequests!==undefined){setLocal('roleRequests',JSON.stringify(d.roleRequests||[]));try{roleRequests=d.roleRequests||[]}catch(e){}}
-    if(d.teamsWebhookUrl!==undefined)setLocal('teamsWebhookUrl',d.teamsWebhookUrl||'');
-    if(d.teamsNotificationPrefs)setLocal('teamsNotificationPrefs',JSON.stringify(d.teamsNotificationPrefs));
-    if(d.ccPortalConfigV3!==undefined)setLocal(UI_KEY,JSON.stringify(d.ccPortalConfigV3||{}));
-    if(d.ccManagerProfiles!==undefined){setLocal('ccManagerProfilesCloud',JSON.stringify(d.ccManagerProfiles||{}));Object.keys(d.ccManagerProfiles||{}).forEach(function(email){setLocal(PROFILE_PREFIX+email,JSON.stringify(d.ccManagerProfiles[email]))})}
-    if(d.ccSeasonMode)setLocal('ccSeasonMode',d.ccSeasonMode);if(d.cc_dynamic_reasons!==undefined)setLocal('cc_dynamic_reasons',d.cc_dynamic_reasons);
-  }finally{busy=false}}
-  localStorage.setItem=function(k,v){nativeSet.call(localStorage,k,v);if(k==='companyActions'){markDirty();return}if(SYNC_KEYS.indexOf(k)!==-1||k.indexOf(PROFILE_PREFIX)===0)scheduleSave()};
-  localStorage.removeItem=function(k){nativeRemove.call(localStorage,k);if(k==='companyActions'){markDirty();return}if(SYNC_KEYS.indexOf(k)!==-1||k.indexOf(PROFILE_PREFIX)===0)scheduleSave()};
-  function start(){if(!firebaseReady()){console.error('V12: Firebase není načtený');return}var r=ref();r.onSnapshot(function(snap){var d=snap.exists?(snap.data()||{}):{};apply(d);ready=true;window.__ccCloudReady=true;window.__ccInitialDataReady=true;try{window.dispatchEvent(new CustomEvent('cc-cloud-ready'))}catch(e){}
-    if(actionUnsub)try{actionUnsub()}catch(e){}
-    actionUnsub=actionsCol().onSnapshot(function(asnap){applyActionSnapshot(asnap,d.companyActions)},function(e){console.error('V12: ACTIONS FIREBASE READ ERROR',e);actionReady=true;showActionError('Akce se nepodařilo načíst z cloudu. Zkontrolujte připojení a oprávnění Firebase.')});
-    if(!snap.exists)r.set(collect(),{merge:true}).catch(function(e){console.error('V12: initial cloud create ERROR',e)});
-  },function(e){ready=false;window.__ccCloudReady=true;window.__ccInitialDataReady=true;console.error('V12: FIREBASE READ ERROR',e);showActionError('Nepodařilo se připojit k Firebase. Zkontrolujte internetové připojení.');});}
+  function applyGeneral(d){
+    busy=true;try{
+      Object.keys(d||{}).forEach(function(k){if(k==='companyActions')return;cloudBase[k]=clone(d[k])});
+      if(d.ticketRequests!==undefined){setLocal('ticketRequests',JSON.stringify(d.ticketRequests||[]));try{requests=d.ticketRequests||[]}catch(e){}}
+      if(d.customUsers!==undefined){setLocal('customUsers',JSON.stringify(d.customUsers||{}));try{customUsers=d.customUsers||{}}catch(e){}window.customUsers=d.customUsers||{}}
+      if(d.users!==undefined){setLocal('users',JSON.stringify(d.users||{}));window.users=d.users||{}}
+      if(d.roleRequests!==undefined){setLocal('roleRequests',JSON.stringify(d.roleRequests||[]));try{roleRequests=d.roleRequests||[]}catch(e){}}
+      if(d.teamsWebhookUrl!==undefined)setLocal('teamsWebhookUrl',d.teamsWebhookUrl||'');
+      if(d.teamsNotificationPrefs!==undefined)setLocal('teamsNotificationPrefs',JSON.stringify(d.teamsNotificationPrefs));
+      if(d.ccPortalConfigV3!==undefined)setLocal(UI_KEY,JSON.stringify(d.ccPortalConfigV3||{}));
+      if(d.ccManagerProfiles!==undefined){setLocal('ccManagerProfilesCloud',JSON.stringify(d.ccManagerProfiles||{}));Object.keys(d.ccManagerProfiles||{}).forEach(function(email){setLocal(PROFILE_PREFIX+email,JSON.stringify(d.ccManagerProfiles[email]))})}
+      if(d.ccSeasonMode!==undefined)setLocal('ccSeasonMode',d.ccSeasonMode||'autumn');
+      if(d.cc_dynamic_reasons!==undefined)setLocal('cc_dynamic_reasons',d.cc_dynamic_reasons);
+    }finally{busy=false}
+  }
+
+  /* Předchozí vrstvy ukládání zůstávají funkční; tato vrstva pouze přidává bezpečné zachycení změn. */
+  localStorage.setItem=function(k,v){
+    var before=k==='companyActions'?getLocal(k):null;
+    nativeSet.call(localStorage,k,v);
+    if(k==='companyActions'){
+      try{var oldList=before?JSON.parse(before):[];var newList=JSON.parse(v)||[];explicitDeletionFromLists(oldList,newList);noteCurrentList(newList)}catch(e){}
+      markActionDirty();return;
+    }
+    if(SYNC_KEYS.indexOf(k)!==-1||k.indexOf(PROFILE_PREFIX)===0)scheduleSave();
+  };
+  localStorage.removeItem=function(k){
+    var before=k==='companyActions'?getLocal(k):null;
+    nativeRemove.call(localStorage,k);
+    if(k==='companyActions'){
+      try{explicitDeletionFromLists(before?JSON.parse(before):[],[])}catch(e){}markActionDirty();return;
+    }
+    if(SYNC_KEYS.indexOf(k)!==-1||k.indexOf(PROFILE_PREFIX)===0)scheduleSave();
+  };
+
+  function start(){
+    if(!firebaseReady()){console.error('V13: Firebase není načtený');return}
+    var r=ref();
+    r.onSnapshot(function(snap){
+      var d=snap.exists?(snap.data()||{}):{};
+      applyGeneral(d);ready=true;window.__ccCloudReady=true;window.__ccInitialDataReady=true;
+      try{window.dispatchEvent(new CustomEvent('cc-cloud-ready'))}catch(e){}
+      if(actionUnsub)try{actionUnsub()}catch(e){}
+      actionUnsub=actionsCol().onSnapshot(function(asnap){applyActionSnapshot(asnap,d.companyActions)},function(e){console.error('V13: ACTIONS READ ERROR',e);actionReady=true;showActionError('Akce se nepodařilo načíst z cloudu. Zkontrolujte připojení a oprávnění Firebase.')});
+      if(!snap.exists)syncGeneral();
+    },function(e){ready=false;window.__ccCloudReady=true;window.__ccInitialDataReady=true;console.error('V13: FIREBASE READ ERROR',e);showActionError('Nepodařilo se připojit k Firebase. Zkontrolujte internetové připojení.')});
+  }
+  window.__ccSyncV13={clientId:clientId,forceActionsSync:function(){clearTimeout(actionTimer);actionTimer=setTimeout(syncActionDiff,0)},getStatus:function(){return {ready:ready,actionReady:actionReady,dirty:Object.keys(dirtyActions).length,deleted:Object.keys(deletedActions).length,clientId:clientId}}};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
 
+/* V13 status panel + explicit delete tracking for app-level save helpers. */
+(function(){
+  'use strict';
+  var lastList=null;
+  function get(){try{return JSON.parse(localStorage.getItem('companyActions')||'[]')||[]}catch(e){return []}}
+  function track(){
+    var now=get();
+    if(lastList){
+      var p={};lastList.forEach(function(a){if(a&&a.id!=null)p[String(a.id)]=a});
+      var n={};now.forEach(function(a){if(a&&a.id!=null)n[String(a.id)]=a});
+      var deleted=[];Object.keys(p).forEach(function(id){if(!n[id])deleted.push(id)});
+      if(deleted.length&&window.__ccSyncV13){try{localStorage.setItem('ccActionExplicitDeletes',JSON.stringify((JSON.parse(localStorage.getItem('ccActionExplicitDeletes')||'[]')||[]).concat(deleted)))}catch(e){}}
+    }
+    lastList=now;
+  }
+  function indicator(){
+    var s=window.__ccSyncV13&&window.__ccSyncV13.getStatus?window.__ccSyncV13.getStatus():null;
+    var el=document.getElementById('cc-v13-sync-status');
+    if(!el){el=document.createElement('div');el.id='cc-v13-sync-status';el.style.cssText='position:fixed;right:16px;top:76px;z-index:10000;padding:6px 10px;border-radius:999px;background:#ecfdf5;border:1px solid #bbf7d0;color:#166534;font:600 11px Segoe UI,system-ui;box-shadow:0 4px 14px rgba(0,0,0,.08);pointer-events:none';document.body.appendChild(el)}
+    if(!s){el.textContent='Cloud synchronizace: čeká';return}
+    el.textContent=s.ready&&s.actionReady?(s.dirty||s.deleted?'Cloud synchronizace: ukládám…':'Cloud synchronizace: připojeno'):'Cloud synchronizace: připojuji…';
+  }
+  function boot(){track();indicator();setInterval(function(){track();indicator()},1000)}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
+</script>
 /* V9 – cloud-first přihlášení; kód se nikdy nehledá pouze lokálně. */
 (function(){var oldLogin=window.loginUserFromGate;window.loginUserFromGate=oldLogin;function firebaseReadyForLogin(){return typeof firebase!=='undefined'&&firebase.apps&&firebase.apps.length;}})();
 </script>
@@ -6860,6 +6977,29 @@ function installBulk(){
 }
 function tick(){try{installQA();installBulk()}catch(e){console.warn('cc tools',e)}}
 function boot(){tick();if(window.MutationObserver){var t=null;new MutationObserver(function(){clearTimeout(t);t=setTimeout(tick,40)}).observe(document.body,{childList:true,subtree:true})}}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
+</script>
+
+<!-- V13 FINAL UX: viditelná instalace + ruční kontrola synchronizace -->
+<script id="cc-v13-final-ux">
+(function(){
+'use strict';
+function installButton(){
+  if(window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true)return;
+  var bar=document.querySelector('.login-bar');if(!bar||document.getElementById('cc-install-visible'))return;
+  var b=document.createElement('button');b.id='cc-install-visible';b.type='button';b.textContent='📲 Přidat jako aplikaci';
+  b.style.cssText='margin-left:8px;background:#fff!important;color:#0f172a!important;border:1px solid #cbd5e1!important;padding:9px 13px!important;border-radius:8px!important;font-weight:700;cursor:pointer;white-space:nowrap';
+  var deferred=null;
+  function openInstall(){
+    if(deferred){deferred.prompt();deferred.userChoice.then(function(){deferred=null;}).catch(function(){});return;}
+    alert('Pokud se instalace sama nenabízí, otevřete v Chrome/Edge nabídku ⋮ a zvolte „Nainstalovat aplikaci“ nebo „Přidat na plochu“. Na iPhonu/iPadu použijte Sdílet → Přidat na plochu.');
+  }
+  b.onclick=openInstall;bar.appendChild(b);
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferred=e;});
+  window.addEventListener('appinstalled',function(){b.textContent='✓ Aplikace je nainstalovaná';b.disabled=true;});
+}
+function boot(){installButton();setInterval(installButton,1500)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
 </script>
