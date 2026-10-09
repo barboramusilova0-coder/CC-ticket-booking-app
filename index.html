@@ -206,22 +206,7 @@ const EVST_L={Active:'ev.active',Full:'ev.full',Cancelled:'ev.cancelled',Complet
 
 /* ---------- konfigurace (zachovává neznámá pole ze starého portálu) ---------- */
 const DEF_FILTERS=[{id:'all',name:'Vše',locked:true,active:true}];
-function normCfg(x){x=x&&typeof x==='object'?clone(x):{};x.landing=x.landing||{};let h=x.help;if(Array.isArray(h))h={answers:h};h=h&&typeof h==='object'?h:{};h.answers=Array.isArray(h.answers)?h.answers:[];h.contact=String(h.contact||'');x.help=h;if(!Array.isArray(x.filters)||!x.filters.length)x.filters=clone(DEF_FILTERS);if(!x.help){
-    x.help = {
-        answers: [],
-        contact: '',
-        enabled: true,
-        icon: ''
-    };
-}
-
-if(!Array.isArray(x.help.answers)){
-    x.help.answers = [];
-}
-
-if(x.help.enabled === undefined){
-    x.help.enabled = true;
-}return x}
+function normCfg(x){try{x=x&&typeof x==='object'?clone(x):{}}catch(e){x={}}if(!x||typeof x!=='object'||Array.isArray(x))x={};x.landing=x.landing&&typeof x.landing==='object'?x.landing:{};let h=x.help;if(Array.isArray(h))h={answers:h};h=h&&typeof h==='object'&&!Array.isArray(h)?h:{};h.answers=Array.isArray(h.answers)?h.answers:[];h.contact=String(h.contact||'');h.enabled=h.enabled!==false;h.icon=typeof h.icon==='string'?h.icon:'';x.help=h;if(!Array.isArray(x.filters)||!x.filters.length)x.filters=clone(DEF_FILTERS);return x}
 function parseReasons(v){if(Array.isArray(v))return v.filter(Boolean);return String(v||'').split(',').map(s=>s.trim()).filter(Boolean)}
 
 /* ---------- cloud ---------- */
@@ -286,7 +271,7 @@ const TYPE_CAT={new_registration:'registration',chatbot_issue:'chatbot_issues',s
 INFO_TYPES.forEach(t=>TYPE_CAT[t]='info_events');
 const TYPE_COLOR={new_registration:'0078D4',approval:'28A745',rejection:'DC2626',new_reservation:'00A4EF',chatbot_issue:'F59E0B',sync_issue:'F59E0B',system_error:'DC2626',event_created:'0078D4',event_deleted:'DC2626',event_modified:'0078D4',test:'64748B',new_event:'0078D4',reminder_30:'0078D4',reminder_14:'0078D4',reminder_7:'F59E0B',reminder_1:'F59E0B',low_capacity:'F59E0B',full_capacity:'DC2626',cancelled:'DC2626',rescheduled:'F59E0B',completed:'64748B'};
 const Teams={validUrl(u){if(!u)return true;try{const p=new URL(u),h=p.hostname.toLowerCase();return p.protocol==='https:'&&(h==='outlook.office.com'||h==='webhook.office.com'||h.endsWith('.webhook.office.com')||h.endsWith('.logic.azure.com')||h.endsWith('.api.powerplatform.com'))&&!p.username&&!p.password&&(!p.port||p.port==='443')}catch(e){return false}},
-  enabled(type){const c=TYPE_CAT[type];return c==null||S.teams.prefs[c]!==false},
+  enabled(type){const c=TYPE_CAT[type];const prefs=S.teams&&S.teams.prefs&&typeof S.teams.prefs==='object'?S.teams.prefs:{};return c==null||prefs[c]!==false},
   async send(type,data){data=data||{};const url=INFO_TYPES.includes(type)?S.teams.info:S.teams.admin;if(!url||!this.enabled(type))return false;
     const lang=S.teams.lang==='en'?1:0,tt=k=>{const d=DICT[k];return d?d[lang]:k};
     const facts=(data.facts||[]).map(f=>({name:String(f[0]).slice(0,80),value:String(f[1]==null?'':f[1]).replace(/[<>]/g,'').slice(0,500)}));
@@ -303,19 +288,7 @@ const evFacts=ev=>[[T('tm.f.name'),ev.name],[T('tm.f.date'),fmtDate(ev.date,ev.t
 /* ---------- téma, sezóna, částice ---------- */
 function seasonNow(){let s=S.season;if(s!=='auto')return s;const d=new Date(),m=d.getMonth()+1,day=d.getDate();if(m===10&&day>=25)return 'halloween';if(m===12)return 'christmas';if(m<=2)return 'winter';if(m<=5)return 'spring';if(m<=8)return 'summer';return 'autumn'}
 function themePref(){const u=S.user&&S.users[norm(S.user.email)];return(u&&u.prefs&&u.prefs.theme)||localStorage.getItem('ccTheme')||'auto'}
-function applyTheme(){const p=themePref();const dark=p==='dark'||(p==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);const h=document.documentElement;h.dataset.theme=dark?'dark':'light';const se=seasonNow();h.dataset.season=se;S.lang=detectLang();if(!S.cfg){
-    S.cfg = {};
-}
-
-if(!S.cfg.help){
-    S.cfg.help = {
-        answers: [],
-        contact: '',
-        enabled: true,
-        icon: ''
-    };
-}
-`h.lang=S.lang;
+function applyTheme(){const p=themePref();const dark=p==='dark'||(p==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);const h=document.documentElement;h.dataset.theme=dark?'dark':'light';const se=seasonNow();h.dataset.season=se;S.lang=detectLang();h.lang=S.lang;
   const m=$('meta[name=theme-color]');if(m)m.content=getComputedStyle(h).getPropertyValue('--accent').trim()||'#e41e26';Particles.set(se)}
 const Particles={cv:null,ctx:null,list:[],kind:'',raf:0,
   set(kind){const want=({autumn:'leaf',winter:'snow',christmas:'snow',halloween:'ember'})[kind]||'';if(want===this.kind)return;this.kind=want;cancelAnimationFrame(this.raf);this.cv=$('#particles');this.ctx=this.cv.getContext('2d');this.ctx.clearRect(0,0,this.cv.width,this.cv.height);if(!want||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
@@ -621,14 +594,7 @@ const Admin={
 
     languages(){const dl=S.cfg.defaultLang||'cs';return Admin.head('languages')+`<div class="card"><div class="fg" style="max-width:300px"><label for="lg-d">${T('lg.default')}</label><select id="lg-d"><option value="cs" ${dl==='cs'?'selected':''}>Čeština</option><option value="en" ${dl==='en'?'selected':''}>English</option></select></div><div class="fg" style="max-width:300px"><label for="lg-t">${T('tm.lang')}</label><select id="lg-t"><option value="cs" ${S.teams.lang==='cs'?'selected':''}>Čeština</option><option value="en" ${S.teams.lang==='en'?'selected':''}>English</option></select></div><button class="btn pri" data-act="lgSave">${T('c.save')}</button><p class="hint" style="margin-top:12px">${T('lg.note')}</p></div>`},
 
-    helper(){const h = S.cfg.help || {
-    answers: [],
-    contact: '',
-    enabled: true,
-    icon: ''
-};
-
-const ans = h.answers || [];return Admin.head('helper','<button class="btn pri sm" data-act="hlpEdit">+ '+T('hp.add')+'</button>')+`<div class="grid g2"><div class="card"><div class="fg"><label for="hp-c">${T('hp.contact')}</label><textarea id="hp-c">${esc(h.contact)}</textarea></div><label class="chk"><input type="checkbox" id="hp-en" ${h.enabled!==false?'checked':''}><span>${T('hp.enabled')}</span></label></div>
+    helper(){const h=S.cfg.help,ans=h.answers;return Admin.head('helper','<button class="btn pri sm" data-act="hlpEdit">+ '+T('hp.add')+'</button>')+`<div class="grid g2"><div class="card"><div class="fg"><label for="hp-c">${T('hp.contact')}</label><textarea id="hp-c">${esc(h.contact)}</textarea></div><label class="chk"><input type="checkbox" id="hp-en" ${h.enabled!==false?'checked':''}><span>${T('hp.enabled')}</span></label></div>
       <div class="card"><label>${T('hp.icon')}</label><div class="row">${h.icon?`<img src="${esc(h.icon)}" alt="" width="56" height="56" style="border-radius:50%;object-fit:cover">`:'<span style="font-size:2rem">🤖</span>'}<input type="file" id="hp-ic" accept="image/*" style="max-width:220px">${h.icon?`<button class="btn sm" data-act="hlpIconDel">${T('c.delete')}</button>`:''}</div><p class="hint">${T('hp.iconHint')}</p></div></div>
       <button class="btn pri" style="margin:12px 0" data-act="hlpSaveMeta">${T('c.save')}</button>
       <h3>${T('hp.answers')} (${ans.length})</h3>${ans.length?`<div class="tw"><table class="stack"><thead><tr><th>${T('hp.q')}</th><th>${T('hp.a')}</th><th></th></tr></thead><tbody>${ans.map((a,i)=>`<tr><td data-l="${T('hp.q')}"><b>${esc(a.q||a.title||a.id||'')}</b><div class="hint">${esc((a.keys||[]).join(', '))}</div></td><td data-l="${T('hp.a')}" class="small">${esc(String(a.a||a.answer||'').slice(0,140))}</td><td data-l=""><button class="btn sm" data-act="hlpEdit" data-i="${i}">${T('c.edit')}</button> <button class="btn bad sm" data-act="hlpDel" data-i="${i}">${T('c.delete')}</button></td></tr>`).join('')}</tbody></table></div>`:`<div class="empty">${T('hp.none')}</div>`}`},
@@ -786,7 +752,7 @@ const Bot={open:false,hist:[],last:'',
     {keys:['rezerv','lístek','listek','vstupenk','ticket','book','reserv'],a:T('bot.f.reserve')},{keys:['schval','stav','status','approv','pending','čeká'],a:T('bot.f.status')},{keys:['přístup','pristup','registr','role','access','register'],a:T('bot.f.access')},
     {keys:['heslo','přihlás','prihlas','password','login','sign in'],a:T('bot.f.login')},{keys:['plná','plne','full','kapacit','capacity','vyprod'],a:T('bot.f.full')},{keys:['zruš','zrus','cancel'],a:T('bot.f.cancel')},{keys:['offline','nefunguje','chyba','error','problém','problem','sync'],a:T('bot.f.trouble')},{keys:['instal','aplikac','pwa','install'],a:T('bot.f.install')}];return base},
   answer(q){const t=norm(q);if(!t)return null;
-    const custom=(S.cfg.help?.answers || []).map(a=>{const keys=(a.keys||[]).concat(String(a.q||a.title||'').toLowerCase().split(/\s+/).filter(w=>w.length>4));let sc=0;keys.forEach(k=>{if(k&&t.includes(String(k).toLowerCase()))sc+=String(k).length});return{a,sc}}).filter(x=>x.sc>0).sort((x,y)=>y.sc-x.sc)[0];
+    const custom=S.cfg.help.answers.map(a=>{const keys=(a.keys||[]).concat(String(a.q||a.title||'').toLowerCase().split(/\s+/).filter(w=>w.length>4));let sc=0;keys.forEach(k=>{if(k&&t.includes(String(k).toLowerCase()))sc+=String(k).length});return{a,sc}}).filter(x=>x.sc>0).sort((x,y)=>y.sc-x.sc)[0];
     if(custom)return{text:String(custom.a.a||custom.a.answer||''),next:(custom.a.next||[]).map(id=>S.cfg.help.answers.find(x=>x.id===id)).filter(Boolean)};
     const byName=(S._all||[]).filter(e=>!isArchived(e)&&t.length>3&&norm(e.name).split(/\s+/).some(w=>w.length>3&&t.includes(w)));if(byName.length&&!/rezerv|book|reserv/.test(t))return{text:byName.slice(0,3).map(e=>{const st=evStatus(e),r=evRemaining(e);return '• '+e.name+' — '+fmtDate(e.date,e.time)+(e.place?', '+e.place:'')+' ['+T(EVST_L[st])+(r!=null&&st==='Active'?', '+T('ev.remaining',{n:r}):'')+']'}).join('\n')};
     if(/akc[ei]|events?|programme|program|kdy|when|nadcház|upcoming/.test(t)){const up=(S._all||[]).filter(e=>evStatus(e)==='Active'||evStatus(e)==='Full').sort((a,b)=>(a.date||'').localeCompare(b.date||'')).slice(0,5);return{text:up.length?T('bot.upcoming')+'\n'+up.map(e=>'• '+e.name+' — '+fmtDate(e.date,e.time)+' ['+T(EVST_L[evStatus(e)])+']').join('\n'):T('ev.none')}}
@@ -797,12 +763,8 @@ const Bot={open:false,hist:[],last:'',
     if(a){this.say(a.text,false);if(a.next&&a.next.length)this.chips(a.next.map(n=>n.q||n.title))}
     else this.say(T('bot.unknown'),false,`<div class="row" style="margin-top:8px"><button class="btn sm" data-act="botReport">${T('bot.report')}</button>${S.cfg.help.contact?'':''}</div>`)},
   chips(list){const c=$('#chat-q');if(c)c.innerHTML=list.map(x=>`<button class="chip" data-act="botQ" data-q="${esc(x)}">${esc(x)}</button>`).join('')},
-  mount(){let r=$('#chat-root');if(!r){r=document.createElement('div');r.id='chat-root';document.body.appendChild(r)}
-    if(!S.user || S.cfg.help?.enabled === false){
-    r.innerHTML='';
-    return;
-}
-
+  mount(){S.cfg=normCfg(S.cfg);let r=$('#chat-root');if(!r){r=document.createElement('div');r.id='chat-root';document.body.appendChild(r)}
+    if(!S.user||S.cfg.help.enabled===false){r.innerHTML='';return}
     const icon=S.cfg.help.icon;const fab=`<button class="chat-fab" data-act="botToggle" aria-label="${T('bot.title')}" aria-expanded="${this.open}">${icon?`<img src="${esc(icon)}" alt="">`:'🤖'}</button>`;
     if(!this.open){if(!$('.chat-fab',r)||r.dataset.o==='1'){r.innerHTML=fab;r.dataset.o='0'}return}
     if(r.dataset.o==='1')return;r.dataset.o='1';
