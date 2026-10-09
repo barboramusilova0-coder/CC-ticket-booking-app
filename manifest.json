@@ -1,0 +1,18 @@
+{
+  "name": "Rezervační portál lístků | Coca-Cola HBC",
+  "short_name": "CC Tickets",
+  "description": "Firemní rezervační portál Coca-Cola HBC",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f5f8",
+  "theme_color": "#e41e26",
+  "icons": [
+    {
+      "src": "cc-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
