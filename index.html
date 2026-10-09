@@ -94,13 +94,18 @@ main{max-width:1280px;margin:0 auto;padding:20px 16px 90px}
 .hero h1{margin:0 0 4px;color:#fff}.hero p{margin:0;opacity:.92;max-width:70ch}
 
 /* ============ AKCE ============ */
-.ev{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--sh1)}
-.ev-img{height:150px;background:var(--hero) center/cover;position:relative}
-.ev-img .badge{position:absolute;top:10px;right:10px}.ev-img .cat{position:absolute;left:10px;bottom:10px;background:rgba(0,0,0,.55);color:#fff}
-.ev-body{padding:14px 16px;display:flex;flex-direction:column;gap:8px;flex:1}
-.ev-body h3{margin:0}.ev-meta{display:flex;flex-direction:column;gap:2px;font-size:.88rem;color:var(--muted)}
-.ev-foot{margin-top:auto;display:flex;gap:8px;align-items:center;justify-content:space-between}
+.ev{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 3px 12px rgba(25,30,40,.07);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;min-width:0}
+.ev:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(25,30,40,.13);border-color:color-mix(in srgb,var(--accent) 35%,var(--border))}
+.ev-img{height:190px;min-height:150px;background-color:var(--bg2);background-position:center;background-size:contain;background-repeat:no-repeat;position:relative;isolation:isolate}
+.ev-img:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.13),transparent 28%,transparent 70%,rgba(0,0,0,.10));pointer-events:none;z-index:-1}
+.ev-img .badge{position:absolute;top:12px;right:12px;box-shadow:0 2px 8px rgba(0,0,0,.12)}.ev-img .cat{position:absolute;left:12px;bottom:12px;background:rgba(0,0,0,.62);color:#fff;backdrop-filter:blur(6px)}
+.ev-body{padding:16px;display:flex;flex-direction:column;gap:10px;flex:1}
+.ev-body h3{margin:0;font-size:1.08rem;letter-spacing:-.01em}.ev-meta{display:flex;flex-direction:column;gap:4px;font-size:.9rem;color:var(--muted)}
+.ev-foot{margin-top:auto;padding-top:6px;display:flex;gap:8px;align-items:center;justify-content:space-between}
+.ev-foot .btn{border-radius:10px;min-height:38px;padding-inline:15px}
 .ev.dim{opacity:.65}
+.ev[data-tip]:hover::after,.ev[data-tip]:focus-visible::after{left:12px;bottom:auto;top:12px;max-width:min(320px,calc(100% - 24px));width:max-content;white-space:normal}
+@media(max-width:520px){.ev-img{height:205px}.ev-body{padding:14px}.ev:hover{transform:none}}
 
 /* ============ TABULKY ============ */
 .tw{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r2);background:var(--surface)}
@@ -443,8 +448,8 @@ const evBadge=st=>`<span class="badge ${({Active:'b-ok',Full:'b-bad',Cancelled:'
 const stBadge=v=>`<span class="badge ${({'Schváleno':'b-ok','Zamítnuto':'b-bad','Náhradník':'b-info','Čeká':'b-warn'})[v]||''}">${esc(T(STAT_L[v]||'st.pending'))}</span>`;
 function evCard(ev,o){o=o||{};const st=evStatus(ev),s=evStats(ev),cap=Number(ev.capacity)||0,rem=evRemaining(ev),pct=cap?Math.min(100,Math.round(s.approved/cap*100)):0;
   const low=st==='Active'&&cap&&rem<=Math.max(3,Math.ceil(cap*.1));const img=ev.image||ev.imageUrl||ev.backgroundImage||'';const can=evBookable(ev)&&S.user;
-  return `<article class="ev ${st==='Cancelled'||st==='Completed'?'dim':''}"><div class="ev-img" style="${img?'background-image:url(&quot;'+esc(img)+'&quot;),var(--hero)':''}" role="img" aria-label="${esc(ev.name)}">${evBadge(st)}${ev.category?'<span class="badge cat">'+esc(ev.category)+'</span>':''}</div>
-  <div class="ev-body"><h3 ${ev.description?'data-tip="'+esc(ev.description)+'" tabindex="0"':''}>${esc(ev.name)}</h3>
+  return `<article class="ev ${st==='Cancelled'||st==='Completed'?'dim':''}" ${ev.description?'data-tip="'+esc(ev.description)+'" tabindex="0" aria-label="'+esc(ev.name)+'"':''}><div class="ev-img" style="${img?'background-image:url(&quot;'+esc(img)+'&quot;)':'background-image:var(--hero)'}" role="img" aria-label="${esc(ev.name)}">${evBadge(st)}${ev.category?'<span class="badge cat">'+esc(ev.category)+'</span>':''}</div>
+  <div class="ev-body"><h3>${esc(ev.name)}</h3>
   <div class="ev-meta"><span>📅 ${esc(fmtDate(ev.date,ev.time))}</span>${ev.place?'<span>📍 '+esc(ev.place)+'</span>':''}</div>
   ${cap?`<div><div class="bar ${st==='Full'?'full':low?'low':''}" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div><div class="hint">${T('ev.cap',{a:s.approved,c:cap})}${low?' · <b>'+T('ev.remaining',{n:rem})+'</b>':''}</div></div>`:''}
   <div class="ev-foot">${o.admin?`<button class="btn sm" data-act="evEdit" data-id="${esc(ev.id)}">${T('c.edit')}</button>`:`<button class="btn pri sm" data-act="reserveFor" data-id="${esc(ev.id)}" ${can?'':'disabled'}>${T(st==='Active'?'ev.reserve':st==='Full'?'ev.full':'ev.na')}</button>`}</div></div></article>`}
