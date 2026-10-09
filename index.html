@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="cs" data-theme="light" data-season="autumn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tickets booking app – Coca-Cola HBC</title>
+<meta name="description" content="Systém rezervace lístků – Coca-Cola HBC Česko a Slovensko">
+<meta name="theme-color" content="#e41e26">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tickets">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+/* ============ DESIGN TOKENS (světlý základ + sezónní přepisy + tmavý režim) ============ */
+:root{
+  --font:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --bg:#f5f6f8;--bg2:#eceef2;--surface:#fff;--surface2:#f8f9fb;--text:#1b1f27;--muted:#5d6675;--border:#dde1e8;
+  --accent:#e41e26;--accent-h:#c4161d;--accent-soft:#fdeaea;--accent-text:#fff;--accent2:#1b1f27;
+  --ok:#188a4b;--ok-bg:#e4f5ea;--warn:#a85b00;--warn-bg:#fff1dc;--bad:#c4161d;--bad-bg:#fde8e8;--info:#0f6cbd;--info-bg:#e3f0fb;--mute-bg:#eceef2;
+  --r:8px;--r2:12px;--sh1:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);--sh2:0 8px 24px rgba(16,24,40,.14);
+  --hero:linear-gradient(135deg,#e41e26,#9d1218);--glass:none;
+}
+[data-season=autumn]{--bg:#f7f1ea;--bg2:#efe4d6;--accent:#d9631e;--accent-h:#b84f13;--accent-soft:#fdeedf;--hero:linear-gradient(135deg,#d9631e,#8f3a0c)}
+[data-season=winter]{--bg:#eaf1f9;--bg2:#dce8f5;--accent:#2b6fd6;--accent-h:#1f57ae;--accent-soft:#e3edfb;--hero:linear-gradient(135deg,#2b6fd6,#0e2f66);--glass:blur(10px)}
+[data-season=spring]{--bg:#f0f7f1;--bg2:#e0efe3;--accent:#2f9e6b;--accent-h:#238056;--accent-soft:#e0f4ea;--hero:linear-gradient(135deg,#7ccf9c,#2f9e6b 60%,#f2c94c)}
+[data-season=summer]{--bg:#fffdf6;--bg2:#fff4cf;--accent:#e4002b;--accent-h:#b80022;--accent-soft:#ffe8ec;--hero:linear-gradient(135deg,#ff8a00,#e4002b)}
+[data-season=christmas]{--bg:#f2f6f1;--bg2:#e1ece0;--accent:#1f6b4a;--accent-h:#16523a;--accent-soft:#dff0e6;--accent2:#b8901f;--hero:linear-gradient(135deg,#1f6b4a,#0d3a28 70%,#b8901f)}
+[data-season=halloween]{--bg:#17110d;--bg2:#21170f;--surface:#241a13;--surface2:#2c2017;--text:#f6ebe0;--muted:#b9a592;--border:#44342a;--accent:#ff7a1a;--accent-h:#e86600;--accent-soft:#3a2415;--accent-text:#1a0f08;--hero:linear-gradient(135deg,#ff7a1a,#7a2d00);--ok-bg:#16301f;--warn-bg:#3a2a10;--bad-bg:#401818;--info-bg:#15283a;--mute-bg:#33261c;--sh1:0 1px 2px rgba(0,0,0,.4);--sh2:0 8px 24px rgba(0,0,0,.6)}
+[data-theme=dark]{--bg:#12151b;--bg2:#1a1e26;--surface:#1c212a;--surface2:#232933;--text:#eceff4;--muted:#a3adbd;--border:#313947;--accent-soft:#3a1f22;--ok:#4cc380;--ok-bg:#16301f;--warn:#f0b35a;--warn-bg:#3a2a10;--bad:#ff7b80;--bad-bg:#401818;--info:#6cb4f2;--info-bg:#15283a;--mute-bg:#2a313d;--sh1:0 1px 2px rgba(0,0,0,.4);--sh2:0 8px 24px rgba(0,0,0,.55)}
+[data-theme=dark][data-season=autumn]{--bg:#17120e;--bg2:#211912;--accent:#f0802f;--accent-soft:#3a2415;--accent-text:#1a0f08}
+[data-theme=dark][data-season=winter]{--bg:#0e1522;--bg2:#162033;--accent:#5b9bff;--accent-soft:#18284a;--accent-text:#06101f}
+[data-theme=dark][data-season=spring]{--accent:#4cc380;--accent-soft:#16301f;--accent-text:#06140c}
+[data-theme=dark][data-season=summer]{--accent:#ff4d62;--accent-soft:#401822;--accent-text:#1a0309}
+[data-theme=dark][data-season=christmas]{--accent:#47b985;--accent-soft:#16301f;--accent2:#e0b84a;--accent-text:#04140c}
+[data-theme=dark]:not([data-season=halloween]):not([data-season=autumn]):not([data-season=winter]):not([data-season=spring]):not([data-season=summer]):not([data-season=christmas]){--accent:#ff4d55;--accent-text:#1a0305}
+
+/* ============ BASE ============ */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font:15px/1.5 var(--font);background:var(--bg);color:var(--text);min-height:100vh;
+  background-image:radial-gradient(1200px 500px at 85% -10%,var(--bg2),transparent 70%)}
+h1,h2,h3,h4{margin:0 0 .5em;line-height:1.25;font-weight:600}
+h1{font-size:1.6rem}h2{font-size:1.25rem}h3{font-size:1.05rem}
+p{margin:0 0 .75em}a{color:var(--accent)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.muted{color:var(--muted)}.small{font-size:.85rem}.right{margin-left:auto}.nowrap{white-space:nowrap}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.col{display:flex;flex-direction:column;gap:10px}
+.grid{display:grid;gap:14px}.g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}.g3{grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}.g4{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+#particles{position:fixed;inset:0;pointer-events:none;z-index:0}
+#app{position:relative;z-index:1}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}#particles{display:none}}
+
+/* ============ PRVKY ============ */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);box-shadow:var(--sh1);padding:18px;-webkit-backdrop-filter:var(--glass);backdrop-filter:var(--glass)}
+[data-season=winter] .card,[data-season=winter] .ev,[data-season=winter] .hdr{background:color-mix(in srgb,var(--surface) 78%,transparent)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:6px 14px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);cursor:pointer;font-weight:600;text-decoration:none;transition:background .15s,border-color .15s}
+.btn:hover:not(:disabled){background:var(--surface2);border-color:var(--muted)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-text)}.btn.pri:hover:not(:disabled){background:var(--accent-h);border-color:var(--accent-h)}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}.btn.bad{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+.btn.sm{min-height:30px;padding:3px 10px;font-size:.85rem}.btn.block{width:100%}.btn.ghost{background:transparent;border-color:transparent}
+label{display:block;font-weight:600;font-size:.9rem;margin-bottom:4px}
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=date],input[type=time],input[type=url],input[type=search],select,textarea{width:100%;min-height:38px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text)}
+textarea{min-height:84px;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+.fg{margin-bottom:12px}.hint{font-size:.8rem;color:var(--muted);margin-top:3px}
+.chk{display:flex;gap:10px;align-items:flex-start;font-weight:500}.chk input{margin-top:4px;width:auto}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:999px;font-size:.78rem;font-weight:700;background:var(--mute-bg);color:var(--muted);white-space:nowrap}
+.b-ok{background:var(--ok-bg);color:var(--ok)}.b-warn{background:var(--warn-bg);color:var(--warn)}.b-bad{background:var(--bad-bg);color:var(--bad)}.b-info{background:var(--info-bg);color:var(--info)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{padding:5px 13px;border:1px solid var(--border);border-radius:999px;background:var(--surface);cursor:pointer;font-weight:600;font-size:.88rem}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-text)}
+.bar{height:7px;background:var(--mute-bg);border-radius:9px;overflow:hidden}.bar>i{display:block;height:100%;background:var(--accent);border-radius:9px}.bar.full>i{background:var(--bad)}.bar.low>i{background:var(--warn)}
+.empty{text-align:center;padding:36px 12px;color:var(--muted);border:1px dashed var(--border);border-radius:var(--r2)}
+[data-tip]{position:relative}
+[data-tip]:hover::after,[data-tip]:focus-visible::after{content:attr(data-tip);position:absolute;left:0;bottom:calc(100% + 6px);z-index:50;width:max-content;max-width:280px;padding:7px 10px;border-radius:6px;background:#1b1f27;color:#fff;font-size:.8rem;font-weight:500;line-height:1.35;white-space:normal;box-shadow:var(--sh2);pointer-events:none}
+
+/* ============ HLAVIČKA / NAV ============ */
+.hdr{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--border);padding-top:env(safe-area-inset-top)}
+.hdr-in{max-width:1280px;margin:0 auto;padding:8px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.05rem;text-decoration:none;color:var(--text)}
+.logo img{width:34px;height:34px;border-radius:8px}.logo small{display:block;font-weight:500;color:var(--muted);font-size:.72rem;line-height:1}
+.sync{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--muted)}.sync i{width:9px;height:9px;border-radius:50%;background:var(--ok)}.sync.off i{background:var(--bad)}.sync.wait i{background:var(--warn)}
+.nav{max-width:1280px;margin:0 auto;padding:0 16px;display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin}
+.nav button{border:0;background:none;padding:10px 14px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+.nav button:hover{color:var(--text)}.nav button.on{color:var(--accent);border-bottom-color:var(--accent)}
+main{max-width:1280px;margin:0 auto;padding:20px 16px 90px}
+.hero{background:var(--hero);color:#fff;border-radius:var(--r2);padding:22px 24px;margin-bottom:18px;box-shadow:var(--sh1)}
+.hero h1{margin:0 0 4px;color:#fff}.hero p{margin:0;opacity:.92;max-width:70ch}
+
+/* ============ AKCE ============ */
+.ev{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--sh1)}
+.ev-img{height:150px;background:var(--hero) center/cover;position:relative}
+.ev-img .badge{position:absolute;top:10px;right:10px}.ev-img .cat{position:absolute;left:10px;bottom:10px;background:rgba(0,0,0,.55);color:#fff}
+.ev-body{padding:14px 16px;display:flex;flex-direction:column;gap:8px;flex:1}
+.ev-body h3{margin:0}.ev-meta{display:flex;flex-direction:column;gap:2px;font-size:.88rem;color:var(--muted)}
+.ev-foot{margin-top:auto;display:flex;gap:8px;align-items:center;justify-content:space-between}
+.ev.dim{opacity:.65}
+
+/* ============ TABULKY ============ */
+.tw{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r2);background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th{text-align:left;padding:10px 12px;background:var(--surface2);border-bottom:1px solid var(--border);font-weight:600;color:var(--muted);white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+tr:last-child td{border-bottom:0}tr:hover td{background:var(--surface2)}
+@media (max-width:760px){
+  table.stack thead{display:none}table.stack,table.stack tbody,table.stack tr,table.stack td{display:block;width:100%}
+  table.stack tr{border-bottom:1px solid var(--border);padding:8px 0}table.stack td{border:0;padding:4px 12px;display:flex;gap:10px;justify-content:space-between;text-align:right}
+  table.stack td::before{content:attr(data-l);font-weight:600;color:var(--muted);text-align:left;flex:0 0 38%}
+}
+
+/* ============ ADMIN ============ */
+.adm{display:grid;grid-template-columns:260px 1fr;gap:18px;align-items:start}
+.adm-nav{display:flex;flex-direction:column;gap:4px;position:sticky;top:110px}
+.adm-nav button{display:flex;gap:10px;align-items:center;text-align:left;border:1px solid transparent;background:none;padding:9px 12px;border-radius:var(--r);cursor:pointer;font-weight:600}
+.adm-nav button:hover{background:var(--surface)}.adm-nav button.on{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.tile{display:flex;flex-direction:column;gap:4px;text-align:left;padding:14px;border:1px solid var(--border);border-radius:var(--r2);background:var(--surface);cursor:pointer;box-shadow:var(--sh1)}
+.tile:hover{border-color:var(--accent)}.tile b{font-size:1rem}.tile span{color:var(--muted);font-size:.85rem}.tile .ic{font-size:1.5rem}
+.kpi{padding:14px 16px;border:1px solid var(--border);border-radius:var(--r2);background:var(--surface);text-align:left;cursor:pointer;box-shadow:var(--sh1)}
+.kpi:hover{border-color:var(--accent)}.kpi b{display:block;font-size:1.9rem;line-height:1.1}.kpi span{color:var(--muted);font-size:.85rem}
+@media (max-width:900px){.adm{grid-template-columns:1fr}.adm-nav{position:static;flex-direction:row;overflow-x:auto}.adm-nav button{white-space:nowrap}.adm-nav .d{display:none}}
+.tl{list-style:none;margin:0;padding:0 0 0 14px;border-left:2px solid var(--border)}.tl li{position:relative;padding:0 0 10px 12px;font-size:.88rem}.tl li::before{content:"";position:absolute;left:-21px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+
+/* ============ GATE ============ */
+.gate{min-height:100vh;display:grid;place-items:center;padding:20px}
+.gate-box{width:min(520px,100%)}.gate-box .card{padding:26px}
+.gate-top{display:flex;justify-content:flex-end;gap:8px;margin-bottom:8px}
+.gate h1{margin-bottom:2px}.steps{margin:0 0 14px;padding-left:20px;font-size:.88rem;color:var(--muted)}
+
+/* ============ DIALOG, TOAST, CHAT ============ */
+dialog{border:1px solid var(--border);border-radius:var(--r2);padding:0;background:var(--surface);color:var(--text);box-shadow:var(--sh2);width:min(640px,calc(100vw - 24px));max-height:calc(100vh - 24px)}
+dialog::backdrop{background:rgba(10,14,20,.55)}
+.dlg-h{padding:16px 20px 0;display:flex;align-items:center;gap:10px}.dlg-h h2{margin:0;flex:1}
+.dlg-b{padding:14px 20px;overflow:auto;max-height:calc(100vh - 170px)}.dlg-f{padding:12px 20px 18px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+#toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom));z-index:100;display:flex;flex-direction:column;gap:8px;align-items:center;width:min(480px,calc(100vw - 24px))}
+.toast{padding:10px 16px;border-radius:var(--r);background:#1b1f27;color:#fff;box-shadow:var(--sh2);font-weight:600;font-size:.9rem;width:100%}.toast.err{background:#9d1218}.toast.ok{background:#14703c}
+.chat-fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:60;width:58px;height:58px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-text);box-shadow:var(--sh2);cursor:pointer;display:grid;place-items:center;font-size:1.6rem;overflow:hidden;padding:0}
+.chat-fab img{width:100%;height:100%;object-fit:cover}
+.chat{position:fixed;right:16px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:60;width:min(390px,calc(100vw - 24px));height:min(560px,calc(100vh - 130px));display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);box-shadow:var(--sh2);overflow:hidden}
+.chat-h{padding:12px 14px;background:var(--accent);color:var(--accent-text);display:flex;align-items:center;gap:10px;font-weight:700}
+.chat-h button{margin-left:auto;border:0;background:rgba(255,255,255,.2);color:inherit;border-radius:6px;cursor:pointer;padding:3px 9px}
+.chat-log{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--surface2)}
+.msg{max-width:88%;padding:8px 12px;border-radius:12px;white-space:pre-wrap;font-size:.9rem}.msg.bot{background:var(--surface);border:1px solid var(--border);align-self:flex-start}.msg.me{background:var(--accent);color:var(--accent-text);align-self:flex-end}
+.chat-q{display:flex;gap:6px;flex-wrap:wrap;padding:8px 12px 0}.chat-f{display:flex;gap:8px;padding:10px 12px}
+.ob-dots{display:flex;gap:6px;justify-content:center;margin:6px 0}.ob-dots i{width:8px;height:8px;border-radius:50%;background:var(--border)}.ob-dots i.on{background:var(--accent)}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<canvas id="particles" aria-hidden="true"></canvas>
+<div id="app"></div>
+<div id="toasts" role="status" aria-live="polite"></div>
+<noscript>Aplikace vyžaduje JavaScript.</noscript>
+<script>
+'use strict';
+/* =====================================================================
+   TICKETS BOOKING PORTAL 2.0 – jediný soubor, logicky rozdělený na moduly.
+   Zdroj pravdy = Firebase (portalData/cocaColaDatabase + podkolekce).
+   localStorage = jen cache (session, jazyk, motiv, poslední stav pro offline start).
+   ===================================================================== */
+const FB={apiKey:"AIzaSyCPSV3AauKHMPfnkACjbfvEDbb6RFJMiJA",authDomain:"cc-tickets-booking-app.firebaseapp.com",projectId:"cc-tickets-booking-app",storageBucket:"cc-tickets-booking-app.firebasestorage.app",messagingSenderId:"998442761726",appId:"1:998442761726:web:e5bbe201f68c9594ea54af",measurementId:"G-GKKE8GCN0T"};
+const DOC='cocaColaDatabase',ACTS='cocaColaActions',DAY=864e5,ROLES=['applicant','manager','rsm_praha','admin'];
+const ADMIN_CODE_HASH='96e0efdf0a2b84d7f1e137ec50258190f8611520d19091ccc286391bf6fa189e';
+const APP_VERSION='2.0.0';
+
+/* ---------- utils ---------- */
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=e=>String(e==null?'':e).trim().toLowerCase();
+const uid=()=>Date.now()*1000+Math.floor(Math.random()*1000);
+const jget=(k,f)=>{try{const v=localStorage.getItem(k);return v==null?f:JSON.parse(v)}catch(e){return f}};
+const jset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const clone=o=>JSON.parse(JSON.stringify(o==null?null:o));
+const pad=n=>String(n).padStart(2,'0');
+const isoDay=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const fmtDate=(d,t)=>{if(!d)return '–';const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);const s=m?(+m[3])+'. '+(+m[2])+'. '+m[1]:d;return t?s+' '+t:s};
+const fmtTs=ts=>{try{return new Date(ts).toLocaleString(S.lang==='en'?'en-GB':'cs-CZ')}catch(e){return ts}};
+const csvCell=v=>{v=String(v==null?'':v);return /[";\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+function download(name,content,type){const b=content instanceof Blob?content:new Blob([content],{type:type||'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+function toast(msg,kind){const t=document.createElement('div');t.className='toast '+(kind||'');t.textContent=msg;$('#toasts').appendChild(t);setTimeout(()=>t.remove(),kind==='err'?7000:3500)}
+/* SHA-256 (kompatibilní s hesly ve stávající databázi: sha256('cc:'+email+':'+heslo)) */
+function sha256(msg){const rr=(v,a)=>(v>>>a)|(v<<(32-a));const mw=Math.pow(2,32);let ascii=unescape(encodeURIComponent(msg)),result='',i,j;const words=[],bl=ascii.length*8,k=[],ic={};let hash=[],pc=0;for(let c=2;pc<64;c++){if(!ic[c]){for(i=0;i<313;i+=c)ic[i]=c;hash[pc]=(Math.pow(c,.5)*mw)|0;k[pc++]=(Math.pow(c,1/3)*mw)|0}}ascii+='\x80';while(ascii.length%64-56)ascii+='\x00';for(i=0;i<ascii.length;i++)words[i>>2]|=ascii.charCodeAt(i)<<((3-i)%4)*8;words[words.length]=(bl/mw)|0;words[words.length]=bl;for(j=0;j<words.length;){const w=words.slice(j,j+=16),old=hash;hash=hash.slice(0,8);for(i=0;i<64;i++){const w15=w[i-15],w2=w[i-2],a=hash[0],e=hash[4];const t1=hash[7]+(rr(e,6)^rr(e,11)^rr(e,25))+((e&hash[5])^(~e&hash[6]))+k[i]+(w[i]=i<16?w[i]:(w[i-16]+(rr(w15,7)^rr(w15,18)^(w15>>>3))+w[i-7]+(rr(w2,17)^rr(w2,19)^(w2>>>10)))|0);const t2=(rr(a,2)^rr(a,13)^rr(a,22))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));hash=[(t1+t2)|0].concat(hash);hash[4]=(hash[4]+t1)|0}for(i=0;i<8;i++)hash[i]=(hash[i]+old[i])|0}for(i=0;i<8;i++)for(j=3;j+1;j--){const b=(hash[i]>>(j*8))&255;result+=(b<16?'0':'')+b.toString(16)}return result}
+const hashPw=(email,pw)=>sha256('cc:'+norm(email)+':'+pw);
+
+/* ---------- stav aplikace (v paměti; zdroj pravdy je Firebase) ---------- */
+const DEF_PREFS={registration:true,chatbot_issues:true,other_events:true,system:true,info_events:true};
+const S={user:jget('currentUser',null),view:'events',adminPage:'home',lang:null,
+  users:{},roleRequests:[],requests:[],events:[],legacy:[],cfg:{},season:'autumn',profiles:{},reasons:[],
+  teams:{admin:'',info:'',prefs:Object.assign({},DEF_PREFS),lang:'cs'},raw:{},
+  net:{online:navigator.onLine,docOk:false,actOk:false,lastSync:null,pending:false,fromCache:false,err:null},
+  filter:'all',reqFilter:'all',reserveEvent:'',errors:jget('ccErrLog',[]),teamsLog:[],ready:false};
+const IDX={byEvent:new Map()}; // approved/total/pending podle akce
+
+/* ---------- i18n ---------- */
+const L=()=>S.lang==='en'?1:0;
+function T(k,v){const d=DICT[k];let s=d?(d[L()]||d[0]):k;if(v)for(const x in v)s=s.split('{'+x+'}').join(v[x]);return s}
+function detectLang(){const u=S.user&&S.users[norm(S.user.email)];return(u&&u.prefs&&u.prefs.lang)||localStorage.getItem('ccLang')||((navigator.language||'cs').toLowerCase().startsWith('cs')?'cs':'en')}
+const ROLE_L={applicant:'role.applicant',manager:'role.manager',rsm_praha:'role.rsm',admin:'role.admin'};
+const STAT_L={'Čeká':'st.pending','Schváleno':'st.approved','Zamítnuto':'st.rejected','Náhradník':'st.waitlist'};
+const EVST_L={Active:'ev.active',Full:'ev.full',Cancelled:'ev.cancelled',Completed:'ev.completed'};
+
+/* ---------- konfigurace (zachovává neznámá pole ze starého portálu) ---------- */
+const DEF_FILTERS=[{id:'all',name:'Vše',locked:true,active:true}];
+function normCfg(x){x=x&&typeof x==='object'?clone(x):{};x.landing=x.landing||{};let h=x.help;if(Array.isArray(h))h={answers:h};h=h&&typeof h==='object'?h:{};h.answers=Array.isArray(h.answers)?h.answers:[];h.contact=String(h.contact||'');x.help=h;if(!Array.isArray(x.filters)||!x.filters.length)x.filters=clone(DEF_FILTERS);return x}
+function parseReasons(v){if(Array.isArray(v))return v.filter(Boolean);return String(v||'').split(',').map(s=>s.trim()).filter(Boolean)}
+
+/* ---------- cloud ---------- */
+const Cloud={db:null,ref:null,col:null,started:false,errAt:0,
+  init(){if(typeof firebase==='undefined'||!firebase.apps){S.net.err='Firebase SDK se nenačetl';return false}
+    try{if(!firebase.apps.length)firebase.initializeApp(FB);this.db=firebase.firestore();try{this.db.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}
+      this.ref=this.db.collection('portalData').doc(DOC);this.col=this.ref.collection(ACTS);return true}catch(e){S.net.err=e.message;logError('firebase-init',e.message);return false}},
+  listen(){if(this.started||!this.ref)return;this.started=true;
+    this.ref.onSnapshot({includeMetadataChanges:true},snap=>{S.net.docOk=true;S.net.err=null;S.net.pending=snap.metadata.hasPendingWrites;S.net.fromCache=snap.metadata.fromCache;if(!snap.metadata.fromCache)S.net.lastSync=Date.now();applyDoc(snap.exists?snap.data():{});changed()},
+      err=>{S.net.docOk=false;S.net.err=err.message;logError('sync',err.message,'doc');changed()});
+    this.col.onSnapshot({includeMetadataChanges:true},snap=>{S.net.actOk=true;S.events=snap.docs.map(d=>{const x=d.data();return Object.assign({},x,{id:x.id!=null?x.id:d.id,_doc:d.id})});applyEvents();cacheSave();changed()},
+      err=>{S.net.actOk=false;S.net.err=err.message;logError('sync',err.message,'events');changed()})},
+  async patch(p){try{await this.ref.update(p)}catch(e){if(e.code==='not-found')await this.ref.set(p);else throw e}},
+  /* transakce nad hlavním dokumentem; fn(data,tx) vrací {patch,result} nebo vyhodí Error s hláškou pro uživatele */
+  async mutate(fn){if(!navigator.onLine)throw new Error(T('err.offline'));let out;
+    await this.db.runTransaction(async tx=>{const s=await tx.get(this.ref);const d=s.exists?s.data():{};const r=await fn(d,tx)||{};out=r.result;if(r.patch&&Object.keys(r.patch).length){s.exists?tx.update(this.ref,r.patch):tx.set(this.ref,r.patch)}});return out},
+  async saveEvent(ev){if(!navigator.onLine)throw new Error(T('err.offline'));const o=clone(ev);delete o._doc;await this.col.doc(String(ev.id)).set(o,{merge:true})},
+  async deleteEvent(id){if(!navigator.onLine)throw new Error(T('err.offline'));await this.col.doc(String(id)).delete()},
+  async fresh(){try{const s=await this.ref.get({source:'server'});applyDoc(s.exists?s.data():{});changed(true)}catch(e){}}
+};
+function applyDoc(d){S.raw=d;
+  S.users=d.users&&typeof d.users==='object'?d.users:{};S.roleRequests=Array.isArray(d.roleRequests)?d.roleRequests:[];S.requests=Array.isArray(d.ticketRequests)?d.ticketRequests:[];
+  S.teams.admin=d.teamsWebhookUrl||'';S.teams.info=d.teamsInfoWebhookUrl||'';S.teams.prefs=Object.assign({},DEF_PREFS,d.teamsNotificationPrefs||{});S.teams.lang=d.teamsLang==='en'?'en':'cs';
+  S.cfg=normCfg(d.ccPortalConfigV3);S.season=d.ccSeasonMode||'autumn';S.profiles=d.ccManagerProfiles&&typeof d.ccManagerProfiles==='object'?d.ccManagerProfiles:{};S.reasons=parseReasons(d.cc_dynamic_reasons);
+  S.legacy=Array.isArray(d.companyActions)?d.companyActions:[];S.auditDays=d.auditRetentionDays||730;
+  applyEvents();cacheSave()}
+function applyEvents(){const m=new Map(),ids=new Set(S.events.map(e=>String(e.id)));
+  /* legacy akce (pole companyActions ve starém dokumentu) – jen zobrazení, dokud nejsou přesunuty do kolekce */
+  S._all=S.events.concat(S.legacy.filter(a=>a&&a.id!=null&&!ids.has(String(a.id))).map(a=>Object.assign({},a,{_legacy:true})));
+  S.requests.forEach(r=>{const key=r.actionId!=null&&r.actionId!==''?'id:'+r.actionId:'n:'+r.action;let x=m.get(key);if(!x){x={total:0,approved:0,pending:0,rejected:0,tickets:0};m.set(key,x)}const n=parseInt(r.tickets)||0;x.total++;const o=overall(r);if(o==='approved')x.approved+=n;else if(o==='pending'||o==='waitlist')x.pending+=n;else x.rejected++;});IDX.byEvent=m}
+function cacheSave(){if(!S.ready&&!S.net.docOk)return;jset('ccCacheV2',{raw:S.raw,events:S.events,t:Date.now()})}
+function cacheLoad(){const c=jget('ccCacheV2',null);if(c&&c.raw){S.events=c.events||[];applyDoc(c.raw)}}
+
+/* ---------- stavy akcí (jediné místo, kde se stav počítá) ---------- */
+const evTime=ev=>{if(!ev||!ev.date)return null;const d=new Date(ev.date+'T'+(ev.time||'23:59')+':00');return isNaN(d)?null:d};
+function evStats(ev){const a=IDX.byEvent.get('id:'+ev.id),b=IDX.byEvent.get('n:'+ev.name);const z={total:0,approved:0,pending:0,rejected:0};return{total:(a?a.total:0)+(b?b.total:0),approved:(a?a.approved:0)+(b?b.approved:0),pending:(a?a.pending:0)+(b?b.pending:0),rejected:(a?a.rejected:0)+(b?b.rejected:0)}}
+const isArchived=ev=>ev.status==='Skryto';
+function evStatusWith(ev,approved,now){const t=evTime(ev);if(ev.status==='Zrušena'||/zruš/i.test(ev.portalStatus||''))return 'Cancelled';
+  if(t&&t<(now||new Date()))return 'Completed';const cap=Number(ev.capacity)||0;if(cap>0&&approved>=cap)return 'Full';if(/vyprod|obsazen|naplněn/i.test(ev.portalStatus||''))return 'Full';return 'Active'}
+const evStatus=(ev,now)=>evStatusWith(ev,evStats(ev).approved,now);
+const evBookable=ev=>!isArchived(ev)&&evStatus(ev)==='Active';
+const evRemaining=ev=>{const c=Number(ev.capacity)||0;return c?Math.max(0,c-evStats(ev).approved):null};
+const evById=id=>(S._all||[]).find(e=>String(e.id)===String(id));
+function overall(r){if(r.status1==='Zamítnuto'||r.status2==='Zamítnuto')return 'rejected';if(r.status1==='Schváleno'&&r.status2==='Schváleno')return 'approved';if(r.status2==='Náhradník')return 'waitlist';return 'pending'}
+
+/* ---------- chyby a monitoring ---------- */
+let _lastErr='',_lastErrT=0,_lastTeamsErr=0;
+function logError(kind,msg,extra){msg=String(msg||'');const e={t:Date.now(),kind,msg:msg.slice(0,300),extra:extra?String(extra).slice(0,200):''};S.errors.unshift(e);S.errors=S.errors.slice(0,40);jset('ccErrLog',S.errors);
+  const key=kind+msg;if(key===_lastErr&&Date.now()-_lastErrT<10000)return;_lastErr=key;_lastErrT=Date.now();
+  try{if(Cloud.ref&&navigator.onLine&&S.user)Cloud.ref.collection('errorLog').add({ts:new Date().toISOString(),kind,msg:e.msg,extra:e.extra,user:S.user.email,ver:APP_VERSION,ua:navigator.userAgent.slice(0,120)}).catch(()=>{})}catch(x){}
+  if(Date.now()-_lastTeamsErr>300000&&S.teams.admin&&kind!=='teams'){_lastTeamsErr=Date.now();Teams.send(kind==='sync'?'sync_issue':'system_error',{facts:[[T('tm.f.problem'),kind+': '+e.msg]]})}}
+window.addEventListener('error',ev=>logError('js',ev.message,(ev.filename||'').split('/').pop()+':'+ev.lineno));
+window.addEventListener('unhandledrejection',ev=>logError('promise',ev.reason&&ev.reason.message||ev.reason));
+
+/* ---------- audit ---------- */
+function audit(action,target,detail){const a={ts:new Date().toISOString(),actor:S.user?S.user.email:'',role:S.user?S.user.role:'',action,target:target==null?'':String(target),detail:detail?String(detail).slice(0,400):''};
+  try{if(Cloud.ref)Cloud.ref.collection('auditLog').add(a).catch(e=>logError('audit',e.message))}catch(e){}}
+
+/* ---------- Teams (2 kanály: admin + informace o akcích) ---------- */
+const INFO_TYPES=['new_event','reminder_30','reminder_14','reminder_7','reminder_1','low_capacity','full_capacity','cancelled','rescheduled','completed'];
+const TYPE_CAT={new_registration:'registration',chatbot_issue:'chatbot_issues',sync_issue:'system',system_error:'system',new_reservation:'other_events',approval:'other_events',rejection:'other_events',event_created:'other_events',event_deleted:'other_events',event_modified:'other_events',test:null};
+INFO_TYPES.forEach(t=>TYPE_CAT[t]='info_events');
+const TYPE_COLOR={new_registration:'0078D4',approval:'28A745',rejection:'DC2626',new_reservation:'00A4EF',chatbot_issue:'F59E0B',sync_issue:'F59E0B',system_error:'DC2626',event_created:'0078D4',event_deleted:'DC2626',event_modified:'0078D4',test:'64748B',new_event:'0078D4',reminder_30:'0078D4',reminder_14:'0078D4',reminder_7:'F59E0B',reminder_1:'F59E0B',low_capacity:'F59E0B',full_capacity:'DC2626',cancelled:'DC2626',rescheduled:'F59E0B',completed:'64748B'};
+const Teams={validUrl(u){if(!u)return true;try{const p=new URL(u),h=p.hostname.toLowerCase();return p.protocol==='https:'&&(h==='outlook.office.com'||h==='webhook.office.com'||h.endsWith('.webhook.office.com')||h.endsWith('.logic.azure.com')||h.endsWith('.api.powerplatform.com'))&&!p.username&&!p.password&&(!p.port||p.port==='443')}catch(e){return false}},
+  enabled(type){const c=TYPE_CAT[type];return c==null||S.teams.prefs[c]!==false},
+  async send(type,data){data=data||{};const url=INFO_TYPES.includes(type)?S.teams.info:S.teams.admin;if(!url||!this.enabled(type))return false;
+    const lang=S.teams.lang==='en'?1:0,tt=k=>{const d=DICT[k];return d?d[lang]:k};
+    const facts=(data.facts||[]).map(f=>({name:String(f[0]).slice(0,80),value:String(f[1]==null?'':f[1]).replace(/[<>]/g,'').slice(0,500)}));
+    facts.push({name:tt('tm.f.when'),value:new Date().toLocaleString(lang?'en-GB':'cs-CZ')});
+    const title=tt('tm.'+type);const card={'@type':'MessageCard','@context':'http://schema.org/extensions',themeColor:TYPE_COLOR[type]||'64748B',summary:title,title,sections:[{activityTitle:title,facts,markdown:false}]};
+    if(type!=='test')card.potentialAction=[{'@type':'OpenUri',name:tt('tm.open'),targets:[{os:'default',uri:location.origin+location.pathname}]}];
+    let ok=false,note='';try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(card)});ok=r.ok;if(!ok)note='HTTP '+r.status}
+      catch(e){try{await fetch(url,{method:'POST',mode:'no-cors',body:JSON.stringify(card)});ok=true;note='unverified'}catch(e2){note=e2.message}}
+    S.teamsLog.unshift({t:Date.now(),type,ok,note});S.teamsLog=S.teamsLog.slice(0,20);
+    if(!ok)logError('teams',type+' '+note);return ok}};
+/* shrnutí akce pro Teams */
+const evFacts=ev=>[[T('tm.f.name'),ev.name],[T('tm.f.date'),fmtDate(ev.date,ev.time)],[T('tm.f.capacity'),ev.capacity||'–'],[T('tm.f.category'),ev.category||'–']];
+
+/* ---------- téma, sezóna, částice ---------- */
+function seasonNow(){let s=S.season;if(s!=='auto')return s;const d=new Date(),m=d.getMonth()+1,day=d.getDate();if(m===10&&day>=25)return 'halloween';if(m===12)return 'christmas';if(m<=2)return 'winter';if(m<=5)return 'spring';if(m<=8)return 'summer';return 'autumn'}
+function themePref(){const u=S.user&&S.users[norm(S.user.email)];return(u&&u.prefs&&u.prefs.theme)||localStorage.getItem('ccTheme')||'auto'}
+function applyTheme(){const p=themePref();const dark=p==='dark'||(p==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);const h=document.documentElement;h.dataset.theme=dark?'dark':'light';const se=seasonNow();h.dataset.season=se;S.lang=detectLang();h.lang=S.lang;
+  const m=$('meta[name=theme-color]');if(m)m.content=getComputedStyle(h).getPropertyValue('--accent').trim()||'#e41e26';Particles.set(se)}
+const Particles={cv:null,ctx:null,list:[],kind:'',raf:0,
+  set(kind){const want=({autumn:'leaf',winter:'snow',christmas:'snow',halloween:'ember'})[kind]||'';if(want===this.kind)return;this.kind=want;cancelAnimationFrame(this.raf);this.cv=$('#particles');this.ctx=this.cv.getContext('2d');this.ctx.clearRect(0,0,this.cv.width,this.cv.height);if(!want||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+    const resize=()=>{this.cv.width=innerWidth;this.cv.height=innerHeight};resize();addEventListener('resize',resize);const n=want==='snow'?55:26;
+    this.list=Array.from({length:n},()=>this.mk(true));const col={leaf:['#d9631e','#e8a33d','#b8431a','#c9892b'],snow:['#ffffff'],ember:['#ff7a1a','#ffb067']}[want];
+    const step=()=>{if(document.hidden){this.raf=requestAnimationFrame(step);return}const c=this.ctx;c.clearRect(0,0,this.cv.width,this.cv.height);
+      this.list.forEach(p=>{p.y+=p.vy;p.x+=Math.sin((p.y+p.ph)/40)*p.sw;p.rot+=p.vr;if(p.y>this.cv.height+10||(want==='ember'&&p.y<-10))Object.assign(p,this.mk(false));
+        c.save();c.translate(p.x,p.y);c.rotate(p.rot);c.globalAlpha=p.a;c.fillStyle=col[p.c%col.length];c.beginPath();if(want==='leaf')c.ellipse(0,0,p.s*1.3,p.s*.7,0,0,7);else c.arc(0,0,p.s*(want==='snow'?.6:.45),0,7);c.fill();c.restore()});this.raf=requestAnimationFrame(step)};step()},
+  mk(init){const h=innerHeight,w=innerWidth,e=this.kind==='ember';return{x:Math.random()*w,y:init?Math.random()*h:(e?h+10:-10),vy:e?-(.3+Math.random()*.6):.4+Math.random()*.9,sw:.3+Math.random()*.6,ph:Math.random()*100,rot:Math.random()*6,vr:(Math.random()-.5)*.03,s:3+Math.random()*5,a:.25+Math.random()*.4,c:Math.floor(Math.random()*4)}}};
+
+/* ---------- autentizace a uživatelé ---------- */
+const Auth={
+  setSession(u){S.user=u?{name:u.name,email:u.email,role:u.role,master:!!u.master}:null;if(S.user)jset('currentUser',S.user);else localStorage.removeItem('currentUser')},
+  async login(email,pw){email=norm(email);if(!email||!pw)throw new Error(T('err.fill'));await Cloud.fresh();const u=S.users[email];
+    if(!u||u.passwordHash!==hashPw(email,pw))throw new Error(T('err.badlogin'));this.setSession(u);audit('login',email);applyTheme()},
+  async adminCode(code){if(sha256('cc-admin:'+String(code||'').trim())!==ADMIN_CODE_HASH)throw new Error(T('err.badcode'));this.setSession({name:'Hlavní Správce',email:'admin@firma.cz',role:'admin',master:true});audit('login-master','admin@firma.cz');applyTheme()},
+  logout(){audit('logout',S.user&&S.user.email);this.setSession(null);S.view='events';applyTheme();render(true)},
+  async register(f){const name=f.name.trim(),email=norm(f.email);if(!name||!email||!f.pw||!f.pw2)throw new Error(T('err.fill'));if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error(T('err.email'));if(f.pw.length<6)throw new Error(T('err.pwlen'));if(f.pw!==f.pw2)throw new Error(T('err.pwmatch'));if(ROLES.indexOf(f.role)<0)throw new Error(T('err.role'));
+    const req={id:Date.now(),name,email,role:f.role,passwordHash:hashPw(email,f.pw),createdAt:new Date().toISOString()};
+    await Cloud.mutate(d=>{const users=d.users||{},rr=Array.isArray(d.roleRequests)?d.roleRequests.slice():[];if(Object.keys(users).some(k=>norm(k)===email))throw new Error(T('err.regdup1'));if(rr.some(r=>norm(r.email)===email))throw new Error(T('err.regdup2'));rr.push(req);return{patch:{roleRequests:rr}}});
+    audit('registration',email,f.role);Teams.send('new_registration',{facts:[[T('tm.f.who'),name],['E-mail',email],[T('tm.f.role'),T(ROLE_L[f.role])]]})},
+  async approveRequest(id,role){let who;await Cloud.mutate(d=>{const rr=(d.roleRequests||[]).slice(),i=rr.findIndex(r=>String(r.id)===String(id));if(i<0)throw new Error(T('err.notfound'));const r=rr[i];if(!r.passwordHash)throw new Error(T('err.nohash'));const users=Object.assign({},d.users||{});users[norm(r.email)]={name:r.name,email:norm(r.email),role:ROLES.includes(role||r.role)?(role||r.role):'applicant',passwordHash:r.passwordHash,approvedAt:new Date().toISOString()};rr.splice(i,1);who=r;return{patch:{users,roleRequests:rr}}});
+    audit('registration-approved',who.email,role||who.role);Teams.send('approval',{facts:[[T('tm.f.who'),who.name],['E-mail',who.email],[T('tm.f.role'),T(ROLE_L[role||who.role])]]})},
+  async rejectRequest(id){let who;await Cloud.mutate(d=>{const rr=(d.roleRequests||[]).slice(),i=rr.findIndex(r=>String(r.id)===String(id));if(i<0)throw new Error(T('err.notfound'));who=rr.splice(i,1)[0];return{patch:{roleRequests:rr}}});
+    audit('registration-rejected',who.email);Teams.send('rejection',{facts:[[T('tm.f.who'),who.name],['E-mail',who.email]]})},
+  async setRole(email,role){if(!ROLES.includes(role))return;await Cloud.mutate(d=>{const u=Object.assign({},d.users||{});if(!u[email])throw new Error(T('err.notfound'));u[email]=Object.assign({},u[email],{role});return{patch:{users:u}}});audit('role-change',email,role)},
+  async setPassword(email,pw){if(!pw||pw.length<6)throw new Error(T('err.pwlen'));await Cloud.mutate(d=>{const u=Object.assign({},d.users||{});if(!u[email])throw new Error(T('err.notfound'));u[email]=Object.assign({},u[email],{passwordHash:hashPw(email,pw)});return{patch:{users:u}}});audit('password-reset',email)},
+  async deleteUser(email,anonymize){await Cloud.mutate(d=>{const u=Object.assign({},d.users||{});const was=u[email];delete u[email];const patch={users:u};if(anonymize&&was){patch.ticketRequests=(d.ticketRequests||[]).map(r=>(norm(r.applicantEmail)===email||(!r.applicantEmail&&norm(r.employee)===norm(was.name)))?Object.assign({},r,{employee:T('gdpr.deleted'),applicantEmail:'',customer:r.customer}):r)}return{patch}});audit('user-deleted',email,anonymize?'anonymized':'')},
+  async savePrefs(p){if(!S.user||S.user.master){if(p.theme)localStorage.setItem('ccTheme',p.theme);if(p.lang)localStorage.setItem('ccLang',p.lang);applyTheme();render(true);return}
+    const email=norm(S.user.email);if(p.theme)localStorage.setItem('ccTheme',p.theme);if(p.lang)localStorage.setItem('ccLang',p.lang);
+    try{await Cloud.mutate(d=>{const u=Object.assign({},d.users||{});if(!u[email])return{};u[email]=Object.assign({},u[email],{prefs:Object.assign({},u[email].prefs||{},p)});return{patch:{users:u}}})}catch(e){toast(e.message,'err')}applyTheme();render(true)},
+  validateSession(){if(!S.user||S.user.master||!S.ready)return;const u=S.users[norm(S.user.email)];if(!Object.keys(S.users).length&&!S.net.docOk)return;
+    if(!u){this.setSession(null);toast(T('err.sessionend'),'err');return}if(u.role!==S.user.role||u.name!==S.user.name){this.setSession(u)}}
+};
+const isAdmin=()=>S.user&&S.user.role==='admin';
+const roleOf=()=>S.user?S.user.role:'';
+
+/* =====================================================================
+   UI pomocníci: dialogy, Excel/CSV, události
+   ===================================================================== */
+const ACT={};
+function dlg(title,body,buttons,opts){opts=opts||{};const d=document.createElement('dialog');d.setAttribute('aria-label',title);
+  d.innerHTML='<div class="dlg-h"><h2>'+esc(title)+'</h2><button class="btn ghost sm" data-x aria-label="'+esc(T('c.close'))+'">✕</button></div><div class="dlg-b">'+body+'</div><div class="dlg-f"></div>';
+  const f=$('.dlg-f',d);const close=()=>{d.close()};
+  (buttons||[]).forEach(b=>{const x=document.createElement('button');x.type='button';x.className='btn '+(b.cls||'');x.textContent=b.label;x.onclick=async()=>{if(b.fn){const r=await b.fn(d,close);if(r===false)return}close()};f.appendChild(x)});
+  $('[data-x]',d).onclick=close;d.addEventListener('close',()=>{d.remove();if(_dirty)setTimeout(()=>render(),50);if(opts.onClose)opts.onClose()});
+  document.body.appendChild(d);d.showModal();const first=$('input:not([type=hidden]),select,textarea',d);if(first&&!opts.noFocus)first.focus();return d}
+const ask=(msg,okLabel,danger)=>new Promise(res=>{let done=false;const d=dlg(T('c.confirm'),'<p>'+esc(msg)+'</p>',[{label:T('c.cancel'),fn:()=>{done=true;res(false)}},{label:okLabel||T('c.ok'),cls:danger?'bad':'pri',fn:()=>{done=true;res(true)}}],{noFocus:true});d.addEventListener('close',()=>{if(!done)res(false)})});
+const askText=(title,label,o)=>new Promise(res=>{o=o||{};let done=false;const d=dlg(title,'<div class="fg"><label for="ask-i">'+esc(label)+'</label><input id="ask-i" type="'+(o.type||'text')+'" value="'+esc(o.value||'')+'" autocomplete="off"></div>',[{label:T('c.cancel'),fn:()=>{done=true;res(null)}},{label:T('c.ok'),cls:'pri',fn:dd=>{done=true;res($('#ask-i',dd).value)}}]);d.addEventListener('close',()=>{if(!done)res(null)})});
+async function run(fn,okMsg){try{const r=await fn();if(okMsg)toast(okMsg,'ok');return r===undefined?true:r}catch(e){toast(e.message||String(e),'err');logError('action',e.message);return false}}
+
+/* CSV / Excel */
+function parseCSV(text){text=text.replace(/^\uFEFF/,'');const first=text.split(/\r?\n/)[0]||'';const sep=(first.match(/;/g)||[]).length>=(first.match(/,/g)||[]).length?';':',';const rows=[];let row=[],cur='',q=false;
+  for(let i=0;i<text.length;i++){const c=text[i];if(q){if(c==='"'){if(text[i+1]==='"'){cur+='"';i++}else q=false}else cur+=c}else if(c==='"')q=true;else if(c===sep){row.push(cur);cur=''}else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cur);cur='';if(row.some(x=>x!==''))rows.push(row);row=[]}else cur+=c}
+  if(cur!==''||row.length){row.push(cur);if(row.some(x=>x!==''))rows.push(row)}if(!rows.length)return[];const head=rows[0].map(h=>h.trim());return rows.slice(1).map(r=>{const o={};head.forEach((h,i)=>o[h]=r[i]==null?'':r[i]);return o})}
+const XL={async lib(){if(window.XLSX)return window.XLSX;await new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=ok;s.onerror=()=>no(new Error(T('err.xlsx')));document.head.appendChild(s)});return window.XLSX},
+  async save(name,sheets){const X=await this.lib();const wb=X.utils.book_new();Object.keys(sheets).forEach(k=>X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet(sheets[k]),k.slice(0,31)));X.writeFile(wb,name+'.xlsx')},
+  async read(file){const X=await this.lib();const wb=X.read(await file.arrayBuffer(),{type:'array'});return X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:'',raw:false})}};
+const toCSV=rows=>'\uFEFF'+rows.map(r=>r.map(csvCell).join(';')).join('\r\n');
+async function exportRows(name,rows,fmt){if(fmt==='xlsx')await XL.save(name,{Data:rows});else download(name+'.csv',toCSV(rows),'text/csv;charset=utf-8')}
+const REQ_HEAD=()=>[T('rq.event'),T('rq.applicant'),'E-mail',T('rq.customer'),T('rq.tickets'),T('rq.reason'),T('rq.l1'),T('rq.by1'),T('rq.l2'),T('rq.by2'),T('rq.manager')];
+const reqRow=r=>[r.action,r.employee,r.applicantEmail||'',r.customer,r.tickets,r.reason||'',r.status1,r.approvedBy1||'',r.status2,r.approvedBy2||'',r.manager||''];
+const EV_HEAD=()=>[T('ev.f.name'),T('ev.f.date'),T('ev.f.time'),T('ev.f.place'),T('ev.f.capacity'),T('ev.f.category'),T('ev.f.status'),T('ev.f.desc'),T('ev.f.image')];
+function evRow(e){return[e.name,e.date,e.time||'',e.place||'',e.capacity||'',e.category||'',isArchived(e)?T('ev.archived'):T(EVST_L[evStatus(e)]),e.description||'',e.image&&!/^data:/.test(e.image)?e.image:'']}
+function imgToData(file,max){return new Promise((ok,no)=>{const r=new FileReader();r.onerror=()=>no(new Error('read'));r.onload=()=>{const im=new Image();im.onerror=()=>no(new Error('img'));im.onload=()=>{const k=Math.min(1,(max||720)/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);ok(c.toDataURL('image/jpeg',.78))};im.src=r.result};r.readAsDataURL(file)})}
+
+/* =====================================================================
+   REZERVACE A SCHVALOVÁNÍ (jediná implementace; vše přes transakce)
+   ===================================================================== */
+const Res={
+  async create(f){const u=S.user;if(!u)throw new Error(T('err.login'));let req,ev0;
+    await Cloud.mutate(async(d,tx)=>{const s=await tx.get(Cloud.col.doc(String(f.eventId)));let ev=s.exists?s.data():(d.companyActions||[]).find(a=>String(a.id)===String(f.eventId));if(!ev)throw new Error(T('err.noevent'));
+      const reqs=(d.ticketRequests||[]).slice();const ap=reqs.filter(r=>overall(r)==='approved'&&(r.actionId!=null&&r.actionId!==''?String(r.actionId)===String(ev.id):r.action===ev.name)).reduce((n,r)=>n+(parseInt(r.tickets)||0),0);
+      const st=evStatusWith(ev,ap);if(st!=='Active'||ev.status==='Skryto')throw new Error(T('err.notbookable',{s:T(EVST_L[st]||'ev.archived')}));
+      const cap=Number(ev.capacity)||0;if(cap&&f.tickets>cap-ap)throw new Error(T('err.toomany',{n:Math.max(0,cap-ap)}));
+      const now=new Date().toISOString();req={id:Date.now(),actionId:ev.id,action:ev.name,employee:f.employee,manager:norm(f.manager),customer:f.customer,tickets:String(f.tickets),reason:f.reason,status1:'Čeká',status2:'Čeká',approvedBy1:'',approvedBy2:'',applicantEmail:norm(u.email),createdAt:now,history:[{ts:now,by:u.email,level:0,value:'created'}]};reqs.push(req);ev0=ev;return{patch:{ticketRequests:reqs}}});
+    audit('reservation-created',req.id,req.action+' / '+req.customer+' / '+req.tickets);
+    Teams.send('new_reservation',{facts:[[T('tm.f.event'),req.action],[T('tm.f.who'),req.employee],[T('tm.f.customer'),req.customer],[T('tm.f.tickets'),req.tickets]]});return req},
+  canL1(r){return S.user&&(S.user.role==='admin'||(S.user.role==='manager'&&norm(r.manager)===norm(S.user.email)))},
+  canL2(r){return S.user&&(S.user.role==='admin'||(S.user.role==='rsm_praha'&&r.status1==='Schváleno'))},
+  async decide(id,level,value){const u=S.user;let res,evx;
+    await Cloud.mutate(async(d,tx)=>{const reqs=(d.ticketRequests||[]).slice(),i=reqs.findIndex(r=>String(r.id)===String(id));if(i<0)throw new Error(T('err.notfound'));const r=Object.assign({},reqs[i]);
+      if(level===1&&!this.canL1(r))throw new Error(T('err.perm'));if(level===2&&!this.canL2(r))throw new Error(T('err.perm2'));
+      let ev=null;if(level===2&&value==='Schváleno'){const s=await tx.get(Cloud.col.doc(String(r.actionId!=null&&r.actionId!==''?r.actionId:'_')));ev=s.exists?s.data():(d.ticketRequests?null:null);if(!ev)ev=(S._all||[]).find(e=>(r.actionId!=null&&r.actionId!==''?String(e.id)===String(r.actionId):e.name===r.action))||null;
+        if(ev){const cap=Number(ev.capacity)||0;if(cap){const ap=reqs.filter((x,j)=>j!==i&&overall(x)==='approved'&&(x.actionId!=null&&x.actionId!==''?String(x.actionId)===String(ev.id):x.action===ev.name)).reduce((n,x)=>n+(parseInt(x.tickets)||0),0);if(ap+(parseInt(r.tickets)||0)>cap)throw new Error(T('err.capacity',{n:Math.max(0,cap-ap)}))}}}
+      const now=new Date().toISOString();if(level===1){r.status1=value;r.approvedBy1=u.name;if(value!=='Schváleno'&&r.status2!=='Čeká'){r.status2='Čeká';r.approvedBy2=''}}else{r.status2=value;r.approvedBy2=u.name}
+      r.history=(r.history||[]).concat([{ts:now,by:u.email,level,value}]);reqs[i]=r;res=r;evx=ev;return{patch:{ticketRequests:reqs}}});
+    audit('reservation-'+(level===1?'l1':'l2'),res.id,value+' / '+res.action+' / '+res.customer);
+    if(value==='Zamítnuto'||(level===2&&value==='Schváleno'))Teams.send(value==='Zamítnuto'?'rejection':'approval',{facts:[[T('tm.f.event'),res.action],[T('tm.f.customer'),res.customer],[T('tm.f.tickets'),res.tickets],[T('tm.f.who'),u.name],[T('tm.f.level'),level]]});
+    if(level===2&&value==='Schváleno'){const ev=evById(res.actionId)||S._all.find(e=>e.name===res.action);if(ev)setTimeout(()=>Sched.capacityAlerts(ev),1200)}return res},
+  async remove(id){await Cloud.mutate(d=>{const reqs=(d.ticketRequests||[]).filter(r=>String(r.id)!==String(id));return{patch:{ticketRequests:reqs}}});audit('reservation-deleted',id)},
+  visible(){const u=S.user;if(!u)return[];const me=norm(u.email);if(u.role==='applicant')return S.requests.filter(r=>r.applicantEmail?norm(r.applicantEmail)===me:norm(r.employee)===norm(u.name));if(u.role==='manager')return S.requests.filter(r=>norm(r.manager)===me);return S.requests.slice()},
+  match(r,f){const nm=norm(S.user&&S.user.name),o=overall(r);switch(f){case 'pending':return o==='pending'||o==='waitlist';case 'approved':return o==='approved';case 'rejected':return o==='rejected';case 'wait1':return r.status1==='Čeká';case 'processed1':return r.status1!=='Čeká';case 'appr1me':return r.status1==='Schváleno'&&norm(r.approvedBy1)===nm;case 'rej1me':return r.status1==='Zamítnuto'&&norm(r.approvedBy1)===nm;case 'wait2':return r.status1==='Schváleno'&&r.status2==='Čeká';case 'done2':return r.status1==='Schváleno'&&r.status2!=='Čeká';default:return true}}
+};
+
+/* =====================================================================
+   Plánovač Teams (běží v prohlížeči přihlášeného admina – bez serverové funkce
+   nelze zaručit odeslání, když nikdo není přihlášen)
+   ===================================================================== */
+const Sched={timer:0,
+  async claim(ev,sendKey,allKeys){if(ev._legacy||!navigator.onLine||!Cloud.col)return false;let got=false;
+    await Cloud.db.runTransaction(async tx=>{const ref=Cloud.col.doc(String(ev._doc||ev.id)),s=await tx.get(ref);if(!s.exists)return;const n=Object.assign({},s.data().notified||{});if(n[sendKey])return;got=true;(allKeys||[sendKey]).forEach(k=>n[k]=true);tx.set(ref,{notified:n},{merge:true})});return got},
+  async capacityAlerts(ev){try{if(ev._legacy||!ev.capacity)return;const st=evStatus(ev),rem=evRemaining(ev),cap=Number(ev.capacity);
+      if(st==='Full'){if(await this.claim(ev,'full',['full','low']))Teams.send('full_capacity',{facts:evFacts(ev).concat([[T('tm.f.note'),T('tm.fullnote')]])})}
+      else if(st==='Active'&&rem!=null&&rem<=Math.max(3,Math.ceil(cap*.1))){if(await this.claim(ev,'low'))Teams.send('low_capacity',{facts:evFacts(ev).concat([[T('tm.f.remaining'),rem]])})}}catch(e){logError('sched',e.message)}},
+  async run(){if(!isAdmin()||!S.teams.info&&!S.teams.admin||!S.ready)return 0;let sent=0;const now=new Date();
+    for(const ev of S.events){try{if(isArchived(ev)||ev.status==='Zrušena')continue;const t=evTime(ev);if(!t)continue;const ms=t-now;
+      if(ms<=0){if(-ms<2*DAY&&await this.claim(ev,'completed')){Teams.send('completed',{facts:evFacts(ev).concat([[T('tm.f.approved'),evStats(ev).approved]])});sent++}continue}
+      const ths=[[30,'d30'],[14,'d14'],[7,'d7'],[1,'d1']];let hit=null;for(const x of ths)if(ms<=x[0]*DAY){hit=x}
+      if(hit){const larger=ths.filter(x=>x[0]>=hit[0]).map(x=>x[1]);if(await this.claim(ev,hit[1],larger)){Teams.send('reminder_'+hit[0],{facts:evFacts(ev).concat([[T('tm.f.remaining'),evRemaining(ev)==null?'–':evRemaining(ev)]])});sent++}}
+      await this.capacityAlerts(ev)}catch(e){logError('sched',e.message)}}return sent},
+  start(){clearInterval(this.timer);if(!isAdmin())return;setTimeout(()=>this.run(),4000);this.timer=setInterval(()=>this.run(),15*60*1000)}};
+
+/* =====================================================================
+   SPRÁVA AKCÍ
+   ===================================================================== */
+const Events={
+  clean(f,old){const e=Object.assign({},old||{});e.name=f.name.trim();e.date=f.date;e.time=f.time||'';e.place=(f.place||'').trim();e.capacity=parseInt(f.capacity)||0;e.category=f.category||'';e.subcategory=f.subcategory||'';e.description=(f.description||'').trim();e.image=f.image||'';if(f.status!=null)e.status=f.status;if(!e.status)e.status='Aktivní';return e},
+  async save(f,old){if(!f.name.trim()||!f.date)throw new Error(T('err.evreq'));const isNew=!old;const e=this.clean(f,old);if(isNew){e.id=Date.now();e.createdAt=new Date().toISOString()}
+    const dateChanged=old&&(old.date!==e.date||(old.time||'')!==(e.time||''));if(dateChanged){e.notified={};}
+    await Cloud.saveEvent(e);if(old&&old._legacy)await this.dropLegacy(e.id);
+    audit(isNew?'event-created':'event-modified',e.id,e.name+' / '+e.date);
+    if(isNew){Teams.send('event_created',{facts:evFacts(e)});Teams.send('new_event',{facts:evFacts(e)})}else{Teams.send('event_modified',{facts:evFacts(e)});if(dateChanged)Teams.send('rescheduled',{facts:[[T('tm.f.name'),e.name],[T('tm.f.old'),fmtDate(old.date,old.time)],[T('tm.f.new'),fmtDate(e.date,e.time)]]})}return e},
+  async dropLegacy(id){await Cloud.mutate(d=>({patch:{companyActions:(d.companyActions||[]).filter(a=>String(a.id)!==String(id))}}))},
+  async setStatus(ev,status){if(ev._legacy){await Cloud.saveEvent(Object.assign({},ev,{status}));await this.dropLegacy(ev.id)}else await Cloud.saveEvent({id:ev.id,status});
+    audit('event-status',ev.id,ev.name+' → '+status);if(status==='Zrušena'){Teams.send('cancelled',{facts:evFacts(ev)});Teams.send('event_modified',{facts:evFacts(ev)})}},
+  async remove(ev){await Cloud.deleteEvent(ev.id);if(ev._legacy)await this.dropLegacy(ev.id);audit('event-deleted',ev.id,ev.name);Teams.send('event_deleted',{facts:evFacts(ev)})},
+  async duplicate(ev){const e=Object.assign({},ev,{id:Date.now(),name:ev.name+' ('+T('c.copy')+')',status:'Aktivní',notified:{},createdAt:new Date().toISOString()});delete e._doc;delete e._legacy;await Cloud.saveEvent(e);audit('event-duplicated',e.id,ev.name)},
+  async bulk(ids,f){const list=ids.map(id=>evById(id)).filter(Boolean);for(const ev of list){const p={id:ev.id};if(f.date){p.date=f.date;p.notified={}}if(f.time)p.time=f.time;if(f.category)p.category=f.category;if(f.capacity!=='')p.capacity=parseInt(f.capacity)||0;if(f.place)p.place=f.place;if(f.status)p.status=f.status;
+      if(ev._legacy){await Cloud.saveEvent(Object.assign({},ev,p));await this.dropLegacy(ev.id)}else await Cloud.saveEvent(p);
+      if(f.date&&f.date!==ev.date)Teams.send('rescheduled',{facts:[[T('tm.f.name'),ev.name],[T('tm.f.old'),fmtDate(ev.date,ev.time)],[T('tm.f.new'),fmtDate(f.date,f.time||ev.time)]]});
+      if(f.status==='Zrušena')Teams.send('cancelled',{facts:evFacts(ev)})}
+    audit('event-bulk',ids.join(','),Object.keys(f).filter(k=>f[k]!=='').join(','));Teams.send('event_modified',{facts:[[T('tm.f.name'),T('ev.bulkn',{n:list.length})]]})},
+  form(ev){ev=ev||{};const cats=catList();return `<div class="grid g2"><div class="fg" style="grid-column:1/-1"><label for="f-name">${T('ev.f.name')} *</label><input id="f-name" type="text" value="${esc(ev.name)}"></div>
+    <div class="fg"><label for="f-date">${T('ev.f.date')} *</label><input id="f-date" type="date" value="${esc(ev.date)}"></div><div class="fg"><label for="f-time">${T('ev.f.time')}</label><input id="f-time" type="time" value="${esc(ev.time)}"></div>
+    <div class="fg"><label for="f-place">${T('ev.f.place')}</label><input id="f-place" type="text" value="${esc(ev.place)}"></div><div class="fg"><label for="f-cap">${T('ev.f.capacity')}</label><input id="f-cap" type="number" min="0" value="${esc(ev.capacity||'')}"></div>
+    <div class="fg"><label for="f-cat">${T('ev.f.category')}</label><input id="f-cat" type="text" list="cat-list" value="${esc(ev.category)}"><datalist id="cat-list">${cats.map(c=>'<option value="'+esc(c)+'">').join('')}</datalist></div>
+    <div class="fg"><label for="f-st">${T('ev.f.status')}</label><select id="f-st"><option value="Aktivní">${T('ev.active')}</option><option value="Zrušena">${T('ev.cancelled')}</option><option value="Skryto">${T('ev.archived')}</option></select></div>
+    <div class="fg" style="grid-column:1/-1"><label for="f-img">${T('ev.f.image')}</label><input id="f-img" type="url" placeholder="https://…" value="${esc(/^data:/.test(ev.image||'')?'':ev.image)}"><div class="row" style="margin-top:6px"><input id="f-file" type="file" accept="image/*" style="max-width:100%"><span class="hint">${T('ev.f.imghint')}</span></div></div>
+    <div class="fg" style="grid-column:1/-1"><label for="f-desc">${T('ev.f.desc')}</label><textarea id="f-desc">${esc(ev.description)}</textarea></div></div>`},
+  read(d,old){return{name:$('#f-name',d).value,date:$('#f-date',d).value,time:$('#f-time',d).value,place:$('#f-place',d).value,capacity:$('#f-cap',d).value,category:$('#f-cat',d).value,status:$('#f-st',d).value,description:$('#f-desc',d).value,image:d._img!=null?d._img:($('#f-img',d).value.trim()||(old&&/^data:/.test(old.image||'')?old.image:'')),subcategory:old?old.subcategory:''}},
+  open(ev){const isNew=!ev;const d=dlg(isNew?T('ev.new'):T('ev.edit'),this.form(ev),[{label:T('c.cancel')},{label:T('c.save'),cls:'pri',fn:async dd=>{const ok=await run(()=>this.save(this.read(dd,ev),ev),T('c.saved'));return ok!==false}}]);
+    if(ev){const s=ev.status==='Skryto'?'Skryto':(ev.status==='Zrušena'?'Zrušena':'Aktivní');$('#f-st',d).value=s}
+    $('#f-file',d).onchange=async e=>{const f=e.target.files[0];if(!f)return;try{d._img=await imgToData(f);$('#f-img',d).value='';toast(T('ev.imgok'),'ok')}catch(x){toast(T('err.img'),'err')}}}
+};
+function catList(){const s=new Set();(S.cfg.filters||[]).forEach(f=>{if(f.id!=='all'&&f.active!==false)s.add(f.name||f.id)});S._all&&S._all.forEach(e=>{if(e.category)s.add(e.category)});return Array.from(s)}
+
+/* =====================================================================
+   POHLEDY
+   ===================================================================== */
+const evBadge=st=>`<span class="badge ${({Active:'b-ok',Full:'b-bad',Cancelled:'b-bad',Completed:''})[st]||''}">${esc(T(EVST_L[st]))}</span>`;
+const stBadge=v=>`<span class="badge ${({'Schváleno':'b-ok','Zamítnuto':'b-bad','Náhradník':'b-info','Čeká':'b-warn'})[v]||''}">${esc(T(STAT_L[v]||'st.pending'))}</span>`;
+function evCard(ev,o){o=o||{};const st=evStatus(ev),s=evStats(ev),cap=Number(ev.capacity)||0,rem=evRemaining(ev),pct=cap?Math.min(100,Math.round(s.approved/cap*100)):0;
+  const low=st==='Active'&&cap&&rem<=Math.max(3,Math.ceil(cap*.1));const img=ev.image||ev.imageUrl||ev.backgroundImage||'';const can=evBookable(ev)&&S.user;
+  return `<article class="ev ${st==='Cancelled'||st==='Completed'?'dim':''}"><div class="ev-img" style="${img?'background-image:url(&quot;'+esc(img)+'&quot;),var(--hero)':''}" role="img" aria-label="${esc(ev.name)}">${evBadge(st)}${ev.category?'<span class="badge cat">'+esc(ev.category)+'</span>':''}</div>
+  <div class="ev-body"><h3 ${ev.description?'data-tip="'+esc(ev.description)+'" tabindex="0"':''}>${esc(ev.name)}</h3>
+  <div class="ev-meta"><span>📅 ${esc(fmtDate(ev.date,ev.time))}</span>${ev.place?'<span>📍 '+esc(ev.place)+'</span>':''}</div>
+  ${cap?`<div><div class="bar ${st==='Full'?'full':low?'low':''}" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div><div class="hint">${T('ev.cap',{a:s.approved,c:cap})}${low?' · <b>'+T('ev.remaining',{n:rem})+'</b>':''}</div></div>`:''}
+  <div class="ev-foot">${o.admin?`<button class="btn sm" data-act="evEdit" data-id="${esc(ev.id)}">${T('c.edit')}</button>`:`<button class="btn pri sm" data-act="reserveFor" data-id="${esc(ev.id)}" ${can?'':'disabled'}>${T(st==='Active'?'ev.reserve':st==='Full'?'ev.full':'ev.na')}</button>`}</div></div></article>`}
+
+const Views={
+  gate(){const m=S.gateMode||'login';const roleOpt=ROLES.map(r=>`<option value="${r}">${T(ROLE_L[r])}</option>`).join('');
+    return `<div class="gate"><div class="gate-box"><div class="gate-top">${this.prefs()}</div><div class="card">
+    <div class="row" style="margin-bottom:10px"><img src="icons/icon-192.png" alt="" width="44" height="44" style="border-radius:10px" onerror="this.style.display='none'"><div><h1>${T('app.title')}</h1><span class="badge b-info">Coca-Cola HBC Česko a Slovensko</span></div></div>
+    ${m==='login'?`<ol class="steps"><li>${T('gate.s1')}</li><li>${T('gate.s2')}</li><li>${T('gate.s3')}</li></ol>
+      <form data-form="login"><div class="fg"><label for="g-em">E-mail</label><input id="g-em" type="email" autocomplete="username" required></div><div class="fg"><label for="g-pw">${T('f.pw')}</label><input id="g-pw" type="password" autocomplete="current-password" required></div>
+      <button class="btn pri block" type="submit">${T('gate.login')}</button></form><button class="btn block" style="margin-top:8px" data-act="gate" data-m="register">${T('gate.request')}</button>
+      <p class="small muted" style="margin:14px 0 0;text-align:right"><a href="#" data-act="gate" data-m="admin">${T('gate.admin')}</a></p>`:''}
+    ${m==='register'?`<h2>${T('gate.request')}</h2><form data-form="register"><div class="fg"><label for="r-n">${T('f.name')}</label><input id="r-n" type="text" autocomplete="name" required></div><div class="fg"><label for="r-e">E-mail</label><input id="r-e" type="email" autocomplete="username" required></div>
+      <div class="fg"><label for="r-r">${T('f.role')}</label><select id="r-r">${roleOpt}</select></div><div class="fg"><label for="r-p">${T('f.pw6')}</label><input id="r-p" type="password" autocomplete="new-password" required></div><div class="fg"><label for="r-p2">${T('f.pw2')}</label><input id="r-p2" type="password" autocomplete="new-password" required></div>
+      <button class="btn pri block" type="submit">${T('gate.send')}</button></form><button class="btn block" style="margin-top:8px" data-act="gate" data-m="login">${T('c.back')}</button>`:''}
+    ${m==='admin'?`<h2>${T('gate.admin')}</h2><form data-form="adminCode"><div class="fg"><label for="a-c">${T('gate.code')}</label><input id="a-c" type="password" autocomplete="off" required></div><button class="btn pri block" type="submit">${T('gate.login')}</button></form><button class="btn block" style="margin-top:8px" data-act="gate" data-m="login">${T('c.back')}</button>`:''}
+    </div></div></div>`},
+  prefs(){const th=themePref();return `<button class="btn sm" data-act="lang" data-v="${S.lang==='en'?'cs':'en'}" aria-label="Language">${S.lang==='en'?'CZ':'EN'}</button><button class="btn sm" data-act="theme" aria-label="${T('c.theme')}">${th==='dark'?'🌙 '+T('c.dark'):th==='light'?'☀️ '+T('c.light'):'🖥️ '+T('c.auto')}</button>`},
+  shell(inner){const u=S.user,n=S.net;const sync=!n.online?['off',T('net.off')]:!n.docOk&&S.ready?['off',T('net.err')]:n.pending||n.fromCache&&!n.docOk?['wait',T('net.sync')]:['',T('net.ok')];
+    const tabs=[['events',T('nav.events')],['reserve',T('nav.reserve')],['requests',T('nav.requests')],['dashboard',T('nav.dashboard')]];if(isAdmin())tabs.push(['admin','⚙ '+T('nav.admin')]);
+    return `<header class="hdr"><div class="hdr-in"><a class="logo" href="#events"><img src="icons/icon-192.png" alt="" onerror="this.style.display='none'"><span>${T('app.title')}<small>Coca-Cola HBC ČR a SR</small></span></a>
+    <span class="sync ${sync[0]}" title="${esc(n.err||'')}"><i></i>${sync[1]}</span><div class="right row">${this.prefs()}<button class="btn sm" data-act="account">👤 ${esc(u.name)} · ${T(ROLE_L[u.role]||'role.applicant')}</button><button class="btn sm" data-act="logout">${T('c.logout')}</button></div></div>
+    <nav class="nav" aria-label="${T('nav.main')}">${tabs.map(t=>`<button data-act="nav" data-v="${t[0]}" class="${S.view===t[0]?'on':''}" ${S.view===t[0]?'aria-current="page"':''}>${esc(t[1])}</button>`).join('')}</nav></header><main id="view">${inner}</main>`},
+
+  events(){const filters=(S.cfg.filters||[]).filter(f=>f.active!==false);if(!filters.some(f=>f.id==='all'))filters.unshift({id:'all',name:T('c.all')});
+    const all=(S._all||[]).filter(e=>!isArchived(e)&&['Active','Full'].includes(evStatus(e)));
+    const list=all.filter(e=>S.filter==='all'||e.category===S.filter||(filters.find(f=>f.id===S.filter)||{}).name===e.category).sort((a,b)=>((a.date||'9999')+(a.time||'')).localeCompare((b.date||'9999')+(b.time||'')));
+    const ld=S.cfg.landing||{};const title=ld.enabled!==false&&ld.title?ld.title:T('ev.heroT'),text=ld.enabled!==false&&ld.text?ld.text:T('ev.heroX');
+    return `<section class="hero"><h1>${esc(title)}</h1><p>${esc(text)}</p></section>
+    <div class="chips" style="margin-bottom:16px" role="group" aria-label="${T('ev.filter')}">${filters.map(f=>`<button class="chip ${S.filter===f.id?'on':''}" data-act="filter" data-v="${esc(f.id)}">${esc(f.id==='all'?T('c.all'):f.name)}</button>`).join('')}</div>
+    ${list.length?`<div class="grid g3">${list.map(e=>evCard(e)).join('')}</div>`:`<div class="empty">${T(S.ready?'ev.none':'c.loading')}</div>`}`},
+
+  reserve(){const open=(S._all||[]).filter(evBookable).sort((a,b)=>((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||'')));const u=S.user,lastMgr=localStorage.getItem('ccLastMgr_'+norm(u.email))||'';
+    const mgrs=Object.values(S.users).filter(x=>x.role==='manager'||x.role==='rsm_praha');
+    return `<div class="card" style="max-width:760px;margin:0 auto"><h2>${T('rs.title')}</h2><p class="muted small">${T('rs.info')}</p>
+    <form data-form="reserve" id="resForm"><div class="fg"><label for="x-ev">${T('rs.event')} *</label><select id="x-ev" required><option value="">${T('rs.pick')}</option>${open.map(e=>`<option value="${esc(e.id)}" ${String(S.reserveEvent)===String(e.id)?'selected':''}>${esc(e.name)} — ${esc(fmtDate(e.date,e.time))}${evRemaining(e)!=null?' ('+T('ev.remaining',{n:evRemaining(e)})+')':''}</option>`).join('')}</select></div>
+    <div class="fg"><label for="x-emp">${T('rs.applicant')} *</label><input id="x-emp" type="text" value="${esc(u.name)}" required></div>
+    <div class="fg"><label for="x-mgr">${T('rs.manager')} *</label><input id="x-mgr" type="email" list="mgr-list" value="${esc(lastMgr)}" placeholder="novak@cchellenic.com" required><datalist id="mgr-list">${mgrs.map(m=>`<option value="${esc(m.email)}">${esc(m.name)}</option>`).join('')}</datalist></div>
+    <div class="grid g2"><div class="fg"><label for="x-cu">${T('rs.customer')} *</label><input id="x-cu" type="text" required></div><div class="fg"><label for="x-n">${T('rs.tickets')} *</label><input id="x-n" type="number" min="1" max="10" value="1" required></div></div>
+    ${S.reasons.length?`<div class="fg"><label for="x-rs">${T('rs.reasonCat')}</label><select id="x-rs"><option value="">${T('rs.pickReason')}</option>${S.reasons.map(r=>`<option>${esc(r)}</option>`).join('')}</select></div>`:''}
+    <div class="fg"><label for="x-re">${T('rs.reason')} *</label><textarea id="x-re" placeholder="${T('rs.reasonPh')}" required></textarea></div>
+    <div class="fg"><label class="chk"><input id="x-ok" type="checkbox"><span>${T('rs.compliance')}</span></label></div>
+    <button class="btn pri" id="x-send" type="submit" disabled>${T('rs.send')}</button></form></div>`},
+
+  requests(){const list=Res.visible().filter(r=>Res.match(r,S.reqFilter)).sort((a,b)=>b.id-a.id);const role=roleOf();
+    const chips=[['all','c.all'],['pending','st.pending'],['approved','st.approved'],['rejected','st.rejected']];if(role==='manager')chips.push(['wait1','dash.waiting']);if(role==='rsm_praha')chips.push(['wait2','dash.waitfinal']);
+    const rows=list.map(r=>{const o=overall(r),del=(isAdmin()||(role==='applicant'&&o!=='approved'))?`<button class="btn bad sm" data-act="reqDel" data-id="${r.id}">${T('c.delete')}</button>`:'';
+      const a1=Res.canL1(r)&&role!=='applicant'?`<div class="row" style="gap:4px;margin-top:4px"><button class="btn ok sm" data-act="decide" data-id="${r.id}" data-l="1" data-v="Schváleno">${T('c.yes')}</button><button class="btn bad sm" data-act="decide" data-id="${r.id}" data-l="1" data-v="Zamítnuto">${T('c.no')}</button></div>`:'';
+      const a2=(role==='rsm_praha'||role==='admin')?(Res.canL2(r)?`<div class="row" style="gap:4px;margin-top:4px"><button class="btn ok sm" data-act="decide" data-id="${r.id}" data-l="2" data-v="Schváleno">${T('c.yes')}</button><button class="btn bad sm" data-act="decide" data-id="${r.id}" data-l="2" data-v="Zamítnuto">${T('c.no')}</button><button class="btn sm" data-act="decide" data-id="${r.id}" data-l="2" data-v="Náhradník">${T('st.waitlist')}</button></div>`:`<div class="hint">🔒 ${T('rq.needl1')}</div>`):'';
+      const mail=isAdmin()&&r.applicantEmail?`<a class="btn sm" href="mailto:${esc(r.applicantEmail)}?subject=${encodeURIComponent(T('rq.mailSubj',{e:r.action}))}&body=${encodeURIComponent(T('rq.mailBody',{e:r.action,a:T(STAT_L[r.status1]),b:T(STAT_L[r.status2])}))}">✉</a>`:'';
+      return `<tr data-q="${esc(norm(r.action+' '+r.employee+' '+r.customer+' '+r.reason))}"><td data-l="${T('rq.event')}"><b>${esc(r.action)}</b><div class="hint">${esc(fmtTs(r.createdAt||r.id))}</div></td><td data-l="${T('rq.applicant')}">${esc(r.employee)}<div class="hint">${esc(r.applicantEmail||'')}</div></td>
+      <td data-l="${T('rq.customer')}"><b>${esc(r.customer)}</b> · ${esc(r.tickets)}×<div class="hint">${esc(r.reason||'')}</div></td>
+      <td data-l="${T('rq.l1')}">${stBadge(r.status1)}<div class="hint">${esc(r.approvedBy1||r.manager||'')}</div>${a1}</td><td data-l="${T('rq.l2')}">${stBadge(r.status2)}<div class="hint">${esc(r.approvedBy2||'')}</div>${a2}</td>
+      <td data-l="" class="nowrap"><button class="btn sm" data-act="reqInfo" data-id="${r.id}">${T('rq.history')}</button> ${mail} ${del}</td></tr>`}).join('');
+    return `<div class="row" style="margin-bottom:12px"><h2 style="margin:0">${role==='applicant'?T('rq.mine'):T('rq.title')}</h2><div class="right row"><input type="search" id="rq-q" placeholder="${T('c.search')}" style="width:200px" aria-label="${T('c.search')}"><button class="btn sm" data-act="expReq" data-f="csv">CSV</button><button class="btn sm" data-act="expReq" data-f="xlsx">Excel</button></div></div>
+    <div class="chips" style="margin-bottom:12px">${chips.map(c=>`<button class="chip ${S.reqFilter===c[0]?'on':''}" data-act="reqFilter" data-v="${c[0]}">${T(c[1])}</button>`).join('')}</div>
+    ${list.length?`<div class="tw"><table class="stack" id="rq-table"><thead><tr><th>${T('rq.event')}</th><th>${T('rq.applicant')}</th><th>${T('rq.customer')}</th><th>${T('rq.l1')}</th><th>${T('rq.l2')}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`:`<div class="empty">${T('rq.none')}</div>`}`},
+
+  dashboard(){const role=roleOf(),mine=Res.visible(),cnt=f=>mine.filter(r=>Res.match(r,f)).length;
+    const k=(n,label,filter,page)=>`<button class="kpi" data-act="${page?'adminGo':'goReq'}" data-v="${esc(page||filter)}"><b>${n}</b><span>${esc(label)}</span></button>`;let body='';
+    if(role==='applicant')body=k(mine.length,T('dash.my'),'all')+k(cnt('approved'),T('st.approved'),'approved')+k(cnt('rejected'),T('st.rejected'),'rejected')+k(cnt('pending'),T('st.pending'),'pending');
+    else if(role==='manager')body=k(cnt('wait1'),T('dash.waiting'),'wait1')+k(cnt('processed1'),T('dash.processed'),'processed1')+k(cnt('appr1me'),T('dash.apprme'),'appr1me')+k(cnt('rej1me'),T('dash.rejme'),'rej1me');
+    else if(role==='rsm_praha')body=k(cnt('wait2'),T('dash.waitfinal'),'wait2')+k(cnt('done2'),T('dash.reviews'),'done2');
+    else{const ev=S._all||[],c=st=>ev.filter(e=>!isArchived(e)&&evStatus(e)===st).length;body=k(c('Active')+'/'+c('Full')+'/'+c('Cancelled'),T('dash.events'),'','events')+k(S.requests.length,T('dash.reservations'),'','requests')+k(S.roleRequests.length,T('dash.registrations'),'','users')+k(S.errors.length,T('dash.health'),'','system')}
+    let extra='';if(role==='admin'){const top=(S._all||[]).filter(e=>!isArchived(e)&&e.capacity&&['Active','Full'].includes(evStatus(e))).sort((a,b)=>evStats(b).approved/b.capacity-evStats(a).approved/a.capacity).slice(0,6);
+      extra=`<div class="card" style="margin-top:16px"><h3>${T('dash.capacity')}</h3>${top.length?top.map(e=>{const s=evStats(e),p=Math.min(100,Math.round(s.approved/e.capacity*100));return `<div style="margin:10px 0"><div class="row"><b>${esc(e.name)}</b><span class="muted small right">${s.approved}/${e.capacity} (${p} %)</span></div><div class="bar ${p>=100?'full':p>=85?'low':''}"><i style="width:${p}%"></i></div></div>`}).join(''):'<p class="muted">'+T('ev.none')+'</p>'}</div>`}
+    const recent=mine.slice().sort((a,b)=>b.id-a.id).slice(0,5);
+    return `<h2>${T('nav.dashboard')}</h2><div class="grid g4">${body}</div>${extra}${role!=='admin'?`<div class="card" style="margin-top:16px"><h3>${T('dash.recent')}</h3>${recent.length?recent.map(r=>`<div class="row" style="padding:6px 0;border-bottom:1px solid var(--border)"><b>${esc(r.action)}</b><span class="muted small">${esc(r.customer)}</span><span class="right">${stBadge(overall(r)==='approved'?'Schváleno':overall(r)==='rejected'?'Zamítnuto':'Čeká')}</span></div>`).join(''):'<p class="muted">'+T('rq.none')+'</p>'}</div>`:''}`}
+};
+
+/* ---------- akce (data-act) ---------- */
+Object.assign(ACT,{
+  gate:d=>{S.gateMode=d.m;render(true)},lang:d=>Auth.savePrefs({lang:d.v}),
+  theme:()=>{const o=['auto','light','dark'],c=themePref();Auth.savePrefs({theme:o[(o.indexOf(c)+1)%3]})},
+  nav:d=>{S.view=d.v;history.replaceState(null,'','#'+d.v);render(true);scrollTo(0,0)},
+  logout:()=>Auth.logout(),filter:d=>{S.filter=d.v;render(true)},reqFilter:d=>{S.reqFilter=d.v;render(true)},
+  goReq:d=>{S.reqFilter=d.v;S.view='requests';render(true)},adminGo:d=>{S.adminPage=d.v;S.view='admin';render(true)},
+  reserveFor:d=>{S.reserveEvent=d.id;S.view='reserve';history.replaceState(null,'','#reserve');render(true);scrollTo(0,0)},
+  async decide(d){const lbl=d.v==='Schváleno'?T('c.yes'):d.v==='Zamítnuto'?T('c.no'):T('st.waitlist');if(d.v==='Zamítnuto'&&!await ask(T('rq.confirmRej'),T('c.no'),true))return;await run(()=>Res.decide(d.id,+d.l,d.v),lbl+' ✓')},
+  async reqDel(d){if(await ask(T('rq.confirmDel'),T('c.delete'),true))await run(()=>Res.remove(d.id),T('c.deleted'))},
+  reqInfo(d){const r=S.requests.find(x=>String(x.id)===String(d.id));if(!r)return;const h=(r.history||[]).map(x=>`<li><b>${esc(fmtTs(x.ts))}</b> – ${esc(x.by)} · ${x.level===0?T('rq.created'):T('rq.level')+' '+x.level+': '+esc(T(STAT_L[x.value]||'st.pending'))}</li>`).join('');
+    dlg(r.action,`<p><b>${esc(r.customer)}</b> · ${esc(r.tickets)}×<br><span class="muted">${esc(r.employee)} · ${esc(r.reason||'')}</span></p><p>${T('rq.l1')}: ${stBadge(r.status1)} ${esc(r.approvedBy1||'')}<br>${T('rq.l2')}: ${stBadge(r.status2)} ${esc(r.approvedBy2||'')}</p><h3>${T('rq.history')}</h3>${h?'<ul class="tl">'+h+'</ul>':'<p class="muted">'+T('rq.nohist')+'</p>'}`,[{label:T('c.close'),cls:'pri'}])},
+  expReq:d=>run(()=>exportRows('zadosti-'+isoDay(new Date()),[REQ_HEAD()].concat(Res.visible().filter(r=>Res.match(r,S.reqFilter)).map(reqRow)),d.f)),
+  account(){const u=S.user,p=themePref();const d=dlg(T('acc.title'),`<p><b>${esc(u.name)}</b><br><span class="muted">${esc(u.email)} · ${T(ROLE_L[u.role])}</span></p><div class="grid g2"><div class="fg"><label for="ac-t">${T('c.theme')}</label><select id="ac-t"><option value="auto">${T('c.auto')}</option><option value="light">${T('c.light')}</option><option value="dark">${T('c.dark')}</option></select></div><div class="fg"><label for="ac-l">${T('c.language')}</label><select id="ac-l"><option value="cs">Čeština</option><option value="en">English</option></select></div></div>
+    <div class="row"><button class="btn sm" id="ac-ob">${T('ob.restart')}</button>${u.master?'':`<button class="btn bad sm right" id="ac-del">${T('gdpr.delete')}</button>`}</div><p class="hint">${T('gdpr.hint')}</p>`,[{label:T('c.close')},{label:T('c.save'),cls:'pri',fn:()=>{Auth.savePrefs({theme:$('#ac-t').value,lang:$('#ac-l').value})}}]);
+    $('#ac-t',d).value=p;$('#ac-l',d).value=S.lang;$('#ac-ob',d).onclick=()=>{d.close();Onboard.start(true)};const del=$('#ac-del',d);if(del)del.onclick=async()=>{d.close();if(await ask(T('gdpr.confirm'),T('gdpr.delete'),true)){const an=await ask(T('gdpr.anon'),T('c.yes'));if(await run(()=>Auth.deleteUser(norm(u.email),an))){Auth.setSession(null);render(true)}}}}
+});
+
+/* =====================================================================
+   ADMINISTRACE – všechny dlaždice (jedna implementace, žádné překryvné vrstvy)
+   ===================================================================== */
+const PAGES=[['home','📊'],['events','🎟️'],['completed','🗂️'],['requests','📋'],['audit','🔎'],['users','👥'],['roles','🛡️'],['approvers','🔑'],['teams','💬'],['appearance','🎨'],['languages','🌐'],['helper','🤖'],['filters','🏷️'],['system','🛠️']];
+async function saveCfg(fn){await Cloud.mutate(d=>{const c=normCfg(d.ccPortalConfigV3);fn(c);return{patch:{ccPortalConfigV3:c}}})}
+const AUDIT_ACTS={};
+const Admin={
+  after:{},
+  view(){const p=S.adminPage||'home';const fn=this.pages[p]||this.pages.home;
+    return `<div class="adm"><nav class="adm-nav" aria-label="${T('nav.admin')}">${PAGES.map(x=>`<button data-act="adminGo" data-v="${x[0]}" class="${p===x[0]?'on':''}"><span>${x[1]}</span><span>${T('ap.'+x[0])}</span></button>`).join('')}</nav><section id="adm-body" aria-live="polite">${fn.call(this)}</section></div>`},
+  post(){const f=this.after[S.adminPage];if(f)setTimeout(()=>f.call(this),0)},
+  head:(t,extra)=>`<div class="row" style="margin-bottom:14px"><div><h2 style="margin:0">${T('ap.'+t)}</h2><p class="muted small" style="margin:0">${T('ap.'+t+'.d')}</p></div><div class="right row">${extra||''}</div></div>`,
+  pages:{
+    home(){const ev=S._all||[],c=st=>ev.filter(e=>!isArchived(e)&&evStatus(e)===st).length;
+      return Admin.head('home')+`<div class="grid g4" style="margin-bottom:18px"><div class="kpi"><b>${c('Active')}</b><span>${T('ev.active')}</span></div><div class="kpi"><b>${c('Full')}</b><span>${T('ev.full')}</span></div><div class="kpi"><b>${c('Cancelled')}</b><span>${T('ev.cancelled')}</span></div><div class="kpi"><b>${c('Completed')}</b><span>${T('ev.completed')}</span></div>
+      <div class="kpi"><b>${S.requests.filter(r=>overall(r)==='pending').length}</b><span>${T('dash.pendingres')}</span></div><div class="kpi"><b>${S.roleRequests.length}</b><span>${T('dash.registrations')}</span></div><div class="kpi"><b>${Object.keys(S.users).length}</b><span>${T('ap.users')}</span></div><div class="kpi"><b>${S.errors.length}</b><span>${T('dash.health')}</span></div></div>
+      <div class="grid g3">${PAGES.filter(p=>p[0]!=='home').map(p=>`<button class="tile" data-act="adminGo" data-v="${p[0]}"><span class="ic">${p[1]}</span><b>${T('ap.'+p[0])}</b><span>${T('ap.'+p[0]+'.d')}</span></button>`).join('')}</div>`},
+
+    events(){const list=(S._all||[]).filter(e=>evStatus(e)!=='Completed'||isArchived(e)).sort((a,b)=>((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||'')));
+      const legacy=(S._all||[]).filter(e=>e._legacy).length;
+      const rows=list.map(e=>{const st=evStatus(e),s=evStats(e),arch=isArchived(e),canc=e.status==='Zrušena';return `<tr data-q="${esc(norm(e.name+' '+(e.category||'')+' '+(e.place||'')))}" data-st="${arch?'archived':st}"><td><input type="checkbox" class="ev-sel" value="${esc(e.id)}" aria-label="${esc(e.name)}"></td>
+      <td data-l="${T('ev.f.name')}"><b>${esc(e.name)}</b><div class="hint">${esc(fmtDate(e.date,e.time))}${e.place?' · '+esc(e.place):''}</div></td><td data-l="${T('ev.f.category')}">${esc(e.category||'–')}</td><td data-l="${T('ev.f.capacity')}">${s.approved}/${e.capacity||'∞'}<div class="hint">${T('ev.pend',{n:s.pending})}</div></td>
+      <td data-l="${T('ev.f.status')}">${arch?'<span class="badge">'+T('ev.archived')+'</span>':evBadge(st)}</td><td data-l="" class="nowrap"><button class="btn sm" data-act="evEdit" data-id="${esc(e.id)}">${T('c.edit')}</button> <button class="btn sm" data-act="evDup" data-id="${esc(e.id)}">${T('c.duplicate')}</button>
+      <button class="btn sm" data-act="evSt" data-id="${esc(e.id)}" data-v="${canc?'Aktivní':'Zrušena'}">${canc?T('c.restore'):T('c.cancelEv')}</button> <button class="btn sm" data-act="evSt" data-id="${esc(e.id)}" data-v="${arch?'Aktivní':'Skryto'}">${arch?T('c.restore'):T('c.archive')}</button> <button class="btn bad sm" data-act="evDel" data-id="${esc(e.id)}">${T('c.delete')}</button></td></tr>`}).join('');
+      return Admin.head('events','<button class="btn pri sm" data-act="evNew">+ '+T('ev.new')+'</button><button class="btn sm" data-act="evBulk">'+T('ev.bulk')+'</button><button class="btn sm" data-act="evImport">'+T('c.import')+'</button><input type="file" id="ev-file" accept=".csv,.xlsx,.xls,.json" class="hide"><button class="btn sm" data-act="evExp" data-f="csv">CSV</button><button class="btn sm" data-act="evExp" data-f="xlsx">Excel</button>')
+      +(legacy?`<div class="card" style="margin-bottom:12px;border-color:var(--warn)"><b>${T('ev.legacy',{n:legacy})}</b> <button class="btn sm" data-act="migrate">${T('ev.migrate')}</button></div>`:'')
+      +`<div class="row" style="margin-bottom:10px"><input type="search" id="ev-q" placeholder="${T('c.search')}" style="max-width:260px"><select id="ev-st" style="max-width:200px"><option value="">${T('c.all')}</option><option value="Active">${T('ev.active')}</option><option value="Full">${T('ev.full')}</option><option value="Cancelled">${T('ev.cancelled')}</option><option value="archived">${T('ev.archived')}</option></select><label class="chk small" style="margin:0"><input type="checkbox" id="ev-all"> ${T('c.selectall')}</label></div>
+      ${list.length?`<div class="tw"><table class="stack" id="ev-table"><thead><tr><th></th><th>${T('ev.f.name')}</th><th>${T('ev.f.category')}</th><th>${T('ev.f.capacity')}</th><th>${T('ev.f.status')}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`:`<div class="empty">${T('ev.none')}</div>`}`},
+
+    completed(){const list=(S._all||[]).filter(e=>evStatus(e)==='Completed').sort((a,b)=>((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||'')));
+      const rows=list.map(e=>{const s=evStats(e),made=e.createdAt||(e.id>1e12&&e.id<2e12?new Date(+e.id).toISOString():'');return `<tr><td data-l="${T('ev.f.name')}"><b>${esc(e.name)}</b></td><td data-l="${T('ev.f.date')}">${esc(fmtDate(e.date,e.time))}</td><td data-l="${T('ev.f.category')}">${esc(e.category||'–')}</td><td data-l="${T('ev.apprTickets')}">${s.approved}</td><td data-l="${T('ev.totalRes')}">${s.total}</td>
+      <td data-l="${T('ev.timeline')}" class="small">${made?esc(fmtDate(made.slice(0,10)))+' → ':''}${T('ev.tl.res',{n:s.total})} → <b>${T('ev.completed')}</b> ${esc(fmtDate(e.date))}</td><td data-l=""><button class="btn sm" data-act="evTl" data-id="${esc(e.id)}">${T('rq.history')}</button> <button class="btn sm" data-act="evDup" data-id="${esc(e.id)}">${T('c.duplicate')}</button></td></tr>`}).join('');
+      return Admin.head('completed','<button class="btn sm" data-act="evExp" data-f="csv" data-done="1">CSV</button><button class="btn sm" data-act="evExp" data-f="xlsx" data-done="1">Excel</button>')+(list.length?`<div class="tw"><table class="stack"><thead><tr><th>${T('ev.f.name')}</th><th>${T('ev.f.date')}</th><th>${T('ev.f.category')}</th><th>${T('ev.apprTickets')}</th><th>${T('ev.totalRes')}</th><th>${T('ev.timeline')}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`:`<div class="empty">${T('ev.nocompleted')}</div>`)},
+
+    requests(){return Admin.head('requests')+Views.requests()},
+
+    audit(){return Admin.head('audit','<button class="btn sm" data-act="auditExp">CSV</button>')+`<div class="row" style="margin-bottom:10px"><input type="search" id="au-q" placeholder="${T('au.filter')}" style="max-width:340px"><span class="muted small" id="au-n"></span></div><div id="au-user"></div><div id="au-body"><div class="empty">${T('c.loading')}</div></div>`},
+
+    users(){const rr=S.roleRequests.map(r=>`<tr><td data-l="${T('f.name')}"><b>${esc(r.name)}</b></td><td data-l="E-mail">${esc(r.email)}</td><td data-l="${T('f.role')}"><select data-rr="${r.id}">${ROLES.map(x=>`<option value="${x}" ${x===r.role?'selected':''}>${T(ROLE_L[x])}</option>`).join('')}</select></td><td data-l=""><button class="btn ok sm" data-act="rrOk" data-id="${r.id}">${T('c.approve')}</button> <button class="btn bad sm" data-act="rrNo" data-id="${r.id}">${T('c.reject')}</button></td></tr>`).join('');
+      const us=Object.keys(S.users).sort().map(k=>{const u=S.users[k];return `<tr><td data-l="${T('f.name')}"><b>${esc(u.name)}</b></td><td data-l="E-mail">${esc(u.email||k)}</td><td data-l="${T('f.role')}"><select data-ur="${esc(k)}">${ROLES.map(x=>`<option value="${x}" ${x===u.role?'selected':''}>${T(ROLE_L[x])}</option>`).join('')}</select></td><td data-l=""><button class="btn sm" data-act="uPw" data-id="${esc(k)}">${T('us.setpw')}</button> <button class="btn bad sm" data-act="uDel" data-id="${esc(k)}">${T('c.delete')}</button></td></tr>`}).join('');
+      return Admin.head('users')+`<h3>${T('us.pending')} (${S.roleRequests.length})</h3>${rr?`<div class="tw"><table class="stack"><thead><tr><th>${T('f.name')}</th><th>E-mail</th><th>${T('f.role')}</th><th></th></tr></thead><tbody>${rr}</tbody></table></div>`:`<div class="empty">${T('us.nopending')}</div>`}<h3 style="margin-top:22px">${T('us.active')} (${Object.keys(S.users).length})</h3>${us?`<div class="tw"><table class="stack"><thead><tr><th>${T('f.name')}</th><th>E-mail</th><th>${T('f.role')}</th><th></th></tr></thead><tbody>${us}</tbody></table></div>`:`<div class="empty">${T('us.none')}</div>`}`},
+
+    roles(){const P=[['perm.create',1,0,0,1],['perm.own',1,0,0,1],['perm.l1',0,1,0,1],['perm.l2',0,0,1,1],['perm.dash',1,1,1,1],['perm.admin',0,0,0,1]];const cnt=r=>Object.values(S.users).filter(u=>u.role===r).length;
+      return Admin.head('roles')+`<div class="tw"><table><thead><tr><th>${T('perm.title')}</th>${ROLES.map(r=>`<th>${T(ROLE_L[r])} <span class="badge">${cnt(r)}</span></th>`).join('')}</tr></thead><tbody>${P.map(p=>`<tr><td>${T(p[0])}</td>${p.slice(1).map(x=>`<td>${x?'✅':'—'}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="hint">${T('perm.note')}</p>`},
+
+    approvers(){const list=Object.values(S.users).filter(u=>u.role==='manager'||u.role==='rsm_praha');
+      return Admin.head('approvers')+(list.length?`<div class="tw"><table class="stack"><thead><tr><th>${T('f.name')}</th><th>E-mail</th><th>${T('f.role')}</th><th>${T('ap.assigned')}</th><th>${T('ap.deputy')}</th><th></th></tr></thead><tbody>${list.map(u=>{const e=norm(u.email),p=S.profiles[e]||{};return `<tr><td data-l="${T('f.name')}"><b>${esc(p.displayName||u.name)}</b></td><td data-l="E-mail">${esc(u.email)}</td><td data-l="${T('f.role')}">${T(ROLE_L[u.role])}</td><td data-l="${T('ap.assigned')}">${S.requests.filter(r=>norm(r.manager)===e).length}</td><td data-l="${T('ap.deputy')}">${esc(p.deputy||'–')}</td><td data-l=""><button class="btn sm" data-act="apEdit" data-id="${esc(e)}">${T('c.edit')}</button></td></tr>`}).join('')}</tbody></table></div>`:`<div class="empty">${T('us.none')}</div>`)},
+
+    teams(){const p=S.teams.prefs;const cat=[['registration','tp.registration'],['other_events','tp.other'],['chatbot_issues','tp.chatbot'],['system','tp.system'],['info_events','tp.info']];
+      return Admin.head('teams')+`<div class="grid g2"><div class="card"><h3>${T('tm.ch1')}</h3><p class="hint">${T('tm.ch1d')}</p><div class="fg"><label for="tm-a">Webhook URL</label><input id="tm-a" type="url" value="${esc(S.teams.admin)}" placeholder="https://…webhook.office.com/…"></div><button class="btn sm" data-act="tmTest" data-ch="admin">${T('tm.test')}</button></div>
+      <div class="card"><h3>${T('tm.ch2')}</h3><p class="hint">${T('tm.ch2d')}</p><div class="fg"><label for="tm-i">Webhook URL</label><input id="tm-i" type="url" value="${esc(S.teams.info)}" placeholder="https://…webhook.office.com/…"></div><button class="btn sm" data-act="tmTest" data-ch="info">${T('tm.test')}</button></div></div>
+      <div class="card" style="margin-top:14px"><h3>${T('tm.prefs')}</h3>${cat.map(c=>`<label class="chk"><input type="checkbox" data-tp="${c[0]}" ${p[c[0]]!==false?'checked':''}><span>${T(c[1])}</span></label>`).join('')}<div class="fg" style="margin-top:12px;max-width:260px"><label for="tm-l">${T('tm.lang')}</label><select id="tm-l"><option value="cs" ${S.teams.lang==='cs'?'selected':''}>Čeština</option><option value="en" ${S.teams.lang==='en'?'selected':''}>English</option></select></div><button class="btn pri" data-act="tmSave">${T('c.save')}</button></div>
+      <div class="card" style="margin-top:14px"><div class="row"><h3 style="margin:0">${T('tm.sched')}</h3><button class="btn sm right" data-act="schedRun">${T('tm.run')}</button></div><p class="hint">${T('tm.schedNote')}</p></div>
+      <h3 style="margin-top:18px">${T('tm.log')}</h3>${S.teamsLog.length?`<div class="tw"><table><tbody>${S.teamsLog.map(l=>`<tr><td>${esc(fmtTs(l.t))}</td><td>${esc(l.type)}</td><td>${l.ok?'<span class="badge b-ok">OK</span>':'<span class="badge b-bad">✕</span>'} ${esc(l.note)}</td></tr>`).join('')}</tbody></table></div>`:`<p class="muted">${T('tm.nolog')}</p>`}`},
+
+    appearance(){const ld=S.cfg.landing||{};const seasons=['auto','autumn','winter','spring','summer','christmas','halloween'];
+      return Admin.head('appearance')+`<div class="card"><h3>${T('ap2.season')}</h3><div class="chips">${seasons.map(s=>`<button class="chip ${S.season===s?'on':''}" data-act="season" data-v="${s}">${T('se.'+s)}</button>`).join('')}</div><p class="hint">${T('ap2.seasonNote')}</p></div>
+      <div class="card" style="margin-top:14px"><h3>${T('ap2.landing')}</h3><label class="chk" style="margin-bottom:10px"><input type="checkbox" id="ld-en" ${ld.enabled!==false?'checked':''}><span>${T('ap2.landingOn')}</span></label><div class="fg"><label for="ld-t">${T('ap2.ltitle')}</label><input id="ld-t" type="text" value="${esc(ld.title||'')}" placeholder="${esc(T('ev.heroT'))}"></div><div class="fg"><label for="ld-x">${T('ap2.ltext')}</label><textarea id="ld-x" placeholder="${esc(T('ev.heroX'))}">${esc(ld.text||'')}</textarea></div><button class="btn pri" data-act="ldSave">${T('c.save')}</button></div>`},
+
+    languages(){const dl=S.cfg.defaultLang||'cs';return Admin.head('languages')+`<div class="card"><div class="fg" style="max-width:300px"><label for="lg-d">${T('lg.default')}</label><select id="lg-d"><option value="cs" ${dl==='cs'?'selected':''}>Čeština</option><option value="en" ${dl==='en'?'selected':''}>English</option></select></div><div class="fg" style="max-width:300px"><label for="lg-t">${T('tm.lang')}</label><select id="lg-t"><option value="cs" ${S.teams.lang==='cs'?'selected':''}>Čeština</option><option value="en" ${S.teams.lang==='en'?'selected':''}>English</option></select></div><button class="btn pri" data-act="lgSave">${T('c.save')}</button><p class="hint" style="margin-top:12px">${T('lg.note')}</p></div>`},
+
+    helper(){const h=S.cfg.help,ans=h.answers;return Admin.head('helper','<button class="btn pri sm" data-act="hlpEdit">+ '+T('hp.add')+'</button>')+`<div class="grid g2"><div class="card"><div class="fg"><label for="hp-c">${T('hp.contact')}</label><textarea id="hp-c">${esc(h.contact)}</textarea></div><label class="chk"><input type="checkbox" id="hp-en" ${h.enabled!==false?'checked':''}><span>${T('hp.enabled')}</span></label></div>
+      <div class="card"><label>${T('hp.icon')}</label><div class="row">${h.icon?`<img src="${esc(h.icon)}" alt="" width="56" height="56" style="border-radius:50%;object-fit:cover">`:'<span style="font-size:2rem">🤖</span>'}<input type="file" id="hp-ic" accept="image/*" style="max-width:220px">${h.icon?`<button class="btn sm" data-act="hlpIconDel">${T('c.delete')}</button>`:''}</div><p class="hint">${T('hp.iconHint')}</p></div></div>
+      <button class="btn pri" style="margin:12px 0" data-act="hlpSaveMeta">${T('c.save')}</button>
+      <h3>${T('hp.answers')} (${ans.length})</h3>${ans.length?`<div class="tw"><table class="stack"><thead><tr><th>${T('hp.q')}</th><th>${T('hp.a')}</th><th></th></tr></thead><tbody>${ans.map((a,i)=>`<tr><td data-l="${T('hp.q')}"><b>${esc(a.q||a.title||a.id||'')}</b><div class="hint">${esc((a.keys||[]).join(', '))}</div></td><td data-l="${T('hp.a')}" class="small">${esc(String(a.a||a.answer||'').slice(0,140))}</td><td data-l=""><button class="btn sm" data-act="hlpEdit" data-i="${i}">${T('c.edit')}</button> <button class="btn bad sm" data-act="hlpDel" data-i="${i}">${T('c.delete')}</button></td></tr>`).join('')}</tbody></table></div>`:`<div class="empty">${T('hp.none')}</div>`}`},
+
+    filters(){const f=S.cfg.filters.filter(x=>x.id!=='all');return Admin.head('filters')+`<div class="grid g2"><div class="card"><h3>${T('fl.cats')}</h3>${f.map(x=>`<div class="row" style="margin-bottom:6px"><input type="text" data-fn="${esc(x.id)}" value="${esc(x.name)}" style="flex:1"><label class="chk small" style="margin:0"><input type="checkbox" data-fa="${esc(x.id)}" ${x.active!==false?'checked':''}> ${T('c.active')}</label><button class="btn bad sm" data-act="flDel" data-id="${esc(x.id)}">✕</button></div>`).join('')}<div class="row" style="margin-top:10px"><input type="text" id="fl-new" placeholder="${T('fl.new')}" style="flex:1"><button class="btn sm" data-act="flAdd">+ ${T('c.add')}</button></div><button class="btn pri" style="margin-top:12px" data-act="flSave">${T('c.save')}</button></div>
+      <div class="card"><h3>${T('fl.reasons')}</h3><p class="hint">${T('fl.reasonsHint')}</p><textarea id="fl-re" rows="8">${esc(S.reasons.join('\n'))}</textarea><button class="btn pri" style="margin-top:12px" data-act="reSave">${T('c.save')}</button></div></div>`},
+
+    system(){const n=S.net,sw=('serviceWorker' in navigator)&&navigator.serviceWorker.controller;const ok=(b,t)=>`<span class="badge ${b?'b-ok':'b-bad'}">${t}</span>`;
+      return Admin.head('system')+`<div class="grid g2"><div class="card"><h3>${T('sy.health')}</h3><table><tbody><tr><td>Firebase</td><td>${ok(n.docOk&&n.actOk,n.docOk&&n.actOk?'OK':T('net.err'))}</td></tr><tr><td>${T('sy.online')}</td><td>${ok(n.online,n.online?'online':'offline')}</td></tr><tr><td>${T('sy.last')}</td><td>${n.lastSync?esc(fmtTs(n.lastSync)):'–'}</td></tr><tr><td>${T('sy.pending')}</td><td>${n.pending?T('c.yes'):T('c.no')}</td></tr><tr><td>PWA / offline cache</td><td>${ok(sw,sw?'aktivní':'–')}</td></tr><tr><td>Teams</td><td>${S.teams.admin||S.teams.info?'<span class="badge b-ok">'+T('sy.set')+'</span>':'<span class="badge b-warn">'+T('sy.notset')+'</span>'}</td></tr><tr><td>${T('sy.data')}</td><td>${(S._all||[]).length} ${T('nav.events').toLowerCase()} · ${S.requests.length} ${T('nav.requests').toLowerCase()} · ${Object.keys(S.users).length} ${T('ap.users').toLowerCase()}</td></tr><tr><td>${T('sy.ver')}</td><td>${APP_VERSION}</td></tr></tbody></table><div class="row" style="margin-top:10px"><button class="btn sm" data-act="cacheClear">${T('sy.clearcache')}</button></div></div>
+      <div class="card"><h3>${T('sy.backup')}</h3><div class="row"><button class="btn pri sm" data-act="bkExport">${T('sy.export')}</button><button class="btn sm" data-act="bkImport">${T('sy.restore')}</button><input type="file" id="bk-file" accept=".json" class="hide"></div><p class="hint">${T('sy.bkHint')}</p><h3 style="margin-top:14px">${T('sy.exports')}</h3><div class="row"><button class="btn sm" data-act="evExp" data-f="csv">${T('ap.events')} CSV</button><button class="btn sm" data-act="evExp" data-f="xlsx">${T('ap.events')} Excel</button></div><div class="row" style="margin-top:6px"><button class="btn sm" data-act="expReq" data-f="csv">${T('nav.requests')} CSV</button><button class="btn sm" data-act="expReq" data-f="xlsx">${T('nav.requests')} Excel</button></div>
+      <h3 style="margin-top:14px">${T('sy.retention')}</h3><div class="row"><input type="number" id="sy-days" min="30" value="${S.auditDays||730}" style="width:110px"><span class="small">${T('sy.days')}</span><button class="btn sm" data-act="auditPurge">${T('sy.purge')}</button></div></div></div>
+      <h3 style="margin-top:18px">${T('sy.errors')} (${S.errors.length}) <button class="btn sm" data-act="errClear">${T('c.clear')}</button></h3>${S.errors.length?`<div class="tw"><table><tbody>${S.errors.slice(0,15).map(e=>`<tr><td class="nowrap">${esc(fmtTs(e.t))}</td><td>${esc(e.kind)}</td><td>${esc(e.msg)} ${esc(e.extra)}</td></tr>`).join('')}</tbody></table></div>`:`<p class="muted">${T('sy.noerr')}</p>`}`}
+  }};
+
+/* ---- obsluha admin akcí ---- */
+const evFromId=id=>evById(id);
+Object.assign(ACT,{
+  evNew:()=>Events.open(null),evEdit:d=>{const e=evFromId(d.id);if(e)Events.open(e)},
+  async evDup(d){const e=evFromId(d.id);if(e)await run(()=>Events.duplicate(e),T('c.saved'))},
+  async evSt(d){const e=evFromId(d.id);if(!e)return;if(d.v==='Zrušena'&&!await ask(T('ev.confirmCancel',{n:e.name}),T('c.cancelEv'),true))return;await run(()=>Events.setStatus(e,d.v),T('c.saved'))},
+  async evDel(d){const e=evFromId(d.id);if(e&&await ask(T('ev.confirmDel',{n:e.name}),T('c.delete'),true))await run(()=>Events.remove(e),T('c.deleted'))},
+  async migrate(){await run(async()=>{const l=(S._all||[]).filter(e=>e._legacy);for(const e of l)await Cloud.saveEvent(e);await Cloud.mutate(()=>({patch:{companyActions:[]}}));audit('legacy-migrated','',l.length+'')},T('c.saved'))},
+  evBulk(){const ids=$$('.ev-sel:checked').map(x=>x.value);if(!ids.length){toast(T('ev.selectSome'),'err');return}
+    const d=dlg(T('ev.bulk')+' ('+ids.length+')',`<p class="hint">${T('ev.bulkHint')}</p><div class="grid g2"><div class="fg"><label for="b-d">${T('ev.f.date')}</label><input id="b-d" type="date"></div><div class="fg"><label for="b-t">${T('ev.f.time')}</label><input id="b-t" type="time"></div><div class="fg"><label for="b-c">${T('ev.f.category')}</label><input id="b-c" type="text" list="cat-list2"><datalist id="cat-list2">${catList().map(c=>'<option value="'+esc(c)+'">').join('')}</datalist></div><div class="fg"><label for="b-n">${T('ev.f.capacity')}</label><input id="b-n" type="number" min="0"></div><div class="fg"><label for="b-p">${T('ev.f.place')}</label><input id="b-p" type="text"></div><div class="fg"><label for="b-s">${T('ev.f.status')}</label><select id="b-s"><option value="">–</option><option value="Aktivní">${T('ev.active')}</option><option value="Zrušena">${T('ev.cancelled')}</option><option value="Skryto">${T('ev.archived')}</option></select></div></div>`,
+      [{label:T('c.cancel')},{label:T('c.apply'),cls:'pri',fn:async dd=>{const f={date:$('#b-d',dd).value,time:$('#b-t',dd).value,category:$('#b-c',dd).value.trim(),capacity:$('#b-n',dd).value,place:$('#b-p',dd).value.trim(),status:$('#b-s',dd).value};if(!Object.values(f).some(v=>v!=='')){toast(T('ev.nochange'),'err');return false}if(f.status==='Zrušena'&&!await ask(T('ev.confirmBulkCancel',{n:ids.length}),T('c.ok'),true))return false;const ok=await run(()=>Events.bulk(ids,f),T('c.saved'));return ok!==false}}])},
+  evImport(){$('#ev-file').click()},
+  evExp(d){const rows=[EV_HEAD()].concat((S._all||[]).filter(e=>d.done?evStatus(e)==='Completed':true).map(evRow));run(()=>exportRows((d.done?'dokoncene-akce-':'akce-')+isoDay(new Date()),rows,d.f))},
+  async evTl(d){const e=evFromId(d.id);if(!e)return;const s=evStats(e);const dd=dlg(e.name,`<p>${esc(fmtDate(e.date,e.time))} · ${esc(e.category||'')} · ${T('ev.apprTickets')}: <b>${s.approved}</b> · ${T('ev.totalRes')}: <b>${s.total}</b></p><div id="tl-b"><p class="muted">${T('c.loading')}</p></div>`,[{label:T('c.close'),cls:'pri'}]);
+    try{const q=await Cloud.ref.collection('auditLog').where('target','==',String(e.id)).get();const items=q.docs.map(x=>x.data()).sort((a,b)=>String(a.ts).localeCompare(String(b.ts)));const made=e.createdAt||(e.id>1e12&&e.id<2e12?new Date(+e.id).toISOString():'');
+      const li=[];if(made&&!items.some(i=>i.action==='event-created'))li.push(`<li><b>${esc(fmtTs(made))}</b> – ${T('ev.tl.created')}</li>`);items.forEach(i=>li.push(`<li><b>${esc(fmtTs(i.ts))}</b> – ${esc(i.action)} · ${esc(i.actor)} ${esc(i.detail)}</li>`));li.push(`<li><b>${esc(fmtDate(e.date,e.time))}</b> – ${T('ev.completed')}</li>`);$('#tl-b',dd).innerHTML='<ul class="tl">'+li.join('')+'</ul>'}catch(x){$('#tl-b',dd).innerHTML='<p class="muted">'+esc(x.message)+'</p>'}},
+  rrOk:d=>run(()=>Auth.approveRequest(d.id,($('[data-rr="'+d.id+'"]')||{}).value),T('us.approved')),
+  async rrNo(d){if(await ask(T('us.confirmRej'),T('c.reject'),true))run(()=>Auth.rejectRequest(d.id),T('c.deleted'))},
+  async uPw(d){const pw=await askText(T('us.setpw'),T('f.pw6'),{type:'password'});if(pw)run(()=>Auth.setPassword(d.id,pw),T('c.saved'))},
+  async uDel(d){if(await ask(T('us.confirmDel',{n:d.id}),T('c.delete'),true))run(()=>Auth.deleteUser(d.id,false),T('c.deleted'))},
+  apEdit(d){const p=S.profiles[d.id]||{};const dd=dlg(d.id,`<div class="fg"><label for="p-n">${T('ap.display')}</label><input id="p-n" type="text" value="${esc(p.displayName||'')}"></div><div class="fg"><label for="p-d">${T('ap.deputy')}</label><input id="p-d" type="email" value="${esc(p.deputy||'')}"></div><div class="fg"><label for="p-x">${T('ap.note')}</label><textarea id="p-x">${esc(p.note||'')}</textarea></div>`,[{label:T('c.cancel')},{label:T('c.save'),cls:'pri',fn:async x=>{const v={displayName:$('#p-n',x).value.trim(),deputy:norm($('#p-d',x).value),note:$('#p-x',x).value.trim()};const ok=await run(()=>Cloud.mutate(dd2=>{const pr=Object.assign({},dd2.ccManagerProfiles||{});pr[d.id]=Object.assign({},pr[d.id]||{},v);return{patch:{ccManagerProfiles:pr}}}),T('c.saved'));audit('approver-profile',d.id);return ok!==false}}])},
+  async tmSave(){const a=$('#tm-a').value.trim(),i=$('#tm-i').value.trim();if(!Teams.validUrl(a)||!Teams.validUrl(i)){toast(T('tm.badurl'),'err');return}const prefs=Object.assign({},DEF_PREFS);$$('[data-tp]').forEach(c=>prefs[c.dataset.tp]=c.checked);
+    await run(()=>Cloud.patch({teamsWebhookUrl:a,teamsInfoWebhookUrl:i,teamsNotificationPrefs:prefs,teamsLang:$('#tm-l').value}),T('c.saved'));audit('settings','teams')},
+  async tmTest(d){const url=($(d.ch==='admin'?'#tm-a':'#tm-i')||{}).value||'';if(!Teams.validUrl(url)||!url){toast(T('tm.badurl'),'err');return}const keep=[S.teams.admin,S.teams.info];S.teams.admin=$('#tm-a').value.trim();S.teams.info=$('#tm-i').value.trim();
+    const ok=await Teams.send(d.ch==='admin'?'test':'new_event',{facts:[[T('tm.f.name'),'TEST'],[T('tm.f.who'),S.user.name]]});S.teams.admin=keep[0];S.teams.info=keep[1];toast(ok?T('tm.sent'):T('tm.fail'),ok?'ok':'err');render(true)},
+  async schedRun(){const n=await Sched.run();toast(T('tm.ran',{n}),'ok')},
+  async season(d){await run(()=>Cloud.patch({ccSeasonMode:d.v}),T('c.saved'));audit('settings','season',d.v)},
+  ldSave:()=>run(()=>saveCfg(c=>{c.landing=Object.assign({},c.landing,{enabled:$('#ld-en').checked,title:$('#ld-t').value.trim(),text:$('#ld-x').value.trim()})}),T('c.saved')),
+  async lgSave(){await run(async()=>{await saveCfg(c=>{c.defaultLang=$('#lg-d').value});await Cloud.patch({teamsLang:$('#lg-t').value})},T('c.saved'))},
+  hlpEdit(d){const i=d.i!=null?+d.i:-1,a=i>=0?S.cfg.help.answers[i]:{};const dd=dlg(T('hp.add'),`<div class="fg"><label for="h-q">${T('hp.q')}</label><input id="h-q" type="text" value="${esc(a.q||a.title||'')}"></div><div class="fg"><label for="h-a">${T('hp.a')}</label><textarea id="h-a" rows="5">${esc(a.a||a.answer||'')}</textarea></div><div class="fg"><label for="h-k">${T('hp.keys')}</label><input id="h-k" type="text" value="${esc((a.keys||[]).join(', '))}"></div>`,[{label:T('c.cancel')},{label:T('c.save'),cls:'pri',fn:async x=>{const q=$('#h-q',x).value.trim(),ans=$('#h-a',x).value.trim();if(!q||!ans){toast(T('err.fill'),'err');return false}const keys=$('#h-k',x).value.split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);const ok=await run(()=>saveCfg(c=>{const o=Object.assign({},i>=0?(c.help.answers[i]||{}):{id:'h'+Date.now()},{q,a:ans,keys});if(i>=0)c.help.answers[i]=o;else c.help.answers.push(o)}),T('c.saved'));return ok!==false}}])},
+  async hlpDel(d){if(await ask(T('c.confirmDel'),T('c.delete'),true))run(()=>saveCfg(c=>{c.help.answers.splice(+d.i,1)}),T('c.deleted'))},
+  hlpSaveMeta:()=>run(()=>saveCfg(c=>{c.help.contact=$('#hp-c').value.trim();c.help.enabled=$('#hp-en').checked}),T('c.saved')),
+  hlpIconDel:()=>run(()=>saveCfg(c=>{delete c.help.icon}),T('c.deleted')),
+  flAdd(){const v=$('#fl-new').value.trim();if(!v)return;run(()=>saveCfg(c=>{if(!c.filters.some(f=>f.id===v))c.filters.push({id:v,name:v,locked:false,active:true})}),T('c.saved'))},
+  async flDel(d){if(await ask(T('c.confirmDel'),T('c.delete'),true))run(()=>saveCfg(c=>{c.filters=c.filters.filter(f=>f.id!==d.id)}),T('c.deleted'))},
+  flSave(){const names={},act={};$$('[data-fn]').forEach(i=>names[i.dataset.fn]=i.value.trim());$$('[data-fa]').forEach(i=>act[i.dataset.fa]=i.checked);run(()=>saveCfg(c=>{c.filters.forEach(f=>{if(f.id==='all')return;if(names[f.id]!=null&&names[f.id])f.name=names[f.id];if(act[f.id]!=null)f.active=act[f.id]})}),T('c.saved'))},
+  reSave(){const list=Array.from(new Set($('#fl-re').value.split(/[\n,]/).map(s=>s.trim()).filter(Boolean)));run(()=>Cloud.patch({cc_dynamic_reasons:list.join(',')}),T('c.saved'))},
+  auditExp(){const rows=[['ts','actor','role','action','target','detail']].concat((Admin._au||[]).map(a=>[a.ts,a.actor,a.role,a.action,a.target,a.detail]));download('audit-'+isoDay(new Date())+'.csv',toCSV(rows),'text/csv;charset=utf-8')},
+  async auditPurge(){const days=Math.max(30,parseInt($('#sy-days').value)||730);if(!await ask(T('sy.purgeConfirm',{n:days}),T('sy.purge'),true))return;await run(async()=>{await Cloud.patch({auditRetentionDays:days});const lim=new Date(Date.now()-days*DAY).toISOString();const q=await Cloud.ref.collection('auditLog').where('ts','<',lim).limit(450).get();const b=Cloud.db.batch();q.docs.forEach(x=>b.delete(x.ref));await b.commit();audit('audit-purge','',q.size+' <'+days+'d');toast(T('sy.purged',{n:q.size}),'ok')})},
+  errClear(){S.errors=[];jset('ccErrLog',[]);render(true)},
+  async cacheClear(){try{if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}const r=await navigator.serviceWorker.getRegistrations();await Promise.all(r.map(x=>x.unregister()))}catch(e){}localStorage.removeItem('ccCacheV2');location.reload()},
+  async bkExport(){await run(async()=>{const ev=(S._all||[]).map(e=>{const o=Object.assign({},e);delete o._doc;delete o._legacy;return o});const doc=clone(S.raw);delete doc.companyActions;const au=(await Cloud.ref.collection('auditLog').orderBy('ts','desc').limit(2000).get()).docs.map(x=>x.data());download('tickets-backup-'+isoDay(new Date())+'.json',JSON.stringify({app:'cc-tickets-portal',version:2,exportedAt:new Date().toISOString(),doc,events:ev,audit:au},null,1),'application/json');audit('backup-export')},T('c.saved'))},
+  bkImport(){$('#bk-file').click()}
+});
+const DOC_KEYS=['ticketRequests','users','roleRequests','customUsers','ccPortalConfigV3','ccManagerProfiles','ccSeasonMode','cc_dynamic_reasons','teamsWebhookUrl','teamsInfoWebhookUrl','teamsNotificationPrefs','teamsLang','auditRetentionDays'];
+async function restoreBackup(file){let j;try{j=JSON.parse(await file.text())}catch(e){throw new Error(T('err.json'))}
+  const doc=j.doc||j;const events=Array.isArray(j.events)?j.events:(Array.isArray(doc.companyActions)?doc.companyActions:[]);
+  if(!DOC_KEYS.some(k=>doc[k]!==undefined)&&!events.length)throw new Error(T('err.json'));
+  if(!await ask(T('bk.confirm',{r:(doc.ticketRequests||[]).length,e:events.length,u:Object.keys(doc.users||{}).length}),T('sy.restore'),true))return false;
+  await ACT.bkExport();const patch={};DOC_KEYS.forEach(k=>{if(doc[k]!==undefined)patch[k]=doc[k]});if(Object.keys(patch).length)await Cloud.patch(patch);
+  for(let i=0;i<events.length;i+=400){const b=Cloud.db.batch();events.slice(i,i+400).forEach(e=>{if(e&&e.id!=null){const o=Object.assign({},e);delete o._doc;delete o._legacy;b.set(Cloud.col.doc(String(e.id)),o)}});await b.commit()}
+  audit('backup-restore','',events.length+' events');return true}
+async function importEvents(file){let rows=[];const n=file.name.toLowerCase();
+  if(n.endsWith('.json')){const j=JSON.parse(await file.text());rows=Array.isArray(j)?j:(j.events||[])}else if(n.endsWith('.csv'))rows=parseCSV(await file.text());else rows=await XL.read(file);
+  const pick=(r,keys)=>{for(const k in r){if(keys.includes(k.toLowerCase().trim()))return String(r[k]).trim()}return''};
+  const toIso=s=>{s=String(s||'').trim();let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return m[1]+'-'+m[2]+'-'+m[3];m=s.match(/^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/);if(m)return m[3]+'-'+pad(m[2])+'-'+pad(m[1]);m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(m)return m[3]+'-'+pad(m[1])+'-'+pad(m[2]);return''};
+  const exist=new Set((S._all||[]).map(e=>norm(e.name)+'|'+e.date));let ok=0,skip=0,base=Date.now();
+  for(const r of rows){const name=pick(r,['name','název','nazev','akce','event','event name']),date=toIso(pick(r,['date','datum']));if(!name||!date){skip++;continue}if(exist.has(norm(name)+'|'+date)){skip++;continue}
+    await Cloud.saveEvent({id:base+ok,name,date,time:(pick(r,['time','čas','cas'])||'').slice(0,5),place:pick(r,['place','místo','misto','location']),capacity:parseInt(pick(r,['capacity','kapacita']))||0,category:pick(r,['category','kategorie']),description:pick(r,['description','popis']),image:pick(r,['image','obrázek','obrazek','image url']),status:'Aktivní',createdAt:new Date().toISOString(),importedFrom:file.name});ok++}
+  audit('events-import','',file.name+': '+ok+' ok, '+skip+' skip');return{ok,skip}}
+
+/* post-render hooky admin stránek */
+Admin.after.events=function(){const f=()=>{const q=norm(($('#ev-q')||{}).value),st=($('#ev-st')||{}).value;$$('#ev-table tbody tr').forEach(r=>{r.classList.toggle('hide',(q&&!r.dataset.q.includes(q))||(st&&r.dataset.st!==st))})};
+  const q=$('#ev-q'),s=$('#ev-st');if(q)q.oninput=f;if(s)s.onchange=f;const a=$('#ev-all');if(a)a.onchange=()=>$$('.ev-sel').forEach(c=>{if(!c.closest('tr').classList.contains('hide'))c.checked=a.checked});
+  const fi=$('#ev-file');if(fi)fi.onchange=async()=>{const file=fi.files[0];fi.value='';if(!file)return;const r=await run(()=>importEvents(file));if(r)toast(T('ev.imported',{ok:r.ok,skip:r.skip}),'ok')}};
+Admin.after.system=function(){const fi=$('#bk-file');if(fi)fi.onchange=async()=>{const f=fi.files[0];fi.value='';if(f){const r=await run(()=>restoreBackup(f));if(r===true)toast(T('bk.done'),'ok')}}};
+Admin.after.helper=function(){const fi=$('#hp-ic');if(fi)fi.onchange=async()=>{const f=fi.files[0];if(!f)return;try{const data=await imgToData(f,160);await run(()=>saveCfg(c=>{c.help.icon=data}),T('c.saved'))}catch(e){toast(T('err.img'),'err')}}};
+Admin.after.users=function(){$$('[data-ur]').forEach(s=>s.onchange=()=>run(()=>Auth.setRole(s.dataset.ur,s.value),T('c.saved')))};
+Admin.after.requests=function(){const q=$('#rq-q');if(q)q.oninput=()=>{const v=norm(q.value);$$('#rq-table tbody tr').forEach(r=>r.classList.toggle('hide',!!v&&!r.dataset.q.includes(v)))}};
+Admin.after.audit=async function(){const body=$('#au-body');if(!body)return;try{const q=await Cloud.ref.collection('auditLog').orderBy('ts','desc').limit(400).get();Admin._au=q.docs.map(x=>x.data());
+    const draw=()=>{const f=norm(($('#au-q')||{}).value);const list=Admin._au.filter(a=>!f||norm(a.actor+' '+a.action+' '+a.target+' '+a.detail).includes(f));$('#au-n').textContent=list.length+' / '+Admin._au.length;
+      const ub=$('#au-user');if(ub){const m=f&&f.includes('@')?S.requests.filter(r=>norm(r.applicantEmail)===f):[];ub.innerHTML=m.length?`<div class="card" style="margin-bottom:12px"><b>${T('au.userRes',{n:m.length})}</b>: ${m.slice(0,8).map(r=>esc(r.action)+' ('+esc(T(STAT_L[r.status2]||'st.pending'))+')').join(' · ')}</div>`:''}
+      $('#au-body').innerHTML=list.length?`<div class="tw"><table class="stack"><thead><tr><th>${T('au.time')}</th><th>${T('au.actor')}</th><th>${T('au.action')}</th><th>${T('au.target')}</th></tr></thead><tbody>${list.slice(0,200).map(a=>`<tr><td data-l="${T('au.time')}" class="nowrap">${esc(fmtTs(a.ts))}</td><td data-l="${T('au.actor')}">${esc(a.actor)}<div class="hint">${esc(a.role)}</div></td><td data-l="${T('au.action')}"><b>${esc(a.action)}</b></td><td data-l="${T('au.target')}">${esc(a.target)}<div class="hint">${esc(a.detail)}</div></td></tr>`).join('')}</tbody></table></div>`:`<div class="empty">${T('au.none')}</div>`};
+    draw();$('#au-q').oninput=draw}catch(e){body.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}};
+
+/* =====================================================================
+   PŘEKLADY  [čeština, English]
+   ===================================================================== */
+const DICT={
+'app.title':['Tickets booking app','Tickets booking app'],
+'c.all':['Vše','All'],'c.active':['Aktivní','Active'],'c.add':['Přidat','Add'],'c.apply':['Použít','Apply'],'c.approve':['Schválit','Approve'],'c.archive':['Archivovat','Archive'],'c.auto':['Automaticky','Auto'],'c.back':['Zpět','Back'],'c.cancel':['Zrušit','Cancel'],'c.cancelEv':['Zrušit akci','Cancel event'],'c.clear':['Vymazat','Clear'],'c.close':['Zavřít','Close'],'c.confirm':['Potvrzení','Confirm'],'c.confirmDel':['Opravdu smazat?','Really delete?'],'c.copy':['kopie','copy'],'c.dark':['Tmavý','Dark'],'c.delete':['Smazat','Delete'],'c.deleted':['Smazáno','Deleted'],'c.duplicate':['Duplikovat','Duplicate'],'c.edit':['Upravit','Edit'],'c.import':['Import','Import'],'c.language':['Jazyk','Language'],'c.light':['Světlý','Light'],'c.loading':['Načítám…','Loading…'],'c.logout':['Odhlásit','Log out'],'c.no':['Ne','No'],'c.ok':['OK','OK'],'c.reject':['Zamítnout','Reject'],'c.restore':['Obnovit','Restore'],'c.save':['Uložit','Save'],'c.saved':['Uloženo','Saved'],'c.search':['Hledat…','Search…'],'c.selectall':['Vybrat vše','Select all'],'c.send':['Odeslat','Send'],'c.theme':['Vzhled','Theme'],'c.yes':['Ano','Yes'],
+'nav.main':['Hlavní navigace','Main navigation'],'nav.events':['Akce','Events'],'nav.reserve':['Nová rezervace','New reservation'],'nav.requests':['Seznam žádostí','Requests'],'nav.dashboard':['Přehled','Dashboard'],'nav.admin':['Administrace','Administration'],
+'net.ok':['Synchronizováno','Synchronized'],'net.sync':['Synchronizuji…','Syncing…'],'net.off':['Offline – změny nelze uložit','Offline – changes cannot be saved'],'net.err':['Chyba synchronizace','Sync error'],
+'role.applicant':['0 – Žadatel','0 – Applicant'],'role.manager':['1. stupeň (ASM / RSM)','Level 1 (ASM / RSM)'],'role.rsm':['2. stupeň (RSM Praha)','Level 2 (RSM Praha)'],'role.admin':['Admin','Admin'],
+'st.pending':['Čeká','Pending'],'st.approved':['Schváleno','Approved'],'st.rejected':['Zamítnuto','Rejected'],'st.waitlist':['Náhradník','Waitlist'],
+'ev.active':['Aktivní','Active'],'ev.full':['Obsazeno','Full'],'ev.cancelled':['Zrušeno','Cancelled'],'ev.completed':['Proběhlo','Completed'],'ev.archived':['Archivováno','Archived'],'ev.na':['Nelze rezervovat','Not bookable'],'ev.reserve':['Rezervovat','Reserve'],
+'ev.heroT':['Akce a vstupenky','Events and tickets'],'ev.heroX':['Vyberte akci a podejte žádost o lístky. Schvalování probíhá ve dvou krocích.','Choose an event and request tickets. Approval takes two steps.'],'ev.filter':['Filtr kategorií','Category filter'],'ev.none':['Momentálně nejsou k dispozici žádné akce.','No events are available right now.'],
+'ev.cap':['Schváleno {a} z {c}','Approved {a} of {c}'],'ev.remaining':['zbývá {n}','{n} left'],'ev.pend':['čeká {n} ks','{n} pending'],
+'ev.new':['Nová akce','New event'],'ev.edit':['Upravit akci','Edit event'],'ev.bulk':['Hromadná úprava','Bulk edit'],'ev.bulkHint':['Vyplňte jen pole, která chcete změnit u všech vybraných akcí.','Fill in only the fields you want to change for all selected events.'],'ev.bulkn':['Hromadná úprava ({n} akcí)','Bulk edit ({n} events)'],'ev.selectSome':['Nejdřív vyberte akce.','Select events first.'],'ev.nochange':['Nic k uložení.','Nothing to apply.'],
+'ev.f.name':['Název','Name'],'ev.f.date':['Datum','Date'],'ev.f.time':['Čas','Time'],'ev.f.place':['Místo','Place'],'ev.f.capacity':['Kapacita','Capacity'],'ev.f.category':['Kategorie','Category'],'ev.f.status':['Stav','Status'],'ev.f.desc':['Popis (zobrazí se jako tooltip)','Description (shown as tooltip)'],'ev.f.image':['Obrázek (URL z webu nebo nahrání souboru)','Image (web URL or file upload)'],'ev.f.imghint':['Nahraný obrázek se zmenší.','Uploaded images are downscaled.'],'ev.imgok':['Obrázek připraven – uložte akci.','Image ready – save the event.'],
+'ev.confirmCancel':['Zrušit akci „{n}“? Nebude možné ji rezervovat a odešle se upozornění do Teams.','Cancel “{n}”? It can no longer be booked and Teams will be notified.'],'ev.confirmDel':['Opravdu trvale smazat akci „{n}“?','Permanently delete “{n}”?'],'ev.confirmBulkCancel':['Zrušit {n} vybraných akcí?','Cancel {n} selected events?'],
+'ev.legacy':['{n} akcí je ve starém formátu.','{n} events are in the legacy format.'],'ev.migrate':['Přesunout do nové kolekce','Move to new collection'],'ev.imported':['Importováno: {ok}, přeskočeno: {skip}','Imported: {ok}, skipped: {skip}'],
+'ev.apprTickets':['Schválené lístky','Approved tickets'],'ev.totalRes':['Rezervací celkem','Total reservations'],'ev.timeline':['Časová osa stavů','Status timeline'],'ev.tl.res':['rezervace: {n}','reservations: {n}'],'ev.tl.created':['Akce vytvořena','Event created'],'ev.nocompleted':['Zatím nejsou žádné proběhlé akce.','No completed events yet.'],
+'f.name':['Jméno a příjmení','Full name'],'f.role':['Role','Role'],'f.pw':['Heslo','Password'],'f.pw6':['Heslo (min. 6 znaků)','Password (min. 6 characters)'],'f.pw2':['Potvrzení hesla','Confirm password'],
+'gate.s1':['Požádejte o přístup a počkejte na schválení administrátorem.','Request access and wait for admin approval.'],'gate.s2':['Po schválení se přihlaste e-mailem a heslem.','After approval, sign in with your e-mail and password.'],'gate.s3':['Vyberte akci a odešlete žádost – schvaluje 1. stupeň a RSM Praha.','Pick an event and submit – level 1 and RSM Praha approve it.'],
+'gate.login':['Přihlásit se','Sign in'],'gate.request':['Požádat o přístup','Request access'],'gate.send':['Odeslat žádost','Submit request'],'gate.sent':['Žádost byla odeslána. Po schválení se můžete přihlásit.','Request sent. You can sign in once it is approved.'],'gate.admin':['Přihlášení administrátora','Administrator sign-in'],'gate.code':['Admin kód','Admin code'],
+'rs.title':['Žádost o lístky na akci','Request tickets for an event'],'rs.info':['Po odeslání uvidíte stav schvalování v záložce „Seznam žádostí“.','After submitting, follow the approval in the “Requests” tab.'],'rs.event':['Akce','Event'],'rs.pick':['-- Vyberte akci --','-- Select an event --'],'rs.applicant':['Žadatel','Applicant'],'rs.manager':['E-mail nadřízeného (1. schvalovatel)','Manager e-mail (1st approver)'],'rs.customer':['Jméno zákazníka','Customer name'],'rs.tickets':['Počet lístků (1–10)','Tickets (1–10)'],'rs.reasonCat':['Kategorie důvodu','Reason category'],'rs.pickReason':['-- Vyberte důvod --','-- Select a reason --'],'rs.reason':['Důvod žádosti (uveďte detaily a obrat v EUR)','Reason (include details and turnover in EUR)'],'rs.reasonPh':['Např. obchodní schůzka s klíčovým klientem…','E.g. business meeting with a key customer…'],
+'rs.compliance':['Potvrzuji, že jsem se seznámil/a s Kodexem chování a Pravidly chování pro zákazníky a jsem si vědom/a povinnosti je dodržovat.','I confirm that I have read the Code of Conduct and the Customer Conduct Rules and will comply with them.'],'rs.send':['Odeslat žádost','Submit request'],'rs.done':['Žádost byla odeslána.','Request submitted.'],
+'rq.title':['Přehled a schvalování žádostí','Requests and approvals'],'rq.mine':['Moje žádosti','My requests'],'rq.event':['Akce','Event'],'rq.applicant':['Žadatel','Applicant'],'rq.customer':['Zákazník','Customer'],'rq.tickets':['Lístky','Tickets'],'rq.reason':['Důvod','Reason'],'rq.l1':['1. stupeň','Level 1'],'rq.l2':['2. stupeň','Level 2'],'rq.by1':['Schválil 1. stupeň','Level 1 by'],'rq.by2':['Schválil 2. stupeň','Level 2 by'],'rq.manager':['Nadřízený','Manager'],
+'rq.none':['Žádné žádosti k zobrazení.','No requests to show.'],'rq.history':['Historie','History'],'rq.nohist':['Historie není k dispozici.','No history available.'],'rq.created':['Žádost vytvořena','Request created'],'rq.level':['Stupeň','Level'],'rq.needl1':['Nejdřív schválí 1. stupeň','Level 1 must approve first'],'rq.confirmRej':['Opravdu zamítnout žádost?','Really reject this request?'],'rq.confirmDel':['Opravdu smazat žádost?','Really delete this request?'],
+'rq.mailSubj':['Stav žádosti o lístky – {e}','Ticket request status – {e}'],'rq.mailBody':['Dobrý den,\n\nstav Vaší žádosti na akci {e}: 1. stupeň – {a}, 2. stupeň – {b}.\n','Hello,\n\nstatus of your request for {e}: level 1 – {a}, level 2 – {b}.\n'],
+'dash.my':['Moje žádosti','My requests'],'dash.waiting':['Čeká na schválení','Waiting for approval'],'dash.processed':['Zpracované','Processed'],'dash.apprme':['Schváleno mnou','Approved by me'],'dash.rejme':['Zamítnuto mnou','Rejected by me'],'dash.waitfinal':['Čeká na finální schválení','Waiting for final approval'],'dash.reviews':['Dokončená posouzení','Completed reviews'],'dash.events':['Akce (aktivní/obsazené/zrušené)','Events (active/full/cancelled)'],'dash.reservations':['Rezervace','Reservations'],'dash.registrations':['Registrace čekající na schválení','Pending registrations'],'dash.health':['Systém (chyby)','System health (errors)'],'dash.capacity':['Přehled kapacit','Capacity overview'],'dash.recent':['Poslední žádosti','Latest requests'],'dash.pendingres':['Čekající rezervace','Pending reservations'],
+'ap.home':['Přehled','Overview'],'ap.home.d':['Stav akcí, žádostí a uživatelů.','Events, requests and users at a glance.'],'ap.events':['Akce a kapacita','Events and capacity'],'ap.events.d':['Vytváření, úpravy, hromadné změny, archivace.','Create, edit, bulk change, archive.'],'ap.completed':['Dokončené akce','Completed events'],'ap.completed.d':['Archiv proběhlých akcí s historií stavů.','Archive of past events with status history.'],'ap.requests':['Žádosti o rezervace','Reservations'],'ap.requests.d':['Všechny žádosti a jejich schvalování.','All requests and their approval.'],'ap.audit':['Audit','Audit'],'ap.audit.d':['Kdo, co a kdy změnil. Historie žadatele podle e-mailu.','Who changed what and when. Applicant history by e-mail.'],'ap.users':['Uživatelé','Users'],'ap.users.d':['Registrace, přístupy a role.','Registrations, access and roles.'],'ap.roles':['Role','Roles'],'ap.roles.d':['Přehled oprávnění jednotlivých rolí.','Permissions of each role.'],'ap.approvers':['Schvalovatelé','Approvers'],'ap.approvers.d':['Profily a zástupci schvalovatelů.','Approver profiles and deputies.'],'ap.teams':['Teams notifikace','Teams notifications'],'ap.teams.d':['Dva kanály, typy zpráv a test.','Two channels, message types and test.'],'ap.appearance':['Vzhled','Appearance'],'ap.appearance.d':['Sezónní motiv a úvodní texty.','Seasonal theme and landing texts.'],'ap.languages':['Jazyky','Languages'],'ap.languages.d':['Výchozí jazyk a jazyk zpráv.','Default language and message language.'],'ap.helper':['Chytrý pomocník','Smart assistant'],'ap.helper.d':['Chatbot a onboarding: odpovědi, ikona, kontakt.','Chatbot and onboarding: answers, icon, contact.'],'ap.filters':['Kategorie a důvody','Categories and reasons'],'ap.filters.d':['Kategorie akcí a důvody rezervací.','Event categories and reservation reasons.'],'ap.system':['Systém a záloha','System and backup'],'ap.system.d':['Stav systému, záloha, obnova, exporty.','System health, backup, restore, exports.'],
+'ap.assigned':['Přiřazených žádostí','Assigned requests'],'ap.deputy':['Zástupce (e-mail)','Deputy (e-mail)'],'ap.display':['Zobrazované jméno','Display name'],'ap.note':['Poznámka','Note'],
+'us.pending':['Čekající registrace','Pending registrations'],'us.nopending':['Žádné čekající registrace.','No pending registrations.'],'us.active':['Aktivní uživatelé','Active users'],'us.none':['Zatím žádní uživatelé.','No users yet.'],'us.approved':['Uživatel schválen.','User approved.'],'us.confirmRej':['Zamítnout a smazat tuto žádost o přístup?','Reject and delete this access request?'],'us.setpw':['Nastavit heslo','Set password'],'us.confirmDel':['Opravdu deaktivovat uživatele {n}?','Really deactivate user {n}?'],
+'perm.title':['Oprávnění','Permission'],'perm.create':['Vytvořit rezervaci','Create reservation'],'perm.own':['Vidět vlastní rezervace','View own reservations'],'perm.l1':['Schvalovat – 1. stupeň (přiřazené)','Approve – level 1 (assigned)'],'perm.l2':['Schvalovat – 2. stupeň','Approve – level 2'],'perm.dash':['Dashboard své role','Own role dashboard'],'perm.admin':['Plná správa systému','Full system control'],'perm.note':['Oprávnění se vynucují v aplikaci. Pro vynucení na straně databáze je potřeba Firebase Authentication a Firestore pravidla (viz poznámky k verzi).','Permissions are enforced in the app. Database-side enforcement requires Firebase Authentication and Firestore rules (see release notes).'],
+'au.filter':['Filtr (e-mail, akce, cíl…)','Filter (e-mail, action, target…)'],'au.none':['Žádné záznamy.','No records.'],'au.time':['Čas','Time'],'au.actor':['Kdo','Who'],'au.action':['Akce','Action'],'au.target':['Cíl / detail','Target / detail'],'au.userRes':['Rezervací žadatele: {n}','Applicant reservations: {n}'],
+'tm.ch1':['Kanál 1 – Admin','Channel 1 – Admin'],'tm.ch1d':['Registrace, rezervace, schválení, chatbot, synchronizace, chyby, správa akcí.','Registrations, reservations, approvals, chatbot, sync, errors, event management.'],'tm.ch2':['Kanál 2 – Informace o akcích','Channel 2 – Event information'],'tm.ch2d':['Nová akce, připomínky 30/14/7 dní a 24 h, kapacita, zrušení, přesun, dokončení.','New event, reminders 30/14/7 days and 24 h, capacity, cancellation, reschedule, completion.'],
+'tm.test':['Odeslat test','Send test'],'tm.prefs':['Které notifikace posílat','Which notifications to send'],'tm.lang':['Jazyk Teams zpráv','Teams message language'],'tm.badurl':['Zadejte platnou HTTPS URL Teams webhooku.','Enter a valid HTTPS Teams webhook URL.'],'tm.sent':['Test odeslán.','Test sent.'],'tm.fail':['Odeslání se nezdařilo.','Delivery failed.'],'tm.run':['Zkontrolovat nyní','Check now'],'tm.sched':['Automatické připomínky','Automatic reminders'],'tm.schedNote':['Připomínky (30/14/7 dní, 24 h), upozornění na kapacitu a dokončení odesílá prohlížeč přihlášeného admina každých 15 minut. Každá zpráva se odešle jen jednou (značka je uložená u akce). Pokud není nikdo z adminů přihlášen, odešlou se při příštím přihlášení; pro nepřetržité odesílání je potřeba serverová funkce.','Reminders (30/14/7 days, 24 h), capacity alerts and completion are sent by a signed-in admin’s browser every 15 minutes. Each message is sent once (flag stored on the event). If no admin is signed in they go out at the next sign-in; continuous delivery needs a server function.'],'tm.ran':['Odesláno zpráv: {n}','Messages sent: {n}'],'tm.log':['Poslední odeslání','Recent deliveries'],'tm.nolog':['V této relaci zatím nic neodešlo.','Nothing sent in this session yet.'],
+'tp.registration':['Registrace (nový uživatel, schválení, zamítnutí přístupu)','Registrations (new user, access decisions)'],'tp.other':['Rezervace, schválení a správa akcí (Admin kanál)','Reservations, approvals and event management (Admin channel)'],'tp.chatbot':['Problémy nahlášené chatbotem','Issues reported by the chatbot'],'tp.system':['Chyby systému a synchronizace','System and sync errors'],'tp.info':['Informace o akcích (Kanál 2)','Event information (Channel 2)'],
+'tm.open':['Otevřít aplikaci','Open app'],'tm.fullnote':['Akce je plně obsazena.','Event fully booked.'],
+'tm.new_registration':['Nová žádost o přístup','New access request'],'tm.new_reservation':['Nová žádost o rezervaci','New reservation request'],'tm.approval':['Schváleno','Approved'],'tm.rejection':['Zamítnuto','Rejected'],'tm.chatbot_issue':['Problém nahlášený pomocníkem','Issue reported by assistant'],'tm.sync_issue':['Problém se synchronizací','Synchronization issue'],'tm.system_error':['Systémová chyba','System error'],'tm.event_created':['Akce vytvořena','Event created'],'tm.event_deleted':['Akce smazána','Event deleted'],'tm.event_modified':['Akce upravena','Event modified'],'tm.test':['Testovací zpráva','Test message'],
+'tm.new_event':['Nová akce','New event'],'tm.reminder_30':['Za 30 dní: akce se blíží','In 30 days: upcoming event'],'tm.reminder_14':['Za 14 dní: akce se blíží','In 14 days: upcoming event'],'tm.reminder_7':['Za 7 dní: akce se blíží','In 7 days: upcoming event'],'tm.reminder_1':['Za 24 hodin: akce se blíží','In 24 hours: upcoming event'],'tm.low_capacity':['Nízká kapacita','Low capacity'],'tm.full_capacity':['Akce je plně obsazena','Event fully booked'],'tm.cancelled':['Akce zrušena','Event cancelled'],'tm.rescheduled':['Akce přesunuta','Event rescheduled'],'tm.completed':['Akce proběhla (archivována)','Event completed (archived)'],
+'tm.f.name':['Název','Name'],'tm.f.date':['Datum','Date'],'tm.f.capacity':['Kapacita','Capacity'],'tm.f.category':['Kategorie','Category'],'tm.f.remaining':['Zbývá lístků','Remaining tickets'],'tm.f.old':['Původní datum','Old date'],'tm.f.new':['Nové datum','New date'],'tm.f.approved':['Schválené lístky','Approved tickets'],'tm.f.who':['Kdo','Who'],'tm.f.when':['Kdy','When'],'tm.f.role':['Role','Role'],'tm.f.event':['Akce','Event'],'tm.f.customer':['Zákazník','Customer'],'tm.f.tickets':['Počet lístků','Tickets'],'tm.f.level':['Stupeň','Level'],'tm.f.problem':['Problém','Problem'],'tm.f.question':['Původní otázka','Original question'],'tm.f.note':['Poznámka','Note'],
+'se.auto':['Automaticky dle data','Automatic by date'],'se.autumn':['Podzim','Autumn'],'se.winter':['Zima','Winter'],'se.spring':['Jaro','Spring'],'se.summer':['Léto','Summer'],'se.christmas':['Vánoce','Christmas'],'se.halloween':['Halloween','Halloween'],
+'ap2.season':['Sezónní motiv (pro všechny uživatele)','Seasonal theme (for all users)'],'ap2.seasonNote':['Světlý/tmavý/automatický režim si volí každý uživatel sám a ukládá se do jeho profilu.','Light/dark/auto mode is chosen by each user and stored in their profile.'],'ap2.landing':['Úvodní banner na seznamu akcí','Banner on the events list'],'ap2.landingOn':['Zobrazit vlastní banner','Show custom banner'],'ap2.ltitle':['Nadpis','Title'],'ap2.ltext':['Text','Text'],
+'lg.default':['Výchozí jazyk (pokud si uživatel nevybere)','Default language (if the user has no choice)'],'lg.note':['Přeloženo: navigace, formuláře, tabulky, dashboardy, chatbot, Teams zprávy, validační hlášky, onboarding. Jazyk si uživatel přepíná v záhlaví a ukládá se do jeho profilu. E-maily se otevírají přes mailto v jazyce uživatele, který je odesílá.','Translated: navigation, forms, tables, dashboards, chatbot, Teams messages, validation messages, onboarding. Users switch language in the header and it is stored in their profile. E-mails open via mailto in the sender’s language.'],
+'hp.add':['Přidat odpověď','Add answer'],'hp.answers':['Vlastní odpovědi pomocníka','Custom assistant answers'],'hp.contact':['Kontakt (zobrazí se při nahlášení problému)','Contact (shown when reporting a problem)'],'hp.enabled':['Pomocník je zapnutý','Assistant enabled'],'hp.icon':['Vlastní ikona pomocníka','Custom assistant icon'],'hp.iconHint':['Můžete ji měnit podle sezóny. Obrázek se zmenší.','You can change it per season. The image is downscaled.'],'hp.keys':['Klíčová slova (oddělená čárkou)','Keywords (comma separated)'],'hp.none':['Zatím žádné vlastní odpovědi – pomocník používá vestavěné.','No custom answers yet – the assistant uses built-in ones.'],'hp.q':['Otázka / název','Question / title'],'hp.a':['Odpověď','Answer'],
+'fl.cats':['Kategorie akcí','Event categories'],'fl.new':['Nová kategorie','New category'],'fl.reasons':['Důvody rezervací','Reservation reasons'],'fl.reasonsHint':['Jeden důvod na řádek.','One reason per line.'],
+'sy.health':['Stav systému','System health'],'sy.online':['Připojení','Connection'],'sy.last':['Poslední synchronizace','Last sync'],'sy.pending':['Čekající zápisy','Pending writes'],'sy.set':['nastaveno','configured'],'sy.notset':['nenastaveno','not set'],'sy.data':['Data','Data'],'sy.ver':['Verze','Version'],'sy.clearcache':['Smazat cache a znovu načíst','Clear cache and reload'],'sy.backup':['Záloha a obnova','Backup and restore'],'sy.export':['Stáhnout zálohu (JSON)','Download backup (JSON)'],'sy.restore':['Obnovit ze zálohy','Restore from backup'],'sy.bkHint':['Obnova přepíše stejná data v databázi. Před ní se automaticky stáhne aktuální záloha.','Restore overwrites the same data in the database. A backup of the current state is downloaded first.'],'sy.exports':['Exporty','Exports'],'sy.retention':['Uchovávání auditu (GDPR)','Audit retention (GDPR)'],'sy.days':['dní','days'],'sy.purge':['Smazat starší záznamy','Delete older records'],'sy.purgeConfirm':['Smazat záznamy auditu starší než {n} dní?','Delete audit records older than {n} days?'],'sy.purged':['Smazáno záznamů: {n}','Records deleted: {n}'],'sy.errors':['Chyby a selhání','Errors and failures'],'sy.noerr':['Žádné chyby.','No errors.'],
+'bk.confirm':['Obnovit ze zálohy? Žádosti: {r}, akce: {e}, uživatelé: {u}. Stávající data se přepíšou.','Restore from backup? Requests: {r}, events: {e}, users: {u}. Existing data will be overwritten.'],'bk.done':['Obnova dokončena.','Restore complete.'],
+'acc.title':['Můj účet','My account'],'gdpr.delete':['Smazat můj účet','Delete my account'],'gdpr.hint':['Smazáním účtu odstraníte svůj přístup. Záznamy auditu se uchovávají po dobu stanovenou administrátorem.','Deleting your account removes your access. Audit records are retained for the period set by the administrator.'],'gdpr.confirm':['Opravdu smazat váš účet? Tuto akci nelze vrátit.','Really delete your account? This cannot be undone.'],'gdpr.anon':['Anonymizovat také vaše žádosti o lístky (jméno a e-mail budou odstraněny)?','Also anonymize your ticket requests (name and e-mail will be removed)?'],'gdpr.deleted':['[smazaný uživatel]','[deleted user]'],
+'bot.title':['Chytrý pomocník','Smart assistant'],'bot.ph':['Napište otázku…','Type a question…'],'bot.hello':['Dobrý den, {n}! Pomohu s akcemi, rezervací, přístupem i problémy. Na co se chcete zeptat?','Hello, {n}! I can help with events, reservations, access and problems. What would you like to know?'],'bot.q.events':['Jaké akce jsou k dispozici?','Which events are available?'],'bot.q.reserve':['Jak vytvořit rezervaci?','How do I make a reservation?'],'bot.q.guide':['Spustit průvodce','Start the guide'],'bot.upcoming':['Nejbližší akce:','Upcoming events:'],
+'bot.unknown':['Na to zatím nemám přesnou odpověď. Zkuste jiná slova, nebo problém nahlaste administrátorovi.','I don’t have an exact answer yet. Try different words or report the problem to the administrator.'],'bot.report':['Nahlásit administrátorovi','Report to administrator'],'bot.reported':['Děkuji, problém jsem předal administrátorovi.','Thanks, I passed the problem on to the administrator.'],'bot.reportFail':['Nahlášení se nepodařilo odeslat automaticky.','The report could not be sent automatically.'],
+'bot.f.reserve':['Novou rezervaci vytvoříte v záložce „Nová rezervace“: vyberte akci, vyplňte údaje, potvrďte Kodex chování a odešlete. Rezervovat lze jen aktivní akce, které ještě neproběhly.','Create a reservation in the “New reservation” tab: pick an event, fill in the details, accept the Code of Conduct and submit. Only active events that have not happened yet can be booked.'],'bot.f.status':['Stav žádostí uvidíte v „Seznam žádostí“. Žádost schvaluje nejdřív 1. stupeň (váš nadřízený) a poté RSM Praha. Kliknutím na „Historie“ uvidíte průběh.','Check your requests in “Requests”. Level 1 (your manager) approves first, then RSM Praha. Click “History” to see the progress.'],'bot.f.access':['O přístup požádáte na úvodní obrazovce tlačítkem „Požádat o přístup“. Žádost schvaluje administrátor.','Request access on the start screen with “Request access”. An administrator approves it.'],'bot.f.login':['Přihlásíte se e-mailem a heslem zadaným při registraci. Heslo vám může znovu nastavit administrátor.','Sign in with the e-mail and password from registration. An administrator can reset your password.'],'bot.f.full':['Když schválené lístky dosáhnou kapacity, akce se automaticky označí jako „Obsazeno“ a nové rezervace jsou zablokované.','When approved tickets reach capacity, the event is automatically marked “Full” and new reservations are blocked.'],'bot.f.cancel':['Zrušené akce nelze rezervovat. Zůstávají v historii a v administraci.','Cancelled events cannot be booked. They remain in history and administration.'],'bot.f.trouble':['Zkontrolujte připojení (vpravo nahoře je stav synchronizace). Pomůže obnovit stránku. Pokud potíže přetrvají, použijte „Nahlásit administrátorovi“.','Check your connection (sync status is at the top right). Reloading the page helps. If the problem persists, use “Report to administrator”.'],'bot.f.install':['Aplikaci nainstalujete přes ikonu instalace v adresním řádku prohlížeče (PC/Android) nebo „Přidat na plochu“ (iPhone/iPad).','Install the app via the install icon in the browser address bar (PC/Android) or “Add to Home Screen” (iPhone/iPad).'],
+'ob.title':['Průvodce','Guided tour'],'ob.skip':['Přeskočit','Skip'],'ob.next':['Další','Next'],'ob.finish':['Hotovo','Done'],'ob.restart':['Spustit průvodce znovu','Restart guided tour'],'ob.welcome':['Vítejte v portálu','Welcome to the portal'],'ob.welcomeT':['Tady žádáte o lístky na firemní akce a sledujete jejich schvalování.','Request tickets for company events and track their approval here.'],'ob.nav':['Navigace','Navigation'],'ob.navT':['Záložky nahoře: seznam akcí, nová rezervace, žádosti a přehled. Jazyk a vzhled změníte v záhlaví.','Tabs at the top: events, new reservation, requests and dashboard. Change language and theme in the header.'],
+'ob.a1':['Jak požádat o lístky','How to request tickets'],'ob.a1T':['Na seznamu akcí zvolte „Rezervovat“, vyplňte zákazníka, počet lístků a důvod a potvrďte Kodex chování.','On the events list choose “Reserve”, fill in the customer, ticket count and reason, and accept the Code of Conduct.'],'ob.a2':['Sledování stavu','Tracking status'],'ob.a2T':['V „Seznam žádostí“ uvidíte stav 1. i 2. stupně a historii každé žádosti.','In “Requests” you see level 1 and 2 status and the history of each request.'],
+'ob.m1':['Schvalování – 1. stupeň','Approval – level 1'],'ob.m1T':['Vidíte žádosti, u kterých jste uveden jako nadřízený. Tlačítky Ano/Ne rozhodnete.','You see requests that name you as manager. Decide with Yes/No.'],'ob.m2':['Přehled a filtry','Dashboard and filters'],'ob.m2T':['Dlaždice v Přehledu vás rovnou přenesou na odpovídající žádosti.','Dashboard tiles take you straight to the matching requests.'],'ob.r1':['Schvalování – 2. stupeň','Approval – level 2'],'ob.r1T':['Finálně schvalujete žádosti potvrzené 1. stupněm. Při plné kapacitě použijte „Náhradník“.','You give final approval to requests confirmed by level 1. When capacity is full use “Waitlist”.'],
+'ob.d1':['Administrace','Administration'],'ob.d1T':['Záložka Administrace obsahuje akce, žádosti, uživatele, audit, Teams, vzhled i zálohy.','The Administration tab contains events, requests, users, audit, Teams, appearance and backups.'],'ob.d2':['Akce a stavy','Events and statuses'],'ob.d2T':['Stavy se počítají automaticky: Aktivní, Obsazeno, Zrušeno, Proběhlo. Proběhlé akce najdete v „Dokončené akce“.','Statuses are automatic: Active, Full, Cancelled, Completed. Past events are in “Completed events”.'],'ob.d3':['Teams a záloha','Teams and backup','' ],'ob.d3T':['Nastavte dva webhooky v „Teams notifikace“ a pravidelně stahujte zálohu v „Systém a záloha“.','Set the two webhooks under “Teams notifications” and download a backup regularly under “System and backup”.'],
+'ob.helper':['Chytrý pomocník','Smart assistant'],'ob.helperT':['Ikona vpravo dole otevře pomocníka – odpovídá na dotazy, najde akce a umí nahlásit problém.','The icon at the bottom right opens the assistant – it answers questions, finds events and can report a problem.'],
+'pwa.update':['K dispozici je nová verze – obnovte stránku.','A new version is available – reload the page.'],
+'err.offline':['Jste offline – změnu nelze uložit.','You are offline – the change cannot be saved.'],'err.fill':['Vyplňte všechna pole.','Fill in all fields.'],'err.badlogin':['Nesprávný e-mail nebo heslo.','Incorrect e-mail or password.'],'err.badcode':['Neplatný admin kód.','Invalid admin code.'],'err.email':['Zadejte platný e-mail.','Enter a valid e-mail.'],'err.pwlen':['Heslo musí mít alespoň 6 znaků.','Password must have at least 6 characters.'],'err.pwmatch':['Hesla se neshodují.','Passwords do not match.'],'err.role':['Neplatná role.','Invalid role.'],'err.regdup1':['Tento e-mail už má schválený účet. Přihlaste se.','This e-mail already has an approved account. Sign in.'],'err.regdup2':['Žádost pro tento e-mail už čeká na schválení.','A request for this e-mail is already awaiting approval.'],'err.notfound':['Záznam nebyl nalezen (mohl být mezitím změněn).','Record not found (it may have changed).'],'err.nohash':['Žádost nemá heslo – požádejte uživatele o novou registraci.','The request has no password – ask the user to register again.'],'err.sessionend':['Váš účet už neexistuje – byli jste odhlášeni.','Your account no longer exists – you were signed out.'],'err.login':['Nejste přihlášeni.','You are not signed in.'],
+'err.noevent':['Akce nebyla nalezena.','Event not found.'],'err.notbookable':['Akci nelze rezervovat (stav: {s}).','This event cannot be booked (status: {s}).'],'err.toomany':['Požadujete víc lístků, než zbývá ({n}).','You requested more tickets than remain ({n}).'],'err.capacity':['Kapacita by byla překročena (zbývá {n}). Použijte „Náhradník“.','Capacity would be exceeded ({n} left). Use “Waitlist”.'],'err.perm':['K tomuto kroku nemáte oprávnění.','You are not allowed to do this.'],'err.perm2':['2. stupeň může schvalovat až po schválení 1. stupněm.','Level 2 can approve only after level 1 has approved.'],'err.pickev':['Vyberte akci.','Select an event.'],'err.tickets':['Počet lístků musí být 1–10.','Tickets must be between 1 and 10.'],'err.evreq':['Vyplňte název a datum akce.','Enter the event name and date.'],'err.img':['Obrázek se nepodařilo zpracovat.','The image could not be processed.'],'err.json':['Soubor není platná záloha JSON.','The file is not a valid JSON backup.'],'err.xlsx':['Knihovnu pro Excel se nepodařilo načíst (jste online?). Použijte CSV.','The Excel library could not be loaded (are you online?). Use CSV.'],'err.nofb':['Firebase se nenačetl – zkontrolujte připojení.','Firebase did not load – check your connection.']
+};
+
+/* =====================================================================
+   CHYTRÝ POMOCNÍK = chatbot + onboarding průvodce (jeden modul)
+   ===================================================================== */
+const Bot={open:false,hist:[],last:'',
+  faq(){const cs=S.lang!=='en';const base=[
+    {keys:['rezerv','lístek','listek','vstupenk','ticket','book','reserv'],a:T('bot.f.reserve')},{keys:['schval','stav','status','approv','pending','čeká'],a:T('bot.f.status')},{keys:['přístup','pristup','registr','role','access','register'],a:T('bot.f.access')},
+    {keys:['heslo','přihlás','prihlas','password','login','sign in'],a:T('bot.f.login')},{keys:['plná','plne','full','kapacit','capacity','vyprod'],a:T('bot.f.full')},{keys:['zruš','zrus','cancel'],a:T('bot.f.cancel')},{keys:['offline','nefunguje','chyba','error','problém','problem','sync'],a:T('bot.f.trouble')},{keys:['instal','aplikac','pwa','install'],a:T('bot.f.install')}];return base},
+  answer(q){const t=norm(q);if(!t)return null;
+    const custom=S.cfg.help.answers.map(a=>{const keys=(a.keys||[]).concat(String(a.q||a.title||'').toLowerCase().split(/\s+/).filter(w=>w.length>4));let sc=0;keys.forEach(k=>{if(k&&t.includes(String(k).toLowerCase()))sc+=String(k).length});return{a,sc}}).filter(x=>x.sc>0).sort((x,y)=>y.sc-x.sc)[0];
+    if(custom)return{text:String(custom.a.a||custom.a.answer||''),next:(custom.a.next||[]).map(id=>S.cfg.help.answers.find(x=>x.id===id)).filter(Boolean)};
+    const byName=(S._all||[]).filter(e=>!isArchived(e)&&t.length>3&&norm(e.name).split(/\s+/).some(w=>w.length>3&&t.includes(w)));if(byName.length&&!/rezerv|book|reserv/.test(t))return{text:byName.slice(0,3).map(e=>{const st=evStatus(e),r=evRemaining(e);return '• '+e.name+' — '+fmtDate(e.date,e.time)+(e.place?', '+e.place:'')+' ['+T(EVST_L[st])+(r!=null&&st==='Active'?', '+T('ev.remaining',{n:r}):'')+']'}).join('\n')};
+    if(/akc[ei]|events?|programme|program|kdy|when|nadcház|upcoming/.test(t)){const up=(S._all||[]).filter(e=>evStatus(e)==='Active'||evStatus(e)==='Full').sort((a,b)=>(a.date||'').localeCompare(b.date||'')).slice(0,5);return{text:up.length?T('bot.upcoming')+'\n'+up.map(e=>'• '+e.name+' — '+fmtDate(e.date,e.time)+' ['+T(EVST_L[evStatus(e)])+']').join('\n'):T('ev.none')}}
+    let best=null,bs=0;this.faq().forEach(f=>{let sc=0;f.keys.forEach(k=>{if(t.includes(k))sc+=k.length});if(sc>bs){bs=sc;best=f}});return best?{text:best.a}:null},
+  say(text,me,extra){this.hist.push({text,me,extra});this.draw()},
+  draw(){const log=$('#chat-log');if(!log)return;log.innerHTML=this.hist.map(m=>`<div class="msg ${m.me?'me':'bot'}">${esc(m.text)}${m.extra||''}</div>`).join('');log.scrollTop=log.scrollHeight},
+  ask(q){q=q.trim();if(!q)return;this.say(q,true);this.last=q;const a=this.answer(q);
+    if(a){this.say(a.text,false);if(a.next&&a.next.length)this.chips(a.next.map(n=>n.q||n.title))}
+    else this.say(T('bot.unknown'),false,`<div class="row" style="margin-top:8px"><button class="btn sm" data-act="botReport">${T('bot.report')}</button>${S.cfg.help.contact?'':''}</div>`)},
+  chips(list){const c=$('#chat-q');if(c)c.innerHTML=list.map(x=>`<button class="chip" data-act="botQ" data-q="${esc(x)}">${esc(x)}</button>`).join('')},
+  mount(){let r=$('#chat-root');if(!r){r=document.createElement('div');r.id='chat-root';document.body.appendChild(r)}
+    if(!S.user||S.cfg.help.enabled===false){r.innerHTML='';return}
+    const icon=S.cfg.help.icon;const fab=`<button class="chat-fab" data-act="botToggle" aria-label="${T('bot.title')}" aria-expanded="${this.open}">${icon?`<img src="${esc(icon)}" alt="">`:'🤖'}</button>`;
+    if(!this.open){if(!$('.chat-fab',r)||r.dataset.o==='1'){r.innerHTML=fab;r.dataset.o='0'}return}
+    if(r.dataset.o==='1')return;r.dataset.o='1';
+    r.innerHTML=fab+`<section class="chat" role="dialog" aria-label="${T('bot.title')}"><div class="chat-h"><span>${T('bot.title')}</span><button data-act="botToggle" aria-label="${T('c.close')}">✕</button></div><div class="chat-log" id="chat-log" aria-live="polite"></div><div class="chat-q" id="chat-q"></div>
+      <form class="chat-f" data-form="chat"><input type="text" id="chat-in" autocomplete="off" placeholder="${T('bot.ph')}" aria-label="${T('bot.ph')}"><button class="btn pri" type="submit">${T('c.send')}</button></form></section>`;
+    if(!this.hist.length){this.say(T('bot.hello',{n:(S.user.name||'').split(' ')[0]}),false);}this.draw();this.chips(this.starters());setTimeout(()=>{const i=$('#chat-in');if(i)i.focus()},50)},
+  starters(){const a=S.cfg.help.answers.slice(0,3).map(x=>x.q||x.title).filter(Boolean);return a.concat([T('bot.q.events'),T('bot.q.reserve'),T('bot.q.guide')]).slice(0,5)}};
+Object.assign(ACT,{botToggle(){Bot.open=!Bot.open;const r=$('#chat-root');if(r)r.dataset.o=Bot.open?'0':'1';Bot.mount()},
+  botQ(d){if(d.q===T('bot.q.guide')){Onboard.start(true);return}Bot.ask(d.q)},
+  async botReport(){const ok=await Teams.send('chatbot_issue',{facts:[[T('tm.f.who'),S.user.name],[T('tm.f.question'),Bot.last],[T('tm.f.role'),T(ROLE_L[S.user.role])]]});audit('chatbot-issue','',Bot.last);Bot.say(ok||!S.teams.admin?T('bot.reported')+(S.cfg.help.contact?'\n'+S.cfg.help.contact:''):T('bot.reportFail')+(S.cfg.help.contact?'\n'+S.cfg.help.contact:''),false)}});
+
+const Onboard={steps(){const r=roleOf();const common=[[T('ob.welcome'),T('ob.welcomeT')],[T('ob.nav'),T('ob.navT')]];
+    const role={applicant:[[T('ob.a1'),T('ob.a1T')],[T('ob.a2'),T('ob.a2T')]],manager:[[T('ob.m1'),T('ob.m1T')],[T('ob.m2'),T('ob.m2T')]],rsm_praha:[[T('ob.r1'),T('ob.r1T')],[T('ob.m2'),T('ob.m2T')]],admin:[[T('ob.d1'),T('ob.d1T')],[T('ob.d2'),T('ob.d2T')],[T('ob.d3'),T('ob.d3T')]]}[r]||[];
+    return common.concat(role,[[T('ob.helper'),T('ob.helperT')]])},
+  start(force){if(!S.user)return;const st=this.steps();let i=0;const body=()=>`<h3>${esc(st[i][0])}</h3><p>${esc(st[i][1])}</p><div class="ob-dots">${st.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join('')}</div>`;
+    const d=dlg(T('ob.title'),body(),[{label:T('ob.skip'),fn:()=>{this.done()}},{label:T('c.back'),fn:dd=>{if(i>0){i--;$('.dlg-b',dd).innerHTML=body()}return false}},{label:T('ob.next'),cls:'pri',fn:dd=>{if(i<st.length-1){i++;$('.dlg-b',dd).innerHTML=body();if(i===st.length-1)$$('.dlg-f .btn',dd)[2].textContent=T('ob.finish');return false}this.done()}}],{noFocus:true})},
+  done(){const u=S.user;if(!u||u.master){localStorage.setItem('ccOnb_'+(u&&u.email),'1');return}localStorage.setItem('ccOnb_'+u.email,'1');Auth.savePrefs({onboarded:true})},
+  maybe(){const u=S.user;if(!u||!S.ready)return;const su=S.users[norm(u.email)];if(localStorage.getItem('ccOnb_'+u.email)||(su&&su.prefs&&su.prefs.onboarded))return;localStorage.setItem('ccOnb_'+u.email,'pending');setTimeout(()=>{if(!$('dialog[open]'))this.start()},600)}};
+
+/* =====================================================================
+   RENDER (jedna cesta, žádné další vrstvy) + události
+   ===================================================================== */
+let _rt=0,_dirty=false,_obChecked=false;
+function changed(force){clearTimeout(_rt);_rt=setTimeout(()=>render(force),force?0:150)}
+function render(force){const app=$('#app');if(!app)return;
+  if(!force){const a=document.activeElement;if(a&&app.contains(a)&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&!/^(checkbox|button|radio|file)$/.test(a.type||'')){_dirty=true;return}if($('dialog[open]')){_dirty=true;return}}
+  _dirty=false;Auth.validateSession();applyTheme();const y=scrollY;
+  if(!S.user){app.innerHTML=Views.gate();Bot.mount();return}
+  let inner;switch(S.view){case 'reserve':inner=Views.reserve();break;case 'requests':inner=Views.requests();break;case 'dashboard':inner=Views.dashboard();break;case 'admin':inner=isAdmin()?Admin.view():Views.events();if(!isAdmin())S.view='events';break;default:inner=Views.events();S.view='events'}
+  app.innerHTML=Views.shell(inner);scrollTo(0,y);if(S.view==='admin')Admin.post();if(S.view==='requests'){const q=$('#rq-q');if(q)q.oninput=()=>{const v=norm(q.value);$$('#rq-table tbody tr').forEach(r=>r.classList.toggle('hide',!!v&&!r.dataset.q.includes(v)))}}
+  if(S.view==='reserve')bindReserve();Bot.mount();if(S.ready&&!_obChecked){_obChecked=true;Onboard.maybe();Sched.start()}}
+function bindReserve(){const ok=$('#x-ok'),b=$('#x-send');if(ok)ok.onchange=()=>{b.disabled=!ok.checked}}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.disabled)return;const f=ACT[b.dataset.act];if(!f)return;if(b.tagName==='A')e.preventDefault();try{const r=f(b.dataset,e);if(r&&r.catch)r.catch(x=>{toast(x.message,'err');logError('ui',x.message)})}catch(x){toast(x.message,'err');logError('ui',x.message)}});
+document.addEventListener('focusout',()=>{if(_dirty)setTimeout(()=>{const a=document.activeElement;if(!(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)))render()},250)});
+document.addEventListener('submit',async e=>{const f=e.target.closest('[data-form]');if(!f)return;e.preventDefault();const k=f.dataset.form,v=id=>($('#'+id,f)||{}).value||'';const btn=$('button[type=submit]',f);if(btn)btn.disabled=true;
+  try{if(k==='login'){await Auth.login(v('g-em'),v('g-pw'));S.view='events';render(true);Cloud.fresh()}
+    else if(k==='adminCode'){await Auth.adminCode(v('a-c'));S.view='events';render(true)}
+    else if(k==='register'){await Auth.register({name:v('r-n'),email:v('r-e'),role:v('r-r'),pw:v('r-p'),pw2:v('r-p2')});toast(T('gate.sent'),'ok');S.gateMode='login';render(true)}
+    else if(k==='reserve'){const n=parseInt(v('x-n'));const rc=v('x-rs');const reason=(rc?rc+': ':'')+v('x-re').trim();if(!v('x-ev'))throw new Error(T('err.pickev'));if(!(n>=1&&n<=10))throw new Error(T('err.tickets'));
+      await Res.create({eventId:v('x-ev'),employee:v('x-emp').trim(),manager:v('x-mgr'),customer:v('x-cu').trim(),tickets:n,reason});localStorage.setItem('ccLastMgr_'+norm(S.user.email),norm(v('x-mgr')));S.reserveEvent='';toast(T('rs.done'),'ok');S.view='requests';S.reqFilter='all';history.replaceState(null,'','#requests');render(true)}
+    else if(k==='chat'){const i=$('#chat-in');const q=i.value;i.value='';Bot.ask(q)}}
+  catch(err){toast(err.message||String(err),'err');if(!/^(Zadejte|Neplatn|Enter|Invalid|Incorrect)/.test(err.message||''))logError('form-'+k,err.message)}finally{if(btn&&document.body.contains(btn))btn.disabled=k==='reserve'&&$('#x-ok')&&!$('#x-ok').checked}});
+addEventListener('online',()=>{S.net.online=true;changed(true);Cloud.fresh()});addEventListener('offline',()=>{S.net.online=false;changed(true)});
+matchMedia('(prefers-color-scheme: dark)').addEventListener&&matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(themePref()==='auto')render(true)});
+addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(['events','reserve','requests','dashboard','admin'].includes(h)&&h!==S.view){S.view=h;render(true)}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&Bot.open&&!$('dialog[open]')){ACT.botToggle()}});
+
+/* ---------- PWA ---------- */
+function setupPWA(){if(!('serviceWorker' in navigator)||!/^https?:$/.test(location.protocol))return;
+  navigator.serviceWorker.register('sw.js').then(r=>{r.addEventListener('updatefound',()=>{const w=r.installing;if(w)w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller)toast(T('pwa.update'),'ok')})})}).catch(e=>logError('sw',e.message));
+  let deferred;addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;S.canInstall=true;window.__install=()=>deferred.prompt()})}
+
+/* ---------- start ---------- */
+function boot(){S.lang=detectLang();cacheLoad();const h=location.hash.slice(1);if(['events','reserve','requests','dashboard','admin'].includes(h))S.view=h;
+  const hasFb=Cloud.init();applyTheme();render(true);
+  if(hasFb){Cloud.listen();setTimeout(()=>{if(!S.ready){S.ready=true;changed(true)}},4000);
+    Cloud.ref.get().then(()=>{S.ready=true;changed(true)}).catch(e=>{S.ready=true;logError('sync',e.message);changed(true)})}else{S.ready=true;toast(T('err.nofb'),'err')}
+  setupPWA()}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+
+</script>
+</body>
+</html>
